@@ -1,5 +1,5 @@
 // Node-only helpers for code that runs both from source (tsx, dev) and as a
-// bundle (tsdown, `npm start`). Kept out of the browser-shared index.
+// bundle (tsdown, `pnpm start`). Kept out of the browser-shared index.
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';

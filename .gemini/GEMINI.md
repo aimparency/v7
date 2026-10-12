@@ -22,5 +22,5 @@
 - User prefers using 'gemini' CLI one-shot commands over paid APIs (like OpenAI) to utilize existing subscriptions.
 - The Watchdog Broker (in backend) manages watchdog processes per project path (normalized to .bowman), reusing sessions and enforcing a 5-minute idle timeout reset by frontend keepalives (every 30s).
 - When you are not sure about user intent regarding an idea you are working on, pause work on it, set status to "unclear" and describe the ambiguity in the status comment. 
-- the dev server is usually always running (with: npm run dev); no need to start it yourself ever. 
+- the dev server is usually always running (with: pnpm dev); no need to start it yourself ever. 
 - the unit for value and cost is explicitly up to the user

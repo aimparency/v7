@@ -14,8 +14,8 @@ async function main() {
   // We run 'tsx src/sse.ts' directly
   const sseScript = path.resolve(__dirname, '../src/sse.ts');
   
-  const npxCmd = process.platform === 'win32' ? 'npx.cmd' : 'npx';
-  const mcp = spawn(npxCmd, ['tsx', sseScript], {
+  const pnpmCmd = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+  const mcp = spawn(pnpmCmd, ['exec', 'tsx', sseScript], {
     env: { ...process.env, MCP_PORT: String(MCP_PORT) },
     cwd: path.resolve(__dirname, '..'),
     stdio: ['ignore', 'pipe', 'inherit'], // Capture stdout for logging

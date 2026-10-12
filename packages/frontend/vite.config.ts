@@ -9,7 +9,7 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 export default defineConfig(({ mode }) => {
   const PORT = parseInt(process.env.PORT_FRONTEND || '4000')
 
-  // When hosting over the network (npm run host) BIND_HOST is set to the chosen
+  // When hosting over the network (pnpm host) BIND_HOST is set to the chosen
   // interface (e.g. the Tailscale IP). Hostnames used to reach the preview must
   // be allow-listed; the machine's own hostname (e.g. "l13y") is included
   // automatically, plus anything in PREVIEW_ALLOWED_HOSTS (comma-separated).
@@ -34,7 +34,7 @@ export default defineConfig(({ mode }) => {
         backend: fileURLToPath(new URL('../../packages/backend/src/index.ts', import.meta.url)),
       },
     },
-    // Plain `npm run dev` leaves BIND_HOST unset -> localhost only. `npm run
+    // Plain `pnpm dev` leaves BIND_HOST unset -> localhost only. `pnpm
     // dev:host` sets BIND_HOST so the dev server (with HMR) is exposed too.
     server: {
       host: bindHost,
@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
       allowedHosts,
     },
     // `vite preview` serves the production build (no dev tools / HMR) — used by
-    // `npm run host` to expose the app over the network, bound to BIND_HOST.
+    // `pnpm host` to expose the app over the network, bound to BIND_HOST.
     preview: {
       host: bindHost,
       port: PORT,

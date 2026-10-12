@@ -46,7 +46,7 @@
     "flexsearch": "^0.8.212",
     "fs-extra": "^11.3.2",
     "fuse.js": "^7.1.0",
-    "shared": "*",
+    "shared": "workspace:*",
     "uuid": "^13.0.0",
     "ws": "^8.18.3",
     "zod": "^3.25.76"

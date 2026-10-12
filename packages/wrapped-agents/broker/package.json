@@ -43,7 +43,7 @@
     "cors": "^2.8.5",
     "express": "^5.2.1",
     "fs-extra": "^11.2.0",
-    "shared": "^1.0.0",
+    "shared": "workspace:*",
     "ws": "^8.16.0",
     "zod": "^3.22.4"
   },

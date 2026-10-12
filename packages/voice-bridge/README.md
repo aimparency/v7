@@ -7,7 +7,7 @@ and wrapped-agent runtime.
 
 Use the repository root scripts for the main application:
 
-- `npm run dev`
-- `npm run start`
+- `pnpm dev`
+- `pnpm start`
 
 Only use this package directly if you are working on voice-specific features.

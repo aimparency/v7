@@ -131,7 +131,7 @@ const baseConfig = {
      * Use the preview server on CI for more realistic testing.
      * Playwright will re-use the local server if there is already a dev-server running.
      */
-    command: process.env.CI ? 'npm run preview' : 'cd ../.. && npm run dev:delay',
+    command: process.env.CI ? 'pnpm preview' : 'cd ../.. && pnpm dev:delay',
     port: Number(PORT),
     reuseExistingServer: true,
   },

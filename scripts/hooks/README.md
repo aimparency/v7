@@ -98,7 +98,7 @@ supported but is deprecated.
 ## Verify locally
 
 ```bash
-npm run test:hooks
+pnpm test:hooks
 ```
 
 This contract test installs into a disposable Git repository and verifies JSON,

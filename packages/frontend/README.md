@@ -15,13 +15,13 @@ For normal project usage, run the app from the repo root instead of starting thi
 Development mode:
 
 ```bash
-npm run dev
+pnpm dev
 ```
 
 Build-mode local run:
 
 ```bash
-npm run start
+pnpm start
 ```
 
 ## Package-level Commands
@@ -29,19 +29,19 @@ npm run start
 Run only the frontend dev server:
 
 ```bash
-npm run dev -w frontend
+pnpm --filter frontend dev
 ```
 
 Build the frontend:
 
 ```bash
-npm run build -w frontend
+pnpm --filter frontend build
 ```
 
 Preview the built frontend:
 
 ```bash
-npm run preview -w frontend
+pnpm --filter frontend preview
 ```
 
 ## Tests
@@ -49,17 +49,17 @@ npm run preview -w frontend
 Unit tests:
 
 ```bash
-npm run test:unit -w frontend
+pnpm --filter frontend test:unit
 ```
 
 End-to-end tests:
 
 ```bash
-npm run test:e2e -w frontend
+pnpm --filter frontend test:e2e
 ```
 
 On a fresh machine, Playwright browsers may need to be installed first:
 
 ```bash
-npx playwright install
+pnpm exec playwright install
 ```

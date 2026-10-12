@@ -26,7 +26,7 @@ This architecture allows:
 
 1. Aimparency backend running locally
 2. Node.js 20+ installed
-3. Built MCP package: `npm run build -w mcp`
+3. Built MCP package: `pnpm --filter mcp build`
 
 By default the MCP server connects to the local backend on `ws://localhost:3001`. If you run Aimparency on different ports, set the relevant environment variables before launching the MCP server.
 
@@ -37,7 +37,7 @@ By default the MCP server connects to the local backend on `ws://localhost:3001`
 Build the package first:
 
 ```bash
-npm run build -w mcp
+pnpm --filter mcp build
 ```
 
 Then add this MCP server to your Claude Code configuration:
@@ -218,7 +218,7 @@ The MCP server is designed to support LLMs working indefinitely on goals:
 ### Building
 
 ```bash
-npm run build -w mcp
+pnpm --filter mcp build
 ```
 
 This bundles the server with tsdown into `packages/mcp/build` (executable `build/index.js`).
@@ -234,13 +234,13 @@ This repo's `.mcp.json` does exactly that:
 ```
 
 The MCP client loads the code when it connects, so reconnect it (e.g. `/mcp` in
-Claude Code) to pick up changes. `npm run dev -w mcp` runs a restarting stdio server for manual testing.
+Claude Code) to pick up changes. `pnpm --filter mcp dev` runs a restarting stdio server for manual testing.
 
 ### Testing
 
 1. Start Aimparency locally, usually from the repo root:
    ```bash
-   npm run dev
+   pnpm dev
    ```
 
 2. Configure and restart your MCP client (Claude Code or Claude for Desktop)
@@ -256,12 +256,12 @@ Claude Code) to pick up changes. `npm run dev -w mcp` runs a restarting stdio se
 
 1. Check that the path in config is absolute and correct
 2. Verify the build output exists: `ls packages/mcp/build/index.js`
-3. Rebuild the package: `npm run build -w mcp`
+3. Rebuild the package: `pnpm --filter mcp build`
 4. Restart your MCP client completely
 
 ### Tool calls failing
 
-1. **Check backend is running:** `npm run dev` or `npm run start` from the repo root
+1. **Check backend is running:** `pnpm dev` or `pnpm start` from the repo root
 2. **Check logs:** Backend logs will show tRPC errors
 3. **Verify projectPath:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
 4. **Verify UUIDs:** All idea/phase IDs must exist
@@ -284,7 +284,7 @@ idea://some-uuid?projectPath=/absolute/path/to/project
 
 Error: `Failed to connect to backend`
 - Backend not running on the expected local websocket port
-- Start Aimparency locally: `npm run dev` or `npm run start`
+- Start Aimparency locally: `pnpm dev` or `pnpm start`
 - If you changed backend ports, launch the MCP server with matching environment variables
 
 ## Future Enhancements

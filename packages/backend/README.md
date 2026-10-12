@@ -27,17 +27,17 @@ The frontend talks to the backend over WebSocket tRPC. The backend is the packag
 From the repo root:
 
 ```bash
-npm run dev      # whole stack, servers from source via tsx
-npm run start    # build bundles, then run them
-npm run test -w backend
+pnpm dev      # whole stack, servers from source via tsx
+pnpm start    # build bundles, then run them
+pnpm --filter backend test
 ```
 
 Inside this workspace:
 
 ```bash
-npm run dev
-npm run start
-npm run test
+pnpm dev
+pnpm start
+pnpm test
 ```
 
 The package test script uses explicit file discovery under `src/` and runs the suite sequentially, so it covers the full backend test set without depending on shell glob behavior or cross-test filesystem races.

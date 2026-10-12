@@ -38,9 +38,9 @@
     "@trpc/client": "^11.7.2",
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
-    "backend": "*",
+    "backend": "workspace:*",
     "pinia": "^3.0.4",
-    "shared": "*",
+    "shared": "workspace:*",
     "socket.io-client": "^4.8.1",
     "vue": "^3.5.25",
     "vuedraggable": "^4.1.0"
@@ -59,12 +59,12 @@
     "fs-extra": "^11.3.2",
     "jsdom": "^27.3.0",
     "npm-run-all2": "^8.0.4",
-    "typescript": "~5.9.3",
+    "typescript": "~6.0.3",
     "uuid": "^13.0.2",
     "vite": "^7.2.7",
     "vite-plugin-vue-devtools": "^8.0.5",
     "vitest": "^4.0.15",
     "vue-tsc": "^3.1.8",
-    "wrapped-agents-broker": "^1.0.0"
+    "wrapped-agents-broker": "workspace:*"
   }
 }

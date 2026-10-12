@@ -40,7 +40,8 @@
     "@types/cors": "^2.8.17",
     "@types/express": "^4.17.21",
     "@types/node": "^20.11.20",
-    "backend": "^1.0.0",
+    "@types/ws": "^8.18.2",
+    "backend": "workspace:*",
     "tsx": "^4.7.1",
     "typescript": "^5.3.3"
   }

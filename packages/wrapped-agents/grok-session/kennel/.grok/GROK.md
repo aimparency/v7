@@ -31,7 +31,7 @@ The watchdog logic is now fully corrected and robust:
       timestamps.
    4. tick logic respects nextCheckTime and enabled.
 
-  You can restart npm run dev. This should be solid.
+  You can restart pnpm dev. This should be solid.
 """
 
 example options situation: """

@@ -1,19 +1,19 @@
 #!/usr/bin/env node
 // One command for "is the repo green?": every workspace's typecheck and test
 // script, plus the hook tests and knip (unused files, exports, dependencies),
-// run in parallel. Workspaces are discovered from the root package.json, so a
-// new package is checked once it has the scripts.
+// run in parallel. Workspaces are discovered through pnpm (pnpm-workspace.yaml),
+// so a new package is checked once it has the scripts.
 //
-//   npm run check                      everything
-//   npm run check -- test              only tests (or: typecheck, unused)
-//   npm run check -- backend frontend  only these workspaces (combinable)
+//   pnpm check                      everything
+//   pnpm check test                 only tests (or: typecheck, unused)
+//   pnpm check backend frontend     only these workspaces (combinable)
 //
 // Parallelism follows free memory as well as cores, since the dev stack usually
 // runs alongside: CHECK_CONCURRENCY overrides the job count, VITEST_MAX_WORKERS
 // the workers per vitest job (default 2).
 
-import { spawn } from 'node:child_process';
-import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { execFileSync, spawn } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -30,16 +30,13 @@ const ROOT_TASKS = [
 ];
 
 function workspaces() {
-  return readJson(path.join(root, 'package.json')).workspaces.flatMap((pattern) => {
-    const parent = path.join(root, pattern.replace(/\/\*$/, ''));
-    return readdirSync(parent, { withFileTypes: true })
-      .filter((entry) => entry.isDirectory() && existsSync(path.join(parent, entry.name, 'package.json')))
-      .map((entry) => {
-        const dir = path.join(parent, entry.name);
-        const pkg = readJson(path.join(dir, 'package.json'));
-        return { name: pkg.name, short: entry.name, dir, scripts: pkg.scripts ?? {} };
-      });
-  });
+  const projects = JSON.parse(execFileSync('pnpm', ['ls', '--recursive', '--depth', '-1', '--json'], { cwd: root, encoding: 'utf8' }));
+  return projects
+    .filter((project) => project.path !== root)
+    .map(({ path: dir }) => {
+      const pkg = readJson(path.join(dir, 'package.json'));
+      return { name: pkg.name, short: path.basename(dir), dir, scripts: pkg.scripts ?? {} };
+    });
 }
 
 function plan(args) {
@@ -63,7 +60,7 @@ function run(task) {
   const started = Date.now();
   return new Promise((resolve) => {
     // CI=1 keeps watch-capable runners (vitest) in run-once mode.
-    const child = spawn('npm', ['run', task.script], {
+    const child = spawn('pnpm', ['run', task.script], {
       cwd: task.cwd,
       env: { VITEST_MAX_WORKERS: '2', ...process.env, CI: '1', FORCE_COLOR: '0' }
     });
@@ -102,7 +99,7 @@ console.log(`${tasks.length} tasks, ${concurrency} at a time (${(os.freemem() / 
 const results = await runAll(tasks, concurrency);
 const failed = results.filter((result) => !result.ok);
 for (const result of failed) {
-  console.log(`\n── ${result.label} (npm run ${result.script}) ──\n${result.output.trimEnd().split('\n').slice(-60).join('\n')}`);
+  console.log(`\n── ${result.label} (pnpm run ${result.script}) ──\n${result.output.trimEnd().split('\n').slice(-60).join('\n')}`);
 }
 console.log(`\n${results.length - failed.length}/${results.length} passed${failed.length ? `; failed: ${failed.map((result) => result.label).join(', ')}` : ''}`);
 process.exit(failed.length ? 1 : 0);

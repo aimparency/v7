@@ -4,8 +4,8 @@ This package contains the older Python-based embedding service that predated the
 
 For the open source release, treat it as legacy infrastructure:
 
-- it is not part of the default `npm run dev` flow
-- it is not part of the default `npm run start` flow
+- it is not part of the default `pnpm dev` flow
+- it is not part of the default `pnpm start` flow
 - the backend no longer depends on it for normal semantic search
 
 Current contents:

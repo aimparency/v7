@@ -62,7 +62,7 @@ function getInstanceKey(projectPath: string, agentType: AgentType): string {
 // Location: packages/wrapped-agents/broker/src/manager.ts
 // WRAPPER_DIR: packages/wrapped-agents (2 levels up from src)
 const WRAPPER_DIR = path.resolve(__dirname, '../../');
-// Monorepo root (packages/wrapped-agents -> ../..), where npm workspace
+// Monorepo root (packages/wrapped-agents -> ../..), where pnpm workspace
 // commands resolve from for the pre-relaunch verification gate.
 const REPO_ROOT = path.resolve(WRAPPER_DIR, '..', '..');
 const SESSIONS_FILE = path.join(WRAPPER_DIR, 'watchdog-sessions.json');
@@ -289,13 +289,13 @@ export interface VerifyResult {
  */
 export async function verifyWrappedAgents(): Promise<VerifyResult> {
   const steps: Array<{ name: string; args: string[] }> = [
-    { name: 'typecheck', args: ['run', 'type-check', '-w', '@aimparency/wrapped-agents-common'] },
-    { name: 'test', args: ['test', '-w', '@aimparency/wrapped-agents-common'] },
+    { name: 'typecheck', args: ['--filter', '@aimparency/wrapped-agents-common', 'type-check'] },
+    { name: 'test', args: ['--filter', '@aimparency/wrapped-agents-common', 'test'] },
   ];
   let output = '';
   for (const step of steps) {
     try {
-      const { stdout, stderr } = await execFileAsync('npm', step.args, {
+      const { stdout, stderr } = await execFileAsync('pnpm', step.args, {
         cwd: REPO_ROOT,
         timeout: 180_000,
         maxBuffer: 16 * 1024 * 1024,
@@ -362,7 +362,7 @@ export const WatchdogManager = {
     const startPort = parseInt(process.env.PORT_PROCESS_START || '7000');
     const port = await findAvailablePort(startPort);
 
-    // Worker entry in the broker's own mode: source via tsx in dev, the bundle under `npm start`.
+    // Worker entry in the broker's own mode: source via tsx in dev, the bundle under `pnpm start`.
     const sessionDir = path.join(WRAPPER_DIR, `${agentType}-session`);
     const workerArgs = nodeEntryArgs(import.meta.url, path.join(sessionDir, 'src', 'index.ts'), path.join(sessionDir, 'dist', 'index.js'));
 

@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "Local-first idea management system with a browser UI, background service, and agent tooling for .bowman projects.",
   "private": true,
-  "workspaces": [
-    "packages/*",
-    "packages/wrapped-agents/*"
-  ],
   "scripts": {
     "dev:embedder": "bash packages/embedder/start.sh",
     "dev:mobile:config": "tsx packages/mobile/scripts/generate-config.ts",
@@ -20,24 +16,24 @@
     "validate:local-runtime": "node scripts/validate-local-runtime.mjs",
     "test:hooks": "bash scripts/hooks/test.sh",
     "verify:migration": "tsx packages/shared/scripts/verify-bowman-migration.ts",
-    "stop-sessions": "npm run stop-sessions -w wrapped-agents-broker",
-    "list-sessions": "npm run list-sessions -w wrapped-agents-broker",
-    "build:core": "npm run build -w backend -w wrapped-agents-broker -w loop-worker -w wrapped-agents-claude-session -w wrapped-agents-codex-session -w wrapped-agents-gemini-session -w wrapped-agents-agy-session -w wrapped-agents-grok-session -w frontend",
-    "build:optional": "npm run build:core && npm run build -w mcp -w voice-bridge",
-    "build": "npm run build:core",
-    "test": "npm run test:all",
-    "test:all": "npm run test:unit && npm run test:e2e",
-    "test:unit": "npm run test:unit:backend && npm run test:unit:frontend && npm run test:unit:shared && npm run test:unit:mcp",
-    "test:unit:backend": "npm run test -w backend",
-    "test:unit:frontend": "npm test -w frontend",
-    "test:unit:shared": "npm run test -w shared",
-    "test:unit:mcp": "npm run test -w mcp",
-    "test:e2e": "npm run test:e2e -w frontend",
-    "test:e2e:ci": "npm run test:e2e:ci -w frontend",
-    "test:watch": "npm run test:unit:frontend",
-    "ncu-upgrade": "npx npm-check-updates -u --deep && npm install",
-    "expose:mcp": "dotenv -e .env -- npm run expose -w mcp",
-    "real-world": "dotenv -e .env -- npm run start -w real-world --",
+    "stop-sessions": "pnpm --filter wrapped-agents-broker stop-sessions",
+    "list-sessions": "pnpm --filter wrapped-agents-broker list-sessions",
+    "build:core": "pnpm --filter backend --filter wrapped-agents-broker --filter loop-worker --filter wrapped-agents-claude-session --filter wrapped-agents-codex-session --filter wrapped-agents-gemini-session --filter wrapped-agents-agy-session --filter wrapped-agents-grok-session --filter frontend build",
+    "build:optional": "pnpm build:core && pnpm --filter mcp --filter voice-bridge build",
+    "build": "pnpm build:core",
+    "test": "pnpm test:all",
+    "test:all": "pnpm test:unit && pnpm test:e2e",
+    "test:unit": "pnpm test:unit:backend && pnpm test:unit:frontend && pnpm test:unit:shared && pnpm test:unit:mcp",
+    "test:unit:backend": "pnpm --filter backend test",
+    "test:unit:frontend": "pnpm --filter frontend test",
+    "test:unit:shared": "pnpm --filter shared test",
+    "test:unit:mcp": "pnpm --filter mcp test",
+    "test:e2e": "pnpm --filter frontend test:e2e",
+    "test:e2e:ci": "pnpm --filter frontend test:e2e:ci",
+    "test:watch": "pnpm test:unit:frontend",
+    "ncu-upgrade": "pnpm --recursive update --latest",
+    "expose:mcp": "dotenv -e .env -- pnpm --filter mcp expose",
+    "real-world": "dotenv -e .env -- pnpm --filter real-world start",
     "check": "node scripts/check.mjs",
     "knip": "knip --no-progress"
   },
@@ -65,5 +61,6 @@
   "bugs": {
     "url": "https://github.com/aimparency/v7/issues"
   },
-  "homepage": "https://github.com/aimparency/v7#readme"
+  "homepage": "https://github.com/aimparency/v7#readme",
+  "packageManager": "pnpm@11.3.0"
 }

@@ -18,6 +18,17 @@
         "e2e/**/*.ts"
       ]
     },
+    "packages/loop-worker": {
+      "entry": [
+        "src/**/*.{test,spec}.ts",
+        "scripts/**/*.ts",
+        "e2e/**/*.ts"
+      ],
+      "ignoreDependencies": [
+        "uuid",
+        "@huggingface/transformers"
+      ]
+    },
     "packages/wrapped-agents/*": {
       "entry": [
         "src/**/*.{test,spec}.ts",
@@ -25,8 +36,5 @@
       ]
     }
   },
-  "ignoreBinaries": [
-    "npm-check-updates"
-  ],
   "ignoreExportsUsedInFile": true
 }

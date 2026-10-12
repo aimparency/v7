@@ -21,9 +21,9 @@ This package compiles to `dist/` and is consumed by other local workspaces.
 Commands:
 
 ```bash
-npm run build -w shared
-npm run dev -w shared
-npm run test -w shared
+pnpm --filter shared build
+pnpm --filter shared dev
+pnpm --filter shared test
 ```
 
 ## Boundaries

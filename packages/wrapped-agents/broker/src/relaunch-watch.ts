@@ -18,7 +18,7 @@ import type { AgentType } from './manager.js';
  *
  * "Rebuild" is implicit in dev: sessions run from source via tsx, so a process
  * restart loads the new code; relaunch() gates that on a typecheck+test verify
- * pass. Under `npm start` sessions run from their bundles, so a relaunch restarts
+ * pass. Under `pnpm start` sessions run from their bundles, so a relaunch restarts
  * the already-built code until the next build.
  */
 

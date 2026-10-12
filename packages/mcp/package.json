@@ -40,7 +40,7 @@
     "@trpc/client": "^11.5.1",
     "cors": "^2.8.5",
     "express": "^5.2.1",
-    "shared": "*",
+    "shared": "workspace:*",
     "uuid": "^13.0.0",
     "ws": "^8.18.3",
     "zod": "^3.24.1"
@@ -52,7 +52,7 @@
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.1",
     "@types/ws": "^8.18.1",
-    "backend": "^1.0.0",
+    "backend": "workspace:*",
     "fs-extra": "^11.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"

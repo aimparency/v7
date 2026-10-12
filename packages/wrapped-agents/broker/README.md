@@ -27,17 +27,17 @@ Spawned watchdog sessions then listen on their own dynamic ports.
 From the repo root:
 
 ```bash
-npm run dev      # whole stack, servers from source via tsx
-npm run start    # build bundles, then run them
-npm run list-sessions
-npm run stop-sessions
+pnpm dev      # whole stack, servers from source via tsx
+pnpm start    # build bundles, then run them
+pnpm list-sessions
+pnpm stop-sessions
 ```
 
 Inside this workspace:
 
 ```bash
-npm run dev
-npm run start
+pnpm dev
+pnpm start
 ```
 
 ## Boundaries

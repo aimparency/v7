@@ -92,7 +92,7 @@ AIMPARENCY_ALLOW_STOP=1 agy
 
 To verify hook contract integrity locally:
 \`\`\`bash
-npm run test:hooks
+pnpm test:hooks
 \`\`\``;
 
       return {

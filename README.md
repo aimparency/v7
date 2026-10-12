@@ -47,7 +47,7 @@ In that sense, the graph is not only for tasks. It is a coordination surface bet
 ## Prerequisites
 
 - Node.js 20+
-- npm
+- pnpm (`corepack enable` picks the version pinned in `package.json`)
 
 Optional:
 
@@ -60,8 +60,8 @@ The core app still starts without those agent CLIs. They are only needed when yo
 ## Quickstart
 
 ```bash
-npm install
-npm run dev
+pnpm install
+pnpm dev
 ```
 
 Then open:
@@ -77,12 +77,12 @@ that shaped the repository itself.
 
 `4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
 
-`npm run dev` starts the core local stack from source (no build step): frontend, backend, and broker. The broker spawns wrapped-agent sessions on demand. `npm run start` builds bundles and runs those instead.
+`pnpm dev` starts the core local stack from source (no build step): frontend, backend, and broker. The broker spawns wrapped-agent sessions on demand. `pnpm start` builds bundles and runs those instead.
 
 If you need optional integrations too, use:
 
 ```bash
-npm run dev:full
+pnpm dev:full
 ```
 
 Use `dev:full` when trying the complete agent/MCP workflow demonstrated by the
@@ -91,30 +91,30 @@ Build Week entry. The app remains self-hosted and opens on
 
 That also starts the dev-only broker inspector, MCP server, and voice bridge.
 
-Voice remains opt-in in the browser UI. To expose it in launcher-based runs, set `AIMPARENCY_ENABLE_VOICE=true` before `npm run dev` or `npm run start`. If you run the frontend directly, use `VITE_ENABLE_VOICE=true`.
+Voice remains opt-in in the browser UI. To expose it in launcher-based runs, set `AIMPARENCY_ENABLE_VOICE=true` before `pnpm dev` or `pnpm start`. If you run the frontend directly, use `VITE_ENABLE_VOICE=true`.
 
 For a lighter build-mode local stack:
 
 ```bash
-npm run start
+pnpm start
 ```
 
 If you already built everything and want to skip rebuilding:
 
 ```bash
-npm run start:fast
+pnpm start:fast
 ```
 
 If you want to build without starting the stack:
 
 ```bash
-npm run build
+pnpm build
 ```
 
 For optional integrations too:
 
 ```bash
-npm run build:all
+pnpm build:optional
 ```
 
 The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background. The launcher prints the resolved ports at startup and writes them to `packages/frontend/public/runtime-config.json`.
@@ -122,7 +122,7 @@ The main visible URL is the frontend, usually `http://localhost:4000`. Backend, 
 To validate the local launcher and runtime-config fallback behavior without starting the full stack, run:
 
 ```bash
-npm run validate:local-runtime
+pnpm validate:local-runtime
 ```
 
 That script checks both default-port and occupied-port cases and verifies that runtime config stays internally consistent.
@@ -218,14 +218,14 @@ If you use one Aimparency instance with multiple repos or workspaces, each targe
 
 Common local startup failures are usually one of these:
 
-- `npm run start` shows the frontend but the UI cannot reach the backend or broker:
-  Check the terminal output from the launcher. It should print the frontend URL and the resolved backend and broker ports. If a background service crashed during startup, fix that service first and rerun `npm run start`.
+- `pnpm start` shows the frontend but the UI cannot reach the backend or broker:
+  Check the terminal output from the launcher. It should print the frontend URL and the resolved backend and broker ports. If a background service crashed during startup, fix that service first and rerun `pnpm start`.
 - Build-mode startup fails with missing `dist/` output:
-  Run `npm run build` once from the repo root, then retry `npm run start`. That builds only the core local runtime packages. If you are debugging MCP or voice specifically, use `npm run build:all`.
+  Run `pnpm build` once from the repo root, then retry `pnpm start`. That builds only the core local runtime packages. If you are debugging MCP or voice specifically, use `pnpm build:optional`.
 - The browser keeps trying to connect to the wrong host or port:
   Remove `packages/frontend/public/runtime-config.json`, rerun the launcher, and reload the page. That file is generated runtime state and should not be committed.
 - You want to verify the launcher's port fallback behavior directly:
-  Run `npm run validate:local-runtime`. It performs a dry-run validation of runtime-config generation for both free and occupied preferred ports.
+  Run `pnpm validate:local-runtime`. It performs a dry-run validation of runtime-config generation for both free and occupied preferred ports.
 - A wrapped-agent session type does not start:
   The core UI can run without Claude, Gemini, or Codex CLIs, but launching that specific session type still requires the corresponding local tooling to be installed and working on your machine.
 - Semantic search looks stale or unexpectedly weak:

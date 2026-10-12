@@ -6,16 +6,16 @@ Store useful things about the development process in this file.
 
 ### Run a specific test file
 ```bash
-npx playwright test e2e/navigation.spec.ts
+pnpm exec playwright test e2e/navigation.spec.ts
 ```
 
 ### Run a specific test case (by title)
 ```bash
-npx playwright test -g "search finds deep nested idea"
+pnpm exec playwright test -g "search finds deep nested idea"
 ```
 
 ### Debugging
 Use the `--debug` flag to open the Playwright inspector:
 ```bash
-npx playwright test e2e/navigation.spec.ts --debug
+pnpm exec playwright test e2e/navigation.spec.ts --debug
 ```

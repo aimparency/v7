@@ -1,6 +1,6 @@
 // Dry run of the .bowman migrations on a copy of a real project.
 //
-//   npm run verify:migration -- <repo or .bowman path> [--keep]
+//   pnpm verify:migration <repo or .bowman path> [--keep]
 //
 // Copies the .bowman (without secrets.json) to a temp dir, migrates the copy to
 // the current data model and compares the graph before and after: ideas,
@@ -20,7 +20,7 @@ import { IdeaSchema } from '../src/types.js';
 const args = process.argv.slice(2);
 const target = args.find((arg) => !arg.startsWith('--'));
 if (!target) {
-  console.error('usage: npm run verify:migration -- <repo or .bowman path> [--keep]');
+  console.error('usage: pnpm verify:migration <repo or .bowman path> [--keep]');
   process.exit(2);
 }
 const isBowman = (dir: string) => ['meta.json', 'ideas', 'aims'].map((entry) => fs.access(path.join(dir, entry)).then(() => true, () => false));

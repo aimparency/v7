@@ -28,7 +28,7 @@ if (existsSync(envFile)) {
   process.loadEnvFile(envFile);
 }
 
-const npmCommand = process.platform === 'win32' ? 'npm.cmd' : 'npm';
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
 const args = process.argv.slice(2);
 const flags = new Set(args.filter((arg) => arg.startsWith('--')));
 
@@ -173,17 +173,21 @@ function resolveBindHost() {
   }
 }
 
-// Each command runs directly in its package (no npm/dotenv wrapper processes).
+// Each command runs directly in its package (no pnpm/dotenv wrapper processes),
+// with that package's binaries (pnpm does not hoist them to the root) first on PATH.
 function stackCommands(mode, env) {
   const dev = mode === 'dev';
   const full = flags.has('--full');
-  const command = (name, prefixColor, dir, devCommand, startCommand) => ({
-    name,
-    prefixColor,
-    cwd: path.join(repoRoot, 'packages', dir),
-    command: dev ? devCommand : startCommand,
-    env,
-  });
+  const command = (name, prefixColor, dir, devCommand, startCommand) => {
+    const cwd = path.join(repoRoot, 'packages', dir);
+    return {
+      name,
+      prefixColor,
+      cwd,
+      command: dev ? devCommand : startCommand,
+      env: { ...env, PATH: [path.join(cwd, 'node_modules', '.bin'), env.PATH].join(path.delimiter) },
+    };
+  };
 
   const commands = [
     command('BACK', 'blue', 'backend', 'tsx watch src/server.ts', 'node dist/server.js'),
@@ -210,7 +214,7 @@ function preflight(mode) {
   if (flags.has('--no-build')) {
     return [];
   }
-  return [[npmCommand, ['run', flags.has('--full') ? 'build:optional' : 'build:core']]];
+  return [[pnpmCommand, ['run', flags.has('--full') ? 'build:optional' : 'build:core']]];
 }
 
 async function main() {
@@ -225,7 +229,7 @@ async function main() {
   logPortSummary(resolvedPorts);
 
   const env = createEnv(resolvedPorts);
-  // Binaries (tsx, vite) resolve from the hoisted root node_modules.
+  // Root binaries (tsx for the preflight); stack commands add their package's own.
   env.PATH = [path.join(repoRoot, 'node_modules', '.bin'), env.PATH].join(path.delimiter);
   if (flags.has('--delay')) {
     env.DEV_DELAY = 'true';

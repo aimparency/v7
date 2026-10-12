@@ -26,7 +26,7 @@
   },
   "homepage": "https://github.com/aimparency/v7/tree/main/packages/wrapped-agents/claude-session",
   "dependencies": {
-    "@aimparency/wrapped-agents-common": "file:../common",
+    "@aimparency/wrapped-agents-common": "workspace:*",
     "@types/node": "^25.0.1",
     "typescript": "^5.9.3"
   }

@@ -25,4 +25,4 @@
   `packages/shared/fixtures/data-model-<N>/` example of the previous format.
 - Migrations must be idempotent; give them a `pending` check when legacy data
   can return through git after the upgrade.
-- Before merging, run `npm run verify:migration -- <repo>` on real projects.
+- Before merging, run `pnpm verify:migration <repo>` on real projects.
