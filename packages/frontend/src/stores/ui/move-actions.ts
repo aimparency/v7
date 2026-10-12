@@ -12,12 +12,29 @@ function getProjectPath(): string {
 type IdeaContext = { parentId: string } | { phaseId: string }
 
 // One server round trip per move (idea.move); the touched ideas and phases come
-// back as stored and replace the local copies.
+// back as stored and replace the local copies. The actions apply their change
+// locally first, so a failed move reloads the touched entities instead of
+// undoing it by hand, then rethrows.
 async function moveOnServer(ideaId: string, move: { from?: IdeaContext; to?: IdeaContext; index?: number }) {
   const dataStore = useDataStore()
-  const { ideas, phases } = await trpc.idea.move.mutate({ projectPath: getProjectPath(), ideaId, ...move })
-  for (const idea of ideas) dataStore.replaceIdea(idea.id, idea)
-  for (const phase of phases) dataStore.replacePhase(phase.id, phase)
+  const projectPath = getProjectPath()
+  const apply = ({ ideas, phases }: { ideas: readonly any[]; phases: readonly any[] }) => {
+    for (const idea of ideas) dataStore.replaceIdea(idea.id, idea)
+    for (const phase of phases) dataStore.replacePhase(phase.id, phase)
+  }
+  try {
+    apply(await trpc.idea.move.mutate({ projectPath, ideaId, ...move }))
+  } catch (error) {
+    const contexts = [move.from, move.to].filter((context) => context !== undefined)
+    const ideaIds = [ideaId, ...contexts.flatMap((context) => 'parentId' in context ? [context.parentId] : [])]
+    const phaseIds = contexts.flatMap((context) => 'phaseId' in context ? [context.phaseId] : [])
+    const [ideas, phases] = await Promise.all([
+      trpc.idea.getMany.query({ projectPath, ideaIds }),
+      Promise.allSettled(phaseIds.map((phaseId) => trpc.phase.get.query({ projectPath, phaseId })))
+    ]).catch(() => [[], []] as const)
+    apply({ ideas, phases: phases.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []) })
+    throw error
+  }
 }
 
 export async function moveIdeaDownAction(uiStore: any) {

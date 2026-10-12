@@ -195,6 +195,44 @@ describe('UI teleport cut/paste', () => {
     expect(modalStore.teleportCutIdeaId).toBeNull()
   })
 
+  it('reloads the touched entities when a move fails', async () => {
+    const dataStore = useDataStore()
+    const uiStore = useUIStore()
+    const projectStore = useProjectStore()
+
+    projectStore.projectPath = '/tmp/project'
+    uiStore.navigatingIdeas = true
+    uiStore.activeColumn = 0
+    uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
+    dataStore.meta = { rootPhaseIds: ['phase-1'] }
+    dataStore.phases['phase-1'] = {
+      id: 'phase-1',
+      name: 'P1',
+      from: 0,
+      to: 1,
+      parent: null,
+      childPhaseIds: [],
+      commitments: ['idea-1', 'idea-2'],
+      selectedIdeaIndex: 0
+    } as any
+    dataStore.ideas['idea-1'] = baseIdea('idea-1', 'A1') as any
+    dataStore.ideas['idea-2'] = baseIdea('idea-2', 'A2') as any
+
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {})
+    mockTrpc.idea.move.mutate.mockRejectedValue(new Error('disk full'))
+    mockTrpc.idea.getMany.query.mockResolvedValue([baseIdea('idea-1', 'A1')])
+    mockTrpc.phase.get.query.mockResolvedValue({
+      id: 'phase-1', name: 'P1', from: 0, to: 1, parent: null, childPhaseIds: [], commitments: ['idea-1', 'idea-2']
+    })
+
+    await uiStore.moveIdeaDown()
+
+    expect(mockTrpc.idea.getMany.query).toHaveBeenCalledWith({ projectPath: '/tmp/project', ideaIds: ['idea-1'] })
+    expect(dataStore.phases['phase-1']!.commitments).toEqual(['idea-1', 'idea-2'])
+    expect(consoleError).toHaveBeenCalled()
+    consoleError.mockRestore()
+  })
+
   it('opens create modal in idea-navigation for an empty selected phase', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
