@@ -63,18 +63,18 @@ implementation, tests, and submission documentation.
 
 ## Run and verify
 
-Supported development platform: Node.js 20+ on Linux, macOS, or Windows with
+Supported development platform: Node.js 20+ and pnpm on Linux, macOS, or Windows with
 Git installed. Aimparency is local-first and runs in a desktop browser.
 
 ```bash
-npm install
-npm run dev:full
+pnpm install
+pnpm dev:full
 ```
 
 Open `http://localhost:4000`, select this cloned repository, and explore its own
 graph first. It contains the real Build Week goal and supporting aims that
 produced this application. For verification without starting the UI, run
-`npm run build` and `npm run test:unit`.
+`pnpm build` and `pnpm test:unit`.
 
 The standard local workflow is documented in the main README. Judges can
 verify the extension without modifying a repository: open any existing aim

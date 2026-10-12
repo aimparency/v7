@@ -8,33 +8,33 @@ Aimparency uses a comprehensive testing strategy covering unit tests and e2e tes
 
 ### All Tests (Recommended for CI/Pre-commit)
 ```bash
-npm test              # Runs all unit tests + e2e tests
+pnpm test              # Runs all unit tests + e2e tests
 # or
-npm run test:all
+pnpm test:all
 ```
 
 ### Unit Tests Only
 ```bash
-npm run test:unit     # All unit tests across all packages
+pnpm test:unit     # All unit tests across all packages
 ```
 
 Individual package unit tests:
 ```bash
-npm run test:unit:backend   # Backend unit tests (tsx --test)
-npm run test:unit:frontend  # Frontend unit tests (vitest)
-npm run test:unit:shared    # Shared package tests
-npm run test:unit:mcp       # MCP server tests
+pnpm test:unit:backend   # Backend unit tests (tsx --test)
+pnpm test:unit:frontend  # Frontend unit tests (vitest)
+pnpm test:unit:shared    # Shared package tests
+pnpm test:unit:mcp       # MCP server tests
 ```
 
 ### E2E Tests
 ```bash
-npm run test:e2e           # Frontend e2e tests (playwright)
-npm run test:e2e:ci        # E2E tests with CI config
+pnpm test:e2e           # Frontend e2e tests (playwright)
+pnpm test:e2e:ci        # E2E tests with CI config
 ```
 
 ### Watch Mode (for development)
 ```bash
-npm run test:watch         # Frontend vitest in watch mode
+pnpm test:watch         # Frontend vitest in watch mode
 ```
 
 ## Test Structure
@@ -84,14 +84,14 @@ The test suite is designed to run in CI environments:
 ```yaml
 # Example GitHub Actions workflow
 - name: Run all tests
-  run: npm test
+  run: pnpm test
 
 # Or separate steps
 - name: Unit tests
-  run: npm run test:unit
+  run: pnpm test:unit
 
 - name: E2E tests
-  run: npm run test:e2e:ci
+  run: pnpm test:e2e:ci
 ```
 
 ## Writing Tests
@@ -167,16 +167,16 @@ NODE_ENV=test tsx --test src/forces.test.ts
 ### E2E tests fail
 ```bash
 # Run in headed mode (see browser)
-HEADED=true npm run test:e2e
+HEADED=true pnpm test:e2e
 
 # Debug specific test
-npx playwright test e2e/graph-aim-drag-create.spec.ts --headed --debug
+pnpm exec playwright test e2e/graph-aim-drag-create.spec.ts --headed --debug
 ```
 
 ### Frontend unit tests fail
 ```bash
 # Run in UI mode
-npm run test:unit -w frontend -- --ui
+pnpm --filter frontend test:unit --ui
 ```
 
 ## Test Maintenance

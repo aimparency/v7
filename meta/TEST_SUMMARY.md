@@ -5,20 +5,20 @@
 ### Test Commands Added to Root package.json
 
 ```bash
-npm test                  # Runs everything (unit + e2e)
-npm run test:all          # Same as above
-npm run test:unit         # All unit tests
-npm run test:e2e          # E2E tests only
-npm run test:watch        # Frontend vitest watch mode
+pnpm test                  # Runs everything (unit + e2e)
+pnpm test:all          # Same as above
+pnpm test:unit         # All unit tests
+pnpm test:e2e          # E2E tests only
+pnpm test:watch        # Frontend vitest watch mode
 ```
 
 ### Individual Package Tests
 
 ```bash
-npm run test:unit:backend   # ✅ 19/19 passing
-npm run test:unit:frontend  # Vitest configured
-npm run test:unit:shared    # Unit tests
-npm run test:unit:mcp       # MCP server tests
+pnpm test:unit:backend   # ✅ 19/19 passing
+pnpm test:unit:frontend  # Vitest configured
+pnpm test:unit:shared    # Unit tests
+pnpm test:unit:mcp       # MCP server tests
 ```
 
 ### What Was Fixed
@@ -74,9 +74,9 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
-      - run: npm install
-      - run: npm run test:unit      # Fast unit tests
-      - run: npm run test:e2e:ci    # E2E with CI config
+      - run: pnpm install
+      - run: pnpm test:unit      # Fast unit tests
+      - run: pnpm test:e2e:ci    # E2E with CI config
 ```
 
 ### Test Best Practices (Documented in TESTING.md)
@@ -92,7 +92,7 @@ jobs:
 To run the full test suite:
 
 ```bash
-npm test
+pnpm test
 ```
 
 This will run:

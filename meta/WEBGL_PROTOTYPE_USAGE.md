@@ -199,7 +199,7 @@ const webglRenderer = useWebGL.value
 
 ### Verify Installation
 
-1. Start dev server: `npm run dev` (in frontend package)
+1. Start dev server: `pnpm dev` (in frontend package)
 2. Navigate to `/graph-webgl` (if using Option 1)
 3. You should see circles rendered using WebGL
 

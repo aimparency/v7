@@ -5,9 +5,9 @@
 Publish Aimparency as a local-first open source project:
 
 - users clone the repository
-- users run `npm install`
-- users use `npm run dev` while developing on Aimparency itself
-- users use `npm run start` for a lighter local run
+- users run `pnpm install`
+- users use `pnpm dev` while developing on Aimparency itself
+- users use `pnpm start` for a lighter local run
 - users point Aimparency at nearby repos or workspaces
 - Aimparency stores state in a `.bowman` directory next to the code it describes
 
@@ -49,7 +49,7 @@ Use this as the release-prep definition of done.
 ### 1. Root onboarding
 
 - [x] Root `README.md` explains what Aimparency is and who it is for
-- [x] Root `README.md` documents `npm install`, `npm run dev`, and `npm run start`
+- [x] Root `README.md` documents `pnpm install`, `pnpm dev`, and `pnpm start`
 - [x] Root `README.md` explains the local-first `.bowman` workflow
 - [x] Root `README.md` makes optional integrations secondary to the core local runtime
 - [x] Root docs include a concise troubleshooting section for common local startup failures
@@ -81,10 +81,10 @@ Use this as the release-prep definition of done.
 
 ### 5. Local startup behavior
 
-- [x] `npm run dev` is the documented development flow
-- [x] `npm run start` exists as the documented lighter local runtime flow
+- [x] `pnpm dev` is the documented development flow
+- [x] `pnpm start` exists as the documented lighter local runtime flow
 - [x] Frontend runtime config no longer hardcodes browser-side `localhost` assumptions for backend and broker
-- [ ] Clean-clone startup has been verified on a normal machine for both `npm run dev` and `npm run start`
+- [ ] Clean-clone startup has been verified on a normal machine for both `pnpm dev` and `pnpm start`
 - [x] Startup logs clearly show the frontend URL and resolved background ports
 
 ### 6. Port and runtime robustness
@@ -115,7 +115,7 @@ The remaining release blockers are mostly in four buckets:
 Release prep is in good shape when:
 
 1. a new user can clone the repo and understand the project from the root docs
-2. `npm install`, `npm run dev`, and `npm run start` work without scavenger hunting
+2. `pnpm install`, `pnpm dev`, and `pnpm start` work without scavenger hunting
 3. `.bowman` behavior is understandable and git-friendly
 4. optional integrations are clearly separated from the core experience
 5. the repository surface looks intentional instead of exploratory
