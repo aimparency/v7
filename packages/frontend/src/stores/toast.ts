@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { isReadOnlyError } from '../utils/read-only'
 
 export type ToastKind = 'info' | 'warning' | 'error'
 
@@ -32,6 +33,8 @@ export const useToastStore = defineStore('toast', {
     info(message: string) { this.show('info', message) },
     warning(message: string) { this.show('warning', message) },
     error(context: string, error?: unknown) {
+      // Not a failure: the project cannot be edited here. Say so once, plainly.
+      if (isReadOnlyError(error)) return this.warning(errorMessage(error))
       if (error !== undefined) console.error(context, error)
       this.show('error', error === undefined ? context : `${context}: ${errorMessage(error)}`)
     },

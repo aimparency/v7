@@ -52,7 +52,8 @@ test('a read-only project refuses every graph change with one message, and stays
     addReflection: () => caller.idea.addReflection({ projectPath, ideaId: child.id, reflection: { context: 'c', outcome: 'o', effectiveness: 'e', lesson: 'l' } }),
     phaseCreate: () => caller.phase.create({ projectPath, phase: { name: 'Later' } }),
     phaseUpdate: () => caller.phase.update({ projectPath, phaseId: phase.id, phase: { name: 'Renamed' } }),
-    updateMeta: () => caller.project.updateMeta({ projectPath, meta: { name: 'Renamed', color: '#123456' } })
+    updateMeta: () => caller.project.updateMeta({ projectPath, meta: { name: 'Renamed', color: '#123456' } }),
+    injectAgentInstructions: () => caller.project.injectAgentInstructions({ projectPath })
   };
   for (const [name, attempt] of Object.entries(attempts)) {
     await assert.rejects(attempt, /open read-only/, name);

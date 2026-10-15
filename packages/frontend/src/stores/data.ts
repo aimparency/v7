@@ -10,6 +10,7 @@ import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
 import { useHistoryStore } from './history'
 import { useToastStore } from './toast'
+import { setProjectAccess } from '../utils/read-only'
 import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
 import { clientId } from '../utils/mutation-activity'
@@ -231,6 +232,8 @@ export const useDataStore = defineStore('data', {
 
     // Project Meta
     meta: null as BaseIdea['status'] | any | null, // ProjectMeta
+    // Whether the open project's graph may be changed here (project.getAccess)
+    access: { writable: true, reason: null as string | null },
   }),
 
   getters: {
@@ -994,9 +997,14 @@ export const useDataStore = defineStore('data', {
         projectStore.setCurrentView('columns');
         mapStore.resetView();
 
-        const meta = await trpc.project.getMeta.query({ projectPath });
+        const [meta, access] = await Promise.all([
+          trpc.project.getMeta.query({ projectPath }),
+          trpc.project.getAccess.query({ projectPath })
+        ]);
 
         this.meta = meta;
+        this.access = access;
+        setProjectAccess(projectPath, access.reason);
 
         // Start subscription
         this.subscribeToUpdates(projectPath);

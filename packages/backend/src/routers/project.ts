@@ -256,6 +256,7 @@ export const projectRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const projectPath = normalizeProjectPath(input.projectPath);
+      await assertWritableBowman(projectPath); // writes into the repository itself
       const rootDir = path.dirname(projectPath); // Project root (above .bowman)
 
       const instructionsPath = path.join(packageRoot(import.meta.url), 'src', 'agent-instruction.md');

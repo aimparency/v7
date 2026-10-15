@@ -3,6 +3,7 @@ import { observable } from '@trpc/server/observable';
 import type { AppRouter } from 'backend';
 import { buildWsUrl, getRuntimeConfig } from './utils/runtime-config';
 import { clientId, mutationActivity } from './utils/mutation-activity';
+import { readOnlyGuardLink } from './utils/read-only';
 
 const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
   if (op.type !== 'mutation') return next(op);
@@ -32,6 +33,7 @@ const wsClient = createWSClient({
 // Create tRPC client with WebSocket
 export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
+    readOnlyGuardLink,
     mutationTrackingLink,
     wsLink({
       client: wsClient,

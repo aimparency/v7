@@ -579,6 +579,7 @@ onUnmounted(() => {
           <div v-if="projectStore.projectPath" class="project-location" :title="`${normalizedProjectRoot}\n${activeBowmanRoot}`">
             <span class="project-chip-label">Project</span>
             <span class="project-chip-value">{{ activeProjectName }}</span>
+            <span v-if="!dataStore.access.writable" class="read-only-badge" :title="dataStore.access.reason ?? ''">read-only</span>
             <code class="project-path">{{ normalizedProjectRoot }}</code>
             <code class="project-path bowman-path">{{ activeBowmanRoot }}</code>
           </div>
@@ -888,6 +889,15 @@ onUnmounted(() => {
 .project-chip-value {
   color: #f0f0f0;
   flex-shrink: 0;
+}
+
+.read-only-badge {
+  flex-shrink: 0;
+  padding: 0 0.35rem;
+  border: 1px solid var(--status-unclear);
+  border-radius: 3px;
+  color: var(--status-unclear);
+  font-size: var(--font-size-tiny);
 }
 
 .project-path {

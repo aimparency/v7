@@ -6,6 +6,8 @@ import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { AWAITING_HUMAN_STATES, rankIdeasAwaitingHuman } from '../utils/review-inbox'
 import { formatIdeaPriority } from '../utils/phase-priority'
+import { isReadOnlyError } from '../utils/read-only'
+import { useToastStore } from '../stores/toast'
 import type { IdeaState } from 'shared'
 
 const emit = defineEmits<{ close: [] }>()
@@ -47,7 +49,8 @@ const setStatus = async (state: string, comment: string) => {
   try {
     await dataStore.updateIdea(projectStore.projectPath, idea.id, { status: { ...idea.status, state, comment } })
   } catch (failure) {
-    error.value = failure instanceof Error ? failure.message : String(failure)
+    if (isReadOnlyError(failure)) useToastStore().error('Cannot change status', failure)
+    else error.value = failure instanceof Error ? failure.message : String(failure)
   }
 }
 
