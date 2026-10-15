@@ -7,22 +7,16 @@ import {
   ideaHistorySearch,
   buildCodeIndex,
   changeImpact,
+  connectGraph,
   codeHeatmap,
-  commitIdeaToPhase,
   createExperiment,
-  createIdea,
   drainInbox,
-  getIdeaContext,
-  getPrioritizedIdeas,
   gitDiff,
   gitStatus,
-  graphHygiene,
   applyUnifiedPatch,
   lineReplace,
   listExperiments,
-  listIdeasFromFiles,
   listFiles,
-  listPhasesFromFiles,
   maybeFindAssociation,
   mutateLoopRuntimeState,
   normalizeBowmanPath,
@@ -32,18 +26,18 @@ import {
   readLoopRuntimeState,
   readWorkerState,
   runCommand,
-  searchIdeasSemanticLite,
   searchFiles,
   semanticCodeSearch,
   setLoopActivity,
   strReplace,
   symbolContext,
-  updateIdea,
   updateExperiment,
+  type GraphTools,
   type LoopDefinition,
   type LoopInboxMessage,
   type LoopInstance
 } from 'agent-tools';
+import { isOngoingState } from 'shared';
 import { filterToolsByCapabilities } from './capabilities.js';
 import { selectCycleTarget, throwIfStreamFailed } from './runtime-policy.js';
 
@@ -178,7 +172,7 @@ async function waitForHumanAnswer(projectPath: string, instanceId: string, reque
   return null;
 }
 
-async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
+async function evaluateStopPolicy(graph: GraphTools, instance: LoopInstance) {
   if (instance.stopPolicy === 'never') return null;
   if (instance.stopPolicy === 'asap') {
     return { status: 'stopped' as const, message: null };
@@ -186,7 +180,7 @@ async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
 
   if (instance.stopPolicy === 'target_halted') {
     if (!instance.targetIdeaId) return null;
-    const ideas = await listIdeasFromFiles(projectPath);
+    const ideas = await graph.listIdeas();
     const idea = ideas.find((candidate) => candidate.id === instance.targetIdeaId);
     if (idea?.status.state === 'halted') {
       return { status: 'done' as const, message: `Target idea halted: ${idea.text}` };
@@ -195,38 +189,34 @@ async function evaluateStopPolicy(projectPath: string, instance: LoopInstance) {
   }
 
   if (!instance.targetPhaseId) return null;
-  const [ideas, phases] = await Promise.all([
-    listIdeasFromFiles(projectPath),
-    listPhasesFromFiles(projectPath)
-  ]);
+  const [ideas, phases] = await Promise.all([graph.listIdeas(), graph.listPhases()]);
   const phase = phases.find((candidate) => candidate.id === instance.targetPhaseId);
   if (!phase || (phase.commitments ?? []).length === 0) return null;
   const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
-  const ongoingStates = new Set(['open', 'in-progress', 'partially', 'human-dependent']);
   const ongoing = (phase.commitments ?? [])
     .map((ideaId) => ideaById.get(ideaId))
-    .filter((idea) => idea && ongoingStates.has(idea.status.state));
+    .filter((idea) => idea && isOngoingState(idea.status.state));
   if (ongoing.length === 0) {
     return { status: 'done' as const, message: `Target phase done: ${phase.name}` };
   }
   return null;
 }
 
-async function waitForNextCycle(projectPath: string, instanceId: string, loop: LoopDefinition, signal: AbortSignal) {
+async function waitForNextCycle(projectPath: string, instanceId: string, loop: LoopDefinition, graph: GraphTools, signal: AbortSignal) {
   await markLoopPhase(projectPath, instanceId, `cooldown (${loop.intervalSeconds}s)`);
   const until = Date.now() + loop.intervalSeconds * 1000;
   while (!signal.aborted && Date.now() < until) {
     const workerState = await readWorkerState(projectPath, instanceId);
     if (workerState?.stopRequested) break;
     const { instance } = await readLoopAndInstance(projectPath, instanceId);
-    const stopDecision = await evaluateStopPolicy(projectPath, instance);
+    const stopDecision = await evaluateStopPolicy(graph, instance);
     if (stopDecision) return stopDecision;
     await sleep(Math.min(1000, Math.max(0, until - Date.now())), signal);
   }
   return null;
 }
 
-async function runCycle(projectPath: string, instanceId: string, loop: LoopDefinition, signal: AbortSignal) {
+async function runCycle(projectPath: string, instanceId: string, loop: LoopDefinition, graph: GraphTools, signal: AbortSignal) {
   const executionPath = loop.worktreePath || projectPath;
   await markLoopPhase(projectPath, instanceId, 'checking API credentials');
   const secrets = await readSecrets(projectPath);
@@ -236,17 +226,15 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
   await markLoopPhase(projectPath, instanceId, 'orienting in idea graph');
   const runtimeState = await readLoopRuntimeState(projectPath);
   const currentInstance = runtimeState.instances.find((candidate) => candidate.id === instanceId);
-  const prioritized = await getPrioritizedIdeas(
-    projectPath,
+  const prioritized = await graph.getPrioritizedIdeas(
     currentInstance?.targetIdeaId ? Number.MAX_SAFE_INTEGER : 5,
     currentInstance?.targetPhaseId
   );
   const target = selectCycleTarget(prioritized, currentInstance?.targetIdeaId);
   if (!target) throw new Error('No open prioritized idea found in the active phase.');
 
-  const context = await getIdeaContext(projectPath, target.idea.id);
-  const related = await searchIdeasSemanticLite(
-    projectPath,
+  const context = await graph.getIdeaContext(target.idea.id);
+  const related = await graph.searchIdeas(
     `${target.idea.text} ${target.idea.description ?? ''}`,
     8
   );
@@ -257,6 +245,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     .join('\n');
   const association = await maybeFindAssociation(
     projectPath,
+    graph.listIdeas,
     stateText,
     loop.associationChance ?? 0.1,
     [target.idea.id]
@@ -400,7 +389,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           properties: { limit: { type: 'number' } },
           additionalProperties: false
         }),
-        execute: async ({ limit }) => getPrioritizedIdeas(projectPath, limit ?? 10, currentInstance?.targetPhaseId)
+        execute: async ({ limit }) => graph.getPrioritizedIdeas(limit ?? 10, currentInstance?.targetPhaseId)
       }),
       get_idea_context: tool({
         description: 'Return an idea, parents, children, and root path context.',
@@ -410,26 +399,26 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['ideaId'],
           additionalProperties: false
         }),
-        execute: async ({ ideaId }) => getIdeaContext(projectPath, ideaId)
+        execute: async ({ ideaId }) => graph.getIdeaContext(ideaId)
       }),
       search_ideas_semantic: tool({
-        description: 'Find related ideas. Current v1 uses lightweight text matching until embedding core is extracted.',
+        description: 'Find related ideas by meaning (semantic search over idea embeddings).',
         inputSchema: jsonSchema<{ query: string; limit?: number }>({
           type: 'object',
           properties: { query: { type: 'string' }, limit: { type: 'number' } },
           required: ['query'],
           additionalProperties: false
         }),
-        execute: async ({ query, limit }) => searchIdeasSemanticLite(projectPath, query, limit ?? 8)
+        execute: async ({ query, limit }) => graph.searchIdeas(query, limit ?? 8)
       }),
       graph_hygiene: tool({
-        description: 'Return graph defect signals: floating ideas (no parent and no phase) and mega parents. Uncommitted ideas are a normal state and are not reported here.',
+        description: 'Return graph defect signals: floating ideas, mega-parents, stale statuses, collapse candidates and duplicate clusters. Uncommitted ideas are a normal state and are not reported here.',
         inputSchema: jsonSchema<Record<string, never>>({
           type: 'object',
           properties: {},
           additionalProperties: false
         }),
-        execute: async () => graphHygiene(projectPath)
+        execute: async () => graph.graphHygiene()
       }),
       experiment: tool({
         description: 'Create, list, or update durable experiments. Define predictions and stop conditions before acting; append evidence and belief updates after observing results.',
@@ -573,7 +562,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['text'],
           additionalProperties: false
         }),
-        execute: async (input) => createIdea(projectPath, input)
+        execute: async (input) => graph.createIdea(input)
       }),
       update_idea: tool({
         description: 'Update idea text/description/status/cost/value. Use human-dependent for ambiguous ideas instead of asking humans too often.',
@@ -596,10 +585,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['ideaId'],
           additionalProperties: false
         }),
-        execute: async ({ ideaId, status, ...patch }) => updateIdea(projectPath, ideaId, {
-          ...patch,
-          status: status ? { state: status.state, comment: status.comment ?? '', date: Date.now() } : undefined
-        })
+        execute: async ({ ideaId, ...patch }) => graph.updateIdea(ideaId, patch)
       }),
       commit_idea_to_phase: tool({
         description: 'Commit an existing idea to a phase so it becomes visible to phase-based prioritization.',
@@ -612,7 +598,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           required: ['ideaId', 'phaseId'],
           additionalProperties: false
         }),
-        execute: async ({ ideaId, phaseId }) => commitIdeaToPhase(projectPath, ideaId, phaseId)
+        execute: async ({ ideaId, phaseId }) => graph.commitIdeaToPhase(ideaId, phaseId)
       }),
       list_files: tool({
         description: 'List project files using rg --files when available.',
@@ -828,6 +814,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
 
 async function main() {
   const { projectPath, instanceId } = parseArgs();
+  const graph = connectGraph(projectPath);
   const abortController = new AbortController();
   let stopping = false;
   let finalStatus: LoopInstance['status'] = 'stopped';
@@ -870,7 +857,7 @@ async function main() {
       const { loop, instance } = await readLoopAndInstance(projectPath, instanceId);
       if (instance.status === 'stopped') break;
       await markLoopPhase(projectPath, instanceId, 'checking stop policy');
-      const stopDecision = await evaluateStopPolicy(projectPath, instance);
+      const stopDecision = await evaluateStopPolicy(graph, instance);
       if (stopDecision) {
         finalStatus = stopDecision.status;
         finalMessage = stopDecision.message;
@@ -880,11 +867,11 @@ async function main() {
         await markInstanceStatus(projectPath, instanceId, 'running');
       }
       await markLoopPhase(projectPath, instanceId, 'running cycle');
-      await runCycle(projectPath, instanceId, loop, abortController.signal);
+      await runCycle(projectPath, instanceId, loop, graph, abortController.signal);
       const nextState = await readWorkerState(projectPath, instanceId);
       if (nextState?.stopRequested || abortController.signal.aborted) break;
       const { instance: refreshedInstance } = await readLoopAndInstance(projectPath, instanceId);
-      const postCycleStopDecision = await evaluateStopPolicy(projectPath, refreshedInstance);
+      const postCycleStopDecision = await evaluateStopPolicy(graph, refreshedInstance);
       if (postCycleStopDecision) {
         finalStatus = postCycleStopDecision.status;
         finalMessage = postCycleStopDecision.message;
@@ -895,7 +882,7 @@ async function main() {
         kind: 'event',
         content: `Cycle complete. Waiting ${loop.intervalSeconds}s.`
       });
-      const waitStopDecision = await waitForNextCycle(projectPath, instanceId, loop, abortController.signal);
+      const waitStopDecision = await waitForNextCycle(projectPath, instanceId, loop, graph, abortController.signal);
       if (waitStopDecision) {
         finalStatus = waitStopDecision.status;
         finalMessage = waitStopDecision.message;
@@ -929,6 +916,7 @@ async function main() {
     if (!abortController.signal.aborted) process.exitCode = 1;
   } finally {
     clearInterval(heartbeat);
+    graph.close();
   }
 }
 

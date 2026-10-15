@@ -2,7 +2,7 @@ import { INITIAL_STATES } from './constants.js';
 import type { Idea, Phase } from './types.js';
 
 // Unknown (custom) states count as ongoing: unsure means not settled.
-const isOngoingState = (state: string | undefined) =>
+export const isOngoingState = (state: string | undefined) =>
   INITIAL_STATES.find((candidate) => candidate.key === state)?.ongoing ?? true;
 
 /**

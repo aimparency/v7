@@ -17,6 +17,7 @@
     "agent-tools": "workspace:*",
     "ai": "^6.0.219",
     "fs-extra": "^11.3.2",
+    "shared": "workspace:*",
     "uuid": "^13.0.2",
     "zod": "^3.25.76"
   },

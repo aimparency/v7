@@ -1,8 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
-import { cosineSimilarity } from 'shared';
-import { listIdeasFromFiles } from './idea-file-tools.js';
+import { cosineSimilarity, type Idea } from 'shared';
 import { normalizeBowmanPath } from './loop-state.js';
 
 const MODEL_ID = 'BAAI/bge-small-en-v1.5';
@@ -93,6 +92,7 @@ export function selectAssociation(
 
 export async function maybeFindAssociation(
   projectPath: string,
+  loadIdeas: () => Promise<Idea[]>,
   stateText: string,
   chance = 0.1,
   excludeIdeaIds: string[] = []
@@ -103,7 +103,7 @@ export async function maybeFindAssociation(
   if (!queryVector) return null;
   const [vectors, ideas] = await Promise.all([
     readVectorStore(projectPath),
-    listIdeasFromFiles(projectPath)
+    loadIdeas()
   ]);
   const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
   const scored = Object.entries(vectors)

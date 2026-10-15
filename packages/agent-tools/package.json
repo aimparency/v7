@@ -14,6 +14,8 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
+    "@trpc/client": "^11.19.0",
+    "backend": "workspace:*",
     "fs-extra": "^11.3.2",
     "shared": "workspace:*",
     "uuid": "^13.0.0",

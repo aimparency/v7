@@ -6,7 +6,6 @@ import fs from 'fs-extra';
 import { cosineSimilarity } from 'shared';
 import { embedDocuments, embedSearchQuery } from './association-tools.js';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
-import { ensureCurrentLayout } from './idea-file-tools.js';
 
 const execFileAsync = promisify(execFile);
 const ignoredGlobs = [
@@ -239,7 +238,6 @@ export async function ideaHistorySearch(projectPath: string, query: string, limi
   const normalizedQuery = query.trim().toLowerCase();
   if (!normalizedQuery) throw new Error('query is required');
   const bowmanPath = normalizeBowmanPath(projectPath);
-  await ensureCurrentLayout(projectPath);
   const ideaFiles = (
     await Promise.all(['ideas', 'archived-ideas'].map(async (directory) => {
       const ideaDir = path.join(bowmanPath, directory);
