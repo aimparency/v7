@@ -18,7 +18,8 @@
     "start": "node dist/server.js",
     "test": "NODE_ENV=test vitest run",
     "test:watch": "NODE_ENV=test vitest",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "warm:model": "tsx scripts/warm-embedding-model.ts"
   },
   "keywords": [
     "aimparency",

@@ -96,6 +96,18 @@ const concurrency = Number(process.env.CHECK_CONCURRENCY) || Math.max(1, Math.mi
   Math.floor(os.freemem() / JOB_MEMORY_BYTES)
 ));
 console.log(`${tasks.length} tasks, ${concurrency} at a time (${(os.freemem() / 1024 ** 3).toFixed(1)} GB free)`);
+// Several test suites use the local embedding model. On a fresh clone (or CI)
+// they would download it at the same time into one cache and abort each other:
+// fetch it once first.
+const MODEL_USERS = ['test backend', 'test agent-tools', 'test mcp'];
+if (tasks.some((task) => MODEL_USERS.includes(task.label))) {
+  const warm = await run({ label: 'warm embedding model', cwd: path.join(root, 'packages', 'backend'), script: 'warm:model' });
+  console.log(`${warm.ok ? 'ok  ' : 'FAIL'}  ${warm.label.padEnd(36)} ${warm.seconds.toFixed(1)}s`);
+  if (!warm.ok) {
+    console.log(warm.output.trimEnd());
+    process.exit(1);
+  }
+}
 const results = await runAll(tasks, concurrency);
 const failed = results.filter((result) => !result.ok);
 for (const result of failed) {
