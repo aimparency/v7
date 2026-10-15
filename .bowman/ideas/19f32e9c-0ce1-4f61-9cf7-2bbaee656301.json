@@ -81,9 +81,9 @@
     "b16cdc29-a215-4b07-a262-49efd6171b2f"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Submission deadline passed on 22 July 2026 CEST and authenticated Devpost draft/submission evidence is recorded. No further build-to-submit work is relevant; await the external jury outcome expected around 12 August 2026, then record won/not-won evidence.",
-    "date": 1785352008012
+    "state": "failed",
+    "comment": "Not among the 8 Build Week winners announced ~25 Aug 2026 (developers.openai.com/blog/build-week-winners). Outcome and analysis recorded on 40463a0c.",
+    "date": 1792059529397
   },
   "intrinsicValue": 25,
   "cost": 5,
