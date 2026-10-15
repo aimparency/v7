@@ -62,12 +62,21 @@ function run(task) {
     // CI=1 keeps watch-capable runners (vitest) in run-once mode.
     const child = spawn('pnpm', ['run', task.script], {
       cwd: task.cwd,
-      env: { VITEST_MAX_WORKERS: '2', ...process.env, CI: '1', FORCE_COLOR: '0' }
+      env: { VITEST_MAX_WORKERS: '2', ...process.env, CI: '1', FORCE_COLOR: '0' },
+      // A time-limited task gets its own process group, so the whole tree can be stopped.
+      detached: Boolean(task.timeoutMs)
     });
     let output = '';
     child.stdout.on('data', (chunk) => { output += chunk; });
     child.stderr.on('data', (chunk) => { output += chunk; });
-    child.on('close', (code) => resolve({ ...task, ok: code === 0, output, seconds: (Date.now() - started) / 1000 }));
+    const timer = task.timeoutMs && setTimeout(() => {
+      output += `\nStopped after ${task.timeoutMs / 60_000} minutes.`;
+      process.kill(-child.pid, 'SIGKILL');
+    }, task.timeoutMs);
+    child.on('close', (code) => {
+      clearTimeout(timer);
+      resolve({ ...task, ok: code === 0, output, seconds: (Date.now() - started) / 1000 });
+    });
   });
 }
 
@@ -101,10 +110,11 @@ console.log(`${tasks.length} tasks, ${concurrency} at a time (${(os.freemem() / 
 // fetch it once first.
 const MODEL_USERS = ['test backend', 'test agent-tools', 'test mcp'];
 if (tasks.some((task) => MODEL_USERS.includes(task.label))) {
-  const warm = await run({ label: 'warm embedding model', cwd: path.join(root, 'packages', 'backend'), script: 'warm:model' });
+  // A stalled download would otherwise hang the whole check.
+  const warm = await run({ label: 'warm embedding model', cwd: path.join(root, 'packages', 'backend'), script: 'warm:model', timeoutMs: 10 * 60_000 });
   console.log(`${warm.ok ? 'ok  ' : 'FAIL'}  ${warm.label.padEnd(36)} ${warm.seconds.toFixed(1)}s`);
   if (!warm.ok) {
-    console.log(warm.output.trimEnd());
+    console.log(`${warm.output.trimEnd()}\nCould not load the embedding model (BAAI/bge-small-en-v1.5 from huggingface.co); check the network and run again.`);
     process.exit(1);
   }
 }
