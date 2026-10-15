@@ -12,6 +12,21 @@ import { normalizeProjectPath } from './project-path.js';
 import { ensureProjectStructure, readProjectMeta } from './storage/project.js';
 import { listIdeas } from './storage/ideas.js';
 import { listPhases } from './storage/phases.js';
+import {
+  getLoopInboxPath,
+  getLoopInstanceDir,
+  getLoopRuntimePath,
+  getLoopWorkerStatePath,
+  loopInboxMessageSchema,
+  loopProviderSchema,
+  loopRuntimeStateSchema,
+  loopWorkerStateSchema,
+  pushLoopMessage,
+  type LoopInstance,
+  type LoopMessage,
+  type LoopRuntimeState,
+  type LoopWorkerState
+} from 'shared/loop-state';
 
 // Background loops: their definitions and instances (runtime/loops.json),
 // config and secrets, and the loop-worker processes that run them.
@@ -19,8 +34,6 @@ import { listPhases } from './storage/phases.js';
 const REPO_ROOT = path.resolve(packageRoot(import.meta.url), '../..');
 const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
 
-export const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
-export const loopCapabilitySchema = z.enum(['coding', 'experiments', 'code-intelligence']);
 export const loopSecretsSchema = z.object({
   NVIDIA_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
@@ -32,70 +45,6 @@ export const loopConfigSchema = z.object({
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60)
 });
-export const loopMessageSchema = z.object({
-  id: z.string(),
-  role: z.enum(['system', 'assistant', 'tool', 'user']),
-  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required', 'external_action_required']),
-  content: z.string(),
-  timestamp: z.number(),
-  requestId: z.string().optional(),
-  replyToRequestId: z.string().optional()
-});
-export const loopDefinitionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  systemPrompt: z.string(),
-  provider: loopProviderSchema.default('nvidia'),
-  model: z.string().default('z-ai/glm-5.2'),
-  baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
-  intervalSeconds: z.number().int().min(5).max(3600).default(60),
-  associationChance: z.number().min(0).max(1).default(0.1),
-  worktreePath: z.string().nullable().default(null),
-  capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
-  createdAt: z.number(),
-  updatedAt: z.number()
-});
-export const loopInstanceSchema = z.object({
-  id: z.string(),
-  loopId: z.string(),
-  name: z.string(),
-  status: z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']),
-  targetPhaseId: z.string().nullable().default(null),
-  targetIdeaId: z.string().nullable().default(null),
-  stopPolicy: z.enum(['target_halted', 'phase_done', 'never', 'asap']).default('never'),
-  currentActivity: z.string().nullable().default(null),
-  createdAt: z.number(),
-  updatedAt: z.number(),
-  messages: z.array(loopMessageSchema).default([])
-});
-export const loopRuntimeStateSchema = z.object({
-  version: z.number().default(1),
-  selectedLoopId: z.string().nullable().default(null),
-  selectedInstanceId: z.string().nullable().default(null),
-  loops: z.array(loopDefinitionSchema).default([]),
-  instances: z.array(loopInstanceSchema).default([])
-});
-export const loopWorkerStateSchema = z.object({
-  instanceId: z.string(),
-  projectPath: z.string(),
-  status: z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']),
-  pid: z.number().optional(),
-  startedAt: z.number().optional(),
-  updatedAt: z.number(),
-  heartbeatAt: z.number().optional(),
-  waitingRequestId: z.string().optional(),
-  waitingPrompt: z.string().optional(),
-  stopRequested: z.boolean().default(false),
-  error: z.string().optional()
-});
-export const loopInboxMessageSchema = z.object({
-  id: z.string(),
-  role: z.literal('user').default('user'),
-  content: z.string(),
-  timestamp: z.number(),
-  replyToRequestId: z.string().optional()
-});
-
 export type LoopWorkerProcess = {
   process: ChildProcess;
   pid: number;
@@ -109,8 +58,6 @@ export const getSecretsPath = (rawProjectPath: string) =>
   path.join(normalizeProjectPath(rawProjectPath), 'secrets.json');
 export const getLoopConfigPath = (rawProjectPath: string) =>
   path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-config.json');
-export const getLoopRuntimePath = (rawProjectPath: string) =>
-  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loops.json');
 
 
 export const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPhaseId?: string | null) => {
@@ -222,7 +169,7 @@ export const readLoopRuntimeState = async (rawProjectPath: string) => {
   }
 };
 
-export const writeLoopRuntimeState = async (rawProjectPath: string, state: z.infer<typeof loopRuntimeStateSchema>) => {
+export const writeLoopRuntimeState = async (rawProjectPath: string, state: LoopRuntimeState) => {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   await writeJsonAtomic(getLoopRuntimePath(projectPath), loopRuntimeStateSchema.parse(state));
@@ -230,7 +177,7 @@ export const writeLoopRuntimeState = async (rawProjectPath: string, state: z.inf
 
 export const mutateLoopRuntimeState = async (
   rawProjectPath: string,
-  mutate: (state: z.infer<typeof loopRuntimeStateSchema>) => void
+  mutate: (state: LoopRuntimeState) => void
 ) => {
   const state = await readLoopRuntimeState(rawProjectPath);
   mutate(state);
@@ -242,26 +189,14 @@ export const mutateLoopRuntimeState = async (
 export const appendLoopMessage = async (
   rawProjectPath: string,
   instanceId: string,
-  message: Omit<z.infer<typeof loopMessageSchema>, 'id' | 'timestamp'>
+  message: Omit<LoopMessage, 'id' | 'timestamp'>
 ) => {
   await mutateLoopRuntimeState(rawProjectPath, (state) => {
     const instance = state.instances.find((candidate) => candidate.id === instanceId);
-    if (!instance) return;
-    instance.messages.push({
-      id: uuidv4(),
-      timestamp: Date.now(),
-      ...message
-    });
-    instance.updatedAt = Date.now();
+    if (instance) pushLoopMessage(instance, { id: uuidv4(), timestamp: Date.now(), ...message });
   });
 };
 
-export const getLoopInstanceDir = (rawProjectPath: string, instanceId: string) =>
-  path.join(normalizeProjectPath(rawProjectPath), 'runtime', 'loop-instances', instanceId);
-export const getLoopWorkerStatePath = (rawProjectPath: string, instanceId: string) =>
-  path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'state.json');
-export const getLoopInboxPath = (rawProjectPath: string, instanceId: string) =>
-  path.join(getLoopInstanceDir(rawProjectPath, instanceId), 'inbox.jsonl');
 
 export const readLoopWorkerErrorText = async (rawProjectPath: string, instanceId: string, workerError?: string) => {
   if (workerError?.trim()) return workerError.trim();
@@ -275,22 +210,13 @@ export const readLoopWorkerErrorText = async (rawProjectPath: string, instanceId
 };
 
 export const appendLoopErrorOnce = async (
-  instance: z.infer<typeof loopInstanceSchema>,
+  instance: LoopInstance,
   content: string
 ) => {
   if (!content.trim()) return;
   const latestError = [...instance.messages].reverse().find((message) => message.kind === 'error');
   if (latestError?.content === content) return;
-  instance.messages.push({
-    id: uuidv4(),
-    role: 'system',
-    kind: 'error',
-    content,
-    timestamp: Date.now()
-  });
-  if (instance.messages.length > 500) {
-    instance.messages.splice(0, instance.messages.length - 500);
-  }
+  pushLoopMessage(instance, { id: uuidv4(), role: 'system', kind: 'error', content, timestamp: Date.now() });
 };
 
 export const loopWorkerKey = (rawProjectPath: string, instanceId: string) =>
@@ -307,7 +233,7 @@ export const readLoopWorkerState = async (rawProjectPath: string, instanceId: st
 export const writeLoopWorkerState = async (
   rawProjectPath: string,
   instanceId: string,
-  state: z.infer<typeof loopWorkerStateSchema>
+  state: LoopWorkerState
 ) => {
   await writeJsonAtomic(getLoopWorkerStatePath(rawProjectPath, instanceId), loopWorkerStateSchema.parse(state));
 };
@@ -315,7 +241,7 @@ export const writeLoopWorkerState = async (
 export const patchLoopWorkerState = async (
   rawProjectPath: string,
   instanceId: string,
-  patch: Partial<z.infer<typeof loopWorkerStateSchema>>
+  patch: Partial<LoopWorkerState>
 ) => {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const existing = await readLoopWorkerState(projectPath, instanceId);

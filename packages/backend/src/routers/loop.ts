@@ -4,9 +4,8 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeProjectPath } from '../project-path.js';
 import { t, delayedProcedure } from '../trpc.js';
+import { getLoopInstanceDir, loopCapabilitySchema, loopProviderSchema } from 'shared/loop-state';
 import {
-  loopProviderSchema,
-  loopCapabilitySchema,
   loopConfigSchema,
   pickDefaultLoopTarget,
   readLoopSecrets,
@@ -15,7 +14,6 @@ import {
   writeLoopConfig,
   readLoopRuntimeState,
   mutateLoopRuntimeState,
-  getLoopInstanceDir,
   killLoopWorker,
   refreshLoopProcessStates,
   spawnLoopWorker,

@@ -1,113 +1,27 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { toBowmanPath } from 'shared';
+import {
+  getLoopEventsPath,
+  getLoopInboxPath,
+  getLoopInstanceDir,
+  getLoopRuntimePath,
+  getLoopWorkerStatePath,
+  loopInboxMessageSchema,
+  loopRuntimeStateSchema,
+  loopWorkerStateSchema,
+  pushLoopMessage,
+  type LoopInboxMessage,
+  type LoopMessage,
+  type LoopRuntimeState,
+  type LoopWorkerState
+} from 'shared/loop-state';
 import { v4 as uuidv4 } from 'uuid';
-import { z } from 'zod';
 
-export const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
-export const loopCapabilitySchema = z.enum(['coding', 'experiments', 'code-intelligence']);
-
-export const loopMessageSchema = z.object({
-  id: z.string(),
-  role: z.enum(['system', 'assistant', 'tool', 'user']),
-  kind: z.enum(['event', 'text', 'status', 'error', 'human_action_required', 'external_action_required']),
-  content: z.string(),
-  timestamp: z.number(),
-  requestId: z.string().optional(),
-  replyToRequestId: z.string().optional()
-});
-
-export const loopDefinitionSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  systemPrompt: z.string(),
-  provider: loopProviderSchema.default('nvidia'),
-  model: z.string().default('z-ai/glm-5.2'),
-  baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
-  intervalSeconds: z.number().int().min(5).max(3600).default(60),
-  associationChance: z.number().min(0).max(1).default(0.1),
-  worktreePath: z.string().nullable().default(null),
-  capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
-  createdAt: z.number(),
-  updatedAt: z.number()
-});
-
-export const loopInstanceStatusSchema = z.enum(['idle', 'running', 'waiting_for_human', 'waiting_for_external', 'stopped', 'done', 'error']);
-export const loopStopPolicySchema = z.enum(['target_halted', 'phase_done', 'never', 'asap']);
-
-export const loopInstanceSchema = z.object({
-  id: z.string(),
-  loopId: z.string(),
-  name: z.string(),
-  status: loopInstanceStatusSchema.default('idle'),
-  targetPhaseId: z.string().nullable().default(null),
-  targetIdeaId: z.string().nullable().default(null),
-  stopPolicy: loopStopPolicySchema.default('never'),
-  currentActivity: z.string().nullable().default(null),
-  createdAt: z.number(),
-  updatedAt: z.number(),
-  messages: z.array(loopMessageSchema).default([])
-});
-
-export const loopRuntimeStateSchema = z.object({
-  version: z.number().default(1),
-  selectedLoopId: z.string().nullable().default(null),
-  selectedInstanceId: z.string().nullable().default(null),
-  loops: z.array(loopDefinitionSchema).default([]),
-  instances: z.array(loopInstanceSchema).default([])
-});
-
-export const loopWorkerStateSchema = z.object({
-  instanceId: z.string(),
-  projectPath: z.string(),
-  status: loopInstanceStatusSchema,
-  pid: z.number().optional(),
-  startedAt: z.number().optional(),
-  updatedAt: z.number(),
-  heartbeatAt: z.number().optional(),
-  waitingRequestId: z.string().optional(),
-  waitingPrompt: z.string().optional(),
-  stopRequested: z.boolean().default(false),
-  error: z.string().optional()
-});
-
-export const loopInboxMessageSchema = z.object({
-  id: z.string(),
-  role: z.literal('user').default('user'),
-  content: z.string(),
-  timestamp: z.number(),
-  replyToRequestId: z.string().optional()
-});
-
-export type LoopRuntimeState = z.infer<typeof loopRuntimeStateSchema>;
-export type LoopDefinition = z.infer<typeof loopDefinitionSchema>;
-export type LoopInstance = z.infer<typeof loopInstanceSchema>;
-export type LoopMessage = z.infer<typeof loopMessageSchema>;
-export type LoopWorkerState = z.infer<typeof loopWorkerStateSchema>;
-export type LoopInboxMessage = z.infer<typeof loopInboxMessageSchema>;
+export * from 'shared/loop-state';
 
 export function normalizeBowmanPath(rawProjectPath: string): string {
   return toBowmanPath(path.resolve(rawProjectPath));
-}
-
-export function getLoopRuntimePath(projectPath: string): string {
-  return path.join(normalizeBowmanPath(projectPath), 'runtime', 'loops.json');
-}
-
-export function getLoopInstanceDir(projectPath: string, instanceId: string): string {
-  return path.join(normalizeBowmanPath(projectPath), 'runtime', 'loop-instances', instanceId);
-}
-
-export function getLoopWorkerStatePath(projectPath: string, instanceId: string): string {
-  return path.join(getLoopInstanceDir(projectPath, instanceId), 'state.json');
-}
-
-export function getLoopEventsPath(projectPath: string, instanceId: string): string {
-  return path.join(getLoopInstanceDir(projectPath, instanceId), 'events.jsonl');
-}
-
-export function getLoopInboxPath(projectPath: string, instanceId: string): string {
-  return path.join(getLoopInstanceDir(projectPath, instanceId), 'inbox.jsonl');
 }
 
 export async function writeJsonAtomic(filePath: string, data: unknown): Promise<void> {
@@ -153,12 +67,7 @@ export async function appendLoopEvent(
   await fs.appendFile(getLoopEventsPath(projectPath, instanceId), line);
   await mutateLoopRuntimeState(projectPath, (state) => {
     const instance = state.instances.find((candidate) => candidate.id === instanceId);
-    if (!instance) return;
-    instance.messages.push(entry);
-    if (instance.messages.length > 500) {
-      instance.messages.splice(0, instance.messages.length - 500);
-    }
-    instance.updatedAt = entry.timestamp;
+    if (instance) pushLoopMessage(instance, entry);
   });
   return entry;
 }

@@ -9,7 +9,8 @@
   "exports": {
     ".": "./src/index.ts",
     "./bowman-migration": "./src/bowman-migration.ts",
-    "./node-entry": "./src/node-entry.ts"
+    "./node-entry": "./src/node-entry.ts",
+    "./loop-state": "./src/loop-state.ts"
   },
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\"",
