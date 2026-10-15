@@ -150,9 +150,10 @@ test('a cycle executes the model\'s tool call through the backend and the phase_
   assert.equal(idea.status.state, 'implemented');
   assert.equal(idea.status.comment, 'fixed by the fake model');
   assert.ok(instance.messages.some((message) => message.content.includes('Target phase done: Now')));
-  // The worker offered the model the graph tools.
-  const toolNames = (modelRequests[0].tools ?? []).map((tool: any) => tool.function.name);
-  assert.ok(toolNames.includes('update_idea') && toolNames.includes('get_prioritized_ideas'), toolNames.join(','));
+  // The model got the graph tools, with projectPath filled in by the worker.
+  const offered = new Map((modelRequests[0].tools ?? []).map((tool: any) => [tool.function.name, tool.function]));
+  assert.ok(offered.has('get_prioritized_ideas') && offered.has('update_idea'));
+  assert.equal((offered.get('update_idea') as any).parameters.properties.projectPath, undefined);
 }, 60_000);
 
 test('a rejected API key ends the instance in error with a hint where the key lives', async () => {

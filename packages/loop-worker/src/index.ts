@@ -39,6 +39,7 @@ import {
 } from 'agent-tools';
 import { isOngoingState } from 'shared';
 import { filterToolsByCapabilities } from './capabilities.js';
+import { graphCatalogTools } from './graph-catalog-tools.js';
 import { selectCycleTarget, throwIfStreamFailed } from './runtime-policy.js';
 
 type LoopSecrets = {
@@ -382,43 +383,8 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           return { ok: true, evidence: evidence.content };
         }
       }),
-      get_prioritized_ideas: tool({
-        description: 'Return open ideas in active phase ranked by Aimparency priority.',
-        inputSchema: jsonSchema<{ limit?: number }>({
-          type: 'object',
-          properties: { limit: { type: 'number' } },
-          additionalProperties: false
-        }),
-        execute: async ({ limit }) => graph.getPrioritizedIdeas(limit ?? 10, currentInstance?.targetPhaseId)
-      }),
-      get_idea_context: tool({
-        description: 'Return an idea, parents, children, and root path context.',
-        inputSchema: jsonSchema<{ ideaId: string }>({
-          type: 'object',
-          properties: { ideaId: { type: 'string' } },
-          required: ['ideaId'],
-          additionalProperties: false
-        }),
-        execute: async ({ ideaId }) => graph.getIdeaContext(ideaId)
-      }),
-      search_ideas_semantic: tool({
-        description: 'Find related ideas by meaning (semantic search over idea embeddings).',
-        inputSchema: jsonSchema<{ query: string; limit?: number }>({
-          type: 'object',
-          properties: { query: { type: 'string' }, limit: { type: 'number' } },
-          required: ['query'],
-          additionalProperties: false
-        }),
-        execute: async ({ query, limit }) => graph.searchIdeas(query, limit ?? 8)
-      }),
-      graph_hygiene: tool({
-        description: 'Return graph defect signals: floating ideas, mega-parents, stale statuses, collapse candidates and duplicate clusters. Uncommitted ideas are a normal state and are not reported here.',
-        inputSchema: jsonSchema<Record<string, never>>({
-          type: 'object',
-          properties: {},
-          additionalProperties: false
-        }),
-        execute: async () => graph.graphHygiene()
+      ...graphCatalogTools(graph, projectPath, {
+        get_prioritized_ideas: currentInstance?.targetPhaseId ? { phaseId: currentInstance.targetPhaseId } : {}
       }),
       experiment: tool({
         description: 'Create, list, or update durable experiments. Define predictions and stop conditions before acting; append evidence and belief updates after observing results.',
@@ -545,60 +511,6 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
           if (mode === 'idea-history') return ideaHistorySearch(executionPath, query, limit);
           return changeImpact(executionPath, query, limit);
         }
-      }),
-      create_idea: tool({
-        description: 'Create a child/supporting idea or newly clarified idea.',
-        inputSchema: jsonSchema<{ text: string; description?: string; supportedIdeas?: string[]; phaseId?: string; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
-          type: 'object',
-          properties: {
-            text: { type: 'string' },
-            description: { type: 'string' },
-            supportedIdeas: { type: 'array', items: { type: 'string' } },
-            phaseId: { type: 'string' },
-            cost: { type: 'number' },
-            intrinsicValue: { type: 'number' },
-            valueRationale: { type: 'string', description: 'Human-authored rationale for the estimated value' }
-          },
-          required: ['text'],
-          additionalProperties: false
-        }),
-        execute: async (input) => graph.createIdea(input)
-      }),
-      update_idea: tool({
-        description: 'Update idea text/description/status/cost/value. Use human-dependent for ambiguous ideas instead of asking humans too often.',
-        inputSchema: jsonSchema<{ ideaId: string; text?: string; description?: string; status?: { state: string; comment?: string }; cost?: number; intrinsicValue?: number; valueRationale?: string }>({
-          type: 'object',
-          properties: {
-            ideaId: { type: 'string' },
-            text: { type: 'string' },
-            description: { type: 'string' },
-            status: {
-              type: 'object',
-              properties: { state: { type: 'string' }, comment: { type: 'string' } },
-              required: ['state'],
-              additionalProperties: false
-            },
-            cost: { type: 'number' },
-            intrinsicValue: { type: 'number' },
-            valueRationale: { type: 'string', description: 'Human-authored rationale for the estimated value' }
-          },
-          required: ['ideaId'],
-          additionalProperties: false
-        }),
-        execute: async ({ ideaId, ...patch }) => graph.updateIdea(ideaId, patch)
-      }),
-      commit_idea_to_phase: tool({
-        description: 'Commit an existing idea to a phase so it becomes visible to phase-based prioritization.',
-        inputSchema: jsonSchema<{ ideaId: string; phaseId: string }>({
-          type: 'object',
-          properties: {
-            ideaId: { type: 'string' },
-            phaseId: { type: 'string' }
-          },
-          required: ['ideaId', 'phaseId'],
-          additionalProperties: false
-        }),
-        execute: async ({ ideaId, phaseId }) => graph.commitIdeaToPhase(ideaId, phaseId)
       }),
       list_files: tool({
         description: 'List project files using rg --files when available.',

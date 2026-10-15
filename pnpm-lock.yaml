@@ -221,6 +221,9 @@ importers:
       '@huggingface/transformers':
         specifier: ^4.3.1
         version: 4.3.1(@types/node@25.9.9)
+      '@trpc/client':
+        specifier: ^11.19.0
+        version: 11.19.0(@trpc/server@11.19.0(typescript@5.9.3))(typescript@5.9.3)
       agent-tools:
         specifier: workspace:*
         version: link:../agent-tools
@@ -230,6 +233,9 @@ importers:
       fs-extra:
         specifier: ^11.3.2
         version: 11.4.1
+      mcp:
+        specifier: workspace:*
+        version: link:../mcp
       shared:
         specifier: workspace:*
         version: link:../shared

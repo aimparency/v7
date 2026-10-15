@@ -1,28 +1,11 @@
 import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type { BackendClient } from "../client.js";
-import type { ToolDefinition } from "./types.js";
-import { navigationTools } from "./navigation.js";
-import { ideaTools } from "./ideas.js";
-import { phaseTools } from "./phases.js";
-import { repoTools } from "./repos.js";
-import { graphHealthTools } from "./graph-health.js";
-import { hookTools } from "./hooks.js";
+import { TOOLS, toolsByName } from "./catalog.js";
 
 export { verificationHintForIdea, ideaCreationConfirmationToken } from "./ideas.js";
 export { resolvePhasePlacement } from "./phases.js";
 export { countIdeaReferences } from "../reconcile.js";
-
-// Listing order is what an agent reads first: the work loop, then the graph.
-const TOOLS: ToolDefinition[] = [
-  ...navigationTools,
-  ...ideaTools,
-  ...phaseTools,
-  ...repoTools,
-  ...graphHealthTools,
-  ...hookTools,
-];
-const toolsByName = new Map(TOOLS.map((tool) => [tool.name, tool]));
 
 export function registerTools(server: Server, trpcClient: BackendClient) {
   server.setRequestHandler(ListToolsRequestSchema, async () => ({

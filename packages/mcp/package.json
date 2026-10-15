@@ -56,5 +56,8 @@
     "fs-extra": "^11.4.1",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3"
+  },
+  "exports": {
+    "./tool-catalog": "./src/tools/catalog.ts"
   }
 }

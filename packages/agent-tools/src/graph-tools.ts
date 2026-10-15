@@ -80,47 +80,14 @@ export function connectGraph(projectPath: string) {
     return results.map((idea) => ({ id: idea.id, text: idea.text, description: idea.description, status: idea.status }));
   }
 
-  async function createIdea(input: {
-    text: string;
-    description?: string;
-    supportedIdeas?: string[];
-    phaseId?: string;
-    cost?: number;
-    intrinsicValue?: number;
-    valueRationale?: string;
-  }) {
-    const { phaseId, ...idea } = input;
-    return phaseId
-      ? backend.idea.createIdeaInPhase.mutate({ projectPath, phaseId, idea })
-      : backend.idea.createFloatingIdea.mutate({ projectPath, idea });
-  }
-
-  async function updateIdea(
-    ideaId: string,
-    idea: Partial<Pick<Idea, 'text' | 'description' | 'cost' | 'intrinsicValue' | 'valueRationale'>> & { status?: { state: string; comment?: string } }
-  ) {
-    return backend.idea.update.mutate({
-      projectPath,
-      ideaId,
-      idea: idea.status ? { ...idea, status: { ...idea.status, date: Date.now() } } : idea
-    });
-  }
-
-  async function commitIdeaToPhase(ideaId: string, phaseId: string) {
-    await backend.idea.commitToPhase.mutate({ projectPath, ideaId, phaseId });
-    return { ideaId, phaseId, committed: true };
-  }
-
   return {
     listIdeas,
     listPhases,
     getPrioritizedIdeas,
     getIdeaContext,
     searchIdeas,
-    graphHygiene: () => backend.graphHealth.graphHygiene.query({ projectPath }),
-    createIdea,
-    updateIdea,
-    commitIdeaToPhase,
+    // For tools defined over the backend API (the MCP tool catalog).
+    backend,
     close: () => socket.close()
   };
 }

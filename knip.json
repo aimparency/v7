@@ -26,6 +26,7 @@
       ],
       "ignoreDependencies": [
         "uuid",
+        "@trpc/client",
         "@huggingface/transformers"
       ]
     },
