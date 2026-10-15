@@ -75,15 +75,14 @@ source software.
 
 <!-- BEGIN answer-04 limit=100 -->
 Aimparency already stores aims, dependencies, statuses, and rationale as files
-alongside a Git repository. It provides graph and list interfaces, local MCP
-tools for assistants, and commit scanning for aim identifiers. This validates
-the core representation through daily use on its own development. However, the
-schema still mixes portable concepts with application and interface concerns.
-There is no independent specification, compatibility guarantee, conformance
-suite, standalone CLI, or externally validated adapter. Provenance semantics
-are implicit. The funded project is a reusable infrastructure module that
-extracts and tests this protocol; it is not maintenance or general feature work
-on the existing application.
+alongside a Git repository, with graph and list interfaces, local MCP tools for
+assistants, and commit scanning for aim identifiers; daily use on its own
+development validates the representation. In October 2026 I extracted a first
+draft: a written format description, JSON Schemas generated from the code, and
+a validator, plus read-only viewing of other repositories' graphs. They still
+describe one application's storage. There is no portable core, compatibility
+guarantee, conformance suite, provenance semantics, installable CLI, or external
+implementation. The funded project builds these; it is not maintenance.
 <!-- END answer-04 -->
 
 ## 5. Project link — optional
