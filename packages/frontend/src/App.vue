@@ -3,7 +3,7 @@ import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type IdeaPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
 import { useGraphUIStore } from './stores/ui/graph-store'
-import { useProjectStore } from './stores/project-store'
+import { getRepoUrlParam, setRepoUrlParam, useProjectStore } from './stores/project-store'
 import { useWatchdogStore } from './stores/watchdog'
 import { useDataStore, type Idea } from './stores/data'
 import { useMapStore } from './stores/map'
@@ -173,6 +173,7 @@ const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
   projectSelectionReturnPath.value = ''
   if (!gitRepositoryLocation(path)) {
+    setRepoUrlParam('')
     await runProjectRestore(path)
     return
   }
@@ -181,6 +182,7 @@ const handleSelectProject = async () => {
   try {
     const { projectPath } = await trpc.project.openGitUrl.mutate({ url: path })
     await runProjectRestore(projectPath)
+    setRepoUrlParam(path) // keeps the address shareable
   } catch (error) {
     useToastStore().error('Could not open the repository', error)
   } finally {
@@ -454,7 +456,11 @@ onMounted(async () => {
   window.addEventListener('beforeunload', flushPersistedUIState)
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
-  if (projectStore.projectPath) {
+  const repoUrl = getRepoUrlParam()
+  if (repoUrl) {
+    projectPathInput.value = repoUrl
+    await handleSelectProject()
+  } else if (projectStore.projectPath) {
     await runProjectRestore(projectStore.projectPath)
     uiStore.ensureSelectionVisible();
     if (projectStore.showWatchdog) {

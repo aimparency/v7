@@ -8,8 +8,22 @@ import {
   type ProjectHistoryEntry
 } from './ui/project-helpers'
 
+// ?repo=<git url>: a shareable link to someone else's project. It wins over
+// ?project= (the local clone) so a reload fetches the latest commit.
+export function getRepoUrlParam(): string {
+  return new URLSearchParams(window.location.search).get('repo') ?? ''
+}
+
+export function setRepoUrlParam(repoUrl: string) {
+  const url = new URL(window.location.href)
+  if (repoUrl) url.searchParams.set('repo', repoUrl)
+  else url.searchParams.delete('repo')
+  window.history.replaceState({}, '', url)
+}
+
 function getInitialProjectPath(): string {
   const urlParams = new URLSearchParams(window.location.search)
+  if (urlParams.get('repo')) return ''
   const pathFromUrl = urlParams.get('project') || urlParams.get('path')
   if (pathFromUrl) return pathFromUrl
   return ''
@@ -52,6 +66,7 @@ export const useProjectStore = defineStore('project', {
         const url = new URL(window.location.href)
         url.searchParams.delete('project')
         url.searchParams.delete('path')
+        url.searchParams.delete('repo')
         window.history.replaceState({}, '', url)
       }
     },
