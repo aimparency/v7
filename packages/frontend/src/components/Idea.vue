@@ -383,6 +383,11 @@ onMounted(() => {
     background-color: rgba(255, 0, 0, 0.2);
   }
 
+  /* The selected active row has a more specific white tint above. */
+  &.selected.active.pending-delete {
+    background-color: rgba(255, 0, 0, 0.2);
+  }
+
   &.multi-selected {
     background-color: rgba(100, 180, 255, 0.15);
     outline: 1px dashed #4a9eff;

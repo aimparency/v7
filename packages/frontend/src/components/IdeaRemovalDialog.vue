@@ -84,8 +84,9 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
       display: flex;
       gap: 0.75rem;
       align-items: center;
-      padding: 0.5rem 0.75rem;
       text-align: left;
+      color: inherit;
+      padding: 0.5rem 0.75rem;
       background: #2a2a2a;
       border: 1px solid #444;
       border-radius: 4px;
@@ -97,7 +98,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
     & kbd {
       min-width: 2.5rem;
-      color: #999;
       font-family: monospace;
     }
   }
