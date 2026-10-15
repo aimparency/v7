@@ -197,6 +197,23 @@
       ],
       "weight": 0.8,
       "hypothesis": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
+    },
+    {
+      "ideaId": "90cf0309-023f-486c-b7a0-322ee2910d46",
+      "relativePosition": [
+        0.6912121376846586,
+        2.4025456875400737
+      ],
+      "weight": 1,
+      "hypothesis": "Human decisions are the scarce input; making them cheap and well-ordered raises the throughput of the whole human+AI system."
+    },
+    {
+      "ideaId": "8f002aaf-7628-4b04-a814-8c52db56b6f7",
+      "relativePosition": [
+        -2.3051167431104065,
+        -0.9676966470087991
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [

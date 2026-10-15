@@ -1,0 +1,76 @@
+{
+  "id": "250fb1aa-f0a7-4ef8-870c-0abad9b98892",
+  "text": "Open any public Git repo's idea graph read-only in the normal UI",
+  "description": "Paste a Git URL (GitHub or any host) and browse that project's .bowman graph in the ordinary Aimparency UI, marked read-only: a visible 'read-only' hint, and every edit attempt answered with a warning instead of an editor (Felix 2026-10-15: no separate viewer). Purpose: a 30-second demo and an easy way to show and explore real graphs, which supports getting outside users. Honest limit: Aimparency is local-first, so the person viewing still runs Aimparency; a hosted public viewer would be a separate decision (SaaS was cancelled).",
+  "reflections": [],
+  "archived": false,
+  "color": "#695633",
+  "tags": [
+    "read-only",
+    "adoption",
+    "ui"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "f3caaee8-7754-423d-bea3-960011904411",
+      "relativePosition": [
+        -0.9140388940632189,
+        -2.326914888890371
+      ],
+      "weight": 1,
+      "hypothesis": "Read-only must be enforced where data is written, not only hidden in the UI."
+    },
+    {
+      "ideaId": "9ed9e7df-d18d-4f7a-818f-845e6bae99bf",
+      "relativePosition": [
+        -2.3332403425830646,
+        -0.8977691817738356
+      ],
+      "weight": 1,
+      "hypothesis": "A plain git clone works for every host and needs no credentials for public repos."
+    },
+    {
+      "ideaId": "f32a74fd-5381-420f-8282-de66f06e2358",
+      "relativePosition": [
+        2.4987419599431884,
+        0.07930080465715927
+      ],
+      "weight": 1,
+      "hypothesis": "Reusing the normal UI keeps one product and makes the demo show the real thing."
+    },
+    {
+      "ideaId": "9beb3725-e879-4e83-955b-924553ab98fe",
+      "relativePosition": [
+        -0.4361084290400203,
+        2.4616680194778997
+      ],
+      "weight": 1,
+      "hypothesis": "A one-click link is what makes the read-only view shareable."
+    },
+    {
+      "ideaId": "55259e27-aea5-413c-af85-8903bb5577e7",
+      "relativePosition": [
+        2.4601777780524694,
+        -0.44443818510206146
+      ],
+      "weight": 1,
+      "hypothesis": "Read-only edit attempts need a non-blocking way to say 'not possible'; a toast is that channel."
+    }
+  ],
+  "supportedIdeas": [
+    "8f002aaf-7628-4b04-a814-8c52db56b6f7",
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065828659
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

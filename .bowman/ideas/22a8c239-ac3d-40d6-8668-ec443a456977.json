@@ -2,6 +2,7 @@
   "id": "22a8c239-ac3d-40d6-8668-ec443a456977",
   "text": "Adopt local-first open-source strategy",
   "description": "Aimparency should run as a service on the user's computer with a browser UI and connect to local projects that contain a .bowman directory. The core product is open source and local-first, not a hosted commercial service.",
+  "reflection": "Reconciled this strategy container: it is not open implementation work. Its architecture child is human-dependent and its publishability child is 4/5 complete with the same remaining clean-clone validation. Keep the long-standing strategy intent, but surface the actual human verification gate.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -25,6 +26,31 @@
         -1.452100270587258
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "e207bec5-1208-4553-bb80-cec73135c098",
+      "relativePosition": [
+        -2.498290947400397,
+        0.09242479178892951
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "8f002aaf-7628-4b04-a814-8c52db56b6f7",
+      "relativePosition": [
+        2.2500699416666015,
+        1.0895803126013506
+      ],
+      "weight": 1,
+      "hypothesis": "Real outside use is the only authoritative signal that the local-first open-source strategy works."
+    },
+    {
+      "ideaId": "250fb1aa-f0a7-4ef8-870c-0abad9b98892",
+      "relativePosition": [
+        1.8663052224117969,
+        -1.6634015801358535
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [
@@ -43,6 +69,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Reconciled this strategy container: it is not open implementation work. Its architecture child is human-dependent and its publishability child is 4/5 complete with the same remaining clean-clone validation. Keep the long-standing strategy intent, but surface the actual human verification gate."
+  "valueVariance": 0
 }

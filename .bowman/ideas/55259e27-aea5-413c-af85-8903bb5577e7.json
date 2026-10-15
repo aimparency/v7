@@ -1,0 +1,30 @@
+{
+  "id": "55259e27-aea5-413c-af85-8903bb5577e7",
+  "text": "Toast notifications in the frontend",
+  "description": "There is no notification system: errors go to alert() (blocks the page) or only to the console, so failed saves can pass unnoticed. Add one small toast store + component (info / warning / error, auto-dismiss, stacked, keyboard-safe) and route existing alert() calls and swallowed mutation errors through it. First new consumer: read-only edit warnings.",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d6654",
+  "tags": [
+    "ui",
+    "feedback"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "22dd4138-d7c2-436a-8891-15568dacf338",
+    "250fb1aa-f0a7-4ef8-870c-0abad9b98892",
+    "f32a74fd-5381-420f-8282-de66f06e2358"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065828865
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

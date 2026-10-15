@@ -1,0 +1,29 @@
+{
+  "id": "6297985c-4e10-43d8-a2b1-c1ac33cad0cd",
+  "text": "Free CI: clean install and pnpm check on every push (GitHub Actions)",
+  "description": "No CI exists; the first-run test failure fixed in 0ee4507 went unnoticed until a manual clean clone. GitHub Actions is free for public repositories on standard runners, so this costs nothing while the repo stays public. Workflow: checkout, pnpm install (cache the pnpm store and the embedding model), pnpm check. Keep it to one job; no deploys, no secrets.",
+  "reflections": [],
+  "archived": false,
+  "color": "#66482d",
+  "tags": [
+    "ci",
+    "release",
+    "testing"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0e5cce7e-7090-444f-92a6-706f02340b46"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065829318
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

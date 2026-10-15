@@ -1,0 +1,30 @@
+{
+  "id": "bab6689f-ff16-45d5-841c-21b80c3a15ec",
+  "text": "Define agent graph tools once in the backend and expose them to MCP and the loop-worker",
+  "description": "Three drifted copies of the work-ranking logic existed (MCP, loop-worker, backend default loop target). Already done 2026-10-15: shared resolveWorkPhase/selectWorkCandidates (96f73a7), missionPathsToRoot (6b26d9c), loop-worker graph access through the backend (8724d0b). Remaining: tool names, descriptions, input schemas and handlers still exist twice (MCP tools/*.ts and loop-worker tool() definitions, with different wording and fewer tools in the worker). Define each tool once (schema + handler over the backend) and generate both the MCP and the AI-SDK tool surfaces from that definition.",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d6646",
+  "tags": [
+    "refactor",
+    "agents",
+    "mcp",
+    "loop-worker"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065829009
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

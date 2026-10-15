@@ -1,0 +1,30 @@
+{
+  "id": "e207bec5-1208-4553-bb80-cec73135c098",
+  "text": "Protocol v0: specify the .bowman format with a JSON Schema and a validate command",
+  "description": "Extract the stored format into a written, versioned spec plus JSON Schemas (generated from the shared zod schemas) and a standalone `bowman validate` CLI. It is the core deliverable of the Prototype Fund framing (open Git-native intent protocol for developers), strengthens the application's current baseline, and lets other tools read idea graphs without MCP or the backend.",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d665c",
+  "tags": [
+    "protocol",
+    "prototype-fund",
+    "open-source"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d2d13165-a72d-4cb5-8890-0b145daf67e4",
+    "22a8c239-ac3d-40d6-8668-ec443a456977"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065319495
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

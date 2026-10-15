@@ -1,0 +1,28 @@
+{
+  "id": "9beb3725-e879-4e83-955b-924553ab98fe",
+  "text": "Shareable open link: an Aimparency URL that opens a Git repo read-only",
+  "description": "A link such as http://localhost:4000/?repo=<git-url> opens that repository read-only directly, so maintainers can put a 'view the idea graph' link in a README and Aimparency users reach it in one click. Depends on opening from a Git URL. Viewers still run Aimparency locally; a public hosted viewer is out of scope unless decided separately.",
+  "reflections": [],
+  "archived": false,
+  "color": "#6f643a",
+  "tags": [
+    "read-only",
+    "adoption"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "250fb1aa-f0a7-4ef8-870c-0abad9b98892"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065864827
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

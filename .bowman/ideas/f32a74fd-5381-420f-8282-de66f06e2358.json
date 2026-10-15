@@ -1,0 +1,38 @@
+{
+  "id": "f32a74fd-5381-420f-8282-de66f06e2358",
+  "text": "Read-only UI: visible hint, and edit attempts answered with a warning toast",
+  "description": "When the open project is read-only, the normal UI stays fully navigable (columns, graph, search, inbox view) but shows a persistent 'read-only' hint in the header. Every edit path (edit/create/delete keys, drag and drop, modals, inbox accept) shows a warning toast saying editing is not possible instead of acting. Prefer one central guard in the stores over per-component checks.",
+  "reflections": [],
+  "archived": false,
+  "color": "#64592e",
+  "tags": [
+    "read-only",
+    "ui"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "55259e27-aea5-413c-af85-8903bb5577e7",
+      "relativePosition": [
+        -1.482804690580969,
+        -2.012781719310635
+      ],
+      "weight": 1,
+      "hypothesis": "The warning on edit attempts is shown as a toast."
+    }
+  ],
+  "supportedIdeas": [
+    "250fb1aa-f0a7-4ef8-870c-0abad9b98892"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065864693
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

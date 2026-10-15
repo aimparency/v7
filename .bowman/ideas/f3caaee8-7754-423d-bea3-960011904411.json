@@ -1,0 +1,28 @@
+{
+  "id": "f3caaee8-7754-423d-bea3-960011904411",
+  "text": "Backend read-only project mode: refuse every mutation and report it",
+  "description": "A project opened read-only must reject all writes at one choke point, with a clear 'read-only' error, and expose its read-only state to the frontend (e.g. in project meta/state). Generalize the existing guard that already refuses writes to projects from a newer Aimparency version (assertWritableBowman), so both cases share one mechanism and one message.",
+  "reflections": [],
+  "archived": false,
+  "color": "#634931",
+  "tags": [
+    "read-only",
+    "backend"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "250fb1aa-f0a7-4ef8-870c-0abad9b98892"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065864129
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

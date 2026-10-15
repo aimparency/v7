@@ -158,6 +158,24 @@
       ],
       "weight": 1,
       "hypothesis": "One graph API for every agent removes write races and drift between how the loop-worker and MCP agents see and change the graph."
+    },
+    {
+      "ideaId": "bab6689f-ff16-45d5-841c-21b80c3a15ec",
+      "relativePosition": [
+        0.5782261044010013,
+        -2.432211868277359
+      ],
+      "weight": 1,
+      "hypothesis": "Every agent seeing the same tools with the same semantics removes a whole class of drift bugs."
+    },
+    {
+      "ideaId": "d8bc9a95-68ab-4d38-8184-a16e6e5830d0",
+      "relativePosition": [
+        -1.5907237072642209,
+        -1.9286259583308456
+      ],
+      "weight": 1,
+      "hypothesis": "The autonomous loop is only trustworthy if its behavior is regression-tested without paid model calls."
     }
   ],
   "supportedIdeas": [

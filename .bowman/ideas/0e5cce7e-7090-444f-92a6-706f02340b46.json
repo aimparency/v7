@@ -2,6 +2,7 @@
   "id": "0e5cce7e-7090-444f-92a6-706f02340b46",
   "text": "Make clean-clone local startup reliable",
   "description": "A new user should be able to clone the repo, run pnpm install, run pnpm dev or pnpm start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.",
+  "reflection": "Clean-clone verification on this machine, 2026-10-15, at 43bc4ea (post npm→pnpm): git clone → pnpm install (3m, node-pty and onnxruntime native builds OK) → pnpm build green → pnpm build:optional green → pnpm validate:local-runtime PASS (default, occupied-port fallback, voice scenarios). The first pnpm check FAILED 24/25: 5 backend search/embedding tests timed out at 5s while the bge-small model downloaded into a cold cache (concurrent downloads also left partial model.onnx.tmp files). Fixed in 0ee4507 with a backend vitest globalSetup that warms the model once outside any timeout; cold-cache rerun in the clone: 105/105, one clean model.onnx. Main repo pnpm check 25/25. Not done by the agent: actually running pnpm start / pnpm dev from the clone and opening the UI (AGENTS.md forbids the agent starting servers).",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -58,6 +59,15 @@
       ],
       "weight": 1,
       "hypothesis": "One dev runtime path (source via tsx) and a real bundle for start removes the stale-dist and build-vs-dev mismatches that made clean-clone startup unreliable."
+    },
+    {
+      "ideaId": "6297985c-4e10-43d8-a2b1-c1ac33cad0cd",
+      "relativePosition": [
+        -2.4984719078923545,
+        0.08739636990595351
+      ],
+      "weight": 1,
+      "hypothesis": "Running the clean-clone path on every push catches first-run breakage before a new user hits it."
     }
   ],
   "supportedIdeas": [
@@ -77,6 +87,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Clean-clone verification on this machine, 2026-10-15, at 43bc4ea (post npm→pnpm): git clone → pnpm install (3m, node-pty and onnxruntime native builds OK) → pnpm build green → pnpm build:optional green → pnpm validate:local-runtime PASS (default, occupied-port fallback, voice scenarios). The first pnpm check FAILED 24/25: 5 backend search/embedding tests timed out at 5s while the bge-small model downloaded into a cold cache (concurrent downloads also left partial model.onnx.tmp files). Fixed in 0ee4507 with a backend vitest globalSetup that warms the model once outside any timeout; cold-cache rerun in the clone: 105/105, one clean model.onnx. Main repo pnpm check 25/25. Not done by the agent: actually running pnpm start / pnpm dev from the clone and opening the UI (AGENTS.md forbids the agent starting servers)."
+  "valueVariance": 0
 }

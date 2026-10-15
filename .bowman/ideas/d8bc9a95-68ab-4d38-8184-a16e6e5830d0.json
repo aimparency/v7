@@ -1,0 +1,28 @@
+{
+  "id": "d8bc9a95-68ab-4d38-8184-a16e6e5830d0",
+  "text": "Automated loop tests against a scripted fake model",
+  "description": "A local fake OpenAI-compatible server that answers from a fixed script per scenario (e.g. first request → call update_idea, second → plain text), so a full loop-worker cycle runs deterministically, offline and free. Proven manually on 2026-10-15 (see dc35aef6). Turn it into committed tests: cycle executes a tool through the backend, stop policies end the instance, provider errors are reported, human_action_required pauses. Later: replay recorded real model transcripts as scripts.",
+  "reflections": [],
+  "archived": false,
+  "color": "#662d4d",
+  "tags": [
+    "testing",
+    "loop-worker"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065829165
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

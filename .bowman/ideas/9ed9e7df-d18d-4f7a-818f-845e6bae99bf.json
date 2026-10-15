@@ -1,0 +1,29 @@
+{
+  "id": "9ed9e7df-d18d-4f7a-818f-845e6bae99bf",
+  "text": "Open a project from a Git URL: shallow clone into a local cache, open it read-only",
+  "description": "On the project selection screen, accept a Git URL (https or ssh, any host). The backend shallow-clones it (git clone --depth 1) into a per-user cache directory keyed by host/owner/repo, refreshes with a fetch on reopen, and opens the contained .bowman read-only. No API tokens, no GitHub-specific API. Handle: repo without .bowman (clear message), large repos (depth 1, no checkout of unrelated files if feasible), private repos (fails gracefully unless the user's own git credentials allow it).",
+  "reflections": [],
+  "archived": false,
+  "color": "#6b5836",
+  "tags": [
+    "read-only",
+    "backend",
+    "project-selection"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "250fb1aa-f0a7-4ef8-870c-0abad9b98892"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792065864467
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
