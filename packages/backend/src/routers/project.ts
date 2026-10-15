@@ -7,7 +7,7 @@ import { packageRoot } from 'shared/node-entry';
 import { observable } from '@trpc/server/observable';
 import type { Idea, ProjectMeta } from 'shared';
 import { CURRENT_DATA_MODEL_VERSION } from 'shared';
-import { assertWritableBowman } from 'shared/bowman-migration';
+import { assertWritableBowman, bowmanWriteBlocker } from 'shared/bowman-migration';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { currentOrigin } from '../change-origin.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
@@ -108,6 +108,16 @@ export const projectRouter = t.router({
       void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
         .catch(error => console.warn('[Search] Warm-up failed:', error));
       return await readProjectMeta(input.projectPath);
+    }),
+
+  // Whether the graph may be changed here; the UI disables editing otherwise.
+  getAccess: delayedProcedure
+    .input(z.object({
+      projectPath: z.string()
+    }))
+    .query(async ({ input }) => {
+      const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
+      return { writable: blocker === null, reason: blocker?.message ?? null };
     }),
 
   discoverLocalProjects: delayedProcedure

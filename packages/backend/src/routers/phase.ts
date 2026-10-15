@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
 import { currentPhaseCursors, type Phase } from 'shared';
-import { assertWritableBowman } from 'shared/bowman-migration';
+import { assertWritableBowman, bowmanWriteBlocker } from 'shared/bowman-migration';
 import { t, delayedProcedure } from '../trpc.js';
 import { emitChange } from '../change-events.js';
 import { readPhase, listPhases, writePhase, updatePhase } from '../storage/phases.js';
@@ -211,6 +211,9 @@ export const phaseRouter = t.router({
       activeLevel: z.number().int().min(0)
     }))
     .mutation(async ({ input }) => {
+      // Cursors are where the viewer is, not graph content: a read-only project
+      // stays navigable, it just does not remember the position.
+      if (await bowmanWriteBlocker(normalizeProjectPath(input.projectPath))) return { success: false };
       await updateProjectMeta(input.projectPath, (meta) => ({ ...meta, phaseCursors: input.cursors, phaseActiveLevel: input.activeLevel }));
       return { success: true };
     }),

@@ -11,7 +11,8 @@
 //
 // Code that finds a version newer than it knows reads but never writes
 // (assertWritableBowman), so an outdated clone cannot write old-format files
-// into an upgraded project.
+// into an upgraded project. The same guard refuses writes to projects opened
+// read-only.
 
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
@@ -87,9 +88,29 @@ export async function readDataModelVersion(bowmanPath: string): Promise<number |
   return typeof meta.dataModelVersion === 'number' ? meta.dataModelVersion : 1;
 }
 
-export async function assertWritableBowman(bowmanPath: string, supported = CURRENT_DATA_MODEL_VERSION): Promise<void> {
+// A project opened read-only (e.g. a cloned Git repository someone shared)
+// carries this machine-local marker; runtime/ is gitignored.
+export const READ_ONLY_MARKER = path.join('runtime', 'read-only');
+
+export class ReadOnlyProjectError extends Error {
+  constructor() {
+    super('This project is open read-only. Its ideas, phases and settings cannot be changed here.');
+    this.name = 'ReadOnlyProjectError';
+  }
+}
+
+/** Why the graph of this project must not be changed, or null when it may. */
+export async function bowmanWriteBlocker(bowmanPath: string, supported = CURRENT_DATA_MODEL_VERSION): Promise<Error | null> {
+  if (await fs.access(path.join(bowmanPath, READ_ONLY_MARKER)).then(() => true, () => false)) return new ReadOnlyProjectError();
   const version = await readDataModelVersion(bowmanPath);
-  if (version !== null && version > supported) throw new NewerDataModelError(version, supported);
+  if (version !== null && version > supported) return new NewerDataModelError(version, supported);
+  return null;
+}
+
+/** The one guard every graph write passes. Aimparency's own caches and migrations are not graph writes. */
+export async function assertWritableBowman(bowmanPath: string, supported = CURRENT_DATA_MODEL_VERSION): Promise<void> {
+  const blocker = await bowmanWriteBlocker(bowmanPath, supported);
+  if (blocker) throw blocker;
 }
 
 async function pendingMigrations(bowmanPath: string, version: number | null, migrations: BowmanMigration[]) {
