@@ -96,6 +96,15 @@
       ],
       "weight": 1,
       "hypothesis": "Prevents a class of committedIn/commitments inconsistencies at the source instead of repairing them afterwards."
+    },
+    {
+      "ideaId": "7218baeb-5e64-4af3-82d9-3c77ed7d00c1",
+      "relativePosition": [
+        -0.7968509504056359,
+        -2.369605149141442
+      ],
+      "weight": 1,
+      "hypothesis": "Invalid states are invisible graph defects; refusing them at the API keeps every status-based rule trustworthy."
     }
   ],
   "supportedIdeas": [
