@@ -63,9 +63,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065828659
+    "state": "review",
+    "comment": "All sub-ideas in review: backend read-only mode, open from Git URL, read-only UI with toasts, ?repo= link. Try: http://localhost:4000/?repo=https://github.com/aimparency/v7.git",
+    "date": 1792073000785
   },
   "intrinsicValue": 0,
   "cost": 1,

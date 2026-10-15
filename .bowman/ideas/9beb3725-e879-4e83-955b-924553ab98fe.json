@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065864827
+    "state": "review",
+    "comment": "?repo=<git url> link works in the running app; awaiting acceptance (and a decision whether to put the link in this repo's README).",
+    "date": 1792072993768
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "project-store getRepoUrlParam/setRepoUrlParam; App onMounted: a ?repo= parameter wins over ?project= and runs the Git-URL open flow (clone or fetch, read-only); after opening, repo stays in the address next to project so the URL stays shareable and reloads refresh; opening a local path or closing deletes it. Evidence: navigated the running app to http://localhost:4000/?repo=https://github.com/aimparency/v7.git -> opened 790 ideas with the read-only badge, address kept repo=...; vue-tsc clean; pnpm check 25/25. Not done: a README link for this repo (Felix's call) and a hosted viewer (out of scope by design)."
 }
