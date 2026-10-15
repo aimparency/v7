@@ -2,8 +2,7 @@ import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import type { Idea } from 'shared';
-import { calculateIdeaValues } from 'shared';
+import { calculateIdeaValues, selectWorkCandidates } from 'shared';
 import { nodeEntryArgs, packageRoot } from 'shared/node-entry';
 import { spawn, type ChildProcess } from 'child_process';
 import { emitChange } from './change-events.js';
@@ -79,12 +78,12 @@ export const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPha
   const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
   if (!phase) return { targetPhaseId: null, targetIdeaId: null };
 
+  // Same actionable leaves the loop-worker and MCP rank; containers are no target.
+  const { scope, candidates } = selectWorkCandidates(ideas, phase);
   const { priorities } = calculateIdeaValues(ideas);
-  const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
-  const targetIdea = [...(phase.commitments ?? [])]
-    .map((ideaId) => ideaById.get(ideaId))
-    .filter((idea): idea is Idea => idea !== undefined && idea.status.state === 'open')
-    .sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
+  const targetIdea = scope === 'mission-containers-exploration'
+    ? null
+    : candidates.sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;
 
   return {
     targetPhaseId: phase.id,
