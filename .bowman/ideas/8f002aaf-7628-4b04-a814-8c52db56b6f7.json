@@ -19,6 +19,24 @@
       ],
       "weight": 1,
       "hypothesis": "Seeing a real graph from a URL in seconds is the cheapest first contact for a new user."
+    },
+    {
+      "ideaId": "917431ba-524b-407f-9889-253040aac7e9",
+      "relativePosition": [
+        2.47,
+        -0.4
+      ],
+      "weight": 1,
+      "hypothesis": "An existing project's issues as a ready graph removes the empty-start barrier for outside developers."
+    },
+    {
+      "ideaId": "826b4e21-7690-4a9c-b6d1-433b2acef4b7",
+      "relativePosition": [
+        -0.06,
+        2.5
+      ],
+      "weight": 1,
+      "hypothesis": "Personal conversations with about five maintainers are how the first outside users and their feedback arrive (Felix, per the relationship principle)."
     }
   ],
   "supportedIdeas": [

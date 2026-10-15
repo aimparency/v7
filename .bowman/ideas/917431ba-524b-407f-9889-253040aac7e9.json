@@ -1,0 +1,29 @@
+{
+  "id": "917431ba-524b-407f-9889-253040aac7e9",
+  "text": "Import a repository's open GitHub issues as ideas",
+  "description": "Lower the entry cost: a maintainer who opens Aimparency on an existing repo should see their open issues as ideas at once instead of an empty graph. Public GitHub REST API (no token for public repos; uses GITHUB_TOKEN if set), pull requests skipped, one parent idea 'Open GitHub issues of owner/repo' with each issue as a child; the issue URL is kept in the description so re-running only adds new issues. Exposed as a backend procedure and an MCP tool (so agents and the loop can do it); UI entry later.",
+  "reflections": [],
+  "archived": false,
+  "color": "#706633",
+  "tags": [
+    "onboarding",
+    "github"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8f002aaf-7628-4b04-a814-8c52db56b6f7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Backend procedure + MCP tool import_github_issues implemented and tried on a real repo; UI entry not yet built.",
+    "date": 1792073406241
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "reflection": "backend/src/github-issues.ts (parseGithubRepository: owner/repo or github.com URL via shared gitRepositoryLocation; fetchOpenGithubIssues: REST API, 100/page up to 10 pages, PRs skipped, GITHUB_TOKEN optional, 404 hint) + idea.importGithubIssues (parent 'Open GitHub issues of owner/repo', children via storeNewIdea + connectIdeasInternal so guards/colors/embeddings/events apply; idempotent by issue URL across ideas and archived ideas) + MCP tool import_github_issues (in the shared catalog, so loop workers could be given it too).\n\nEvidence: github-issues.test.ts 4/4 (import + PR skip + labels + idempotent top-up; 150 issues over 2 pages; 404 explanation; URL parsing); live through the running backend into a scratch project: sindresorhus/slugify -> 1 issue (#63, labels enhancement/help wanted), second run imported 0; MCP tests 46/46; pnpm check 25/25. Open: a UI entry (e.g. offered on a fresh project or in project settings); importing 1000 issues takes a while (~tens of seconds, per-idea writes + background embeddings)."
+}
