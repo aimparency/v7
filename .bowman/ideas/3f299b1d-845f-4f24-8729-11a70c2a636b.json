@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792068517168
+    "state": "review",
+    "comment": "Graph toolbar 'Layout' button implemented and dry-run on the real graph; NOT persisted. First run would rewrite ~603 of 889 connections in ~192 files: Felix decides whether to accept that one-time diff.",
+    "date": 1792069686061
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "utils/autolayout.ts solveDiffMinimalLayout: start from positions implied by STORED offsets (roots/fixed ideas stay, descendants follow first parent), then IRLS on per-connection L1 residuals + sweep-and-prune overlap projection (clearance 1.2 radius sums, smaller idea moves more), 50 final separation passes. Only connections with residual > 5% of radius sum are rewritten, rounded to 2 decimals; drag saves and Relax now also round (kills float-noise diffs). GraphView: 'Layout' button, confirm shows N of M connections in K files, persists one update per parent; shared persistConnectionOffsets with Relax.\n\nReal graph dry run (791 nodes, 889 links, ~220 ms): stored offsets alone place 363 ideas in hard overlap and 180 connections conflict (multi-parent/cycles); the rendered layout matches no stored offset within 5% (median residual 15 radius sums). Result: 0 hard overlaps, 603 changes / 192 files. Repeated runs: 603 -> 50 -> 16 (converging, not exactly idempotent: root positions are not stored, so components re-collide). Tighter keep-thresholds (0.02/0.01) were worse. Tests: autolayout.spec.ts (5: clean layout = 0 changes, overlapping subtree moves rigidly with only root connections rewritten, two-parent conflict = exactly 1 change, non-editable never rewritten, rounding). pnpm check 25/25."
 }
