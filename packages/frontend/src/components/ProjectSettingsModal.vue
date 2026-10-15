@@ -4,6 +4,7 @@ import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
+import { useToastStore } from '../stores/toast'
 import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost } from 'shared'
 import type { AgentType } from '../stores/watchdog'
 
@@ -21,6 +22,9 @@ const statuses = ref<Array<{ key: string, color: string, promptsEvaluation?: boo
 const loading = ref(false)
 const isUpdatingInstructions = ref(false)
 const updateResults = ref<string[]>([])
+const issueRepository = ref('')
+const isImportingIssues = ref(false)
+const issueImportResult = ref('')
 const autonomyMode = ref<'manual' | 'supervised' | 'autonomous'>('supervised')
 const preferredAgentType = ref<AgentType | ''>('')
 const sessionLeaseMinutes = ref(60)
@@ -241,6 +245,19 @@ const updateInstructions = async () => {
     }
 }
 
+const importIssues = async () => {
+    isImportingIssues.value = true
+    issueImportResult.value = ''
+    try {
+        const { imported, alreadyImported } = await trpc.idea.importGithubIssues.mutate({ projectPath: projectStore.projectPath, repository: issueRepository.value })
+        issueImportResult.value = `Imported ${imported} issue${imported === 1 ? '' : 's'}${alreadyImported ? `, ${alreadyImported} already there` : ''}.`
+    } catch (error) {
+        useToastStore().error('Issue import failed', error)
+    } finally {
+        isImportingIssues.value = false
+    }
+}
+
 const save = async () => {
     if (!Number.isFinite(defaultCost.value) || defaultCost.value <= 0) {
         costSettingsError.value = 'Default cost must be greater than 0: everything costs something.'
@@ -408,6 +425,18 @@ const save = async () => {
             </select>
             <button @click="addLinkedRepo" class="action-btn add-repo-btn" :disabled="!selectedTargetPath || repoBusy">Link</button>
           </div>
+        </div>
+
+        <div class="form-group">
+          <label>GitHub Issues</label>
+          <p class="hint-text">Imports the open issues of a repository as ideas under one parent idea; importing again only adds new ones.</p>
+          <div class="add-repo-row">
+            <input v-model="issueRepository" type="text" placeholder="owner/repo or github.com URL" @keydown.enter="importIssues" />
+            <button @click="importIssues" class="action-btn add-repo-btn" :disabled="!issueRepository.trim() || isImportingIssues">
+              {{ isImportingIssues ? 'Importing…' : 'Import' }}
+            </button>
+          </div>
+          <p v-if="issueImportResult" class="hint-text">{{ issueImportResult }}</p>
         </div>
 
         <div class="form-group">
@@ -746,7 +775,7 @@ const save = async () => {
       align-items: stretch;
       margin-top: 0.5rem;
 
-      select { flex: 1; }
+      select, input { flex: 1; }
 
       .add-repo-btn {
         width: auto;
