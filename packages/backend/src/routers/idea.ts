@@ -3,13 +3,14 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
-import { IdeaProposalSchema, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
+import { IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
 import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition } from '../storage/ideas.js';
 import { readPhase } from '../storage/phases.js';
+import { readProjectMeta } from '../storage/project.js';
 import { deleteIdeas, detachIdea, disconnectIdeas } from '../storage/idea-removal.js';
 import { commitIdeaToPhase, removeIdeaFromPhase } from '../storage/commitments.js';
 import { moveIdea } from '../storage/idea-move.js';
@@ -58,6 +59,15 @@ const refreshEmbeddingInBackground = (projectPath: string, idea: Idea) => {
     .catch(error => console.warn(`Embedding refresh failed for idea ${idea.id}:`, error));
 };
 
+// A state outside the project's statuses (e.g. a typo like 'human-dependency')
+// would silently fall out of every status-based view and rule. 'archived' is
+// the archive mechanism, not a configurable status.
+async function assertKnownState(projectPath: string, state: string) {
+  const statuses = (await readProjectMeta(projectPath)).statuses ?? INITIAL_STATES;
+  if (state === 'archived' || statuses.some(status => status.key === state)) return;
+  throw new Error(`Unknown status '${state}'. Known: ${[...statuses.map(status => status.key), 'archived'].join(', ')}`);
+}
+
 // Stores a new idea without connections; the caller links it into the graph.
 // colorParentId is the parent whose branch color the idea inherits.
 async function storeNewIdea(
@@ -65,6 +75,7 @@ async function storeNewIdea(
   input: NewIdeaInput,
   options: { colorParentId?: string; committedIn?: string[]; defaultIntrinsicValue?: number }
 ): Promise<Idea> {
+  if (input.status?.state) await assertKnownState(projectPath, input.status.state);
   const idea: Idea = {
     id: uuidv4(),
     text: input.text,
@@ -542,6 +553,10 @@ export const ideaRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const existingIdea = await readIdea(input.projectPath, input.ideaId);
+      const newState = input.idea.status?.state;
+      if (newState !== undefined && newState !== existingIdea.status.state) {
+        await assertKnownState(input.projectPath, newState);
+      }
 
       // Handle consistency for supportedIdeas (Parents)
       if (input.idea.supportedIdeas) {

@@ -985,6 +985,23 @@ test('idea.update - persists hypothesis and evaluation on supportingConnections'
   assert.strictEqual(after.supportingConnections[0]!.evaluation, 'it did');
 });
 
+test('idea status must be one of the project statuses (or archived)', async () => {
+  await assert.rejects(
+    caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Typo', status: { state: 'human-dependency' } } }),
+    /Unknown status 'human-dependency'/
+  );
+  const idea = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Valid' } });
+  await assert.rejects(
+    caller.idea.update({ projectPath: testProjectPath, ideaId: idea.id, idea: { status: { state: 'human-dependency' } } }),
+    /Unknown status/
+  );
+  const blocked = await caller.idea.update({ projectPath: testProjectPath, ideaId: idea.id, idea: { status: { state: 'human-dependent' } } });
+  assert.strictEqual(blocked.status.state, 'human-dependent');
+  // Re-sending an unchanged state is never rejected, so ideas holding a legacy state stay editable.
+  const edited = await caller.idea.update({ projectPath: testProjectPath, ideaId: idea.id, idea: { text: 'Edited', status: { state: 'human-dependent' } } });
+  assert.strictEqual(edited.text, 'Edited');
+});
+
 test('idea.update - persists custom color', async () => {
   const ideaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
