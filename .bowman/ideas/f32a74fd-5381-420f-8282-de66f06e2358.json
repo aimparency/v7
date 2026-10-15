@@ -25,14 +25,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065864693
+    "state": "review",
+    "comment": "Read-only badge + central mutation guard with warning toasts, verified in the running app on a read-only scratch copy; awaiting acceptance.",
+    "date": 1792072573442
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "utils/read-only.ts: readOnlyGuardLink (first tRPC link) refuses every mutation of a project the backend reported not writable (project.getAccess, loaded with getMeta in loadProject), except viewer state (phase.setCursor, project.buildSearchIndex); nothing is sent. Toast store converts read-only refusals (guard or backend guard) into one warning with the plain reason; ReviewInboxModal routes them there. Header badge 'read-only' with the reason as tooltip. Backend: injectAgentInstructions now guarded too (writes CLAUDE.md etc. into the repo).\n\nEvidence: read-only.test.ts (3: refused before sending / queries+setCursor+other projects pass / warning toast instead of error); live app on a copy of this graph with runtime/read-only: badge visible, inbox accept answered by the warning toast, copied ideas/phases/meta byte-identical afterwards; pnpm check 25/25 (a first commit 4ef1c33 slipped past a failing MultiClient mock because the gate's exit status was piped away; fixed in the next commit)."
 }

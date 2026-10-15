@@ -15,14 +15,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065864129
+    "state": "review",
+    "comment": "Backend read-only mode via runtime/read-only marker + project.getAccess; awaiting acceptance.",
+    "date": 1792072048364
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "shared/bowman-migration: READ_ONLY_MARKER (.bowman/runtime/read-only, gitignored, machine-local), ReadOnlyProjectError, bowmanWriteBlocker(path) -> Error|null; assertWritableBowman (already on every idea/phase/meta write, delete, history restore) now refuses both read-only and newer-data-model projects. project.getAccess -> { writable, reason } for the UI (f32a74fd). phase.setCursor skips persistence when not writable (navigation keeps working). Aimparency-owned upkeep (caches, embeddings, loops runtime, migrations of the clone) is intentionally still allowed.\n\nEvidence: read-only-project.test.ts: 10 mutation kinds (create floating/sub, update, delete, disconnect, removeFromPhase, addReflection, phase create/update, updateMeta) all reject with the read-only message; ideas/phases/meta.json byte-identical afterwards; list queries work; setCursor returns success:false; getAccess flips from writable to the reason. pnpm check 25/25. MCP and loop-worker writes go through the backend, so they are covered by the same guard."
 }
