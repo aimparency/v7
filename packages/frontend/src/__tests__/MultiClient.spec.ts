@@ -12,6 +12,7 @@ const { mockTrpc } = vi.hoisted(() => {
       },
       project: {
         getMeta: { query: vi.fn().mockResolvedValue({}) },
+        getAccess: { query: vi.fn().mockResolvedValue({ writable: true, reason: null }) },
         loadIdeas: { query: vi.fn().mockResolvedValue({ ideas: [], unreadable: [] }) },
         onUpdate: {
           subscribe: vi.fn((input, opts) => {
