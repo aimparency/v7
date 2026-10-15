@@ -1,0 +1,28 @@
+{
+  "id": "3f299b1d-845f-4f24-8729-11a70c2a636b",
+  "text": "Diff-minimal autolayout: fix overlaps and tension by rewriting as few connection offsets as possible",
+  "description": "Layout state is the per-connection relativePosition (child offset from parent in units of radius sum); rendered positions emerge from springs + collisions. Multi-parent ideas and overlaps leave the stored offsets inconsistent.\n\nApproach: solve node positions minimizing sum over connections of |realized offset - stored offset| (L1 / IRLS, robust) plus a non-overlap penalty. L1 makes residuals sparse: most connections stay exactly satisfied and keep their stored value; only connections with residual above a threshold are rewritten to their realized offset. Persist rounded offsets (2 decimals) so unchanged layouts produce no float-noise diffs. Show count of changed connections/files before persisting (toast/confirm, not window.confirm). Optional later: group penalty per parent file to minimize changed files.\n\nSupersedes the angle-only Relax action (22851f87) as the main layout tool; Relax stays as an explicit \"even spacing\" mode.",
+  "reflections": [],
+  "archived": false,
+  "color": "#66402d",
+  "tags": [
+    "graph",
+    "layout"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792068517168
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

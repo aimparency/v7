@@ -17,14 +17,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065828865
+    "state": "review",
+    "comment": "Toast store + ToastStack implemented and verified in the running app; awaiting Felix's acceptance.",
+    "date": 1792069022298
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "stores/toast.ts (info 4s / warning 8s auto-dismiss, errors sticky, repeats counted ×N, max 5) + components/ToastStack.vue (aria-live, never takes focus) mounted in App.vue. main.ts routes Vue errorHandler and unhandledrejection to toasts. Replaced alert() in GraphView (relax), ConsistencyModal, PhaseCreationModal; swallowed errors now toast: move/paste actions, position flush ('Failed to save positions'), graph connect, live-update subscription drop. Destructive confirm() prompts kept on purpose. Verified: toast.spec.ts (2 tests), vue-tsc clean, pnpm check 25/25, live app screenshot shows error ×2 + info toast. Note: puppeteer MCP re-wraps console.error per call, which recursed during smoke testing; harness artifact, not app code."
 }

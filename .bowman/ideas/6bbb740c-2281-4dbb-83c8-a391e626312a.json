@@ -299,6 +299,15 @@
       ],
       "weight": 1,
       "hypothesis": "Keeps value-proportional sizes while small ideas stay easy to hit."
+    },
+    {
+      "ideaId": "3f299b1d-845f-4f24-8729-11a70c2a636b",
+      "relativePosition": [
+        0.10021232354067001,
+        2.497990690577245
+      ],
+      "weight": 1,
+      "hypothesis": "A readable graph without overlaps, achieved with small reviewable git diffs, keeps the graph usable as it grows."
     }
   ],
   "supportedIdeas": [
