@@ -1,7 +1,7 @@
 {
   "id": "0e5cce7e-7090-444f-92a6-706f02340b46",
   "text": "Make clean-clone local startup reliable",
-  "description": "A new user should be able to clone the repo, run npm install, run npm run dev or npm run start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.\n\n**Current state:** Port fallback/reporting is validated and documented. Implementation appears complete but requires end-to-end human verification on a real machine (cannot be tested in sandbox).",
+  "description": "A new user should be able to clone the repo, run pnpm install, run pnpm dev or pnpm start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -68,14 +68,15 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Blocked by need for real-machine clean-clone testing - see supporting idea ee7781d4",
-    "date": 1774590174173
+    "state": "review",
+    "comment": "Clean clone install/build/validate/check verified; first-run test failure found and fixed (0ee4507). Remaining for Felix: run pnpm start in a fresh clone once and open the UI.",
+    "date": 1792059350625
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Clean-clone verification on this machine, 2026-10-15, at 43bc4ea (post npm→pnpm): git clone → pnpm install (3m, node-pty and onnxruntime native builds OK) → pnpm build green → pnpm build:optional green → pnpm validate:local-runtime PASS (default, occupied-port fallback, voice scenarios). The first pnpm check FAILED 24/25: 5 backend search/embedding tests timed out at 5s while the bge-small model downloaded into a cold cache (concurrent downloads also left partial model.onnx.tmp files). Fixed in 0ee4507 with a backend vitest globalSetup that warms the model once outside any timeout; cold-cache rerun in the clone: 105/105, one clean model.onnx. Main repo pnpm check 25/25. Not done by the agent: actually running pnpm start / pnpm dev from the clone and opening the UI (AGENTS.md forbids the agent starting servers)."
 }
