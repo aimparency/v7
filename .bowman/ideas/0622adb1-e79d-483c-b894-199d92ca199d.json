@@ -149,6 +149,15 @@
         2.4518839031372717
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "dc35aef6-bcf1-4f56-9350-2f349b16aa6c",
+      "relativePosition": [
+        -1.4793445045154079,
+        2.015326235863579
+      ],
+      "weight": 1,
+      "hypothesis": "One graph API for every agent removes write races and drift between how the loop-worker and MCP agents see and change the graph."
     }
   ],
   "supportedIdeas": [

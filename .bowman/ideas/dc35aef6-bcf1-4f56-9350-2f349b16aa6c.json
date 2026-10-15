@@ -1,0 +1,29 @@
+{
+  "id": "dc35aef6-bcf1-4f56-9350-2f349b16aa6c",
+  "text": "Route loop-worker graph reads and writes through the backend instead of raw .bowman file access",
+  "description": "agent-tools/idea-file-tools.ts is a second, file-based implementation of the agent graph API used only by the loop-worker (prioritize, idea context, hygiene, create/update/commit idea). The backend always runs when a worker runs (it spawns it), yet worker writes bypass it: no per-file locks (races with backend writes to the same idea), no change events (UI does not update, no undo history), no search/embedding index update, no parent-color inheritance, and a much simpler graph hygiene. Selection, ranking and mission paths are already shared (96f73a7, 6b26d9c); the write path and hygiene are not. Proposal: the backend passes its WS port to the spawned worker, and the worker calls the backend tRPC procedures (same client as MCP) instead of writing files; then delete the duplicated file tools. Risk: the worker then needs a reachable backend; today it can run against a project with no backend.",
+  "reflections": [],
+  "archived": false,
+  "color": "#662d43",
+  "tags": [
+    "refactor",
+    "loop-worker",
+    "architecture"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792061195992
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
