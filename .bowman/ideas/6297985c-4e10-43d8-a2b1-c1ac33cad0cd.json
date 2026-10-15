@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065829318
+    "state": "review",
+    "comment": "Workflow committed (not pushed, so not yet run on GitHub). Needs a push and a first green run to be confirmed.",
+    "date": 1792074159764
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": ".github/workflows/check.yml: checkout, pnpm/action-setup (packageManager pnpm 11.3.0), Node 22 with pnpm store cache, install --frozen-lockfile, embedding model cache (actions/cache on the transformers .cache glob), pnpm check, pnpm validate:bowman ., pnpm build, bundled loop-worker load smoke test; 30 min limit, no secrets.\n\nSimulated in a fresh clone of HEAD: install ok, validate ok (791 ideas valid), build ok, bundle smoke ok; pnpm check FAILED on the cold model cache: backend globalSetup and agent-tools code-intelligence downloaded the model concurrently into one cache -> aborted fetch after 132 s, backend search/loop tests timed out. Fixes: pnpm check runs backend warm:model once before the model-using suites (1e886ac) and stops a stalled download after 10 min with a clear message (this commit). Cold verification of the fix could not complete today: huggingface.co stalled the 130 MB model at 20 MB (curl confirmed small files fine, large stalled). Warm path verified locally (pnpm check 25/25). Note: actions/cache only saves after a successful job, so the first CI run must download the model."
 }
