@@ -37,6 +37,14 @@
       ],
       "weight": 1,
       "hypothesis": "Personal conversations with about five maintainers are how the first outside users and their feedback arrive (Felix, per the relationship principle)."
+    },
+    {
+      "ideaId": "ddc44bbc-2ede-4501-a90a-5a0fa6e9c6fe",
+      "relativePosition": [
+        1.62,
+        1.9
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [

@@ -1,4 +1,3 @@
-import fs from 'node:fs/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
@@ -7,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
-const runtimeConfigPath = path.join(repoRoot, 'packages', 'frontend', 'public', 'runtime-config.json');
+// The launcher's dry run prints the runtime config it would write, so this never touches the live one.
+const dryRunConfigPrefix = '[local-runtime] runtime config (dry run): ';
 
 const testPorts = {
   frontendPort: 4400,
@@ -49,9 +49,10 @@ function runNodeScript(args, env = process.env) {
   });
 }
 
-async function readRuntimeConfig() {
-  const raw = await fs.readFile(runtimeConfigPath, 'utf8');
-  return JSON.parse(raw);
+function dryRunConfig(stdout) {
+  const line = stdout.split('\n').find((entry) => entry.startsWith(dryRunConfigPrefix));
+  assert(line, 'launcher dry-run printed no runtime config');
+  return JSON.parse(line.slice(dryRunConfigPrefix.length));
 }
 
 function formatPorts(config) {
@@ -101,10 +102,6 @@ function reservePort(port) {
   });
 }
 
-async function removeRuntimeConfigIfPresent() {
-  await fs.rm(runtimeConfigPath, { force: true });
-}
-
 function createScenarioEnv(overrides = {}) {
   return {
     ...process.env,
@@ -120,8 +117,6 @@ function createScenarioEnv(overrides = {}) {
 }
 
 async function runScenario(name, setupEnv, expectedPredicate) {
-  await removeRuntimeConfigIfPresent();
-
   const result = await runNodeScript(['scripts/run-local-stack.mjs', 'start', '--no-build', '--dry-run'], setupEnv);
 
   console.log(`\n[scenario:${name}] exit=${result.code}${result.signal ? ` signal=${result.signal}` : ''}`);
@@ -134,7 +129,7 @@ async function runScenario(name, setupEnv, expectedPredicate) {
 
   assert(result.code === 0, `launcher dry-run failed in scenario "${name}"`);
 
-  const config = await readRuntimeConfig();
+  const config = dryRunConfig(result.stdout);
   validateShape(config);
   console.log(`[scenario:${name}] runtime-config: ${formatPorts(config)}`);
 
@@ -143,7 +138,6 @@ async function runScenario(name, setupEnv, expectedPredicate) {
 
 async function main() {
   console.log('[validate-local-runtime] repo:', repoRoot);
-  console.log('[validate-local-runtime] runtime-config path:', runtimeConfigPath);
 
   await runScenario('defaults-free', createScenarioEnv(), (config) => {
     for (const [key, expected] of Object.entries(testPorts)) {

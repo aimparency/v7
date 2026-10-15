@@ -75,6 +75,10 @@ explore its own graph. The graph is not sample data: it contains the goals,
 dependencies, implementation ideas, reflections, and Build Week submission path
 that shaped the repository itself.
 
+To work on your own repository, pass its path: `pnpm dev ~/code/my-repo`
+prints a link that opens it directly (a `.bowman` directory is created there on
+first open). A Git URL instead of a path opens that repository read-only.
+
 `4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
 
 `pnpm dev` starts the core local stack from source (no build step): frontend, backend, and broker. The broker spawns wrapped-agent sessions on demand. `pnpm start` builds bundles and runs those instead.

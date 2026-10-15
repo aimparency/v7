@@ -9,8 +9,9 @@ import concurrently from 'concurrently';
 // One launcher for the local stack. Dev runs every server from TypeScript source
 // through tsx (no watchers, no build step); start builds bundles and runs those.
 //
-//   node scripts/run-local-stack.mjs dev|start [--full] [--host] [--delay] [--no-build] [--dry-run]
+//   node scripts/run-local-stack.mjs dev|start [<repo path or git url>] [--full] [--host] [--delay] [--no-build] [--dry-run]
 //
+//   <repo ...>  print a link that opens that project (a git URL opens read-only)
 //   --full      also the broker client, MCP over SSE and the voice bridge
 //   --host      bind to LAN_BIND_HOST (or the tailscale IP) and serve MCP over SSE
 //   --delay     DEV_DELAY=true: the backend slows responses (frontend e2e tests)
@@ -105,13 +106,17 @@ async function resolvePorts() {
   };
 }
 
-async function writeRuntimeConfig(resolvedPorts) {
-  await fs.mkdir(frontendPublicDir, { recursive: true });
-  await fs.writeFile(runtimeConfigPath, JSON.stringify({
+function runtimeConfig(resolvedPorts) {
+  return {
     ...resolvedPorts,
     voiceEnabled: parseBoolean(process.env.AIMPARENCY_ENABLE_VOICE, false),
     generatedAt: new Date().toISOString(),
-  }, null, 2) + '\n');
+  };
+}
+
+async function writeRuntimeConfig(resolvedPorts) {
+  await fs.mkdir(frontendPublicDir, { recursive: true });
+  await fs.writeFile(runtimeConfigPath, JSON.stringify(runtimeConfig(resolvedPorts), null, 2) + '\n');
 }
 
 function logPortSummary(resolvedPorts) {
@@ -217,16 +222,40 @@ function preflight(mode) {
   return [[pnpmCommand, ['run', flags.has('--full') ? 'build:optional' : 'build:core']]];
 }
 
+// `pnpm dev ../my-repo` runs from the repo root; pnpm keeps the caller's directory in INIT_CWD.
+function projectLink(target, frontendPort) {
+  const url = new URL(`http://localhost:${frontendPort}/`);
+  if (/^(https?:\/\/|ssh:\/\/|[\w.-]+@[\w.-]+:)/.test(target)) {
+    url.searchParams.set('repo', target);
+    return url.href;
+  }
+  const projectPath = path.resolve(process.env.INIT_CWD ?? process.cwd(), target);
+  if (!existsSync(projectPath)) {
+    console.error(`[local-runtime] No such directory: ${projectPath}`);
+    process.exit(1);
+  }
+  url.searchParams.set('project', projectPath);
+  return url.href;
+}
+
 async function main() {
-  const mode = args.find((arg) => !arg.startsWith('--')) ?? 'start';
+  const [mode = 'start', target] = args.filter((arg) => !arg.startsWith('--'));
   if (mode !== 'dev' && mode !== 'start') {
     console.error(`Unknown mode "${mode}". Expected dev or start.`);
     process.exit(1);
   }
 
   const resolvedPorts = await resolvePorts();
-  await writeRuntimeConfig(resolvedPorts);
+  // A dry run prints the config instead: writing it would repoint a running stack's frontend.
+  if (flags.has('--dry-run')) {
+    console.log(`[local-runtime] runtime config (dry run): ${JSON.stringify(runtimeConfig(resolvedPorts))}`);
+  } else {
+    await writeRuntimeConfig(resolvedPorts);
+  }
   logPortSummary(resolvedPorts);
+  if (target) {
+    console.log(`[local-runtime] open: ${projectLink(target, resolvedPorts.frontendPort)}`);
+  }
 
   const env = createEnv(resolvedPorts);
   // Root binaries (tsx for the preflight); stack commands add their package's own.
