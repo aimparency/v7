@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792065864467
+    "state": "review",
+    "comment": "Open from Git URL implemented and verified live with github.com/aimparency/v7; awaiting acceptance.",
+    "date": 1792072853064
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "backend/src/git-repository-cache.ts openGitRepository(url): git clone --depth 1 --no-tags --filter=blob:none --sparse -- <url>, sparse-checkout set .bowman, into $AIMPARENCY_GIT_CACHE or $XDG_CACHE_HOME/aimparency/repos/<host>/<owner>/<repo>; reopen = fetch --depth 1 + reset --hard FETCH_HEAD (re-clone if origin differs); no .bowman -> clear error, clone removed; writes runtime/read-only. Safety: shared gitRepositoryLocation accepts only https/http/ssh/scp-style (file: test-only), rejects option-like segments; GIT_ALLOW_PROTOCOL, GIT_TERMINAL_PROMPT=0, 120 s timeout. project.openGitUrl mutation; picker shows 'Open read-only' / 'Cloning…', skips folder inspection for URLs, errors as toast.\n\nEvidence: git-repository-cache.test.ts (4: sparse read-only clone without src/, refresh picks up an upstream commit, no-.bowman reported + not kept, unreachable repo fails with git's reason, URL acceptance/refusal incl. ext::, file, -oProxyCommand); ProjectSelectionView spec; live: typed https://github.com/aimparency/v7.git in the running app -> Cloning… -> opened 790 ideas / 34 phases with read-only badge, .git 1.4 MB; pnpm check 25/25."
 }
