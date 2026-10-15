@@ -28,14 +28,22 @@ test("dream is advertised as an MCP prompt", async () => {
   ]);
 });
 
-test("dream defaults to a non-mutating, epistemically labelled simulation", async () => {
+test("dream defaults to an epistemically labelled dream that keeps only its memory", async () => {
   const result = await setup(7).getPrompt("dream", { projectPath: "/project/.bowman" });
   const text = result.messages[0].content.text;
   assert.match(result.description, /7 ideas/);
   assert.match(text, /Wildness: strange/);
   assert.match(text, /Write back accepted artifacts: false/);
   assert.match(text, /OBSERVED.*RESEARCHED.*INFERRED.*IMAGINED/);
-  assert.match(text, /Do not mutate the graph/);
+  assert.match(text, /Apart from the memory reflection, do not mutate the graph/);
+});
+
+test("dream remembers since the last dream and wakes with what it remembers", async () => {
+  const text = (await setup().getPrompt("dream", { projectPath: "/project/.bowman" })).messages[0].content.text;
+  assert.match(text, /newest reflection, on any idea, whose context starts with "Dream:"/);
+  assert.match(text, /Always record the memory: addReflection .* context "Dream: the whole project"/);
+  assert.match(text, /love is intrinsic value/);
+  assert.match(text, /opening with exactly: "I just woke up from dreaming, here is what I remember:"/);
 });
 
 test("dream can explicitly write back selected residues", async () => {
@@ -51,8 +59,10 @@ test("dream can explicitly write back selected residues", async () => {
   assert.match(text, /Write only the 1-3 selected residues/);
 });
 
-test("dream rejects missing projectPath", async () => {
-  await assert.rejects(() => setup().getPrompt("dream", {}), /projectPath argument is required/);
+test("dream works without a path, defaulting to the current repository", async () => {
+  const result = await setup().getPrompt("dream", {});
+  assert.equal(result.description, "Dream about the whole project");
+  assert.match(result.messages[0].content.text, /Project: the current repository's \.bowman directory/);
 });
 
 test("disable-hook works without a path and instructs a single explicit tool call", async () => {

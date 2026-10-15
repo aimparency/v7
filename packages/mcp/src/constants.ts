@@ -9,10 +9,11 @@ export const PROJECT_PATH_TOOL_PROPERTY = {
   description: PROJECT_PATH_DESCRIPTION
 };
 
+// Optional so prompts like `/mcp__aimparency__dream` work without typing a path.
 export const PROJECT_PATH_PROMPT_ARGUMENT = {
   name: "projectPath",
-  description: PROJECT_PATH_DESCRIPTION,
-  required: true
+  description: "Absolute path to the .bowman dir; defaults to the current repository",
+  required: false
 };
 
 export const PROJECT_PATH_PARAMETER = `projectPath=/abs/path/${AIMPARENCY_DIR_NAME}`;
