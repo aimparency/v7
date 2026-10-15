@@ -172,6 +172,22 @@ What each part is for:
 - `.gitignore`: generated `.bowman` artifacts that should not be committed
 - `vectors.json`, `cache.db`, `semantic-graph.json`: generated search/cache data
 
+The format is specified in [`protocol/`](protocol/README.md) with JSON Schemas, so other tools can read and write it. Check a project with `pnpm validate:bowman <path>`.
+
+## Starting From Existing Issues
+
+To begin with what a project already tracks, import its open GitHub issues: they become ideas under one parent idea, and re-running only adds new ones. Agents can do this with the MCP tool `import_github_issues` (`owner/repo` or a github.com URL; set `GITHUB_TOKEN` for private repositories).
+
+## Viewing Someone Else's Graph
+
+Paste a Git URL into the project picker, or open a link like
+
+```text
+http://localhost:4000/?repo=https://github.com/aimparency/v7.git
+```
+
+Aimparency clones only that repository's `.bowman` into `~/.cache/aimparency/repos/` and opens it read-only: you can browse everything, edits are refused, and reopening fetches the latest commit. Maintainers can put such a link in their README; viewers still run Aimparency locally.
+
 ## Git Workflow
 
 Aimparency is designed so the important project state can live next to the code it describes.
