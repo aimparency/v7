@@ -14,11 +14,11 @@
 |----------|---------|-------------|----------|--------|
 | **1** | ZIM Einzelprojekt | ~€50k (60% of ~€83k project) | Rolling | Draft ready → blocked on GmbH/UG |
 | **2** | Bayern Digitalbonus Plus | up to €30k | Rolling | Direct fit — Hohenwart seat |
-| **3** | KI4KMU (BMBF) | ~€50k (75% startup rate) | **15 Oct 2026** | Projektskizze draft ready |
+| **3** | ~~KI4KMU (BMBF)~~ → KMU-innovativ: IKT | — | KI4KMU closed (last cut-off Oct 2023); KMU-innovativ: IKT next 15 Apr 2027 | Needs an existing KMU |
 | **4** | LfA / BayTP+ (Bayern) | loan / grant mix | Rolling | Via KUS Pfaffenhofen |
 | **5** | EIC Accelerator Step 1 (EU) | up to €2.5M later | 1st Tue/month | Low-cost parallel track |
 
-**Recommended path to €50k:** Incorporate in **Hohenwart** → submit **ZIM** immediately (rolling). Run **Digitalbonus Plus** in parallel (€30k). File **KI4KMU** Projektskizze by 15 Oct 2026 as backup. Use **KUS Pfaffenhofen** for Bavaria program navigation.
+**Recommended path to €50k:** Incorporate in **Hohenwart** → submit **ZIM** immediately (rolling). Run **Digitalbonus Plus** in parallel (€30k). (KI4KMU is closed; see section 3.) Use **KUS Pfaffenhofen** for Bavaria program navigation.
 
 **Critical blocker:** Almost all programs require a German **GmbH/UG** (or equivalent KMU) *before* project start. Antrag **vor** Ausgaben.
 
@@ -87,8 +87,13 @@
 
 **Excluded topics:** HR, marketing-only AI, IT security-only, predictive maintenance, care robotics.
 
-**Deadlines:** Projektskizzen due **15 April** and **15 October** each year.  
-→ Next window: **15 October 2026**.
+**Status (checked 2026-10-15): CLOSED.** BMFTR lists KI4KMU under closed calls; its
+eight cut-offs ran May 2020 – October 2023
+(https://ki-und-softwaresysteme.de/bekanntmachungen/). The figures above are
+historical. The open successor for SME AI R&D is **KMU-innovativ: IKT**
+(rolling, cut-offs 15 April / 15 October, next 15.04.2027), which requires an
+existing KMU with a German site
+(https://ki-und-softwaresysteme.de/foerderschwerpunkte/kmu-foerderung/kmu-innovativ-ikt/).
 
 **Process:** Two-stage (Projektskizze → full Antrag).
 
@@ -179,11 +184,11 @@ Most grants need a **GmbH or UG (haftungsbeschränkt)** before applying.
 - [ ] Inquiry Bayern Digitalbonus Plus (Bezirksregierung Oberbayern)
 
 ### By 15 September 2026
-- [ ] Finalize KI4KMU Projektskizze
+- [x] ~~Finalize KI4KMU Projektskizze~~ (programme closed)
 - [ ] Internal review with Förderberater (optional; BAFA can subsidize)
 
 ### By 15 October 2026
-- [ ] Submit KI4KMU Projektskizze (backup track)
+- [x] ~~Submit KI4KMU Projektskizze~~ (programme closed since 2023)
 
 ### Ongoing
 - [ ] Track ZIM / IBB responses (3–6 month cycles)

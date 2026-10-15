@@ -6,7 +6,7 @@
 |---------|--------------|-----------|---------|
 | **ZIM Einzelprojekt** | ✅ `../zim-projektskizze-draft.md` | ❌ | GmbH/UG + PTJ portal |
 | **IBB Pro FIT Innovation** | ✅ `inquiry-ibb-pro-fit.md` + ZIM draft | ❌ | GmbH/UG + email send |
-| **KI4KMU (BMBF)** | ✅ `../ki4kmu-projektskizze-draft.md` | ❌ | GmbH/UG; deadline 15 Oct 2026 |
+| **KI4KMU (BMBF)** | ✅ `../ki4kmu-projektskizze-draft.md` | — | Closed since Oct 2023 (checked 2026-10-15); successor KMU-innovativ: IKT needs a KMU, next cut-off 15 Apr 2027 |
 | **Bayern Digitalbonus Plus** | ✅ `inquiry-digitalbonus-bayern.md` | ❌ | GmbH/UG + ELSTER + Bavaria seat? |
 | **EIC Accelerator Step 1** | ✅ `eic-step1-short-proposal.md` + deck + video script | ❌ | EU PIC + pitch PDF + 3min video |
 
@@ -32,4 +32,4 @@
 2. Felix creates EU PIC → EIC Step 1 submit (or records video + exports deck PDF)
 3. Send inquiry emails (IBB, PTJ, Bayern) — same day as incorporation
 4. Submit ZIM via easy-Online within 48h of HR entry
-5. Calendar: finalize KI4KMU by 2026-09-15, submit by 2026-10-15
+5. ~~KI4KMU~~ closed; consider KMU-innovativ: IKT (15 Apr 2027) once a company exists

@@ -1,6 +1,6 @@
 # KI4KMU — Projektskizze (Draft)
 
-**Status:** Draft for 15 October 2026 submission window.  
+**Status:** KI4KMU is closed (last cut-off Oct 2023; checked 2026-10-15). Reusable as a starting point for KMU-innovativ: IKT, which needs an existing KMU.  
 **Target grant:** ~€50,000 (75% startup rate on ~€67k project)  
 **Duration:** 24 months (max per BMBF program)
 

@@ -1,7 +1,8 @@
 {
   "id": "21202fb8-b4c3-4636-9de3-5084bb2ad6ab",
   "text": "Submit KI4KMU Projektskizze by 15 Oct 2026",
-  "description": "EU parallel track. Submission package complete.\n\n**Ready:**\n- meta/applications/eic-step1-short-proposal.md\n- meta/applications/eic-pitch-deck.md (export to PDF)\n- meta/applications/eic-video-script.md (record 3 min)\n\n**Blocked on:**\n1. EU Funding Portal account + PIC (natural person OK at Step 1)\n2. 10-slide PDF pitch deck\n3. 3-minute video\n\n**Submit:** Rolling, batched 1st Tuesday/month 17:00 Brussels\n**Portal:** https://ec.europa.eu/info/funding-tenders/opportunities/portal",
+  "description": "Submit a KI4KMU (BMBF/BMFTR) Projektskizze. Draft: meta/ki4kmu-projektskizze-draft.md. (The previous description here was a copy of the EIC Accelerator Step 1 checklist, which belongs to 26b7516b.)",
+  "reflection": "Research 2026-10-15: KI4KMU is closed. The BMFTR programme site lists it under 'Geschlossene Förderaufrufe' (entry dated 15.12.2025) and describes it in the past tense: eight cut-offs between May 2020 and October 2023, 100 projects selected (https://ki-und-softwaresysteme.de/foerderschwerpunkte/kmu-foerderung/ki4kmu/, https://ki-und-softwaresysteme.de/bekanntmachungen/). The '15 Oct 2026' deadline in meta/german-eu-grants-2026.md was wrong. Even when open it required an existing KMU (company) and favored Verbund projects with research institutions. Nearest open successor: KMU-innovativ: IKT (rolling; cut-offs 15 April / 15 October; next after today is 15.04.2027), which also requires an existing KMU with a German site — not possible before a company exists.",
   "reflections": [],
   "archived": false,
   "tags": [
@@ -18,9 +19,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Proposal text complete; needs PIC login + PDF deck + video recording",
-    "date": 1782854152141
+    "state": "cancelled",
+    "comment": "Programme closed (last cut-off Oct 2023; listed as closed by BMFTR). Successor KMU-innovativ: IKT needs an existing company; earliest realistic cut-off 15 Apr 2027 if a company is founded first.",
+    "date": 1792064923388
   },
   "intrinsicValue": 0,
   "cost": 1,

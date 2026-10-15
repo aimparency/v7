@@ -2,7 +2,15 @@
   "id": "6453b8e2-f7bc-4045-8251-bfd008254c2a",
   "text": "Confirm Felix's individual Prototype Fund eligibility and funding setup",
   "description": "Verify the formal checklist against the current Jahrgang 03 rules: adult individual developer, residence and taxes in Germany, self-employed/freelance during the project or proportionally released from employment, no company as grant recipient, and no conflicting public financing for the same work. Record the intended tax/self-employment setup and clarify any uncertainty with Prototype Fund before investing heavily in the application.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1792064934959,
+      "context": "Eligibility research 2026-10-15 for Prototype Fund Jahrgang 03 (prototypefund.de itself blocks automated access with 403, so rules come from the official application platform plus DSEE, StartHub Hessen and Brandenburg ESF listings).",
+      "outcome": "Window 1 Oct – 30 Nov 2026, 15:00 CET. Three tracks: Innovation (data security and software infrastructure), Resilienz (free alternatives to dominant centralized software), Up and Coming (same fields, only for applicants ≤25 or students/informatics trainees). Funding period starts 1 June 2027, six months, optional four-month Second Stage. Solo up to €47,500 (own share required: €47.5k of a €50k budget), teams of up to four (GbR seated in Germany) up to €95,000 for six months. Applicants: adults, living in Germany, self-employed/freelance paying German taxes, or employed with pro-rata release for the project period (part-time employment allowed). Output must be open source; Aimparency is ISC and public on GitHub. 'Software-Infrastruktur' is explicitly developer-facing foundational tools and libraries such as standardized protocol implementations, which the existing protocol-plus-CLI draft matches. Unverified: whether further development of an existing project qualifies, and whether holding shares in a UG/GmbH during the funding period conflicts.",
+      "effectiveness": "Answers every formal rule except Felix's personal facts. Those are now exactly four: residence in Germany, tax status, employment/self-employment from June 2027, and overlapping public funding.",
+      "lesson": "Recheck grant facts against live sources before acting on dated notes; the KI4KMU note claimed a 2026 deadline for a programme closed since 2023."
+    }
+  ],
   "archived": false,
   "tags": [
     "prototype-fund",
