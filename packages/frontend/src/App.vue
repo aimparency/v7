@@ -27,6 +27,8 @@ import WatchdogPanel from './components/WatchdogPanel.vue'
 import LoopPanel from './components/LoopPanel.vue'
 import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
+import ReviewInboxModal from './components/ReviewInboxModal.vue'
+import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
@@ -91,6 +93,8 @@ const loopHeight = ref(parseInt(localStorage.getItem('aimparency-loop-height') |
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const loopRef = ref<InstanceType<typeof LoopPanel>>()
 const showConsistencyModal = ref(false)
+const showReviewInbox = ref(false)
+const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities).length)
 const showIdeaProposalEntry = ref(false)
 const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
@@ -578,6 +582,15 @@ onUnmounted(() => {
             <code class="project-path bowman-path">{{ activeBowmanRoot }}</code>
           </div>
 
+          <button
+            v-if="projectStore.projectPath"
+            class="icon-btn inbox-btn"
+            title="Ideas awaiting your review or decision, by priority"
+            @click="showReviewInbox = true"
+          >
+            ⧗ {{ awaitingHumanCount }}
+          </button>
+
           <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
             ⚙️
           </button>
@@ -683,6 +696,9 @@ onUnmounted(() => {
     />
 
     <IdeaRemovalDialog v-if="modalStore.ideaRemoval" :request="modalStore.ideaRemoval" />
+
+    <!-- Before the idea editor, so an idea opened from the inbox stacks on top -->
+    <ReviewInboxModal v-if="showReviewInbox" @close="showReviewInbox = false" />
 
     <!-- Idea Edit Modal -->
     <IdeaEditModal
@@ -823,6 +839,8 @@ onUnmounted(() => {
   cursor: pointer;
   line-height: 1;
   padding: 0;
+
+  &.inbox-btn { padding: 0 0.5rem; }
 }
 
 .icon-btn:hover {
