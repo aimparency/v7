@@ -1,0 +1,260 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/aimparency/v7/blob/main/protocol/schemas/idea.schema.json",
+  "title": "Aimparency idea",
+  "description": ".bowman/ideas/<id>.json and .bowman/archived-ideas/<id>.json: one idea and its outgoing links. Data model version 4.",
+  "type": "object",
+  "properties": {
+    "id": {
+      "type": "string",
+      "format": "uuid"
+    },
+    "text": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "reflection": {
+      "type": "string"
+    },
+    "reflections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "date": {
+            "type": "number"
+          },
+          "context": {
+            "type": "string"
+          },
+          "outcome": {
+            "type": "string"
+          },
+          "effectiveness": {
+            "type": "string"
+          },
+          "lesson": {
+            "type": "string"
+          },
+          "pattern": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "date",
+          "context",
+          "outcome",
+          "effectiveness",
+          "lesson"
+        ],
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "archived": {
+      "type": "boolean",
+      "default": false
+    },
+    "color": {
+      "anyOf": [
+        {
+          "type": "string",
+          "pattern": "^#[0-9a-fA-F]{6}$"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "default": []
+    },
+    "supportingConnections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "ideaId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relativePosition": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "default": [
+              0,
+              0
+            ]
+          },
+          "weight": {
+            "type": "number",
+            "default": 1
+          },
+          "hypothesis": {
+            "type": "string"
+          },
+          "evaluation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "ideaId"
+        ],
+        "additionalProperties": false
+      },
+      "default": []
+    },
+    "supportingRepos": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "repoId": {
+            "type": "string",
+            "format": "uuid"
+          },
+          "relativePosition": {
+            "type": "array",
+            "minItems": 2,
+            "maxItems": 2,
+            "items": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "number"
+              }
+            ],
+            "default": [
+              0,
+              0
+            ]
+          },
+          "weight": {
+            "type": "number",
+            "default": 1
+          },
+          "hypothesis": {
+            "type": "string"
+          },
+          "evaluation": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "repoId"
+        ],
+        "additionalProperties": false
+      }
+    },
+    "incoming": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "supportedIdeas": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "committedIn": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "format": "uuid"
+      }
+    },
+    "status": {
+      "type": "object",
+      "properties": {
+        "state": {
+          "type": "string"
+        },
+        "comment": {
+          "type": "string"
+        },
+        "date": {
+          "type": "number"
+        },
+        "reviewedAt": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "state",
+        "comment",
+        "date"
+      ],
+      "additionalProperties": false
+    },
+    "intrinsicValue": {
+      "type": "number",
+      "minimum": 0,
+      "default": 0
+    },
+    "valueRationale": {
+      "type": "string"
+    },
+    "cost": {
+      "type": "number",
+      "exclusiveMinimum": 0,
+      "default": 1
+    },
+    "loopWeight": {
+      "type": "number",
+      "default": 0
+    },
+    "duration": {
+      "type": "number",
+      "minimum": 0,
+      "default": 1
+    },
+    "costVariance": {
+      "type": "number",
+      "default": 0
+    },
+    "valueVariance": {
+      "type": "number",
+      "default": 0
+    },
+    "calculatedValue": {
+      "type": "number"
+    },
+    "calculatedCost": {
+      "type": "number"
+    },
+    "calculatedDoneCost": {
+      "type": "number"
+    },
+    "calculatedPriority": {
+      "type": "number"
+    }
+  },
+  "required": [
+    "id",
+    "text",
+    "supportedIdeas",
+    "committedIn",
+    "status"
+  ],
+  "additionalProperties": false
+}

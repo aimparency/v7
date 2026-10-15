@@ -34,7 +34,9 @@
     "expose:mcp": "dotenv -e .env -- pnpm --filter mcp expose",
     "real-world": "dotenv -e .env -- pnpm --filter real-world start",
     "check": "node scripts/check.mjs",
-    "knip": "knip --no-progress"
+    "knip": "knip --no-progress",
+    "protocol:schemas": "tsx packages/shared/scripts/protocol-schemas.ts",
+    "validate:bowman": "tsx packages/shared/scripts/validate-bowman.ts"
   },
   "keywords": [
     "aimparency",

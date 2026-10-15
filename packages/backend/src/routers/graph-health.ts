@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import type { Idea, Phase } from 'shared';
-import { cosineSimilarity } from 'shared';
+import { checkGraphConsistency, cosineSimilarity, type GraphConsistencyIssueCode } from 'shared';
 import { findDuplicatePairs, clusterDuplicates } from '../duplicate-detection.js';
 import { listIdeas, writeIdea, migrateIdeaFiles, scanIdeaFiles } from '../storage/ideas.js';
 import { listPhases, writePhase, reconcilePhaseTree } from '../storage/phases.js';
@@ -9,14 +9,7 @@ import { getDb } from '../db.js';
 import { t, delayedProcedure } from '../trpc.js';
 
 type ConsistencyIssueCode =
-  | 'idea_nonexistent_phase'
-  | 'idea_missing_phase_commitment'
-  | 'phase_nonexistent_idea'
-  | 'phase_missing_idea_committed_in'
-  | 'idea_nonexistent_child'
-  | 'idea_missing_child_supported_idea'
-  | 'idea_nonexistent_parent'
-  | 'idea_missing_parent_supporting_connection'
+  | GraphConsistencyIssueCode
   | 'orphaned_embedding'
   | 'idea_unreadable'
   | 'legacy';
@@ -68,98 +61,15 @@ export const graphHealthRouter = t.router({
         issues.push(createConsistencyIssue('idea_unreadable', `Idea ${file.id} (${file.file}) cannot be loaded: ${file.error}. Fix the file by hand.`));
       }
 
-      const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
-      const phaseMap = new Map(phases.map((p: Phase) => [p.id, p]));
-
-      // Check 1: Idea <-> Phase consistency
-      for (const idea of ideas) {
-        for (const phaseId of idea.committedIn) {
-          if (!phaseMap.has(phaseId)) {
-            issues.push(createConsistencyIssue(
-              'idea_nonexistent_phase',
-              `Idea ${idea.id} claims to be committed in non-existent phase ${phaseId}`
-            ));
-          } else {
-            const phase = phaseMap.get(phaseId)!;
-            if (!phase.commitments.includes(idea.id)) {
-              issues.push(createConsistencyIssue(
-                'idea_missing_phase_commitment',
-                `Idea ${idea.id} says committed in Phase ${phaseId}, but Phase does not have it in commitments`
-              ));
-            }
-          }
-        }
-      }
-
-      for (const phase of phases) {
-        for (const ideaId of phase.commitments) {
-          if (unreadableIds.has(ideaId)) continue;
-          if (!ideaMap.has(ideaId)) {
-            issues.push(createConsistencyIssue(
-              'phase_nonexistent_idea',
-              `Phase ${phase.id} commits to non-existent idea ${ideaId}`
-            ));
-          } else {
-            const idea = ideaMap.get(ideaId)!;
-            if (!idea.committedIn.includes(phase.id)) {
-              issues.push(createConsistencyIssue(
-                'phase_missing_idea_committed_in',
-                `Phase ${phase.id} commits to Idea ${ideaId}, but Idea does not say committed in Phase`
-              ));
-            }
-          }
-        }
-      }
-
-      // Check 2: Idea <-> Idea consistency (supportingConnections/supportedIdeas)
-      for (const idea of ideas) {
-        // supportingConnections (Children)
-        if (idea.supportingConnections) {
-          for (const conn of idea.supportingConnections) {
-              const childId = conn.ideaId;
-              if (unreadableIds.has(childId)) continue;
-              if (!ideaMap.has(childId)) {
-              issues.push(createConsistencyIssue(
-                'idea_nonexistent_child',
-                `Idea ${idea.id} has non-existent supporting connection (child) ${childId}`
-              ));
-              } else {
-              const child = ideaMap.get(childId)!;
-              if (!child.supportedIdeas.includes(idea.id)) {
-                  issues.push(createConsistencyIssue(
-                    'idea_missing_child_supported_idea',
-                    `Idea ${idea.id} lists ${childId} as supporting, but ${childId} does not list ${idea.id} as supportedIdeas`
-                  ));
-              }
-              }
-          }
-        }
-
-        // supportedIdeas (Parents)
-        for (const parentId of idea.supportedIdeas) {
-          if (unreadableIds.has(parentId)) continue;
-          if (!ideaMap.has(parentId)) {
-            issues.push(createConsistencyIssue(
-              'idea_nonexistent_parent',
-              `Idea ${idea.id} has non-existent supportedIdeas (parent) ${parentId}`
-            ));
-          } else {
-            const parent = ideaMap.get(parentId)!;
-            const parentHasConnection = parent.supportingConnections?.some((c) => c.ideaId === idea.id);
-            if (!parentHasConnection) {
-              issues.push(createConsistencyIssue(
-                'idea_missing_parent_supporting_connection',
-                `Idea ${idea.id} lists ${parentId} as supportedIdeas, but ${parentId} does not list ${idea.id} in supportingConnections`
-              ));
-            }
-          }
-        }
+      const ideaIds = new Set(ideas.map((idea: Idea) => idea.id));
+      for (const issue of checkGraphConsistency(ideas, phases, unreadableIds)) {
+        issues.push(createConsistencyIssue(issue.code, issue.message));
       }
 
       // Check 4: Embeddings consistency
       const vectorStore = await loadVectorStore(input.projectPath);
       for (const ideaId of Object.keys(vectorStore)) {
-          if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
+          if (!ideaIds.has(ideaId) && !unreadableIds.has(ideaId)) {
               issues.push(createConsistencyIssue(
                 'orphaned_embedding',
                 `Orphaned embedding found for Idea ${ideaId}`

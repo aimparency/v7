@@ -92,7 +92,7 @@ export const PhaseSchema = z.object({
 export const IdeaStateSchema = z.object({
   key: z.string().regex(/^[a-z0-9-]+$/),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-  ongoing: z.boolean(),
+  ongoing: z.boolean().optional(), // Informational: whether a state counts as ongoing comes from INITIAL_STATES by key (isOngoingState)
   promptsEvaluation: z.boolean().optional() // Entering this status asks to evaluate the idea's parent connections
 });
 
