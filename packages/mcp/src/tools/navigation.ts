@@ -1,4 +1,4 @@
-import { calculateIdeaValues, defaultIdeaCost, type Idea, type Phase } from "shared";
+import { calculateIdeaValues, defaultIdeaCost, resolveWorkPhase, selectWorkCandidates, type Phase } from "shared";
 import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
@@ -28,45 +28,7 @@ export const navigationTools: ToolDefinition[] = [
       // Reported once here instead of in every tool description: what cost estimates mean in this project.
       const projectMeta = await trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null);
 
-      let targetPhase: Phase | null = null;
-
-      if (args.phaseId) {
-        targetPhase = phaseById.get(args.phaseId as string) ?? null;
-      }
-
-      if (!targetPhase) {
-        // Time-based resolution: find the deepest currently-active leaf phase
-        // that has open commitments. "phaseCursors" in meta.json can be stale
-        // or store indices rather than UUIDs, so we don't rely on it.
-        const now = Date.now();
-        // Legacy: phases no longer get dates; only old ones still carry them.
-        const isDated = (phase: Phase) => (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!;
-        const activePhases = allPhases.filter(isDated);
-
-        // Build a helper: is this phase a leaf (no children, or all children are inactive)?
-        const hasActiveChild = (phase: Phase): boolean =>
-          (phase.childPhaseIds ?? []).some((cid) => {
-            const child = phaseById.get(cid);
-            return !!child && isDated(child);
-          });
-
-        // Prefer deepest active leaf with open commitments; fall back up the tree.
-        const leaves = activePhases.filter((p) => !hasActiveChild(p));
-        const candidates = leaves.length > 0 ? leaves : activePhases;
-
-        // Walk up from each candidate until we find one with commitments.
-        const findWithCommitments = (phase: Phase | undefined): Phase | null => {
-          if (!phase) return null;
-          if (phase.commitments.length > 0) return phase;
-          return findWithCommitments(phase.parent ? phaseById.get(phase.parent) : undefined);
-        };
-
-        for (const leaf of candidates) {
-          const found = findWithCommitments(leaf);
-          if (found) { targetPhase = found; break; }
-        }
-      }
-
+      const targetPhase = resolveWorkPhase(allPhases, args.phaseId as string | undefined);
       if (!targetPhase) {
         return { content: [{ type: "text", text: "No active phase found. Use list_phases to find a phase and pass phaseId." }] };
       }
@@ -80,36 +42,17 @@ export const navigationTools: ToolDefinition[] = [
         projectPath: args.projectPath as string,
       });
       const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas);
-
-      const ideaIdSet = new Set<string>(targetPhase.commitments ?? []);
-      const openInPhase = allIdeas.filter(
-        (a) => ideaIdSet.has(a.id) && a.status.state === 'open'
-      );
-      const hasActiveChild = (idea: Idea) => idea.supportingConnections.some((connection) => {
-        const child = allIdeas.find((candidate) => candidate.id === connection.ideaId);
-        return child && ['open', 'partially'].includes(child.status?.state);
-      });
-      const openLeavesInPhase = openInPhase.filter((idea) => !hasActiveChild(idea));
-      const uncommittedLeaves = openLeavesInPhase.length === 0
-        ? allIdeas.filter((idea) =>
-            idea.status?.state === 'open'
-            && (idea.committedIn ?? []).length === 0
-            && (idea.supportedIdeas ?? []).length > 0
-            && !hasActiveChild(idea)
-          )
-        : [];
-      const rankedOpenIdeas = uncommittedLeaves.length > 0
-        ? uncommittedLeaves
-        : openInPhase;
-      const emptyActionableFrontier = openLeavesInPhase.length === 0 && uncommittedLeaves.length === 0;
-      const selectionScope = uncommittedLeaves.length > 0
-        ? 'connected-uncommitted-leaves'
-        : emptyActionableFrontier
-          ? 'mission-containers-exploration'
-          : 'phase-commitments';
+      const {
+        scope: selectionScope,
+        candidates: rankedOpenIdeas,
+        committed: allCommitted,
+        openInPhase,
+        openLeavesInPhase,
+        uncommittedLeaves,
+      } = selectWorkCandidates(allIdeas, targetPhase);
+      const emptyActionableFrontier = selectionScope === 'mission-containers-exploration';
 
       // Diagnostics: how many committed ideas are missing economic data
-      const allCommitted = allIdeas.filter((a) => ideaIdSet.has(a.id));
       // An idea with effectively-zero flowed value is disconnected from any intrinsic
       // value source in the graph — its priority is meaningless regardless of cost.
       const missingValue = allCommitted.filter(

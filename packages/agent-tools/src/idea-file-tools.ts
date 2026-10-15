@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { IdeaSchema, PhaseSchema, calculateIdeaValues, defaultIdeaCost, missionPathsToRoot, type Idea, type Phase } from 'shared';
+import { IdeaSchema, PhaseSchema, calculateIdeaValues, defaultIdeaCost, missionPathsToRoot, resolveWorkPhase, selectWorkCandidates, type Idea, type Phase } from 'shared';
 import { assertWritableBowman, migrateBowman } from 'shared/bowman-migration';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
 
@@ -69,54 +69,26 @@ export async function writePhaseToFile(projectPath: string, phase: Phase): Promi
   await writeJsonAtomic(path.join(phasesDir(projectPath), `${phase.id}.json`), PhaseSchema.parse(phase));
 }
 
+// Same selection and ranking as MCP get_prioritized_ideas.
 export async function getPrioritizedIdeas(projectPath: string, limit = 10, phaseId?: string | null): Promise<PrioritizedIdea[]> {
   const [ideas, phases] = await Promise.all([
     listIdeasFromFiles(projectPath),
     listPhasesFromFiles(projectPath)
   ]);
-  const phaseById = new Map(phases.map((phase) => [phase.id, phase]));
-  let targetPhases: Phase[];
-  if (phaseId) {
-    const phase = phaseById.get(phaseId);
-    targetPhases = phase ? [phase] : [];
-  } else {
-    const now = Date.now();
-    const isActive = (phase: Phase) =>
-      (phase.from ?? 0) > 0 && (phase.to ?? 0) > 0 && phase.from! <= now && now <= phase.to!;
-    const activePhases = phases.filter(isActive);
-    const hasActiveChild = (phase: Phase) =>
-      (phase.childPhaseIds ?? []).some((childId) => {
-        const child = phaseById.get(childId);
-        return child !== undefined && isActive(child);
-      });
-    const leaves = activePhases.filter((phase) => !hasActiveChild(phase));
-    const candidates = leaves.length > 0 ? leaves : activePhases;
-    const findWithCommitments = (phase: Phase | undefined): Phase | null => {
-      if (!phase) return null;
-      if ((phase.commitments ?? []).length > 0) return phase;
-      return findWithCommitments(phase.parent ? phaseById.get(phase.parent) : undefined);
-    };
-    targetPhases = candidates
-      .map((phase) => findWithCommitments(phase))
-      .filter((phase): phase is Phase => phase !== null);
-  }
+  const phase = resolveWorkPhase(phases, phaseId);
+  if (!phase) return [];
+  const { scope, candidates } = selectWorkCandidates(ideas, phase);
+  // Exploration candidates are containers to decompose, not work to execute.
+  if (scope === 'mission-containers-exploration') return [];
   const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(ideas);
-  const byId = new Map(ideas.map((idea) => [idea.id, idea]));
-  const rows: PrioritizedIdea[] = [];
-  for (const phase of targetPhases) {
-    for (const ideaId of phase.commitments ?? []) {
-      const idea = byId.get(ideaId);
-      if (!idea || idea.status.state !== 'open') continue;
-      rows.push({
-        idea,
-        phase,
-        priority: priorities.get(idea.id) ?? 0,
-        value: (values.get(idea.id) ?? 0) * totalIntrinsic,
-        cost: costs.get(idea.id) ?? 0
-      });
-    }
-  }
-  return rows
+  return candidates
+    .map((idea) => ({
+      idea,
+      phase,
+      priority: priorities.get(idea.id) ?? 0,
+      value: (values.get(idea.id) ?? 0) * totalIntrinsic,
+      cost: costs.get(idea.id) ?? 0
+    }))
     .sort((left, right) => right.priority - left.priority)
     .slice(0, limit);
 }
