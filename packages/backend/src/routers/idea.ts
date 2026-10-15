@@ -20,6 +20,92 @@ import { invalidateSemanticCache } from '../forces.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { generateIdeaProposal } from '../idea-proposal-generator.js';
 
+const newIdeaInputSchema = z.object({
+  text: z.string(),
+  description: z.string().optional(),
+  tags: z.array(z.string()).optional(),
+  status: z.object({
+    state: z.string().optional(),
+    comment: z.string().optional(),
+    date: z.number().optional(),
+    reviewedAt: z.number().optional()
+  }).optional(),
+  intrinsicValue: z.number().finite().nonnegative().optional(),
+  valueRationale: z.string().optional(),
+  cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
+  duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
+  loopWeight: z.number().optional(),
+  supportedIdeas: z.array(z.string()).optional(),
+  supportingConnections: z.array(z.object({
+    ideaId: z.string(),
+    weight: z.number().optional(),
+    relativePosition: z.tuple([z.number(), z.number()]).optional(),
+    hypothesis: z.string().optional()
+  })).optional(),
+  color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
+});
+type NewIdeaInput = z.infer<typeof newIdeaInputSchema>;
+
+// Fire-and-forget: the model can take seconds; the write must not wait for it.
+const refreshEmbeddingInBackground = (projectPath: string, idea: Idea) => {
+  if (process.env.NODE_ENV === 'test' || !idea.text) return;
+  generateEmbedding(embeddingTextForIdea(idea))
+    .then(async vector => {
+      if (!vector) return;
+      await saveEmbedding(projectPath, idea.id, vector);
+      invalidateSemanticCache(projectPath);
+    })
+    .catch(error => console.warn(`Embedding refresh failed for idea ${idea.id}:`, error));
+};
+
+// Stores a new idea without connections; the caller links it into the graph.
+// colorParentId is the parent whose branch color the idea inherits.
+async function storeNewIdea(
+  projectPath: string,
+  input: NewIdeaInput,
+  options: { colorParentId?: string; committedIn?: string[]; defaultIntrinsicValue?: number }
+): Promise<Idea> {
+  const idea: Idea = {
+    id: uuidv4(),
+    text: input.text,
+    description: input.description,
+    tags: input.tags || [],
+    reflections: [],
+    supportingConnections: [],
+    supportedIdeas: [],
+    committedIn: options.committedIn ?? [],
+    status: {
+      state: input.status?.state || 'open',
+      comment: input.status?.comment || '',
+      date: input.status?.date || Date.now(),
+      ...(input.status?.reviewedAt !== undefined ? { reviewedAt: input.status.reviewedAt } : {})
+    },
+    intrinsicValue: input.intrinsicValue ?? options.defaultIntrinsicValue ?? 0,
+    valueRationale: input.valueRationale,
+    cost: input.cost ?? await projectDefaultCost(projectPath),
+    loopWeight: input.loopWeight ?? 1,
+    duration: input.duration ?? 1,
+    costVariance: 0,
+    valueVariance: 0,
+    archived: false,
+    color: await resolveCreationColor(projectPath, input.color, options.colorParentId)
+  };
+  await writeIdea(projectPath, idea);
+  addIdeaToIndex(projectPath, idea);
+  refreshEmbeddingInBackground(projectPath, idea);
+  return idea;
+}
+
+// Links a new idea to the parents and children given at creation.
+async function connectNewIdea(projectPath: string, ideaId: string, input: NewIdeaInput, alreadyLinkedParentId?: string) {
+  for (const parentId of input.supportedIdeas ?? []) {
+    if (parentId !== alreadyLinkedParentId) await connectIdeasInternal(projectPath, parentId, ideaId);
+  }
+  for (const conn of input.supportingConnections ?? []) {
+    await connectIdeasInternal(projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
+  }
+}
+
 // Ideas created without a cost estimate get the project's default (meta.json defaultCost).
 const projectDefaultCost = async (projectPath: string): Promise<number> =>
   defaultIdeaCost(await fs.readJson(path.join(normalizeProjectPath(projectPath), 'meta.json')).catch(() => null));
@@ -572,16 +658,7 @@ export const ideaRouter = t.router({
 
       await writeIdea(input.projectPath, updatedIdea);
       updateIdeaInIndex(input.projectPath, updatedIdea);
-
-      // Update embedding (async)
-      if (process.env.NODE_ENV !== 'test' && updatedIdea.text) {
-        generateEmbedding(embeddingTextForIdea(updatedIdea)).then(vector => {
-           if(vector) {
-             saveEmbedding(input.projectPath, input.ideaId, vector);
-             invalidateSemanticCache(input.projectPath);
-           }
-        });
-      }
+      refreshEmbeddingInBackground(input.projectPath, updatedIdea);
 
       return updatedIdea;
     }),
@@ -728,99 +805,22 @@ export const ideaRouter = t.router({
   createFloatingIdea: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      idea: z.object({
-        text: z.string(),
-        description: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        status: z.object({
-          state: z.string().optional(),
-          comment: z.string().optional(),
-          date: z.number().optional(),
-          reviewedAt: z.number().optional()
-        }).optional(),
-        intrinsicValue: z.number().finite().nonnegative().optional(),
-        valueRationale: z.string().optional(),
-        cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
-        duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
-        loopWeight: z.number().optional(),
-        supportedIdeas: z.array(z.string()).optional(),
-        supportingConnections: z.array(z.object({
-           ideaId: z.string(),
-           weight: z.number().optional(),
-           relativePosition: z.tuple([z.number(), z.number()]).optional(),
-           hypothesis: z.string().optional()
-        })).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
-      }),
+      idea: newIdeaInputSchema,
       // Parent the caller will connect right after creation (graph drag, MCP):
       // the default color derives from it.
       inheritColorFrom: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      const ideaId = uuidv4();
-      const status = input.idea.status
-        ? {
-            state: input.idea.status.state || 'open',
-            comment: input.idea.status.comment || '',
-            date: input.idea.status.date || Date.now(),
-            ...(input.idea.status.reviewedAt !== undefined ? { reviewedAt: input.idea.status.reviewedAt } : {})
-          }
-        : { state: 'open' as const, comment: '', date: Date.now() };
+      // The first idea of a project is its root mission and carries the value.
+      const ideasDir = path.join(normalizeProjectPath(input.projectPath), 'ideas');
+      const isFirstIdea = !(await fs.pathExists(ideasDir))
+        || !(await fs.readdir(ideasDir)).some(file => file.endsWith('.json'));
 
-      // Check if this is the first idea in the project
-      const normalizedPath = normalizeProjectPath(input.projectPath);
-      const ideasDir = path.join(normalizedPath, 'ideas');
-      const existingIdeas = await fs.pathExists(ideasDir)
-        ? (await fs.readdir(ideasDir)).filter(f => f.endsWith('.json')).length
-        : 0;
-      const isFirstIdea = existingIdeas === 0;
-
-      const primaryParentId = input.inheritColorFrom ?? input.idea.supportedIdeas?.[0];
-      const idea: Idea = {
-        id: ideaId,
-        text: input.idea.text,
-        description: input.idea.description,
-        tags: input.idea.tags || [],
-        reflections: [],
-        supportingConnections: [],
-        supportedIdeas: [],
-        committedIn: [],
-        status,
-        intrinsicValue: input.idea.intrinsicValue ?? (isFirstIdea ? 1000 : 0),
-        valueRationale: input.idea.valueRationale,
-        cost: input.idea.cost ?? await projectDefaultCost(input.projectPath),
-        loopWeight: input.idea.loopWeight ?? 1,
-        duration: input.idea.duration ?? 1,
-        costVariance: 0,
-        valueVariance: 0,
-        archived: false,
-        color: await resolveCreationColor(input.projectPath, input.idea.color, primaryParentId)
-      };
-
-      await writeIdea(input.projectPath, idea);
-      addIdeaToIndex(input.projectPath, idea);
-
-      if (process.env.NODE_ENV !== 'test') {
-        generateEmbedding(embeddingTextForIdea(idea)).then(vector => {
-           if(vector) {
-             saveEmbedding(input.projectPath, ideaId, vector);
-             invalidateSemanticCache(input.projectPath);
-           }
-        });
-      }
-
-      if (input.idea.supportedIdeas) {
-          for (const parentId of input.idea.supportedIdeas) {
-              await connectIdeasInternal(input.projectPath, parentId, ideaId);
-          }
-      }
-
-      if (input.idea.supportingConnections) {
-          for (const conn of input.idea.supportingConnections) {
-              await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
-          }
-      }
-
+      const idea = await storeNewIdea(input.projectPath, input.idea, {
+        colorParentId: input.inheritColorFrom ?? input.idea.supportedIdeas?.[0],
+        defaultIntrinsicValue: isFirstIdea ? 1000 : 0
+      });
+      await connectNewIdea(input.projectPath, idea.id, input.idea);
       return idea;
     }),
 
@@ -828,183 +828,32 @@ export const ideaRouter = t.router({
     .input(z.object({
       projectPath: z.string(),
       parentIdeaId: z.string().uuid(),
-      idea: z.object({
-        text: z.string(),
-        description: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        status: z.object({
-          state: z.string().optional(),
-          comment: z.string().optional(),
-          date: z.number().optional(),
-          reviewedAt: z.number().optional()
-        }).optional(),
-        intrinsicValue: z.number().finite().nonnegative().optional(),
-        valueRationale: z.string().optional(),
-        cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
-        duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
-        loopWeight: z.number().optional(),
-        supportedIdeas: z.array(z.string()).optional(),
-        supportingConnections: z.array(z.object({
-           ideaId: z.string(),
-           weight: z.number().optional(),
-           relativePosition: z.tuple([z.number(), z.number()]).optional(),
-           hypothesis: z.string().optional()
-        })).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
-      }),
+      idea: newIdeaInputSchema,
       positionInParent: z.number().optional(),
       weight: z.number().optional(),
       hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      const childIdeaId = uuidv4();
-      const status = input.idea.status
-        ? {
-            state: input.idea.status.state || 'open',
-            comment: input.idea.status.comment || '',
-            date: input.idea.status.date || Date.now(),
-            ...(input.idea.status.reviewedAt !== undefined ? { reviewedAt: input.idea.status.reviewedAt } : {})
-          }
-        : { state: 'open' as const, comment: '', date: Date.now() };
-
-      const childIdea: Idea = {
-        id: childIdeaId,
-        text: input.idea.text,
-        description: input.idea.description,
-        tags: input.idea.tags || [],
-        reflections: [],
-        supportingConnections: [],
-        supportedIdeas: [],
-        committedIn: [],
-        status,
-        intrinsicValue: input.idea.intrinsicValue ?? 0,
-        valueRationale: input.idea.valueRationale,
-        cost: input.idea.cost ?? await projectDefaultCost(input.projectPath),
-        loopWeight: input.idea.loopWeight ?? 1,
-        duration: input.idea.duration ?? 1,
-        costVariance: 0,
-        valueVariance: 0,
-        archived: false,
-        color: await resolveCreationColor(input.projectPath, input.idea.color, input.parentIdeaId)
-      };
-
-      await writeIdea(input.projectPath, childIdea);
-      addIdeaToIndex(input.projectPath, childIdea);
-
-      if (process.env.NODE_ENV !== 'test') {
-        generateEmbedding(embeddingTextForIdea(childIdea)).then(vector => {
-           if(vector) saveEmbedding(input.projectPath, childIdeaId, vector);
-        });
-      }
-
-      await connectIdeasInternal(input.projectPath, input.parentIdeaId, childIdeaId, input.positionInParent, 0, undefined, input.weight, input.hypothesis);
-
-      if (input.idea.supportedIdeas) {
-          for (const parentId of input.idea.supportedIdeas) {
-              if (parentId !== input.parentIdeaId) {
-                  await connectIdeasInternal(input.projectPath, parentId, childIdeaId);
-              }
-          }
-      }
-
-      if (input.idea.supportingConnections) {
-          for (const conn of input.idea.supportingConnections) {
-              await connectIdeasInternal(input.projectPath, childIdeaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
-          }
-      }
-
-      return childIdea;
+      const idea = await storeNewIdea(input.projectPath, input.idea, { colorParentId: input.parentIdeaId });
+      await connectIdeasInternal(input.projectPath, input.parentIdeaId, idea.id, input.positionInParent, 0, undefined, input.weight, input.hypothesis);
+      await connectNewIdea(input.projectPath, idea.id, input.idea, input.parentIdeaId);
+      return idea;
     }),
 
   createIdeaInPhase: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
       phaseId: z.string().uuid(),
-      idea: z.object({
-        text: z.string(),
-        description: z.string().optional(),
-        tags: z.array(z.string()).optional(),
-        status: z.object({
-          state: z.string().optional(),
-          comment: z.string().optional(),
-          date: z.number().optional(),
-          reviewedAt: z.number().optional()
-        }).optional(),
-        intrinsicValue: z.number().finite().nonnegative().optional(),
-        valueRationale: z.string().optional(),
-        cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
-        duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
-        loopWeight: z.number().optional(),
-        supportedIdeas: z.array(z.string()).optional(),
-        supportingConnections: z.array(z.object({
-           ideaId: z.string(),
-           weight: z.number().optional(),
-           relativePosition: z.tuple([z.number(), z.number()]).optional(),
-           hypothesis: z.string().optional()
-        })).optional(),
-        color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
-      }),
+      idea: newIdeaInputSchema,
       insertionIndex: z.number().optional()
     }))
     .mutation(async ({ input }) => {
-      const ideaId = uuidv4();
-      const status = input.idea.status
-        ? {
-            state: input.idea.status.state || 'open',
-            comment: input.idea.status.comment || '',
-            date: input.idea.status.date || Date.now(),
-            ...(input.idea.status.reviewedAt !== undefined ? { reviewedAt: input.idea.status.reviewedAt } : {})
-          }
-        : { state: 'open' as const, comment: '', date: Date.now() };
-
-      const primaryParentId = input.idea.supportedIdeas?.[0];
-      const idea: Idea = {
-        id: ideaId,
-        text: input.idea.text,
-        description: input.idea.description,
-        tags: input.idea.tags || [],
-        reflections: [],
-        supportingConnections: [],
-        supportedIdeas: [],
-        committedIn: [input.phaseId], // Will be updated by commitIdeaToPhase
-        status,
-        intrinsicValue: input.idea.intrinsicValue ?? 0,
-        valueRationale: input.idea.valueRationale,
-        cost: input.idea.cost ?? await projectDefaultCost(input.projectPath),
-        loopWeight: input.idea.loopWeight ?? 1,
-        duration: input.idea.duration ?? 1,
-        costVariance: 0,
-        valueVariance: 0,
-        archived: false,
-        color: await resolveCreationColor(input.projectPath, input.idea.color, primaryParentId)
-      };
-
-      await writeIdea(input.projectPath, idea);
-      addIdeaToIndex(input.projectPath, idea);
-
-      if (process.env.NODE_ENV !== 'test') {
-        generateEmbedding(embeddingTextForIdea(idea)).then(vector => {
-           if(vector) {
-             saveEmbedding(input.projectPath, ideaId, vector);
-             invalidateSemanticCache(input.projectPath);
-           }
-        });
-      }
-
-      await commitIdeaToPhase(input.projectPath, ideaId, input.phaseId, input.insertionIndex);
-
-      if (input.idea.supportedIdeas) {
-          for (const parentId of input.idea.supportedIdeas) {
-              await connectIdeasInternal(input.projectPath, parentId, ideaId);
-          }
-      }
-
-      if (input.idea.supportingConnections) {
-          for (const conn of input.idea.supportingConnections) {
-              await connectIdeasInternal(input.projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
-          }
-      }
-
+      const idea = await storeNewIdea(input.projectPath, input.idea, {
+        colorParentId: input.idea.supportedIdeas?.[0],
+        committedIn: [input.phaseId]
+      });
+      await commitIdeaToPhase(input.projectPath, idea.id, input.phaseId, input.insertionIndex);
+      await connectNewIdea(input.projectPath, idea.id, input.idea);
       return idea;
     }),
 
