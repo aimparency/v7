@@ -1,0 +1,29 @@
+{
+  "id": "b3b50366-25b2-4efe-9172-1e937a7e752f",
+  "text": "/dream: consolidating sleep that remembers since the last dream",
+  "description": "MCP prompt /mcp__aimparency__dream, usable in every Aimparency project. It recalls the window since the newest \"Dream:\" reflection (fallback: 14 days of .bowman git history), consolidates it into at most 5 lessons, dreams from the ideas carrying intrinsic value (love = what is valued for its own sake), and wakes with \"I just woke up from dreaming, here is what I remember:\". It always records its memory as a reflection on the top root; other graph mutations need writeBack=true. Commit 7678a8a.",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d3266",
+  "tags": [
+    "dream",
+    "reflection",
+    "mcp"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Prompt reworked and tested (prompts.test.ts, pnpm check 25/25). Needs /mcp reconnect, then a first dream run by Felix to accept.",
+    "date": 1792106810085
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
