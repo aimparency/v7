@@ -13,11 +13,12 @@ import PhaseSearchModal from '../components/PhaseSearchModal.vue'
 import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
-import { useGraphSimulation } from '../composables/useGraphSimulation'
+import { isIdeaNode, useGraphSimulation } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import { proposeRelaxedConnections } from '../utils/auto-relax'
+import { roundOffset, solveDiffMinimalLayout } from '../utils/autolayout'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -357,14 +358,45 @@ async function autoRelaxLayout() {
 
   const parentCount = new Set(proposals.map(proposal => proposal.parentId)).size
   if (!window.confirm(`Relax ${proposals.length} connections across ${parentCount} ideas? This will persist their relative positions.`)) return
+  await persistConnectionOffsets(proposals)
+}
 
-  const proposalsByParent = new Map<string, Map<string, [number, number]>>()
-  for (const proposal of proposals) {
-    const children = proposalsByParent.get(proposal.parentId) ?? new Map()
-    children.set(proposal.childId, proposal.relativePosition)
-    proposalsByParent.set(proposal.parentId, children)
+// Removes overlaps and multi-parent tension while rewriting as few stored
+// connection offsets as possible (see utils/autolayout).
+async function autoLayout() {
+  const { positions, changes } = solveDiffMinimalLayout(
+    nodes.value.map(node => ({ id: node.id, position: node.pos, radius: node.r, movable: true })),
+    links.value.map(link => ({
+      parentId: link.target.id,
+      childId: link.source.id,
+      relativePosition: link.relativePosition,
+      editable: isIdeaNode(link.source) && isIdeaNode(link.target)
+    }))
+  )
+  if (changes.length === 0) {
+    useToastStore().info('The layout is already free of overlaps and tension.')
+    return
   }
-  await Promise.all([...proposalsByParent].map(async ([parentId, children]) => {
+
+  const parentCount = new Set(changes.map(change => change.parentId)).size
+  if (!window.confirm(`Auto layout rewrites ${changes.length} of ${links.value.length} connections in ${parentCount} idea files. Persist?`)) return
+  for (const node of nodes.value) {
+    const position = positions.get(node.id)
+    if (position) { node.pos[0] = position[0]; node.pos[1] = position[1] }
+  }
+  await persistConnectionOffsets(changes)
+  useToastStore().info(`Auto layout rewrote ${changes.length} connections in ${parentCount} idea files.`)
+}
+
+// One update per parent idea; untouched connections keep their stored values.
+async function persistConnectionOffsets(changes: { parentId: string, childId: string, relativePosition: [number, number] }[]) {
+  const changesByParent = new Map<string, Map<string, [number, number]>>()
+  for (const change of changes) {
+    const children = changesByParent.get(change.parentId) ?? new Map()
+    children.set(change.childId, roundOffset(change.relativePosition))
+    changesByParent.set(change.parentId, children)
+  }
+  await Promise.all([...changesByParent].map(async ([parentId, children]) => {
     const parent = dataStore.ideas[parentId]
     if (!parent) return
     await dataStore.updateIdea(projectStore.projectPath, parentId, {
@@ -518,6 +550,9 @@ function toggleSpinOffPreview() {
       </button>
       <button class="control-btn" @click="autoRelaxLayout" title="Evenly space child ideas and persist relative positions after confirmation">
         Relax
+      </button>
+      <button class="control-btn" @click="autoLayout" title="Remove overlaps and tension, rewriting as few connection positions as possible (asks before persisting)">
+        Layout
       </button>
       <button 
         class="control-btn" 

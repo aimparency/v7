@@ -10,6 +10,7 @@ import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
 import { useHistoryStore } from './history'
 import { useToastStore } from './toast'
+import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
 import { clientId } from '../utils/mutation-activity'
 import { loadAllIdeasCache, saveIdeas } from '../utils/db'
@@ -805,7 +806,7 @@ export const useDataStore = defineStore('data', {
         const updatedConnections = [...connections]
         const oldConn = updatedConnections[connectionIndex]!
         // Keep hypothesis/evaluation: only the position changes.
-        updatedConnections[connectionIndex] = { ...oldConn, relativePosition: newRelativePosition }
+        updatedConnections[connectionIndex] = { ...oldConn, relativePosition: roundOffset(newRelativePosition) }
         parent.supportingConnections = updatedConnections
 
         // 2. Queue for persistence
