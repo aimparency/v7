@@ -1,4 +1,4 @@
-import { calculateIdeaValues, INITIAL_STATES, type Idea } from "shared";
+import { calculateIdeaValues, INITIAL_STATES, missionPathsToRoot } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
@@ -112,8 +112,6 @@ export const ideaTools: ToolDefinition[] = [
     handler: async (args, trpcClient) => {
       const ideaId = args.ideaId as string;
       const projectPath = args.projectPath as string;
-      const MAX_PATH_DEPTH = 64;
-      const MAX_PATHS = 100;
 
       // Load the whole graph once: it powers the value model (to choose
       // which parent to follow at branches) and lets us resolve parent/child
@@ -153,93 +151,7 @@ export const ideaTools: ToolDefinition[] = [
       await describeRepoEdges(trpcClient, projectPath, [repoCarrier]);
       const repoContext = repoCarrier.supportingRepos;
 
-      // Highest-value path to root: walk up supportedIdeas so the agent sees
-      // lineage toward the highest-value goal (e.g. "achieve ASI"). At a
-      // branch (multiple parents) follow the one with the highest actual
-      // value inflow into the current idea — i.e. the parent through which
-      // most value flows here. Cycle-guarded and capped at MAX_PATH.
-      type PathStep = { id: string; text: string; description?: string; intrinsicValue: number; valueInflow: number };
-      const pathToRoot: PathStep[] = [];
-      const visited = new Set<string>([ideaId]);
-      let cursor: Idea = idea;
-      while (pathToRoot.length < MAX_PATH_DEPTH) {
-        const parentIds = cursor.supportedIdeas.filter(
-          (id) => ideaMap.has(id) && !visited.has(id)
-        );
-        if (parentIds.length === 0) break; // reached a root (or only cycles remain)
-
-        // Pick the parent with the greatest value inflow into `cursor`.
-        let best = parentIds[0];
-        let bestFlow = flowValues.get(`${best}->${cursor.id}`) ?? 0;
-        for (const pid of parentIds) {
-          const flow = flowValues.get(`${pid}->${cursor.id}`) ?? 0;
-          if (flow > bestFlow) { best = pid; bestFlow = flow; }
-        }
-
-        const parent = ideaMap.get(best)!;
-        visited.add(best);
-        pathToRoot.push({
-          id: parent.id,
-          text: parent.text,
-          description: parent.description,
-          intrinsicValue: parent.intrinsicValue ?? 0,
-          valueInflow: Number(bestFlow.toFixed(4)),
-        });
-        cursor = parent;
-      }
-      // Order root-first so the north-star goal reads at the top.
-      pathToRoot.reverse();
-
-      // All distinct root paths. Keep a visited set per branch so a node
-      // shared by several legitimate paths appears in each, while cycles
-      // cannot masquerade as roots. Bounds are explicit in the response.
-      const pathsToRoot: PathStep[][] = [];
-      let pathsToRootTruncated = false;
-      const walkAllParents = (
-        current: Idea,
-        upwardPath: PathStep[],
-        branchVisited: Set<string>
-      ) => {
-        if (pathsToRoot.length >= MAX_PATHS) {
-          pathsToRootTruncated = true;
-          return;
-        }
-        if (upwardPath.length >= MAX_PATH_DEPTH) {
-          pathsToRootTruncated = true;
-          return;
-        }
-
-        const existingParentIds = current.supportedIdeas
-          .filter((id) => ideaMap.has(id));
-        if (existingParentIds.length === 0) {
-          pathsToRoot.push([...upwardPath].reverse());
-          return;
-        }
-
-        let followedParent = false;
-        for (const parentId of existingParentIds) {
-          if (branchVisited.has(parentId)) continue;
-          followedParent = true;
-          const parent = ideaMap.get(parentId)!;
-          const flow = flowValues.get(`${parentId}->${current.id}`) ?? 0;
-          walkAllParents(
-            parent,
-            [...upwardPath, {
-              id: parent.id,
-              text: parent.text,
-              description: parent.description,
-              intrinsicValue: parent.intrinsicValue ?? 0,
-              valueInflow: Number(flow.toFixed(4)),
-            }],
-            new Set([...branchVisited, parentId])
-          );
-        }
-        if (!followedParent) {
-          // Every branch closes a cycle; this is not a path to a root.
-          return;
-        }
-      };
-      walkAllParents(idea, [], new Set([ideaId]));
+      const { pathToRoot, pathsToRoot, truncated } = missionPathsToRoot(ideaMap, idea, flowValues);
 
       return {
         content: [
@@ -249,7 +161,7 @@ export const ideaTools: ToolDefinition[] = [
                 idea: { id: idea.id, text: idea.text, description: idea.description },
                 path_to_root: pathToRoot,
                 paths_to_root: pathsToRoot,
-                paths_to_root_truncated: pathsToRootTruncated,
+                paths_to_root_truncated: truncated,
                 semantic_context: semanticContext,
                 parents: parentContext,
                 children: childContext,

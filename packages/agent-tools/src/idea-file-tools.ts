@@ -1,7 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { IdeaSchema, PhaseSchema, calculateIdeaValues, defaultIdeaCost, type Idea, type Phase } from 'shared';
+import { IdeaSchema, PhaseSchema, calculateIdeaValues, defaultIdeaCost, missionPathsToRoot, type Idea, type Phase } from 'shared';
 import { assertWritableBowman, migrateBowman } from 'shared/bowman-migration';
 import { normalizeBowmanPath, writeJsonAtomic } from './loop-state.js';
 
@@ -127,82 +127,7 @@ export async function getIdeaContext(projectPath: string, ideaId: string) {
   const idea = ideaMap.get(ideaId);
   if (!idea) throw new Error(`Idea not found: ${ideaId}`);
   const { flowValues } = calculateIdeaValues(ideas);
-  const MAX_PATH_DEPTH = 64;
-  const MAX_PATHS = 100;
-  const pathToRoot = [];
-  const visited = new Set<string>([ideaId]);
-  let cursor: Idea = idea;
-  while (pathToRoot.length < MAX_PATH_DEPTH) {
-    const parentIds = (cursor.supportedIdeas ?? []).filter((id) => ideaMap.has(id) && !visited.has(id));
-    if (parentIds.length === 0) break;
-    let best = parentIds[0];
-    let bestFlow = flowValues.get(`${best}->${cursor.id}`) ?? 0;
-    for (const parentId of parentIds) {
-      const flow = flowValues.get(`${parentId}->${cursor.id}`) ?? 0;
-      if (flow > bestFlow) {
-        best = parentId;
-        bestFlow = flow;
-      }
-    }
-    const parent = ideaMap.get(best)!;
-    visited.add(parent.id);
-    pathToRoot.push({
-      id: parent.id,
-      text: parent.text,
-      description: parent.description,
-      intrinsicValue: parent.intrinsicValue ?? 0,
-      valueInflow: Number(bestFlow.toFixed(4))
-    });
-    cursor = parent;
-  }
-  pathToRoot.reverse();
-  const pathsToRoot: Array<Array<{
-    id: string;
-    text: string;
-    description?: string;
-    intrinsicValue: number;
-    valueInflow: number;
-  }>> = [];
-  let pathsToRootTruncated = false;
-  const walkAllParents = (
-    current: Idea,
-    upwardPath: typeof pathsToRoot[number],
-    branchVisited: Set<string>
-  ) => {
-    if (pathsToRoot.length >= MAX_PATHS) {
-      pathsToRootTruncated = true;
-      return;
-    }
-    if (upwardPath.length >= MAX_PATH_DEPTH) {
-      pathsToRootTruncated = true;
-      return;
-    }
-    const existingParentIds = (current.supportedIdeas ?? []).filter((id) => ideaMap.has(id));
-    if (existingParentIds.length === 0) {
-      pathsToRoot.push([...upwardPath].reverse());
-      return;
-    }
-    let followedParent = false;
-    for (const parentId of existingParentIds) {
-      if (branchVisited.has(parentId)) continue;
-      followedParent = true;
-      const parent = ideaMap.get(parentId)!;
-      const flow = flowValues.get(`${parentId}->${current.id}`) ?? 0;
-      walkAllParents(
-        parent,
-        [...upwardPath, {
-          id: parent.id,
-          text: parent.text,
-          description: parent.description,
-          intrinsicValue: parent.intrinsicValue ?? 0,
-          valueInflow: Number(flow.toFixed(4))
-        }],
-        new Set([...branchVisited, parentId])
-      );
-    }
-    if (!followedParent) return;
-  };
-  walkAllParents(idea, [], new Set([ideaId]));
+  const { pathToRoot, pathsToRoot, truncated } = missionPathsToRoot(ideaMap, idea, flowValues);
   const parents = (idea.supportedIdeas ?? [])
     .map((id) => ideaMap.get(id))
     .filter(Boolean)
@@ -215,7 +140,7 @@ export async function getIdeaContext(projectPath: string, ideaId: string) {
     idea: { id: idea.id, text: idea.text, description: idea.description, status: idea.status },
     path_to_root: pathToRoot,
     paths_to_root: pathsToRoot,
-    paths_to_root_truncated: pathsToRootTruncated,
+    paths_to_root_truncated: truncated,
     parents,
     children
   };
