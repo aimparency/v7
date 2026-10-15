@@ -1298,6 +1298,23 @@ test('graph hygiene: only still-open parents of finished children are collapse c
   assert.ok(!unarchived.includes(waiting.id));
 });
 
+test('setConnectionPositions rewrites only the given offsets and keeps hypotheses', async () => {
+  const parent = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'parent' } });
+  const moved = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'moved' }, hypothesis: 'why' });
+  const kept = await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: 'kept' } });
+  const keptBefore = (await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id })).supportingConnections.find((c) => c.ideaId === kept.id)!;
+
+  assert.deepEqual(await caller.idea.setConnectionPositions({
+    projectPath: testProjectPath,
+    changes: [{ parentId: parent.id, childId: moved.id, relativePosition: [1.5, -2] }]
+  }), { updated: 1 });
+
+  const connections = (await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id })).supportingConnections;
+  assert.deepEqual(connections.find((c) => c.ideaId === moved.id)!.relativePosition, [1.5, -2]);
+  assert.equal(connections.find((c) => c.ideaId === moved.id)!.hypothesis, 'why');
+  assert.deepEqual(connections.find((c) => c.ideaId === kept.id), keptBefore);
+});
+
 test('opening an unversioned project records the current data model version', async () => {
   await fs.outputJson(path.join(testProjectPath, 'meta.json'), { name: 'Old', color: '#007acc' });
   const meta = await caller.project.getMeta({ projectPath: testProjectPath });

@@ -782,6 +782,7 @@ export function useGraphSimulation() {
   return {
     nodes,
     links,
+    semanticLinks,
     nodeMap,
     trigger,
     semanticForceMultiplier,

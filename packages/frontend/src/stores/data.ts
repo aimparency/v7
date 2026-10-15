@@ -19,6 +19,21 @@ import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 type RouterOutputs = inferRouterOutputs<AppRouter>
 type ConsistencyIssue = RouterOutputs['graphHealth']['checkConsistency']['issues'][number]
 type UnreadableIdea = RouterOutputs['project']['loadIdeas']['unreadable'][number]
+export type ConnectionPositionChange = { parentId: string, childId: string, relativePosition: [number, number] }
+
+// Idea events arriving close together (a layout save rewrites hundreds of
+// files) are applied in one pass: every applied change rebuilds the graph.
+const remoteIdeaUpdates: (() => void)[] = []
+let remoteIdeaFlush: ReturnType<typeof setTimeout> | null = null
+export function flushRemoteIdeaUpdates() {
+  if (remoteIdeaFlush) clearTimeout(remoteIdeaFlush)
+  remoteIdeaFlush = null
+  for (const update of remoteIdeaUpdates.splice(0)) update()
+}
+const applyRemoteIdeaUpdate = (apply: () => void) => {
+  remoteIdeaUpdates.push(apply)
+  remoteIdeaFlush ??= setTimeout(flushRemoteIdeaUpdates, 16)
+}
 
 const isMissingFileError = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
@@ -215,7 +230,7 @@ export const useDataStore = defineStore('data', {
 
     // Persistence Debounce
     saveTimeout: null as any,
-    pendingUpdates: new Set<string>(),
+    pendingConnectionPositions: new Map<string, ConnectionPositionChange>(), // by `parent>child`
     deletedIdeas: new Set<string>(),
     // Monotonic per-idea request order. A response may only replace local state
     // while it is still the newest request for that idea.
@@ -809,11 +824,12 @@ export const useDataStore = defineStore('data', {
         const updatedConnections = [...connections]
         const oldConn = updatedConnections[connectionIndex]!
         // Keep hypothesis/evaluation: only the position changes.
-        updatedConnections[connectionIndex] = { ...oldConn, relativePosition: roundOffset(newRelativePosition) }
+        const relativePosition = roundOffset(newRelativePosition)
+        updatedConnections[connectionIndex] = { ...oldConn, relativePosition }
         parent.supportingConnections = updatedConnections
 
         // 2. Queue for persistence
-        this.pendingUpdates.add(parentId)
+        this.pendingConnectionPositions.set(`${parentId}>${childIdeaId}`, { parentId, childId: childIdeaId, relativePosition })
         
         // 3. Debounce save
         if (this.saveTimeout) clearTimeout(this.saveTimeout)
@@ -825,18 +841,38 @@ export const useDataStore = defineStore('data', {
     },
 
     async flushUpdates(projectPath: string) {
-      const updates = Array.from(this.pendingUpdates)
-      this.pendingUpdates.clear()
+      const changes = [...this.pendingConnectionPositions.values()]
+      this.pendingConnectionPositions.clear()
       this.saveTimeout = null
+      await this.saveConnectionPositions(projectPath, changes)
+    },
 
+    // Many offsets at once (autolayout): applied locally in one pass, so the
+    // graph rebuilds once, then saved in one request.
+    async setConnectionPositions(projectPath: string, changes: ConnectionPositionChange[]) {
+      const rounded = changes.map(change => ({ ...change, relativePosition: roundOffset(change.relativePosition) }))
+      const byParent = new Map<string, Map<string, [number, number]>>()
+      for (const change of rounded) {
+        const children = byParent.get(change.parentId) ?? new Map<string, [number, number]>()
+        children.set(change.childId, change.relativePosition)
+        byParent.set(change.parentId, children)
+      }
+      for (const [parentId, children] of byParent) {
+        const parent = this.ideas[parentId]
+        if (!parent) continue
+        this.beginIdeaSync(parentId) // an older in-flight response must not undo this
+        parent.supportingConnections = parent.supportingConnections.map(connection => {
+          const relativePosition = children.get(connection.ideaId)
+          return relativePosition ? { ...connection, relativePosition } : connection
+        })
+      }
+      await this.saveConnectionPositions(projectPath, rounded)
+    },
+
+    async saveConnectionPositions(projectPath: string, changes: ConnectionPositionChange[]) {
+      if (changes.length === 0) return
       try {
-        await Promise.all(updates.map(ideaId => {
-          const idea = this.ideas[ideaId]
-          if (!idea) return Promise.resolve()
-          return this.updateIdea(projectPath, ideaId, {
-            supportingConnections: idea.supportingConnections
-          })
-        }))
+        await trpc.idea.setConnectionPositions.mutate({ projectPath, changes })
       } catch (e) {
         useToastStore().error('Failed to save positions', e)
       }
@@ -1070,13 +1106,13 @@ export const useDataStore = defineStore('data', {
             this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
           } else if (data.type === 'idea') {
             if (data.deleted) {
-              applyEntity(() => this.removeIdeaLocally(data.id))
+              applyRemoteIdeaUpdate(() => applyEntity(() => this.removeIdeaLocally(data.id)))
             } else if (!this.deletedIdeas.has(data.id)) {
               const revision = this.beginIdeaSync(data.id)
               const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
-              applyEntity(() => {
+              applyRemoteIdeaUpdate(() => applyEntity(() => {
                 if (this.replaceIdeaIfCurrent(idea.id, idea, revision)) this.syncFloatingIdea(idea)
-              })
+              }))
             }
           } else if (data.type === 'phase') {
             if (data.deleted) {

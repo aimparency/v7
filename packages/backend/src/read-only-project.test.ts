@@ -48,6 +48,7 @@ test('a read-only project refuses every graph change with one message, and stays
     update: () => caller.idea.update({ projectPath, ideaId: child.id, idea: { text: 'Renamed' } }),
     delete: () => caller.idea.delete({ projectPath, ideaIds: [child.id] }),
     disconnect: () => caller.idea.disconnect({ projectPath, parentIdeaId: parent.id, childIdeaId: child.id }),
+    setConnectionPositions: () => caller.idea.setConnectionPositions({ projectPath, changes: [{ parentId: parent.id, childId: child.id, relativePosition: [1, 1] }] }),
     removeFromPhase: () => caller.idea.removeFromPhase({ projectPath, ideaId: parent.id, phaseId: phase.id }),
     addReflection: () => caller.idea.addReflection({ projectPath, ideaId: child.id, reflection: { context: 'c', outcome: 'o', effectiveness: 'e', lesson: 'l' } }),
     phaseCreate: () => caller.phase.create({ projectPath, phase: { name: 'Later' } }),

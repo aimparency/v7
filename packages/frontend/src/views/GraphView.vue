@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, shallowRef, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
@@ -13,12 +13,13 @@ import PhaseSearchModal from '../components/PhaseSearchModal.vue'
 import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
-import { isIdeaNode, useGraphSimulation } from '../composables/useGraphSimulation'
+import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
-import { proposeRelaxedConnections } from '../utils/auto-relax'
-import { roundOffset, solveDiffMinimalLayout } from '../utils/autolayout'
+import type { LayoutChange } from '../utils/autolayout'
+import type { LayoutRequest } from '../utils/autolayout.worker'
+import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -337,75 +338,88 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
   zoomOut: 1.2,
 })
 
-async function autoRelaxLayout() {
-  const proposals = proposeRelaxedConnections(
-    links.value
-      .filter(link => !link.source.isRepo)
-      .map(link => ({
+// Layout: the solver proposes new connection offsets (largest shifts first).
+// They are previewed live by giving the simulation's links the proposed
+// offsets; nothing is saved until Apply, and the slider picks how many.
+const layoutPreview = shallowRef<{ changes: LayoutChange[]; stored: Map<GraphLink, GraphLink['relativePosition']> } | null>(null)
+const layoutPreviewCount = ref(0)
+const layoutRunning = ref(false)
+const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
+
+function solveLayoutInWorker(request: LayoutRequest): Promise<LayoutChange[]> {
+  const worker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
+  return new Promise<LayoutChange[]>((resolve, reject) => {
+    worker.onmessage = (event: MessageEvent<LayoutChange[]>) => resolve(event.data)
+    worker.onerror = (event) => reject(new Error(event.message))
+    worker.postMessage(request)
+  }).finally(() => worker.terminate())
+}
+
+async function startLayoutPreview() {
+  if (layoutPreview.value || layoutRunning.value) return
+  layoutRunning.value = true
+  try {
+    const changes = await solveLayoutInWorker({
+      nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
+      links: links.value.map(link => ({
         parentId: link.target.id,
         childId: link.source.id,
-        parentPosition: link.target.renderPos,
-        childPosition: link.source.renderPos,
-        parentRadius: link.target.r,
-        childRadius: link.source.r,
-        relativePosition: link.relativePosition
-      }))
-  )
-  if (proposals.length === 0) {
-    useToastStore().info('The graph is already relaxed; no relative positions changed by more than 3%.')
-    return
-  }
-
-  const parentCount = new Set(proposals.map(proposal => proposal.parentId)).size
-  if (!window.confirm(`Relax ${proposals.length} connections across ${parentCount} ideas? This will persist their relative positions.`)) return
-  await persistConnectionOffsets(proposals)
-}
-
-// Removes overlaps and multi-parent tension while rewriting as few stored
-// connection offsets as possible (see utils/autolayout).
-async function autoLayout() {
-  const { positions, changes } = solveDiffMinimalLayout(
-    nodes.value.map(node => ({ id: node.id, position: node.pos, radius: node.r, movable: true })),
-    links.value.map(link => ({
-      parentId: link.target.id,
-      childId: link.source.id,
-      relativePosition: link.relativePosition,
-      editable: isIdeaNode(link.source) && isIdeaNode(link.target)
-    }))
-  )
-  if (changes.length === 0) {
-    useToastStore().info('The layout is already free of overlaps and tension.')
-    return
-  }
-
-  const parentCount = new Set(changes.map(change => change.parentId)).size
-  if (!window.confirm(`Auto layout rewrites ${changes.length} of ${links.value.length} connections in ${parentCount} idea files. Persist?`)) return
-  for (const node of nodes.value) {
-    const position = positions.get(node.id)
-    if (position) { node.pos[0] = position[0]; node.pos[1] = position[1] }
-  }
-  await persistConnectionOffsets(changes)
-  useToastStore().info(`Auto layout rewrote ${changes.length} connections in ${parentCount} idea files.`)
-}
-
-// One update per parent idea; untouched connections keep their stored values.
-async function persistConnectionOffsets(changes: { parentId: string, childId: string, relativePosition: [number, number] }[]) {
-  const changesByParent = new Map<string, Map<string, [number, number]>>()
-  for (const change of changes) {
-    const children = changesByParent.get(change.parentId) ?? new Map()
-    children.set(change.childId, roundOffset(change.relativePosition))
-    changesByParent.set(change.parentId, children)
-  }
-  await Promise.all([...changesByParent].map(async ([parentId, children]) => {
-    const parent = dataStore.ideas[parentId]
-    if (!parent) return
-    await dataStore.updateIdea(projectStore.projectPath, parentId, {
-      supportingConnections: parent.supportingConnections.map(connection => ({
-        ...connection,
-        relativePosition: children.get(connection.ideaId) ?? connection.relativePosition
-      }))
+        relativePosition: [link.relativePosition[0], link.relativePosition[1]],
+        editable: isIdeaNode(link.source) && isIdeaNode(link.target)
+      })),
+      semanticPairs: simulation.semanticLinks.value.map(pair => ({ source: pair.source, target: pair.target, distance: pair.distance }))
     })
-  }))
+    if (changes.length === 0) {
+      useToastStore().info('The layout is already tidy; no connection would change.')
+      return
+    }
+    const linkByKey = new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link]))
+    const stored = new Map<GraphLink, GraphLink['relativePosition']>()
+    for (const change of changes) {
+      const link = linkByKey.get(linkKey(change.parentId, change.childId))
+      if (link) stored.set(link, link.relativePosition)
+    }
+    layoutPreview.value = { changes, stored }
+    layoutPreviewCount.value = changes.length
+  } catch (error) {
+    useToastStore().error('Layout failed', error)
+  } finally {
+    layoutRunning.value = false
+  }
+}
+
+// Each link gets either its proposed or its stored offset (new arrays: the
+// stored ones are shared with the data store and must stay untouched).
+watch([layoutPreview, layoutPreviewCount], ([preview, count]) => {
+  if (!preview) return
+  const linkByKey = new Map([...preview.stored.keys()].map(link => [linkKey(link.target.id, link.source.id), link]))
+  preview.changes.forEach((change, index) => {
+    const link = linkByKey.get(linkKey(change.parentId, change.childId))
+    if (link) link.relativePosition = index < count ? [...change.relativePosition] : preview.stored.get(link)!
+  })
+})
+
+// New graph data rebuilds the links, which drops the preview.
+watch(links, () => {
+  if (!layoutPreview.value) return
+  layoutPreview.value = null
+  useToastStore().info('The graph changed, so the layout preview was closed.')
+})
+
+function cancelLayoutPreview() {
+  const preview = layoutPreview.value
+  if (!preview) return
+  for (const [link, relativePosition] of preview.stored) link.relativePosition = relativePosition
+  layoutPreview.value = null
+}
+
+async function applyLayoutPreview() {
+  const preview = layoutPreview.value
+  if (!preview) return
+  layoutPreview.value = null
+  const applied = preview.changes.slice(0, layoutPreviewCount.value)
+  await dataStore.setConnectionPositions(projectStore.projectPath, applied)
+  useToastStore().info(`Layout saved ${applied.length} connections in ${new Set(applied.map(change => change.parentId)).size} idea files.`)
 }
 
 // Helper: split node text into lines for label rendering
@@ -526,6 +540,13 @@ function toggleSpinOffPreview() {
     <SpinOffApplyModal />
 
     <GraphSidePanel v-if="graphUIStore.graphColorMode !== 'spin-off'" />
+    <LayoutPreviewPanel
+      v-if="layoutPreview"
+      v-model:count="layoutPreviewCount"
+      :changes="layoutPreview.changes"
+      @apply="applyLayoutPreview"
+      @cancel="cancelLayoutPreview"
+    />
     <div class="top-controls">
       <span
         v-if="dataStore.unreadableIdeas.length"
@@ -548,11 +569,14 @@ function toggleSpinOffPreview() {
           <line x1="4" y1="4" x2="9" y2="9"></line>
         </svg>
       </button>
-      <button class="control-btn" @click="autoRelaxLayout" title="Evenly space child ideas and persist relative positions after confirmation">
-        Relax
-      </button>
-      <button class="control-btn" @click="autoLayout" title="Remove overlaps and tension, rewriting as few connection positions as possible (asks before persisting)">
-        Layout
+      <button
+        class="control-btn"
+        :class="{ active: layoutPreview || layoutRunning }"
+        :disabled="layoutRunning"
+        @click="startLayoutPreview"
+        title="Shorter connections, room between ideas, similar branches nearby; previews first, saves on Apply"
+      >
+        {{ layoutRunning ? 'Layout…' : 'Layout' }}
       </button>
       <button 
         class="control-btn" 

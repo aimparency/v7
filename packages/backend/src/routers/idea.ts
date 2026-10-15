@@ -8,7 +8,7 @@ import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
+import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, updateIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
 import { fetchOpenGithubIssues, parseGithubRepository } from '../github-issues.js';
 import { readPhase } from '../storage/phases.js';
 import { readProjectMeta } from '../storage/project.js';
@@ -751,6 +751,39 @@ export const ideaRouter = t.router({
     .mutation(async ({ input }) => {
       await removeIdeaFromPhase(input.projectPath, input.ideaId, input.phaseId);
       return { success: true };
+    }),
+
+  // Many connection offsets in one call (autolayout, drag saves): each parent
+  // file is rewritten once; every other field, including hypotheses, is kept.
+  setConnectionPositions: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      changes: z.array(z.object({
+        parentId: z.string().uuid(),
+        childId: z.string().uuid(),
+        relativePosition: z.tuple([z.number().finite(), z.number().finite()])
+      }))
+    }))
+    .mutation(async ({ input }) => {
+      const byParent = new Map<string, Map<string, [number, number]>>();
+      for (const change of input.changes) {
+        const children = byParent.get(change.parentId) ?? new Map<string, [number, number]>();
+        children.set(change.childId, change.relativePosition);
+        byParent.set(change.parentId, children);
+      }
+      let updated = 0;
+      for (const [parentId, children] of byParent) {
+        await updateIdea(input.projectPath, parentId, (parent) => ({
+          ...parent,
+          supportingConnections: parent.supportingConnections.map((connection) => {
+            const relativePosition = children.get(connection.ideaId);
+            if (!relativePosition) return connection;
+            updated++;
+            return { ...connection, relativePosition };
+          })
+        }));
+      }
+      return { updated };
     }),
 
   connectIdeas: delayedProcedure

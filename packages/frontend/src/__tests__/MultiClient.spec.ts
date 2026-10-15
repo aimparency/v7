@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { setActivePinia, createPinia } from 'pinia'
-import { useDataStore } from '../stores/data'
+import { flushRemoteIdeaUpdates, useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 
 // Use hoisted to make variable available inside vi.mock
@@ -16,7 +16,11 @@ const { mockTrpc } = vi.hoisted(() => {
         loadIdeas: { query: vi.fn().mockResolvedValue({ ideas: [], unreadable: [] }) },
         onUpdate: {
           subscribe: vi.fn((input, opts) => {
-            subscriptionCallback = opts.onData
+            // The store applies idea events in batches; deliver each one fully.
+            subscriptionCallback = async (event: unknown) => {
+              await opts.onData(event)
+              flushRemoteIdeaUpdates()
+            }
             return { unsubscribe: vi.fn() }
           })
         }

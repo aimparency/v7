@@ -1,17 +1,20 @@
-// Diff-minimal autolayout.
+// Autolayout that respects spatial memory.
 //
 // The stored layout is one offset per connection: the child's position
-// relative to its parent, in units of the two radii summed. The simulation turns
-// those offsets into positions; overlaps and ideas with several disagreeing
-// parents leave tension. This solver finds non-overlapping positions that keep
-// as many stored offsets EXACTLY as possible, so persisting the result rewrites
-// few connections (small git diffs) instead of nudging all of them.
+// relative to its parent, in units of the two radii summed. The solver looks for
+// positions where connections are short, ideas keep the simulation's spacing,
+// branches radiate outward and semantically close ideas sit near each other,
+// while as many stored offsets as possible stay EXACTLY as they are. So a run
+// rewrites few connections (small git diffs) and areas stay where they were.
 //
-// Method: iteratively reweighted least squares on the L1 norm of each
-// connection's residual (a group lasso per connection), alternated with an
-// overlap projection. The L1 weight 1/|residual| makes a satisfied connection
-// stiff and a violated one cheap, so the needed movement concentrates on few
-// connections; whole subtrees move rigidly with their root.
+// Method: iteratively reweighted least squares. Each term proposes a target
+// position with a weight; every iteration moves each idea toward the weighted
+// mean, then separates overlaps. The memory term is an L1 norm per connection
+// (weight 1/|residual|): a satisfied connection is stiff and a violated one
+// cheap, so the needed movement concentrates on few connections, and whole
+// subtrees move rigidly with their root. The other terms are quadratic, so they
+// only win where they are large: a connection is shortened once it is more
+// than memory / length radius sums longer than `room`.
 
 export interface LayoutNode {
   id: string
@@ -27,16 +30,26 @@ export interface LayoutLink {
   editable: boolean
 }
 
+export interface SemanticPair {
+  source: string
+  target: string
+  distance: number // cosine distance, 0 = same meaning
+}
+
 export interface LayoutChange {
   parentId: string
   childId: string
   relativePosition: [number, number]
+  shift: number // how far the offset moves, in radius sums; changes are sorted by it, largest first
 }
 
 export interface LayoutOptions {
   iterations?: number
-  clearance?: number // minimum center distance, in radius sums (the simulation pushes softly up to 2)
+  clearance?: number // minimum center distance in radius sums; the simulation's own margin, so it comes to rest
+  room?: number // connection length, in radius sums, that is never shortened
+  semanticPairs?: readonly SemanticPair[]
   minimumChange?: number // residual, in radius sums, below which a connection keeps its stored offset
+  weights?: Partial<typeof DEFAULT_WEIGHTS>
 }
 
 // Stored offsets are rounded so a re-save of an unchanged layout is diff-free.
@@ -45,16 +58,24 @@ const OFFSET_SCALE = 10 ** OFFSET_DECIMALS
 export const roundOffset = (offset: readonly [number, number]): [number, number] =>
   [Math.round(offset[0] * OFFSET_SCALE) / OFFSET_SCALE, Math.round(offset[1] * OFFSET_SCALE) / OFFSET_SCALE]
 
-const ANCHOR_WEIGHT = 0.05 // keeps components where they are; the objective alone is translation invariant
-const SMOOTHING = 0.01 // in radius sums: keeps 1/|residual| finite
+// Weights are dimensionless: residuals are measured in radius sums.
+const DEFAULT_WEIGHTS = {
+  memory: 3, // keep stored offsets
+  length: 1, // shorten connections longer than `room`
+  outward: 0.3, // a child lies beyond its parent, seen from the grandparents
+  semantic: 0.002, // per semantic pair (there are thousands), pulls toward (clearance + 4 · distance) radius sums
+  anchor: 0.05 // keeps every idea near where it was: the objective alone is translation invariant
+}
+const SMOOTHING = 0.01 // keeps 1/|residual| finite
 const DAMPING = 0.5
 const FINAL_SEPARATION_PASSES = 50
 
-export function solveDiffMinimalLayout(
+export function solveLayout(
   nodes: readonly LayoutNode[],
   links: readonly LayoutLink[],
-  { iterations = 300, clearance = 1.2, minimumChange = 0.05 }: LayoutOptions = {}
+  { iterations = 300, clearance = 2, room = 2.5, semanticPairs = [], minimumChange = 0.05, weights = {} }: LayoutOptions = {}
 ): { positions: Map<string, [number, number]>; changes: LayoutChange[] } {
+  const { memory: MEMORY, length: LENGTH, outward: OUTWARD, semantic: SEMANTIC, anchor: ANCHOR } = { ...DEFAULT_WEIGHTS, ...weights }
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
   const x = Float64Array.from(nodes, node => node.position[0])
@@ -68,6 +89,15 @@ export function solveDiffMinimalLayout(
     const span = radius[child]! + radius[parent]!
     return [{ link, child, parent, span, dx: link.relativePosition[0] * span, dy: link.relativePosition[1] * span }]
   })
+  const parentsOf = nodes.map(() => [] as number[])
+  for (const edge of edges) parentsOf[edge.child]!.push(edge.parent)
+  const connected = new Set(edges.map(edge => edge.child * count + edge.parent))
+  const pairs = semanticPairs.flatMap(pair => {
+    const a = indexOf.get(pair.source)
+    const b = indexOf.get(pair.target)
+    if (a === undefined || b === undefined || a === b || connected.has(a * count + b) || connected.has(b * count + a)) return []
+    return [{ a, b, span: radius[a]! + radius[b]!, length: clearance + 4 * pair.distance }]
+  })
 
   placeFromStoredOffsets(nodes, edges, x, y)
   const startX = x.slice()
@@ -76,27 +106,58 @@ export function solveDiffMinimalLayout(
   const sumX = new Float64Array(count)
   const sumY = new Float64Array(count)
   const sumWeight = new Float64Array(count)
+  const pull = (index: number, weight: number, targetX: number, targetY: number) => {
+    sumX[index] = sumX[index]! + weight * targetX
+    sumY[index] = sumY[index]! + weight * targetY
+    sumWeight[index] = sumWeight[index]! + weight
+  }
   const order = Array.from({ length: count }, (_, index) => index)
 
   for (let iteration = 0; iteration < iterations; iteration++) {
     for (let index = 0; index < count; index++) {
-      const drift = Math.hypot(x[index]! - startX[index]!, y[index]! - startY[index]!)
-      const weight = ANCHOR_WEIGHT / Math.max(drift, SMOOTHING * radius[index]!)
-      sumX[index] = weight * startX[index]!
-      sumY[index] = weight * startY[index]!
-      sumWeight[index] = weight
+      const drift = Math.hypot(x[index]! - startX[index]!, y[index]! - startY[index]!) / radius[index]!
+      sumX[index] = 0
+      sumY[index] = 0
+      sumWeight[index] = 0
+      pull(index, ANCHOR / Math.max(drift, SMOOTHING), startX[index]!, startY[index]!)
     }
 
-    for (const edge of edges) {
-      const { child, parent, dx, dy } = edge
-      const residual = Math.hypot(x[child]! - x[parent]! - dx, y[child]! - y[parent]! - dy)
-      const weight = 1 / Math.max(residual, SMOOTHING * edge.span)
-      sumX[child] = sumX[child]! + weight * (x[parent]! + dx)
-      sumY[child] = sumY[child]! + weight * (y[parent]! + dy)
-      sumWeight[child] = sumWeight[child]! + weight
-      sumX[parent] = sumX[parent]! + weight * (x[child]! - dx)
-      sumY[parent] = sumY[parent]! + weight * (y[child]! - dy)
-      sumWeight[parent] = sumWeight[parent]! + weight
+    for (const { child, parent, span, dx, dy } of edges) {
+      const vx = x[child]! - x[parent]!
+      const vy = y[child]! - y[parent]!
+
+      const memory = MEMORY / Math.max(Math.hypot(vx - dx, vy - dy) / span, SMOOTHING)
+      pull(child, memory, x[parent]! + dx, y[parent]! + dy)
+      pull(parent, memory, x[child]! - dx, y[child]! - dy)
+
+      const length = Math.hypot(vx, vy)
+      if (length > room * span) {
+        const scale = room * span / length
+        pull(child, LENGTH, x[parent]! + vx * scale, y[parent]! + vy * scale)
+        pull(parent, LENGTH, x[child]! - vx * scale, y[child]! - vy * scale)
+      }
+
+      const grandparents = parentsOf[parent]!
+      if (grandparents.length > 0 && length > 0) {
+        let fromX = 0
+        let fromY = 0
+        for (const grandparent of grandparents) {
+          fromX += x[parent]! - x[grandparent]!
+          fromY += y[parent]! - y[grandparent]!
+        }
+        const fromLength = Math.hypot(fromX, fromY)
+        if (fromLength > 0) pull(child, OUTWARD, x[parent]! + fromX / fromLength * length, y[parent]! + fromY / fromLength * length)
+      }
+    }
+
+    for (const { a, b, span, length } of pairs) {
+      const vx = x[b]! - x[a]!
+      const vy = y[b]! - y[a]!
+      const distance = Math.hypot(vx, vy)
+      if (distance <= length * span) continue
+      const scale = length * span / distance
+      pull(b, SEMANTIC, x[a]! + vx * scale, y[a]! + vy * scale)
+      pull(a, SEMANTIC, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
     for (let index = 0; index < count; index++) {
@@ -115,10 +176,27 @@ export function solveDiffMinimalLayout(
     if (!link.editable) return []
     const offsetX = x[child]! - x[parent]!
     const offsetY = y[child]! - y[parent]!
-    if (Math.hypot(offsetX - dx, offsetY - dy) <= minimumChange * span) return []
-    return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]) }]
-  })
+    const shift = Math.hypot(offsetX - dx, offsetY - dy) / span
+    if (shift <= minimumChange) return []
+    return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]), shift }]
+  }).sort((left, right) => right.shift - left.shift)
   return { positions, changes }
+}
+
+/** Where the stored offsets alone put each idea; what the simulation settles toward. */
+export function positionsFromStoredOffsets(nodes: readonly LayoutNode[], links: readonly LayoutLink[]): Map<string, [number, number]> {
+  const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
+  const x = Float64Array.from(nodes, node => node.position[0])
+  const y = Float64Array.from(nodes, node => node.position[1])
+  const edges = links.flatMap(link => {
+    const child = indexOf.get(link.childId)
+    const parent = indexOf.get(link.parentId)
+    if (child === undefined || parent === undefined || child === parent) return []
+    const span = nodes[child]!.radius + nodes[parent]!.radius
+    return [{ child, parent, dx: link.relativePosition[0] * span, dy: link.relativePosition[1] * span }]
+  })
+  placeFromStoredOffsets(nodes, edges, x, y)
+  return new Map(nodes.map((node, index): [string, [number, number]] => [node.id, [x[index]!, y[index]!]]))
 }
 
 // The diff is measured against the stored offsets, not against what the
