@@ -3,6 +3,25 @@ import type { ToolDefinition } from "./types.js";
 
 export const repoTools: ToolDefinition[] = [
   {
+    name: "import_github_issues",
+    description: "Start or top up the graph from a GitHub repository's open issues: one parent idea 'Open GitHub issues of owner/repo' with each issue as a child (title, body, issue URL, labels as tags). Pull requests are skipped; re-running only adds issues not imported yet. Public repos need no token; GITHUB_TOKEN in the backend's environment reaches private ones. Afterwards, connect the parent to the mission it serves and estimate value/cost of the issues worth doing.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        repository: { type: "string", description: "owner/repo or a github.com URL" },
+      },
+      required: ["projectPath", "repository"],
+    },
+    handler: async (args, trpcClient) => {
+      const result = await trpcClient.idea.importGithubIssues.mutate({
+        projectPath: args.projectPath as string,
+        repository: args.repository as string,
+      });
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  },
+  {
     name: "list_linked_repos",
     description: "List the repos this project can link an idea to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
     inputSchema: {

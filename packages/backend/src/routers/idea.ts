@@ -8,7 +8,8 @@ import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition } from '../storage/ideas.js';
+import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
+import { fetchOpenGithubIssues, parseGithubRepository } from '../github-issues.js';
 import { readPhase } from '../storage/phases.js';
 import { readProjectMeta } from '../storage/project.js';
 import { deleteIdeas, detachIdea, disconnectIdeas } from '../storage/idea-removal.js';
@@ -1059,6 +1060,43 @@ export const ideaRouter = t.router({
   // - Archives B
   // Guards: no self-merge, B must not already be archived. A direct parent-child
   // pair is allowed (the connecting edge is dropped to avoid a self-reference).
+  // Starts (or tops up) a graph from a repository's open GitHub issues: one
+  // parent idea per repository, one child per issue. The issue URL in the
+  // description marks what was imported, so re-running only adds new issues.
+  importGithubIssues: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      repository: z.string().min(1) // owner/repo or a github.com URL
+    }))
+    .mutation(async ({ input }) => {
+      const parsed = parseGithubRepository(input.repository);
+      if (!parsed) throw new Error(`Not a GitHub repository: ${input.repository} (use owner/repo or a github.com URL)`);
+      const { owner, repo } = parsed;
+      const issues = await fetchOpenGithubIssues(owner, repo);
+
+      const { ideas } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
+      const imported = new Set(ideas.flatMap((idea) => idea.description?.match(/https:\/\/github\.com\/\S+\/issues\/\d+/g) ?? []));
+      const parentText = `Open GitHub issues of ${owner}/${repo}`;
+      const fresh = issues.filter((issue) => !imported.has(issue.url));
+      let parent = ideas.find((idea) => idea.text === parentText && idea.status.state !== 'archived');
+      if (!parent && fresh.length > 0) {
+        parent = await storeNewIdea(input.projectPath, {
+          text: parentText,
+          description: `Imported from https://github.com/${owner}/${repo}/issues`,
+          tags: ['github']
+        }, {});
+      }
+      for (const issue of fresh) {
+        const child = await storeNewIdea(input.projectPath, {
+          text: issue.title,
+          description: [issue.body.trim().slice(0, 4000), `GitHub issue #${issue.number}: ${issue.url}`].filter(Boolean).join('\n\n'),
+          tags: ['github-issue', ...issue.labels]
+        }, { colorParentId: parent!.id });
+        await connectIdeasInternal(input.projectPath, parent!.id, child.id);
+      }
+      return { parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: issues.length - fresh.length };
+    }),
+
   merge: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
