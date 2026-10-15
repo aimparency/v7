@@ -116,7 +116,8 @@
         3.3147084222053973,
         -1.8980617220341478
       ],
-      "weight": 1
+      "weight": 1,
+      "evaluation": "Viewport label culling and sweep-and-prune layout keep the 790-idea graph fluid; no measured bottleneck remains."
     },
     {
       "ideaId": "4cf3aad9-b371-4264-b26a-61261c73ed43",

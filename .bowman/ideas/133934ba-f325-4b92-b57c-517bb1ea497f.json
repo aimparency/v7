@@ -46,7 +46,8 @@
         0.46961208840745017,
         3.8666067517452336
       ],
-      "weight": 1
+      "weight": 1,
+      "evaluation": "Showed that an agent can tune strategy parameters in simulation; no real-world value, since the parent direction was cancelled."
     },
     {
       "ideaId": "69321b93-d540-45a9-9a25-8f2d5254d43c",

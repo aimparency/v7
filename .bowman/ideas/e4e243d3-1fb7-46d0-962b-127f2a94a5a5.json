@@ -2,6 +2,7 @@
   "id": "e4e243d3-1fb7-46d0-962b-127f2a94a5a5",
   "text": "Implement archiving",
   "description": "",
+  "reflection": "Autonomous relevance check on 2026-07-30 found the sole implementation child, “Archive checkbox in edit idea - available when status is a halted status,” is done. Reconciled this finite umbrella from open to review rather than rebuilding completed work.",
   "reflections": [],
   "archived": false,
   "tags": [],
@@ -20,15 +21,14 @@
     "ce8516bc-df20-44d3-9fea-6784401e8276"
   ],
   "status": {
-    "state": "review",
-    "comment": "Archiving implementation child is done; awaiting integrated user acceptance.",
-    "date": 1785399053263
+    "state": "implemented",
+    "comment": "Closed 2026-10-15 at Felix's request. The scope is covered: an archive checkbox for non-ongoing statuses, archiving several selected ideas at once through the multi-edit modal, archived ideas findable via the search picker's include-archived option, and merge_ideas archiving merged sources. Considered and not added: a one-click archive of every cancelled/failed idea (136 are unarchived). That is a judgment for each idea, not a missing feature.",
+    "date": 1792085391247
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Autonomous relevance check on 2026-07-30 found the sole implementation child, “Archive checkbox in edit idea - available when status is a halted status,” is done. Reconciled this finite umbrella from open to review rather than rebuilding completed work."
+  "valueVariance": 0
 }
