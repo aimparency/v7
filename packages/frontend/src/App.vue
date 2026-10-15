@@ -29,6 +29,8 @@ import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ReviewInboxModal from './components/ReviewInboxModal.vue'
 import ToastStack from './components/ToastStack.vue'
+import { useToastStore } from './stores/toast'
+import { gitRepositoryLocation } from 'shared'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
@@ -165,10 +167,25 @@ const stopResizeWatchdog = () => {
 // Template refs
 const projectPathInput = ref('')
 
+const isOpeningGitUrl = ref(false)
+
 const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
   projectSelectionReturnPath.value = ''
-  await runProjectRestore(path)
+  if (!gitRepositoryLocation(path)) {
+    await runProjectRestore(path)
+    return
+  }
+  // Someone else's project: the backend clones its .bowman and opens it read-only.
+  isOpeningGitUrl.value = true
+  try {
+    const { projectPath } = await trpc.project.openGitUrl.mutate({ url: path })
+    await runProjectRestore(projectPath)
+  } catch (error) {
+    useToastStore().error('Could not open the repository', error)
+  } finally {
+    isOpeningGitUrl.value = false
+  }
 }
 
 const refreshDiscoveredProjects = async () => {
@@ -629,6 +646,7 @@ onUnmounted(() => {
       :discovered-projects="discoveredProjects"
       :scanned-roots="discoveredProjectRoots"
       :is-refreshing-discovered-projects="isRefreshingDiscoveredProjects"
+      :is-opening-git-url="isOpeningGitUrl"
       @select-project="handleSelectProject"
       @open-project-from-history="openProjectFromHistory"
       @remove-from-history="removeFromHistory"

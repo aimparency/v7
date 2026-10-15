@@ -14,6 +14,7 @@ const mountView = (modelValue: string) => mount(ProjectSelectionView, {
     discoveredProjects: [],
     scannedRoots: [],
     isRefreshingDiscoveredProjects: false,
+    isOpeningGitUrl: false,
   },
 })
 
@@ -28,6 +29,13 @@ describe('ProjectSelectionView project kind', () => {
     const wrapper = mountView('/work/existing')
     await vi.advanceTimersByTimeAsync(200)
     expect(wrapper.find('.select-project').text()).toBe('Open Project')
+  })
+
+  it('offers to open a Git URL read-only without inspecting it as a folder', async () => {
+    const wrapper = mountView('https://github.com/aimparency/v7.git')
+    await vi.advanceTimersByTimeAsync(200)
+    expect(wrapper.find('.select-project').text()).toBe('Open read-only')
+    expect(inspectPath).not.toHaveBeenCalled()
   })
 
   it('labels paths without a .bowman as New Project', async () => {

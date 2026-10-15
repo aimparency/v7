@@ -2,6 +2,7 @@
 import { computed, onUnmounted, ref, watch } from 'vue'
 import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
 import { trpc } from '../trpc'
+import { gitRepositoryLocation } from 'shared'
 
 type DiscoveredProject = {
   path: string
@@ -15,6 +16,7 @@ const props = defineProps<{
   discoveredProjects: DiscoveredProject[]
   scannedRoots: string[]
   isRefreshingDiscoveredProjects: boolean
+  isOpeningGitUrl: boolean
 }>()
 
 const emit = defineEmits<{
@@ -39,7 +41,7 @@ watch(() => props.modelValue, (value) => {
   inspectedPath.value = ''
   bowmanExists.value = null
   completionValue.value = ''
-  if (!path) return
+  if (!path || gitRepositoryLocation(path)) return
   inspectionTimer = setTimeout(async () => {
     try {
       const result = await trpc.project.inspectPath.query({ projectPath: path })
@@ -64,11 +66,13 @@ watch(() => props.modelValue, (value) => {
 
 onUnmounted(() => clearTimeout(inspectionTimer))
 
-const selectButtonLabel = computed(() =>
-  props.modelValue.trim() && inspectedPath.value === props.modelValue.trim() && bowmanExists.value === false
+const selectButtonLabel = computed(() => {
+  if (props.isOpeningGitUrl) return 'Cloning…'
+  if (gitRepositoryLocation(props.modelValue)) return 'Open read-only'
+  return props.modelValue.trim() && inspectedPath.value === props.modelValue.trim() && bowmanExists.value === false
     ? 'New Project'
     : 'Open Project'
-)
+})
 const completionSuffix = computed(() => completionValue.value.slice(props.modelValue.trim().length))
 
 const acceptCompletion = (event: KeyboardEvent) => {
@@ -114,14 +118,14 @@ const formatRelativeTime = (timestamp: number): string => {
         <input
           :value="props.modelValue"
           type="text"
-          placeholder="Enter project folder path..."
+          placeholder="Project folder path, or a Git URL to view read-only"
           class="project-input"
           @input="onInput"
           @keydown.tab="acceptCompletion"
           @keydown.enter="emit('select-project')"
         />
       </div>
-      <button @click="emit('select-project')" class="select-project">{{ selectButtonLabel }}</button>
+      <button @click="emit('select-project')" class="select-project" :disabled="props.isOpeningGitUrl">{{ selectButtonLabel }}</button>
     </div>
 
     <div class="project-lists">

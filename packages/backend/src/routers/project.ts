@@ -14,6 +14,7 @@ import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-
 import { onChange, type ChangeEvent } from '../change-events.js';
 import { writeJsonAtomic } from '../storage/json.js';
 import { normalizeProjectPath } from '../project-path.js';
+import { openGitRepository } from '../git-repository-cache.js';
 import { ensureProjectStructure, readProjectMeta } from '../storage/project.js';
 import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
 import { listPhases } from '../storage/phases.js';
@@ -119,6 +120,13 @@ export const projectRouter = t.router({
       const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
       return { writable: blocker === null, reason: blocker?.message ?? null };
     }),
+
+  // Someone else's project by Git URL: cached clone of its .bowman, read-only.
+  openGitUrl: delayedProcedure
+    .input(z.object({
+      url: z.string().min(1)
+    }))
+    .mutation(async ({ input }) => ({ projectPath: await openGitRepository(input.url) })),
 
   discoverLocalProjects: delayedProcedure
     .input(projectDiscoveryInputSchema.optional())
