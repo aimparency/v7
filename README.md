@@ -51,6 +51,7 @@ In that sense, the graph is not only for tasks. It is a coordination surface bet
 
 Optional:
 
+- [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) for the agent coding tools' file search
 - Claude CLI for Claude-backed sessions
 - Gemini tooling for Gemini-backed sessions
 - Codex tooling for Codex-backed sessions

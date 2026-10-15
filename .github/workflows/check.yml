@@ -22,6 +22,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      # The agent coding tools search with ripgrep.
+      - run: sudo apt-get update -q && sudo apt-get install -y --no-install-recommends ripgrep
+
       # The backend tests embed text with a local model (~130 MB download).
       - uses: actions/cache@v4
         with:
