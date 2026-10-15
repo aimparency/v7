@@ -300,17 +300,6 @@ function updateVisibleLabels() {
     visibleLabelIds.value = next
 }
 
-const renderLinks = computed(() => { 
-    trigger.value; 
-    return links.value.map(l => ({
-        source: { ...l.source, x: l.source.renderPos[0], y: l.source.renderPos[1] },
-        target: { ...l.target, x: l.target.renderPos[0], y: l.target.renderPos[1] },
-        weight: l.weight,
-        share: l.share,
-        scale: visualScale.value
-    })) 
-})
-
 const selectedLinkData = computed(() => {
   trigger.value
   if (!graphUIStore.selectedLink) return null

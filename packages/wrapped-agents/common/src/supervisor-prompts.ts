@@ -7,8 +7,6 @@
 import type { SupervisorStateName, StateContext, AutonomyPolicy } from './supervisor-state'
 import { getState, type State, type Action } from './state-machine-definition'
 
-const PROMPT_MARKER = "Respond ONLY with the raw JSON action object (single line, no markdown, no code blocks)."
-
 export interface PromptContext {
   state: SupervisorStateName
   supervisedContext: string  // Last N lines from worker session
