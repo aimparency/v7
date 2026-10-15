@@ -5,6 +5,7 @@ import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
+import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
@@ -350,7 +351,7 @@ async function autoRelaxLayout() {
       }))
   )
   if (proposals.length === 0) {
-    window.alert('The graph is already relaxed; no relative positions changed by more than 3%.')
+    useToastStore().info('The graph is already relaxed; no relative positions changed by more than 3%.')
     return
   }
 

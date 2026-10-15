@@ -2,6 +2,7 @@
 import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
+import { useToastStore } from '../stores/toast'
 
 const emit = defineEmits(['close'])
 
@@ -34,7 +35,7 @@ const handleFix = async () => {
         fixesApplied.value = fixes
     }
   } catch (e) {
-    alert('Failed to fix inconsistencies: ' + e)
+    useToastStore().error('Failed to fix inconsistencies', e)
   } finally {
     isFixing.value = false
   }

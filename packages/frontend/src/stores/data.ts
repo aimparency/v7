@@ -9,6 +9,7 @@ import { useUIStore } from './ui'
 import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
 import { useHistoryStore } from './history'
+import { useToastStore } from './toast'
 import { keepIdeaSelection } from './ui/selection-anchor'
 import { clientId } from '../utils/mutation-activity'
 import { loadAllIdeasCache, saveIdeas } from '../utils/db'
@@ -833,7 +834,7 @@ export const useDataStore = defineStore('data', {
           })
         }))
       } catch (e) {
-        console.error("Failed to flush updates", e)
+        useToastStore().error('Failed to save positions', e)
       }
     },
     
@@ -1078,7 +1079,7 @@ export const useDataStore = defineStore('data', {
             }
           }
         },
-        onError: (err: any) => console.error('Subscription error:', err)
+        onError: (err: any) => useToastStore().error('Live updates stopped; reload to resync', err)
       });
     },
 

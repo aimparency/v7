@@ -28,6 +28,7 @@ import LoopPanel from './components/LoopPanel.vue'
 import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ReviewInboxModal from './components/ReviewInboxModal.vue'
+import ToastStack from './components/ToastStack.vue'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
@@ -751,6 +752,7 @@ onUnmounted(() => {
       </div>
       <div v-if="historyStore.message" class="history-message">{{ historyStore.message }}</div>
     </footer>
+    <ToastStack />
   </div>
 </template>
 

@@ -4,6 +4,7 @@ import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { findConnectionBetween, useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
+import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
@@ -18,6 +19,7 @@ export function useGraphInteraction(
     // Alias for backwards compatibility
     const svgRef = elementRef
     const dataStore = useDataStore()
+    const toastStore = useToastStore()
     const uiStore = useUIStore()
     const modalStore = useUIModalStore()
     const projectStore = useProjectStore()
@@ -278,7 +280,7 @@ export function useGraphInteraction(
                                  // Offer contribution % + hypothesis for the new connection.
                                  modalStore.openConnectionDetailsModal(parentNode.id, newIdeaId, onConnectionConfirmed)
                              }).catch(err => {
-                                 console.error('Graph: Connection failed', err)
+                                 toastStore.error('Connection failed', err)
                              })
                          } else {
                              setTimeout(checkNode, 50)
@@ -544,7 +546,7 @@ export function useGraphInteraction(
                 // Offer contribution % + hypothesis for the new connection.
                 modalStore.openConnectionDetailsModal(parent.id, child.id)
             } catch (e) {
-                console.error('Failed to connect ideas:', e)
+                toastStore.error('Failed to connect ideas', e)
             }
         }
     }

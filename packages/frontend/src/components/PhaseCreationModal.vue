@@ -4,6 +4,7 @@ import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
+import { useToastStore } from '../stores/toast'
 import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
 import PhaseSearchModal from './PhaseSearchModal.vue'
@@ -152,7 +153,7 @@ const onParentSelected = (payload: PhaseSearchSelection) => {
 
   const phase = payload.data
   if (modalStore.phaseModalMode === 'edit' && phase.id === modalStore.phaseModalEditingPhaseId) {
-    alert('Cannot set phase as its own parent.')
+    useToastStore().warning('Cannot set phase as its own parent.')
     return
   }
 

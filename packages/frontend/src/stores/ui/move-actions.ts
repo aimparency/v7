@@ -1,5 +1,6 @@
 import { trpc } from '../../trpc'
 import { useDataStore } from '../data'
+import { useToastStore } from '../toast'
 import { isIdeaInTree as isIdeaInTreeHelper } from './navigation-helpers'
 import { useProjectStore } from '../project-store'
 import { useUIModalStore } from './modal-store'
@@ -67,7 +68,7 @@ export async function moveIdeaDownAction(uiStore: any) {
           await moveOnServer(currentIdea.id, { from: parent, to: parent, index: nextIndex })
           parentState.selectedIncomingIndex = nextIndex
         } catch (e) {
-          console.error('Move failed', e)
+          useToastStore().error('Move failed', e)
         }
       }
     }
@@ -94,7 +95,7 @@ export async function moveIdeaDownAction(uiStore: any) {
           reloadedPhase.selectedIdeaIndex = nextIndex
         }
       } catch (e) {
-        console.error('Move failed', e)
+        useToastStore().error('Move failed', e)
       }
     } else {
       const col = uiStore.activeColumn
@@ -132,7 +133,7 @@ export async function moveIdeaDownAction(uiStore: any) {
           const reloadedNew = dataStore.phases[nextPhaseId]
           if (reloadedNew) reloadedNew.selectedIdeaIndex = 0
         } catch (e) {
-          console.error('Move across phases failed', e)
+          useToastStore().error('Move across phases failed', e)
         }
       }
     }
@@ -167,7 +168,7 @@ export async function moveIdeaUpAction(uiStore: any) {
           await moveOnServer(currentIdea.id, { from: parent, to: parent, index: prevIndex })
           parentState.selectedIncomingIndex = prevIndex
         } catch (e) {
-          console.error('Move failed', e)
+          useToastStore().error('Move failed', e)
         }
       }
     }
@@ -193,7 +194,7 @@ export async function moveIdeaUpAction(uiStore: any) {
           reloadedPhase.selectedIdeaIndex = prevIndex
         }
       } catch (e) {
-        console.error('Move failed', e)
+        useToastStore().error('Move failed', e)
       }
     } else {
       const col = uiStore.activeColumn
@@ -231,7 +232,7 @@ export async function moveIdeaUpAction(uiStore: any) {
           const reloadedPrev = dataStore.phases[prevPhaseId]
           if (reloadedPrev) reloadedPrev.selectedIdeaIndex = reloadedPrev.commitments.length - 1
         } catch (e) {
-          console.error('Move across phases failed', e)
+          useToastStore().error('Move across phases failed', e)
         }
       }
     }
@@ -307,7 +308,7 @@ export async function moveIdeaOutAction(uiStore: any) {
     const to = grandparentId ? { parentId: grandparentId } : targetPhaseId ? { phaseId: targetPhaseId } : undefined
     await moveOnServer(currentIdeaId, { from: { parentId }, to, index: newIndex })
   } catch (e) {
-    console.error('Move failed', e)
+    useToastStore().error('Move failed', e)
   }
 }
 
@@ -417,7 +418,7 @@ export async function moveIdeaInAction(uiStore: any) {
     const from = oldParentId ? { parentId: oldParentId } : oldPhaseId ? { phaseId: oldPhaseId } : undefined
     await moveOnServer(currentIdeaId, { from, to: { parentId: previousSiblingId }, index: insertionIndex })
   } catch (e) {
-    console.error('Move failed', e)
+    useToastStore().error('Move failed', e)
   }
 }
 
@@ -485,7 +486,7 @@ export async function pasteCutIdeaAction(uiStore: any, dataStore: any) {
 
     modalStore.clearTeleportBuffer()
   } catch (e) {
-    console.error('Teleport paste failed', e)
+    useToastStore().error('Teleport paste failed', e)
   }
 }
 
@@ -541,6 +542,6 @@ export async function pasteCopiedIdeaAction(uiStore: any, dataStore: any) {
 
     modalStore.clearTeleportBuffer()
   } catch (e) {
-    console.error('Copy paste failed', e)
+    useToastStore().error('Copy paste failed', e)
   }
 }
