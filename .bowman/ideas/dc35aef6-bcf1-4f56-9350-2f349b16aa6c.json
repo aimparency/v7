@@ -16,14 +16,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792061195992
+    "state": "review",
+    "comment": "Implemented and verified against the running backend; awaiting Felix's acceptance (ideally after one live loop cycle).",
+    "date": 1792061856439
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "reflection": "Implemented in 8724d0b (preceded by the shared selection/paths/schema work in 96f73a7, 6b26d9c, ece2416). agent-tools/idea-file-tools.ts (230 lines) deleted; connectGraph(projectPath) in agent-tools/graph-tools.ts is a tRPC client to the backend (PORT_BACKEND_WS, inherited from the spawning backend's env; Node 22 global WebSocket, so no ws dependency). Worker search is now real semantic search (idea.searchSemantic) instead of keyword matching; hygiene is the backend's full graphHygiene. Stop policy uses shared isOngoingState (the old list missed 'review'). Verified: agent-tools, loop-worker and shared typechecks and tests; pnpm check 25/25; loop-worker tsdown bundle contains no runtime backend import; integration script against the running backend: real-graph listIdeas (777), getPrioritizedIdeas, getIdeaContext (2 paths), semantic search hits, hygiene; scratch project create → child linked to parent, status update, branch color inherited; process exits cleanly after close(). Not verified: a full live loop cycle (needs a provider API key and incurs model cost). Known limitation: the worker now needs a reachable backend; it is always spawned by one."
 }
