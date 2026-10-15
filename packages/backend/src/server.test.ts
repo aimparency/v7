@@ -1268,6 +1268,36 @@ test('a pre-rename .bowman (aims/, done) is migrated on first access and read as
   assert.equal(await fs.pathExists(path.join(testProjectPath, 'aims')), false);
 });
 
+test('idea.get migrates a legacy file that came back through git, and names an unknown id as not found', async () => {
+  await caller.project.getMeta({ projectPath: testProjectPath });
+  const returnedId = uuidv4();
+  await fs.outputJson(path.join(testProjectPath, 'aims', `${returnedId}.json`),
+    { id: returnedId, text: 'returned', tags: [], committedIn: [], status: { state: 'open', comment: '', date: 1 }, supportedAims: [], supportingConnections: [] });
+
+  assert.equal((await caller.idea.get({ projectPath: testProjectPath, ideaId: returnedId })).text, 'returned');
+  const unknownId = uuidv4();
+  await assert.rejects(caller.idea.get({ projectPath: testProjectPath, ideaId: unknownId }), new RegExp(`Idea ${unknownId} not found`));
+});
+
+test('graph hygiene: only still-open parents of finished children are collapse candidates; waiting ideas are not unarchived clutter', async () => {
+  const parentIn = async (state: string) => {
+    const parent = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: `${state} parent`, status: { state } } });
+    await caller.idea.createSubIdea({ projectPath: testProjectPath, parentIdeaId: parent.id, idea: { text: `child of ${state}`, status: { state: 'implemented' } } });
+    return parent;
+  };
+  const open = await parentIn('open');
+  await parentIn('implemented');
+  const cancelled = await parentIn('cancelled');
+  await parentIn('review');
+  const waiting = await parentIn('human-dependent');
+
+  const report = await caller.graphHealth.graphHygiene({ projectPath: testProjectPath });
+  assert.deepEqual(report.collapseCandidates.items.map((item) => item.id), [open.id]);
+  const unarchived = report.unarchivedCancelledOrFailed.items.map((item) => item.id);
+  assert.deepEqual(unarchived, [cancelled.id]);
+  assert.ok(!unarchived.includes(waiting.id));
+});
+
 test('opening an unversioned project records the current data model version', async () => {
   await fs.outputJson(path.join(testProjectPath, 'meta.json'), { name: 'Old', color: '#007acc' });
   const meta = await caller.project.getMeta({ projectPath: testProjectPath });

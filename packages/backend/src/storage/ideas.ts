@@ -98,21 +98,31 @@ function placeUnplacedConnections<T extends { supportingConnections?: any[] }>(i
   };
 }
 
-export async function readIdea(rawProjectPath: string, ideaId: string, afterLayoutMigration = false): Promise<Idea> {
-  const projectPath = normalizeProjectPath(rawProjectPath);
-  
-  // Try active ideas first
-  let ideaPath = path.join(projectPath, 'ideas', `${ideaId}.json`);
-  if (!(await fs.pathExists(ideaPath))) {
-    // Try archived ideas
-    ideaPath = path.join(projectPath, 'archived-ideas', `${ideaId}.json`);
-    if (!afterLayoutMigration && !(await fs.pathExists(ideaPath))) {
-      await migrateProject(projectPath, { force: true }); // may still be in the legacy layout
-      return readIdea(projectPath, ideaId, true);
-    }
+export class IdeaNotFoundError extends Error {
+  constructor(ideaId: string) {
+    super(`Idea ${ideaId} not found`);
   }
-  
-  return IdeaSchema.parse(normalizeIdeaRecord(await fs.readJson(ideaPath)).idea);
+}
+
+export async function readIdea(rawProjectPath: string, ideaId: string): Promise<Idea> {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  const file = `${ideaId}.json`;
+  const ideaPath = async () => {
+    for (const dir of ['ideas', 'archived-ideas']) {
+      const candidate = path.join(projectPath, dir, file);
+      if (await fs.pathExists(candidate)) return candidate;
+    }
+    return null;
+  };
+
+  let found = await ideaPath();
+  // Only an idea in the legacy layout (e.g. back through git) justifies a migration.
+  if (!found && (await fs.pathExists(path.join(projectPath, 'aims', file)) || await fs.pathExists(path.join(projectPath, 'archived-aims', file)))) {
+    await migrateProject(projectPath, { force: true });
+    found = await ideaPath();
+  }
+  if (!found) throw new IdeaNotFoundError(ideaId);
+  return IdeaSchema.parse(normalizeIdeaRecord(await fs.readJson(found)).idea);
 }
 
 // Explicit, idempotent upgrade of idea files: legacy fields and unplaced

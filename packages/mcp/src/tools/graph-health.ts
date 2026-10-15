@@ -106,7 +106,7 @@ export const graphHealthTools: ToolDefinition[] = [
   },
   {
     name: "graph_hygiene",
-    description: "Read-only dashboard of graph DEFECTS: floating ideas (no phase AND no parents), mega-parents (catch-all smell, >= megaParentThreshold direct children), stale cancelled/failed/human-dependent ideas, collapse candidates (all active children implemented), and duplicate clusters (cosine >= duplicateThreshold; needs build_search_index). Uncommitted ideas are NOT defects — having no phase is a normal state; browse them with list_ideas uncommitted=true. Act via merge_ideas / suggest_reparents / update_idea.",
+    description: "Read-only dashboard of graph DEFECTS: floating ideas (no phase AND no parents), mega-parents (catch-all smell, >= megaParentThreshold direct children), cancelled/failed ideas not yet archived, collapse candidates (open/in-progress/partially parents whose active children are all implemented: finish the parent or add what it still needs), and duplicate clusters (cosine >= duplicateThreshold; needs build_search_index). Uncommitted ideas are NOT defects — having no phase is a normal state; browse them with list_ideas uncommitted=true. Act via merge_ideas / suggest_reparents / update_idea.",
     inputSchema: {
       type: "object",
       properties: {

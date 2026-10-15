@@ -423,8 +423,8 @@ export const graphHealthRouter = t.router({
     }),
 
   // Read-only graph-hygiene dashboard: surfaces where the idea graph needs maintenance —
-  // floating ideas, mega-parents (catch-all smell), stale cancelled/failed/human-dependent
-  // ideas, collapse candidates (parents whose active children are all done), and
+  // floating ideas, mega-parents (catch-all smell), cancelled/failed ideas not yet archived,
+  // collapse candidates (still-open parents whose active children are all done), and
   // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
   graphHygiene: delayedProcedure
     .input(z.object({
@@ -468,14 +468,20 @@ export const graphHealthRouter = t.router({
         .sort((x, y) => y.n - x.n)
         .map((x) => ({ id: x.a.id, text: x.a.text, directChildren: x.n }));
 
-      // 3. Stale-status: cancelled/failed/human-dependent but not archived (clutter).
-      const staleStates = new Set(['cancelled', 'failed', 'human-dependent']);
-      const staleStatus = active
-        .filter((a: Idea) => staleStates.has(a.status.state))
+      // 3. Settled as cancelled/failed but not archived: archive once the reason no
+      // longer needs to stay visible. (human-dependent is waiting, not settled.)
+      const unarchivedStates = new Set(['cancelled', 'failed']);
+      const unarchivedCancelledOrFailed = active
+        .filter((a: Idea) => unarchivedStates.has(a.status.state))
         .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
 
-      // 4. Collapse candidates: parents whose active children are ALL done.
+      // 4. Collapse candidates: parents still open to work whose active children are
+      // ALL done — either finish the parent or name what else it needs. A settled
+      // parent (implemented, cancelled) or one awaiting a human (review,
+      // human-dependent) with done children is the expected end state, not a defect.
+      const workableStates = new Set(['open', 'in-progress', 'partially']);
       const collapseCandidates = active
+        .filter((a: Idea) => workableStates.has(a.status.state))
         .map((a: Idea) => {
           const kids = childIdsOf(a).map((id) => ideaMap.get(id)!).filter((k) => !k.archived);
           const done = kids.filter((k) => k.status.state === 'implemented').length;
@@ -504,7 +510,7 @@ export const graphHealthRouter = t.router({
         thresholds: { megaParentThreshold, duplicateThreshold },
         floating: section(floating),
         megaParents: section(megaParents),
-        staleStatus: section(staleStatus),
+        unarchivedCancelledOrFailed: section(unarchivedCancelledOrFailed),
         collapseCandidates: section(collapseCandidates),
         duplicateClusters: section(duplicateClusters),
       };

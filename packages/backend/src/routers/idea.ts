@@ -8,7 +8,7 @@ import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
+import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
 import { fetchOpenGithubIssues, parseGithubRepository } from '../github-issues.js';
 import { readPhase } from '../storage/phases.js';
 import { readProjectMeta } from '../storage/project.js';
@@ -211,8 +211,7 @@ export const ideaRouter = t.router({
         if (result.status === 'fulfilled') return [result.value];
 
         const ideaId = input.ideaIds[index];
-        const message = result.reason instanceof Error ? result.reason.message : String(result.reason);
-        if (!message.includes('ENOENT')) {
+        if (!(result.reason instanceof IdeaNotFoundError)) {
           console.warn(`Failed to read idea ${ideaId}`, result.reason);
         }
         return [];

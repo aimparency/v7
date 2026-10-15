@@ -22,7 +22,7 @@ type UnreadableIdea = RouterOutputs['project']['loadIdeas']['unreadable'][number
 
 const isMissingFileError = (error: unknown) => {
   const message = error instanceof Error ? error.message : String(error)
-  return message.includes('ENOENT') || message.includes('no such file or directory')
+  return /ENOENT|no such file or directory|Idea \S+ not found/.test(message)
 }
 
 // Neutral grey for black-box linked-repo nodes — they are opaque boundaries,

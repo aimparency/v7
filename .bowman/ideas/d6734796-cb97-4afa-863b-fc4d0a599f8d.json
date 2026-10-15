@@ -14,7 +14,16 @@
   ],
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "98e98771-b469-42c2-a9c8-08d1812ce3a3",
+      "relativePosition": [
+        1.99,
+        1.51
+      ],
+      "weight": 1
+    }
+  ],
   "supportedIdeas": [
     "fe8b6496-588c-4439-8a39-056dab245c4f"
   ],
