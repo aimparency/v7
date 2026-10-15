@@ -31,3 +31,30 @@ export function packageRoot(callerUrl: string): string {
   }
   return dir;
 }
+
+/**
+ * Runs `fn` while holding an exclusive lock on `filePath` across processes
+ * (atomic mkdir of `<filePath>.lock`). For read-modify-write cycles on a file
+ * that several processes change, e.g. the backend and loop workers on
+ * runtime/loops.json. A lock older than `staleMs` is from a crashed holder.
+ */
+export async function withProcessFileLock<T>(filePath: string, fn: () => Promise<T>, staleMs = 10_000): Promise<T> {
+  const lockPath = `${filePath}.lock`;
+  await fs.promises.mkdir(path.dirname(filePath), { recursive: true });
+  for (;;) {
+    try {
+      await fs.promises.mkdir(lockPath);
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'EEXIST') throw error;
+      const age = await fs.promises.stat(lockPath).then((stats) => Date.now() - stats.mtimeMs, () => 0);
+      if (age > staleMs) await fs.promises.rm(lockPath, { recursive: true, force: true });
+      else await new Promise((resolve) => setTimeout(resolve, 10));
+    }
+  }
+  try {
+    return await fn();
+  } finally {
+    await fs.promises.rm(lockPath, { recursive: true, force: true });
+  }
+}

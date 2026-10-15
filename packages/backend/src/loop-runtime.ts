@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { calculateIdeaValues, selectWorkCandidates } from 'shared';
-import { nodeEntryArgs, packageRoot } from 'shared/node-entry';
+import { nodeEntryArgs, packageRoot, withProcessFileLock } from 'shared/node-entry';
 import { spawn, type ChildProcess } from 'child_process';
 import { emitChange } from './change-events.js';
 import { writeJsonAtomic } from './storage/json.js';
@@ -176,11 +176,15 @@ export const writeLoopRuntimeState = async (rawProjectPath: string, state: LoopR
 
 export const mutateLoopRuntimeState = async (
   rawProjectPath: string,
-  mutate: (state: LoopRuntimeState) => void
+  mutate: (state: LoopRuntimeState) => void | Promise<void>
 ) => {
-  const state = await readLoopRuntimeState(rawProjectPath);
-  mutate(state);
-  await writeLoopRuntimeState(rawProjectPath, state);
+  // Loop workers change the same file: hold the shared lock across read and write.
+  const state = await withProcessFileLock(getLoopRuntimePath(normalizeProjectPath(rawProjectPath)), async () => {
+    const current = await readLoopRuntimeState(rawProjectPath);
+    await mutate(current);
+    await writeLoopRuntimeState(rawProjectPath, current);
+    return current;
+  });
   emitChange({ type: 'loop', id: 'runtime', projectPath: normalizeProjectPath(rawProjectPath) });
   return state;
 };
@@ -289,13 +293,16 @@ export const killLoopWorker = async (rawProjectPath: string, instanceId: string)
 
 export const refreshLoopProcessStates = async (rawProjectPath: string) => {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const state = await readLoopRuntimeState(projectPath);
-  for (const instance of state.instances) {
-    const active = activeLoopWorkers.get(loopWorkerKey(projectPath, instance.id));
-    if (active?.process.exitCode !== null && active?.process.exitCode !== undefined) {
-      activeLoopWorkers.delete(loopWorkerKey(projectPath, instance.id));
+  // Under the shared lock: a stale snapshot written back would drop what a
+  // worker appended in between.
+  return withProcessFileLock(getLoopRuntimePath(projectPath), async () => {
+    const state = await readLoopRuntimeState(projectPath);
+    for (const instance of state.instances) {
+      const active = activeLoopWorkers.get(loopWorkerKey(projectPath, instance.id));
+      if (active?.process.exitCode !== null && active?.process.exitCode !== undefined) {
+        activeLoopWorkers.delete(loopWorkerKey(projectPath, instance.id));
+      }
     }
-  }
     let changed = false;
     for (const instance of state.instances) {
       const workerState = await readLoopWorkerState(projectPath, instance.id);
@@ -321,6 +328,7 @@ export const refreshLoopProcessStates = async (rawProjectPath: string) => {
     }
     if (changed) await writeLoopRuntimeState(projectPath, state);
     return state;
+  });
 };
 
 export const spawnLoopWorker = async (rawProjectPath: string, instanceId: string) => {

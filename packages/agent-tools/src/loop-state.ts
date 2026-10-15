@@ -1,6 +1,7 @@
 import fs from 'fs-extra';
 import path from 'path';
 import { toBowmanPath } from 'shared';
+import { withProcessFileLock } from 'shared/node-entry';
 import {
   getLoopEventsPath,
   getLoopInboxPath,
@@ -46,10 +47,13 @@ export async function mutateLoopRuntimeState(
   projectPath: string,
   mutate: (state: LoopRuntimeState) => void
 ): Promise<LoopRuntimeState> {
-  const state = await readLoopRuntimeState(projectPath);
-  mutate(state);
-  await writeLoopRuntimeState(projectPath, state);
-  return state;
+  // The backend changes the same file: hold the shared lock across read and write.
+  return withProcessFileLock(getLoopRuntimePath(projectPath), async () => {
+    const state = await readLoopRuntimeState(projectPath);
+    mutate(state);
+    await writeLoopRuntimeState(projectPath, state);
+    return state;
+  });
 }
 
 export async function appendLoopEvent(
