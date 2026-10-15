@@ -833,16 +833,13 @@ export class WatchdogService {
         // parseable action is already present after the marker, process it now.
         // We validate the JSON locally first so a half-rendered reply doesn't
         // trip processDecision's retry path.
-        let earlyContent = this.locateResponseAfterMarker(
+        const earlyContent = this.locateResponseAfterMarker(
           this.readAgentLines(this.watchdog, WATCHDOG_PARSER_LINE_COUNT),
           this.currentPromptMarker,
         );
         if (earlyContent) {
           try {
-            let jsonString = earlyContent;
-            if (!earlyContent.trim().startsWith('{')) {
-              jsonString = this.extractJson(earlyContent);
-            }
+            const jsonString = this.replyJson(earlyContent);
             JSON.parse(jsonString.replace(/[\r\n]+/g, ' '));
             this.log("DEBUG: Watchdog reply already on screen before spinner seen. Parsing early.");
             this.waitingForResponseStart = false;
@@ -870,8 +867,8 @@ export class WatchdogService {
 
         const elapsedSinceRequest = now - this.responseRequestedAt;
 
-        if (elapsedSinceRequest > 120000) {
-          this.log(`DEBUG: Supervisor failed to produce usable reply within 120s. Retrying.`);
+        if (elapsedSinceRequest > MAX_WATCHDOG_TIMEOUT_MS) {
+          this.log(`DEBUG: Supervisor failed to produce usable reply within ${MAX_WATCHDOG_TIMEOUT_MS}ms. Retrying.`);
           await this.retry("Supervisor reply timeout");
           return;
         }
@@ -888,18 +885,14 @@ export class WatchdogService {
         // response is on screen and looks correct, we should still attempt extraction.
         this.log("Attempting to parse supervisor response (past grace)...");
         const watchdogTail = this.readAgentLines(this.watchdog, WATCHDOG_PARSER_LINE_COUNT);
-        let contentToParse = this.locateResponseAfterMarker(
+        const contentToParse = this.locateResponseAfterMarker(
           watchdogTail,
           this.currentPromptMarker,
         );
 
         if (contentToParse) {
           try {
-            let jsonString = contentToParse;
-            if (!contentToParse.trim().startsWith('{')) {
-              jsonString = this.extractJson(contentToParse);
-            }
-            await this.processDecision(jsonString);
+            await this.processDecision(this.replyJson(contentToParse));
           } catch (e: any) {
             this.log(`DEBUG: JSON extraction/parsing failed: ${e.message}`);
             await this.retry(e.message || "JSON extraction failed");
@@ -1397,6 +1390,11 @@ export class WatchdogService {
       }
     } catch {}
     return null;
+  }
+
+  // The reply after the prompt marker is usually bare JSON; otherwise dig it out of the screen text.
+  private replyJson(content: string): string {
+    return content.trim().startsWith('{') ? content : this.extractJson(content);
   }
 
   extractJson(text: string): string {
