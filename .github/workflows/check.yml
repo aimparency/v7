@@ -1,0 +1,42 @@
+# Is the repo green on a clean machine? Free on GitHub-hosted runners for
+# public repositories. One job, no secrets, no deploys.
+name: check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4 # version from package.json "packageManager"
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # The backend tests embed text with a local model (~130 MB download).
+      - uses: actions/cache@v4
+        with:
+          path: node_modules/.pnpm/@huggingface+transformers@*/node_modules/@huggingface/transformers/.cache
+          key: embedding-model-${{ hashFiles('pnpm-lock.yaml') }}
+          restore-keys: embedding-model-
+
+      - run: pnpm check
+
+      - name: This repository's own idea graph conforms to the .bowman protocol
+        run: pnpm validate:bowman .
+
+      # What `pnpm start` runs: bundles must build and load with only their
+      # declared dependencies (the worker exits with its usage message).
+      - run: pnpm build
+      - name: Bundled loop worker loads
+        run: |
+          node packages/loop-worker/dist/index.js 2>&1 | grep -q 'Usage: loop-worker'
