@@ -104,6 +104,12 @@ For a lighter build-mode local stack:
 pnpm start
 ```
 
+The first `pnpm start` in a terminal asks which repository to open and whether
+other people should reach it (see [Hosting It for a Group](#hosting-it-for-a-group));
+the answers go to `.env`, and `pnpm start --setup` asks again. `pnpm start` uses
+exactly the configured ports and stops if one is taken; `--port <n>` picks
+another frontend port for one run. `pnpm dev` still moves to free ports.
+
 If you already built everything and want to skip rebuilding:
 
 ```bash
@@ -130,7 +136,7 @@ To validate the local launcher and runtime-config fallback behavior without star
 pnpm validate:local-runtime
 ```
 
-That script checks both default-port and occupied-port cases and verifies that runtime config stays internally consistent.
+That script checks that `dev` moves to free ports, that `start` refuses occupied ones, and the hosted mode's single port.
 
 ## Local Workflow
 
@@ -192,6 +198,60 @@ http://localhost:4000/?repo=https://github.com/aimparency/v7.git
 ```
 
 Aimparency clones only that repository's `.bowman` into `~/.cache/aimparency/repos/` and opens it read-only: you can browse everything, edits are refused, and reopening fetches the latest commit. Maintainers can put such a link in their README; viewers still run Aimparency locally.
+
+## Hosting It for a Group
+
+One server can host a project's graph for a whole group: anyone may read it,
+people with an account may edit it, and admins manage the accounts. On the
+server (Node.js 20+ and git; an https clone needs no GitHub account):
+
+```bash
+git clone https://github.com/aimparency/v7.git aimparency
+cd aimparency
+corepack enable
+pnpm install
+pnpm start
+```
+
+`pnpm start` asks:
+
+1. the repository to serve: a path, or a Git URL that it clones next to `aimparency/`;
+2. whether to host it for other people: answer yes;
+3. the port (default 4000) and the address to listen on (`127.0.0.1` behind nginx);
+4. the first admin's name and password.
+
+From then on `pnpm start` (for example from a systemd unit) serves that one
+project on that one port: the UI, the API under `/trpc`, and an MCP server under
+`/mcp/sse`. Agents, loops and the watchdog stay off on a hosted instance, and
+nothing outside the project can be opened.
+
+- **Accounts.** Admins add people in the UI (header: Accounts), or on the
+  server with `pnpm accounts add <name> <read|write|admin>`,
+  `pnpm accounts role|password|remove <name>` and `pnpm accounts list`. Accounts
+  live in the project's `.bowman/runtime/accounts.json` (gitignored); passwords
+  are stored as scrypt hashes.
+- **Roles.** Reading needs no account. `write` edits ideas and phases.
+  `admin` also manages accounts, project settings and commits.
+- **Commits.** Edits change the files in the served repository; someone with
+  push access commits and pushes them, and that git account answers for every
+  account it lets in.
+- **MCP.** A logged-in user's "MCP link" (in the header) connects an MCP client
+  as that account. It contains a token, so treat it like a password. Without a
+  token the MCP can only read.
+
+Behind nginx with TLS, one location is enough:
+
+```nginx
+location / {
+    proxy_pass http://127.0.0.1:4000;
+    proxy_http_version 1.1;
+    proxy_set_header Upgrade $http_upgrade;
+    proxy_set_header Connection "upgrade";
+    proxy_set_header Host $host;
+    proxy_buffering off;   # MCP streams server-sent events
+    proxy_read_timeout 1d; # keeps idle WebSocket and MCP connections open
+}
+```
 
 ## Git Workflow
 

@@ -12,6 +12,7 @@ import { normalizeProjectPath } from '../project-path.js';
 import { cleanupCommitments } from '../storage/commitments.js';
 import { addPhaseToIndex, updatePhaseInIndex, removePhaseFromIndex, searchPhases } from '../search.js';
 import { ensureSearchIndex } from '../search-index.js';
+import { hostedProject } from '../auth/access.js';
 
 // Updates the ordered list a phase lives in: its parent's childPhaseIds, or
 // meta.rootPhaseIds for root phases. Locked, so concurrent edits don't drop ids.
@@ -212,8 +213,9 @@ export const phaseRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       // Cursors are where the viewer is, not graph content: a read-only project
-      // stays navigable, it just does not remember the position.
-      if (await bowmanWriteBlocker(normalizeProjectPath(input.projectPath))) return { success: false };
+      // stays navigable, it just does not remember the position. A hosted one has
+      // many viewers, so none of them moves the stored cursor.
+      if (hostedProject() || await bowmanWriteBlocker(normalizeProjectPath(input.projectPath))) return { success: false };
       await updateProjectMeta(input.projectPath, (meta) => ({ ...meta, phaseCursors: input.cursors, phaseActiveLevel: input.activeLevel }));
       return { success: true };
     }),

@@ -1,4 +1,6 @@
+import fs from 'node:fs/promises';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -112,12 +114,14 @@ function createScenarioEnv(overrides = {}) {
     PORT_BROKER_WS: String(testPorts.brokerWsPort),
     PORT_PROCESS_START: String(testPorts.processStartPort),
     AIMPARENCY_ENABLE_VOICE: 'false',
+    // Setup answers in this checkout's .env must not turn the scenarios hosted.
+    AIMPARENCY_HOSTED: 'false',
     ...overrides,
   };
 }
 
-async function runScenario(name, setupEnv, expectedPredicate) {
-  const result = await runNodeScript(['scripts/run-local-stack.mjs', 'start', '--no-build', '--dry-run'], setupEnv);
+async function launch(name, mode, setupEnv) {
+  const result = await runNodeScript(['scripts/run-local-stack.mjs', mode, '--no-build', '--dry-run'], setupEnv);
 
   console.log(`\n[scenario:${name}] exit=${result.code}${result.signal ? ` signal=${result.signal}` : ''}`);
   if (result.stdout.trim()) {
@@ -126,7 +130,11 @@ async function runScenario(name, setupEnv, expectedPredicate) {
   if (result.stderr.trim()) {
     console.log(`[scenario:${name}] stderr:\n${result.stderr.trim()}`);
   }
+  return result;
+}
 
+async function runScenario(name, setupEnv, expectedPredicate, mode = 'start') {
+  const result = await launch(name, mode, setupEnv);
   assert(result.code === 0, `launcher dry-run failed in scenario "${name}"`);
 
   const config = dryRunConfig(result.stdout);
@@ -160,7 +168,11 @@ async function main() {
       assert(config.brokerWsPort !== testPorts.brokerWsPort, 'broker WS port did not fall back');
       assert(config.processStartPort !== testPorts.processStartPort, 'process start port did not fall back');
       assert(config.voiceEnabled === false, 'expected voice to stay disabled during port fallback');
-    });
+    }, 'dev');
+
+    // start keeps its ports: a proxy in front of it must not end up somewhere else.
+    const strict = await launch('start-occupied', 'start', createScenarioEnv());
+    assert(strict.code === 1 && /is in use/.test(strict.stderr), 'start did not refuse an occupied port');
   } finally {
     await Promise.all(
       reservedServers.map((server) => new Promise((resolve, reject) => {
@@ -178,6 +190,22 @@ async function main() {
   await runScenario('voice-enabled', createScenarioEnv({ AIMPARENCY_ENABLE_VOICE: 'true' }), (config) => {
     assert(config.voiceEnabled === true, 'expected voice to enable when requested');
   });
+
+  const hostedProject = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-hosted-'));
+  try {
+    const hostedEnv = createScenarioEnv({ AIMPARENCY_HOSTED: 'true', AIMPARENCY_PROJECT: hostedProject, PORT: '4410', PORT_MCP: '4411' });
+    const withoutAdmin = await launch('hosted-without-admin', 'start', hostedEnv);
+    assert(withoutAdmin.code === 1 && /No admin account yet/.test(withoutAdmin.stderr), 'hosted start ran without an admin');
+
+    await fs.mkdir(path.join(hostedProject, '.bowman', 'runtime'), { recursive: true });
+    await fs.writeFile(path.join(hostedProject, '.bowman', 'runtime', 'accounts.json'), JSON.stringify({ users: [{ name: 'admin', role: 'admin', passwordHash: 'x' }], tokens: [] }));
+    const hosted = await launch('hosted', 'start', hostedEnv);
+    assert(hosted.code === 0, 'hosted dry run failed');
+    assert(/hosting .* on http:\/\/127\.0\.0\.1:4410/.test(hosted.stdout), 'hosted mode did not use its one port');
+    assert(!/BROK|FRNT/.test(hosted.stdout), 'hosted mode would start the broker or the dev frontend');
+  } finally {
+    await fs.rm(hostedProject, { recursive: true, force: true });
+  }
 
   console.log('\n[validate-local-runtime] PASS');
 }

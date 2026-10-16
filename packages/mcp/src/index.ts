@@ -2,10 +2,12 @@
 
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createMcpServer } from "./factory.js";
-import { wsClient } from "./client.js";
+import { createBackendClient } from "./client.js";
+
+const backend = createBackendClient(process.env.AIMPARENCY_TOKEN);
 
 async function main() {
-  const server = createMcpServer();
+  const server = createMcpServer(backend.trpc);
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Aimparency MCP Server running on stdio");
@@ -13,7 +15,7 @@ async function main() {
 
 // Cleanup handler to close WebSocket and exit gracefully
 function cleanup() {
-  wsClient.close();
+  backend.close();
   process.exit(0);
 }
 

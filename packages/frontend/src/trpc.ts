@@ -1,7 +1,8 @@
 import { createTRPCProxyClient, createWSClient, wsLink, type TRPCLink } from '@trpc/client';
 import { observable } from '@trpc/server/observable';
 import type { AppRouter } from 'backend';
-import { buildWsUrl, getRuntimeConfig } from './utils/runtime-config';
+import { backendWsUrl } from './utils/runtime-config';
+import { loginToken } from './utils/login';
 import { clientId, mutationActivity } from './utils/mutation-activity';
 import { readOnlyGuardLink } from './utils/read-only';
 
@@ -26,8 +27,8 @@ const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
 
 // Create WebSocket client
 const wsClient = createWSClient({
-  url: buildWsUrl(getRuntimeConfig().backendWsPort),
-  connectionParams: { clientId },
+  url: backendWsUrl(),
+  connectionParams: { clientId, token: loginToken() ?? undefined },
 });
 
 // Create tRPC client with WebSocket

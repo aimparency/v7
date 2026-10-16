@@ -8,6 +8,9 @@ const DEFAULT_RUNTIME_CONFIG = {
   brokerWsPort: Number.parseInt(env.VITE_PORT_BROKER_WS || '5001', 10),
   processStartPort: Number.parseInt(env.VITE_PORT_PROCESS_START || '7000', 10),
   voiceEnabled: env.VITE_ENABLE_VOICE === 'true',
+  // A hosted instance (one project, accounts) serves everything on its own origin.
+  hosted: false,
+  project: '',
 }
 
 export type RuntimeConfig = typeof DEFAULT_RUNTIME_CONFIG & {
@@ -72,6 +75,8 @@ function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
     brokerWsPort: readPort(value.brokerWsPort, DEFAULT_RUNTIME_CONFIG.brokerWsPort),
     processStartPort: readPort(value.processStartPort, DEFAULT_RUNTIME_CONFIG.processStartPort),
     voiceEnabled: readBoolean(value.voiceEnabled, DEFAULT_RUNTIME_CONFIG.voiceEnabled),
+    hosted: readBoolean(value.hosted, false),
+    project: typeof value.project === 'string' ? value.project : '',
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : undefined,
   }
 }
@@ -105,4 +110,11 @@ export function buildHttpUrl(port: string | number): string {
 
 export function buildWsUrl(port: string | number): string {
   return `${getWsProtocol()}//${getBrowserHost()}:${port}`
+}
+
+// The backend's WebSocket: its own port locally, /trpc on the page's origin when
+// hosted (behind nginx that is wss://<domain>/trpc).
+export function backendWsUrl(): string {
+  if (runtimeConfig.hosted) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/trpc`
+  return buildWsUrl(runtimeConfig.backendWsPort)
 }

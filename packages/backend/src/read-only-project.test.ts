@@ -37,7 +37,7 @@ test('a read-only project refuses every graph change with one message, and stays
   const phase = await caller.phase.create({ projectPath, phase: { name: 'Now' } }) as { id: string };
   const parent = await caller.idea.createIdeaInPhase({ projectPath, phaseId: phase.id, idea: { text: 'Parent' } });
   const child = await caller.idea.createSubIdea({ projectPath, parentIdeaId: parent.id, idea: { text: 'Child' } });
-  assert.deepEqual(await caller.project.getAccess({ projectPath }), { writable: true, reason: null });
+  assert.deepEqual(await caller.project.getAccess({ projectPath }), { writable: true, reason: null, user: null, role: 'admin' });
 
   await fs.writeFile(path.join(projectPath, READ_ONLY_MARKER), '');
   const before = await snapshot();
@@ -66,6 +66,8 @@ test('a read-only project refuses every graph change with one message, and stays
   assert.deepEqual(await caller.phase.setCursor({ projectPath, cursors: { '0': phase.id }, activeLevel: 0 }), { success: false });
   assert.deepEqual(await caller.project.getAccess({ projectPath }), {
     writable: false,
-    reason: 'This project is open read-only. Its ideas, phases and settings cannot be changed here.'
+    reason: 'This project is open read-only. Its ideas, phases and settings cannot be changed here.',
+    user: null,
+    role: 'admin'
   });
 });

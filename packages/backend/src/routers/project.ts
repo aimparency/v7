@@ -21,7 +21,8 @@ import { listPhases } from '../storage/phases.js';
 import { indexIdeas, indexPhases } from '../search.js';
 import { loadVectorStore, hasCurrentEmbedding, generateEmbedding, saveEmbeddings } from '../embeddings.js';
 import { ensureSearchIndex } from '../search-index.js';
-import { t, delayedProcedure } from '../trpc.js';
+import { t, procedure, delayedProcedure } from '../trpc.js';
+import { roleAtLeast } from '../auth/accounts.js';
 
 const projectDiscoveryInputSchema = z.object({
   roots: z.array(z.string()).optional(),
@@ -92,7 +93,7 @@ const discoverProjectsFromRoot = async (
 };
 
 export const projectRouter = t.router({
-  onUpdate: t.procedure.subscription(() => {
+  onUpdate: procedure.subscription(() => {
     return observable<ChangeEvent & { origin?: string }>((emit) =>
       // Listeners run inside the emitting request's context: tag the origin
       // so clients can recognize (and undo) their own changes.
@@ -117,9 +118,13 @@ export const projectRouter = t.router({
     .input(z.object({
       projectPath: z.string()
     }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
-      return { writable: blocker === null, reason: blocker?.message ?? null };
+      const viewer = ctx.viewer ?? { name: null, role: 'admin' as const };
+      const reason = blocker?.message ?? (roleAtLeast(viewer.role, 'write') ? null
+        : viewer.name ? `This project is open read-only for ${viewer.name}: ask an admin for write access.`
+        : 'This project is open read-only here: log in to edit.');
+      return { writable: reason === null, reason, user: viewer.name, role: viewer.role };
     }),
 
   // Someone else's project by Git URL: cached clone of its .bowman, read-only.

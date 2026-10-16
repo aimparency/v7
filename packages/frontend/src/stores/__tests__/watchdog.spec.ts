@@ -45,7 +45,8 @@ vi.mock('../../trpc', () => ({
 }))
 
 vi.mock('../../utils/runtime-config', () => ({
-  buildHttpUrl: (port: number) => `http://127.0.0.1:${port}`
+  buildHttpUrl: (port: number) => `http://127.0.0.1:${port}`,
+  getRuntimeConfig: () => ({ hosted: false, project: '' })
 }))
 
 describe('watchdog store project switching', () => {

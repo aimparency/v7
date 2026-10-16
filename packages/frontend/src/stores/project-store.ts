@@ -7,6 +7,7 @@ import {
   upsertProjectHistory,
   type ProjectHistoryEntry
 } from './ui/project-helpers'
+import { getRuntimeConfig } from '../utils/runtime-config'
 
 // ?repo=<git url>: a shareable link to someone else's project. It wins over
 // ?project= (the local clone) so a reload fetches the latest commit.
@@ -22,6 +23,9 @@ export function setRepoUrlParam(repoUrl: string) {
 }
 
 function getInitialProjectPath(): string {
+  // A hosted instance serves exactly one project.
+  const { hosted, project } = getRuntimeConfig()
+  if (hosted) return project
   const urlParams = new URLSearchParams(window.location.search)
   if (urlParams.get('repo')) return ''
   const pathFromUrl = urlParams.get('project') || urlParams.get('path')
@@ -35,10 +39,10 @@ export const useProjectStore = defineStore('project', {
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
     projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as ProjectHistoryEntry[],
     currentView: 'columns' as 'columns' | 'graph' | 'voice',
-    showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
+    showWatchdog: !getRuntimeConfig().hosted && localStorage.getItem('aimparency-show-watchdog') === 'true',
     watchdogMaximized: false,
     // Never both: the watchdog wins when both were left open.
-    showLoop: localStorage.getItem('aimparency-show-loop') === 'true' && localStorage.getItem('aimparency-show-watchdog') !== 'true',
+    showLoop: !getRuntimeConfig().hosted && localStorage.getItem('aimparency-show-loop') === 'true' && localStorage.getItem('aimparency-show-watchdog') !== 'true',
     loopMaximized: false,
     loopHasHumanRequests: false,
     showLoopActionsOverlay: false,

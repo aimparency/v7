@@ -247,8 +247,9 @@ export const useDataStore = defineStore('data', {
 
     // Project Meta
     meta: null as BaseIdea['status'] | any | null, // ProjectMeta
-    // Whether the open project's graph may be changed here (project.getAccess)
-    access: { writable: true, reason: null as string | null },
+    // Whether the open project's graph may be changed here, and by whom
+    // (project.getAccess; user is the login of a hosted instance)
+    access: { writable: true, reason: null as string | null, user: null as string | null, role: 'admin' as 'read' | 'write' | 'admin' },
   }),
 
   getters: {

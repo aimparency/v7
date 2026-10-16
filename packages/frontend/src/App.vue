@@ -10,6 +10,7 @@ import { useMapStore } from './stores/map'
 import { useHistoryStore } from './stores/history'
 import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
+import LoginControl from './components/LoginControl.vue'
 import type { IdeaSearchAdditionalOption, IdeaSearchPickPayload } from './stores/ui/idea-search-types'
 import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -103,6 +104,8 @@ const showConsistencyModal = ref(false)
 const showReviewInbox = ref(false)
 const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities).length)
 const showIdeaProposalEntry = ref(false)
+// A hosted instance serves one project to many people: no agents, loops or project switching.
+const hosted = getRuntimeConfig().hosted
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
@@ -359,20 +362,20 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     uiStore.interruptUIStateRestore()
   }
 
-  if (event.key === 'p' && !uiStore.navigatingIdeas && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (!hosted && event.key === 'p' && !uiStore.navigatingIdeas && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault()
     openProjectSelection()
     return
   }
 
-  // Watchdog toggle
-  if (event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  // Watchdog toggle (p, w and a are local-only)
+  if (!hosted && event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     projectStore.showWatchdog = !projectStore.showWatchdog
     return
   }
 
   // Loop (agent loop area) toggle
-  if (event.key === 'a' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (!hosted && event.key === 'a' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     projectStore.showLoop = !projectStore.showLoop
     return
   }
@@ -571,7 +574,7 @@ onUnmounted(() => {
           >Voice</button>
         </div>
 
-        <label v-if="continueHook.installed" class="hook-control" @mouseenter="refreshContinueHook">
+        <label v-if="continueHook.installed && !hosted" class="hook-control" @mouseenter="refreshContinueHook">
           Hook
           <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
           <span class="state">{{ continueHook.enabled ? 'on' : 'off' }}</span>
@@ -589,7 +592,7 @@ onUnmounted(() => {
           </span>
         </label>
 
-        <div class="watchdog-controls">
+        <div v-if="!hosted" class="watchdog-controls">
           <button
             @click="projectStore.showWatchdog = !projectStore.showWatchdog"
             class="icon-btn"
@@ -662,7 +665,7 @@ onUnmounted(() => {
           </div>
 
           <button
-            v-if="workingTree && dataStore.access.writable"
+            v-if="workingTree && dataStore.access.writable && dataStore.access.role === 'admin'"
             class="icon-btn commit-btn"
             :class="{ prompt: commitPrompt }"
             :title="workingTreeTitle"
@@ -707,7 +710,8 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <a @click="closeProject" class="close-project">Switch Project</a>
+        <LoginControl v-if="hosted" />
+        <a v-else @click="closeProject" class="close-project">Switch Project</a>
       </div>
     </header>
 
