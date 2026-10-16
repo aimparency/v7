@@ -9,6 +9,20 @@ import { emitChange } from '../change-events.js';
 import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
 import { deriveLegacySiblingIds } from './phase-files.js';
 
+// Says what this folder is to whoever finds it in a repository. Written once;
+// the owner may change or delete it.
+const README_CONTENT = `# .bowman
+
+This repository's ideas: aims, how they support each other, and phases.
+Plain JSON, versioned by git, made with [Aimparency](https://github.com/aimparency/v7).
+
+- **View and edit:** clone Aimparency and run \`pnpm dev <path of this repository>\`,
+  or view it read-only with \`http://localhost:4000/?repo=<git url of this repository>\`.
+- **Agents** work on it through Aimparency's MCP server.
+- **By hand** works too, but Aimparency migrates the files between data model
+  versions ([format](https://github.com/aimparency/v7/tree/main/protocol)).
+- \`runtime/\` and the other gitignored files are local to one machine.
+`;
 const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\nsecrets.json\n.migration-lock\n';
 const DEFAULT_AUTONOMY_POLICY = {
   version: 1,
@@ -71,6 +85,8 @@ export async function ensureProjectStructure(rawProjectPath: string) {
     await writeJsonAtomic(autonomyPolicyPath, DEFAULT_AUTONOMY_POLICY);
   }
   
+  await fs.writeFile(path.join(projectPath, 'README.md'), README_CONTENT, { flag: 'wx' }).catch(() => undefined);
+
   const gitignorePath = path.join(projectPath, '.gitignore');
   if (!(await fs.pathExists(gitignorePath))) {
     await fs.writeFile(gitignorePath, GITIGNORE_CONTENT);

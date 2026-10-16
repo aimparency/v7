@@ -3,6 +3,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { askNewPassword, closeQuestions } from './ask.mjs';
 import * as accounts from '../packages/backend/src/auth/accounts.ts';
+import { ensureProjectStructure } from '../packages/backend/src/storage/project.ts';
 
 // Accounts of the hosted project, from the server's terminal (run through tsx):
 //
@@ -38,6 +39,8 @@ async function main() {
       for (const user of await accounts.listUsers(project)) console.log(`${user.name}\t${user.role}`);
       return;
     case 'add':
+      // The setup's first account: give the project its .bowman (README, .gitignore) now.
+      await ensureProjectStructure(path.resolve(project));
       await accounts.createUser(project, name ?? '', checkRole(role), await password(name));
       console.log(`Added ${name} (${role}).`);
       return;

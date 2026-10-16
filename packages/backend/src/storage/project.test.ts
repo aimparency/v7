@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'path';
 import fs from 'fs-extra';
 import { CURRENT_DATA_MODEL_VERSION } from 'shared';
-import { forgetProjectChecks, migrateProject } from './project.js';
+import { ensureProjectStructure, forgetProjectChecks, migrateProject } from './project.js';
 
 let projectPath = '';
 
@@ -31,4 +31,18 @@ test('migrateProject scans for legacy data once per project until the checks are
   forgetProjectChecks();
   await migrateProject(projectPath);
   assert.deepEqual((await fs.readJson(ideaFile)).supportingConnections[0], { ideaId: 'child', hypothesis: 'because' });
+});
+
+test('a new .bowman explains itself in a README, and an existing one is kept', async () => {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-readme-test-'));
+  try {
+    await ensureProjectStructure(root);
+    const readme = path.join(root, '.bowman', 'README.md');
+    assert.match(await fs.readFile(readme, 'utf8'), /Aimparency/);
+    await fs.writeFile(readme, 'our own words');
+    await ensureProjectStructure(root);
+    assert.equal(await fs.readFile(readme, 'utf8'), 'our own words');
+  } finally {
+    await fs.remove(root);
+  }
 });
