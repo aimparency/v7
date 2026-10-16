@@ -1144,9 +1144,11 @@ test('discoverLocalProjects - finds nearby repositories with .bowman directories
   const repoA = path.join(workspaceRoot, 'repo-a');
   const repoB = path.join(workspaceRoot, 'nested', 'repo-b');
   const plainDir = path.join(workspaceRoot, 'plain-dir');
+  const leftoverTestProject = path.join(workspaceRoot, '.test-tmp', 'run-1');
 
   await fs.ensureDir(path.join(repoA, '.bowman'));
   await fs.ensureDir(path.join(repoB, '.bowman'));
+  await fs.ensureDir(path.join(leftoverTestProject, '.bowman'));
   await fs.ensureDir(plainDir);
 
   const result = await caller.project.discoverLocalProjects({

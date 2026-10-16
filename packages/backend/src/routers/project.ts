@@ -35,7 +35,8 @@ const DISCOVERY_IGNORED_DIRS = new Set([
   'build',
   'coverage',
   '.next',
-  '.turbo'
+  '.turbo',
+  '.test-tmp' // projects that backend tests create (and an interrupted run leaves behind)
 ]);
 
 // Vectors are stored in one JSON file, so each flush rewrites the whole store.
