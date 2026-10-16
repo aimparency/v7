@@ -357,6 +357,14 @@
         2.0532527692831852
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "70ff0051-46bf-4ee2-b2f3-ad72cca2fa7a",
+      "relativePosition": [
+        0.15,
+        2.5
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [

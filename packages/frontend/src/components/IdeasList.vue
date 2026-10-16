@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { ref, useId, watch } from 'vue'
 import draggable from 'vuedraggable'
 import type { Idea } from '../stores/data'
 import { useDataStore } from '../stores/data'
@@ -38,6 +38,10 @@ const modalStore = useUIModalStore()
 const dataStore = useDataStore()
 const ideasListRef = ref<HTMLElement | null>(null)
 const localIdeas = ref<Idea[]>([...props.ideas])
+// Each list is its own drag group: a drop only reorders within the list.
+// handleChange saves moves only; a shared group let ideas be dropped into
+// another list, which looked done but was never saved.
+const dragGroup = `ideas-${useId()}`
 
 watch(() => props.ideas, (newVal) => {
   localIdeas.value = [...newVal]
@@ -79,7 +83,7 @@ const handleIdeaClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: 
     <draggable
       v-model="localIdeas"
       item-key="id"
-      group="ideas"
+      :group="dragGroup"
       @change="handleChange"
       class="ideas-list"
       handle=".idea-content" 
