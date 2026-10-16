@@ -39,6 +39,14 @@
       "effectiveness": "Search was thorough; the result is a confirmed human block, not lack of effort.",
       "lesson": "The binding constraint is human review throughput (158 review vs 5 open), not available work. Generating more agent output into review lowers marginal value. Next agent step should follow Felix's decisions on 73c110aa and the review backlog rather than new speculative work.",
       "pattern": "review-backlog-bottleneck"
+    },
+    {
+      "date": 1792122762107,
+      "context": "2026-10-16 continuation loop after parking the five Felix-gated ideas (frontier empty) and cancelling the Prototype Fund chain; the hook challenged the human request.",
+      "outcome": "Step-back found and finished three reversible, authority-free items: .test-tmp excluded from project discovery (6d57ae4), update_ideas batch tool (c39b55e), and a reproduction showing read tools do not write .bowman files. Hygiene: one intentional duplicate pair, two taxonomy mega-parents, 53 unarchived cancelled/failed ideas kept on purpose as create_idea's cancellation memory. Not done on purpose: a /dream run (it is Felix's acceptance test for b3b50366), idea claiming (only matters with parallel loops).",
+      "effectiveness": "The remaining frontier is genuinely human: which product earns first (3253bc9e), whether to cancel the remaining grant tree (8d174cd3, 80b53c24), the arrow-base visual judgment (22f996dd), the self-weight value-model decision (0b3a90cb), outreach (8f002aaf), and accepting ~170 ideas in review.",
+      "lesson": "Parking human questions as unclear/human-dependent empties the frontier honestly; the challenge step still found small real work, so it is worth running before yielding.",
+      "pattern": "review-backlog-bottleneck"
     }
   ],
   "archived": false,
