@@ -148,10 +148,24 @@ const onInputEnter = () => {
   else emit('select-project')
 }
 
+// d marks the selected recent project for removal (red), a second d removes it.
+const pendingRemoval = ref('')
+watch(selectedIndex, () => { pendingRemoval.value = '' })
+
 const onListKeydown = (event: KeyboardEvent) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return
   const key = event.key
-  if (key === 'j' || key === 'ArrowDown') focusResult(selectedIndex.value + 1)
+  const confirmingRemoval = pendingRemoval.value
+  pendingRemoval.value = ''
+  if (key === 'd') {
+    const result = results.value[selectedIndex.value]
+    if (!result?.recent) return
+    if (confirmingRemoval !== result.path) pendingRemoval.value = result.path
+    else {
+      emit('remove-from-history', result.path)
+      focusResult(selectedIndex.value)
+    }
+  } else if (key === 'j' || key === 'ArrowDown') focusResult(selectedIndex.value + 1)
   else if (key === 'k' || key === 'ArrowUp') focusResult(selectedIndex.value - 1)
   else if (key === 'e') {
     const result = results.value[selectedIndex.value]
@@ -221,13 +235,14 @@ const formatRelativeTime = (timestamp: number): string => {
             v-for="(project, index) in recentResults"
             :key="project.path"
             class="history-item"
-            :class="{ failed: project.failedToLoad, selected: index === selectedIndex }"
+            :class="{ failed: project.failedToLoad, selected: index === selectedIndex, removing: project.path === pendingRemoval }"
           >
             <img v-if="thumbnails.get(project.path)" class="thumbnail" :src="thumbnails.get(project.path)" alt="" />
             <span v-else class="thumbnail"></span>
             <button
               type="button"
               class="edit-button"
+              tabindex="-1"
               title="Edit path before opening"
               aria-label="Edit path before opening"
               @click.stop="loadPathIntoInput(project.path)"
@@ -245,8 +260,9 @@ const formatRelativeTime = (timestamp: number): string => {
             </button>
             <button
               class="remove-button"
+              tabindex="-1"
               @click.stop="emit('remove-from-history', project.path)"
-              title="Remove from history"
+              title="Remove from history (d d)"
             >×</button>
           </div>
         </div>
@@ -280,6 +296,7 @@ const formatRelativeTime = (timestamp: number): string => {
             <button
               type="button"
               class="edit-button"
+              tabindex="-1"
               title="Edit path before opening"
               aria-label="Edit path before opening"
               @click.stop="loadPathIntoInput(project.path)"
@@ -496,6 +513,11 @@ const formatRelativeTime = (timestamp: number): string => {
   &.selected {
     border-color: #007acc;
     background: #333;
+  }
+
+  &.removing {
+    border-color: #ff6666;
+    background: #4a2020;
   }
 
   & .thumbnail {

@@ -112,4 +112,26 @@ describe('ProjectSelectionView search', () => {
     expect(selected()).toBe('/work/aimparency/v6')
     wrapper.unmount()
   })
+
+  it('removes a recent project with d, d: the first d only marks it red', async () => {
+    const wrapper = mountView('', true)
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.find('input').trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+    const list = wrapper.find('.project-lists')
+    await list.trigger('keydown', { key: 'd' })
+    expect(wrapper.find('.history-item.removing .history-path').text()).toBe('/work/aimparency/v7')
+    expect(wrapper.emitted('remove-from-history')).toBeUndefined()
+    await list.trigger('keydown', { key: 'j' })
+    expect(wrapper.find('.history-item.removing').exists()).toBe(false)
+    await list.trigger('keydown', { key: 'd' })
+    await list.trigger('keydown', { key: 'd' })
+    expect(wrapper.emitted('remove-from-history')).toEqual([['/work/entour']])
+    wrapper.unmount()
+  })
+
+  it('keeps the edit and remove buttons out of the Tab order', () => {
+    const wrapper = mountView('', true)
+    expect(wrapper.findAll('.edit-button, .remove-button').every(button => button.attributes('tabindex') === '-1')).toBe(true)
+  })
 })
