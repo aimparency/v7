@@ -177,9 +177,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Felix 2026-10-16: neither entour.fyi nor Aimparency earns yet; both cost money and energy, and he builds them anyway. No earning order to pick for now.",
-    "date": 1792137141226
+    "state": "unclear",
+    "comment": "Felix 2026-10-16: neither entour.fyi nor Aimparency earns yet; both cost money and energy, and he builds them anyway. The only near-term money step is the NLnet decision (28ddbcb0); this mission waits on it and on Felix's direction.",
+    "date": 1792137690644
   },
   "intrinsicValue": 0,
   "cost": 1,
