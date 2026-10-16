@@ -113,6 +113,28 @@ describe('ProjectSelectionView search', () => {
     wrapper.unmount()
   })
 
+  it('steps entry to entry with Tab, back to the input with Shift+Tab, and e edits the path', async () => {
+    const wrapper = mountView('', true)
+    await vi.advanceTimersByTimeAsync(200)
+    const input = wrapper.find('input')
+    await input.trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+    const list = wrapper.find('.project-lists')
+    const selected = () => wrapper.find('.history-item.selected .history-path').text()
+    await list.trigger('keydown', { key: 'Tab' })
+    expect(selected()).toBe('/work/entour')
+    await list.trigger('keydown', { key: 'Tab', shiftKey: true })
+    expect(selected()).toBe('/work/aimparency/v7')
+    await list.trigger('keydown', { key: 'Tab', shiftKey: true })
+    expect(document.activeElement).toBe(input.element)
+    await input.trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+    await list.trigger('keydown', { key: 'e' })
+    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['/work/aimparency/v7'])
+    expect(document.activeElement).toBe(input.element)
+    wrapper.unmount()
+  })
+
   it('removes a recent project with d, d: the first d only marks it red', async () => {
     const wrapper = mountView('', true)
     await vi.advanceTimersByTimeAsync(200)

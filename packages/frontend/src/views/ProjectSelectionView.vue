@@ -165,14 +165,14 @@ const onListKeydown = (event: KeyboardEvent) => {
       emit('remove-from-history', result.path)
       focusResult(selectedIndex.value)
     }
-  } else if (key === 'j' || key === 'ArrowDown') focusResult(selectedIndex.value + 1)
-  else if (key === 'k' || key === 'ArrowUp') focusResult(selectedIndex.value - 1)
+  } else if (key === 'j' || key === 'ArrowDown' || (key === 'Tab' && !event.shiftKey)) focusResult(selectedIndex.value + 1)
+  else if ((key === 'Tab' && event.shiftKey && selectedIndex.value === 0) || key === 'Escape') {
+    event.stopPropagation()
+    focusInput()
+  } else if (key === 'k' || key === 'ArrowUp' || key === 'Tab') focusResult(selectedIndex.value - 1)
   else if (key === 'e') {
     const result = results.value[selectedIndex.value]
     if (result) loadPathIntoInput(result.path)
-    focusInput()
-  } else if (key === 'Escape' || (key === 'Tab' && event.shiftKey)) {
-    event.stopPropagation()
     focusInput()
   } else return
   event.preventDefault()
