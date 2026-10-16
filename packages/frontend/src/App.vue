@@ -104,6 +104,7 @@ const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas
 const showIdeaProposalEntry = ref(false)
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
+const showHookInfo = ref(false)
 const refreshContinueHook = async () => {
   const projectPath = projectStore.projectPath
   try {
@@ -561,19 +562,25 @@ onUnmounted(() => {
           >Voice</button>
         </div>
 
-        <div class="watchdog-controls">
+        <label v-if="continueHook.installed" class="hook-control" @mouseenter="refreshContinueHook">
+          Hook
           <button
-            v-if="continueHook.installed"
-            @click="toggleContinueHook"
-            @mouseenter="refreshContinueHook"
-            class="icon-btn"
-            style="width: auto; padding: 0 0.5rem;"
-            :style="{ background: continueHook.enabled ? '#444' : 'transparent' }"
-            :title="continueHook.enabled ? 'Agents continue through the idea graph when they stop. Click to let them stop.' : 'Agents stop normally. Click to make them continue through the idea graph.'"
-          >
-            Hook {{ continueHook.enabled ? 'on' : 'off' }}
-          </button>
+            type="button"
+            class="info-btn"
+            aria-label="What is the hook?"
+            @click.prevent="showHookInfo = !showHookInfo"
+            @blur="showHookInfo = false"
+          >ⓘ</button>
+          <span v-if="showHookInfo" class="hook-info" role="tooltip" @click.prevent>
+            The Stop hook of your coding agent (Claude Code, Codex) in this repository.
+            On: when the agent finishes, it is sent back to work on the next idea of the graph.
+            Off: the agent stops normally. Applies from its next stop, only in this clone.
+          </span>
+          <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
+          <span class="state">{{ continueHook.enabled ? 'on' : 'off' }}</span>
+        </label>
 
+        <div class="watchdog-controls">
           <button
             @click="projectStore.showWatchdog = !projectStore.showWatchdog"
             class="icon-btn"
@@ -862,6 +869,38 @@ onUnmounted(() => {
   gap: 0.25rem 0.4rem;
 }
 
+.hook-control {
+  position: relative;
+  cursor: pointer;
+
+  & .info-btn {
+    background: none;
+    border: none;
+    color: #888;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  & input { width: auto; margin: 0; }
+  & .state { color: #aaa; min-width: 1.6rem; }
+
+  & .hook-info {
+    position: absolute;
+    top: calc(100% + 0.3rem);
+    left: 0;
+    z-index: 100;
+    width: 22rem;
+    padding: 0.5rem 0.6rem;
+    background: #2a2a2a;
+    border: 1px solid #555;
+    border-radius: 0.3rem;
+    color: #ddd;
+    font-size: var(--font-size-small);
+    white-space: normal;
+    cursor: default;
+  }
+}
+
 /* Push the project/close cluster to the right edge of the first row. */
 .status .project-info {
   margin-left: auto;
@@ -871,6 +910,7 @@ onUnmounted(() => {
    pill so wrapped rows stay tidy. */
 .column-controls,
 .watchdog-controls,
+.hook-control,
 .project-info,
 .project-location,
 .view-controls {
@@ -880,6 +920,7 @@ onUnmounted(() => {
 
 .column-controls,
 .watchdog-controls,
+.hook-control,
 .project-info {
   display: flex;
   align-items: center;
