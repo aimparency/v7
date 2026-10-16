@@ -212,6 +212,11 @@ const handleSelectProject = async () => {
   const path = projectPathInput.value.trim()
   projectSelectionReturnPath.value = ''
   if (!gitRepositoryLocation(path)) {
+    // A bare name would resolve against the backend's working directory.
+    if (!/^(\/|[A-Za-z]:[\\/])/.test(path)) {
+      useToastStore().error('Type a full path, starting with /, or pick a project from the list')
+      return
+    }
     setRepoUrlParam('')
     await runProjectRestore(path)
     return

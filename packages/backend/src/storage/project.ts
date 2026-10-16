@@ -57,6 +57,9 @@ export async function migrateProject(projectPath: string, { force = false } = {}
 
 export async function ensureProjectStructure(rawProjectPath: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
+  // A relative path resolves against the backend's working directory, so typing a
+  // bare name like "idea" would create a project inside packages/backend.
+  if (!path.isAbsolute(projectPath)) throw new Error(`Project path must be absolute: ${rawProjectPath}`);
   await migrateProject(projectPath);
   await fs.ensureDir(path.join(projectPath, 'ideas'));
   await fs.ensureDir(path.join(projectPath, 'archived-ideas'));
