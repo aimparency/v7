@@ -34,9 +34,9 @@
     "2cb2e798-c679-489e-b168-8c02c89f78cd"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Felix must confirm residence, German tax status, employment/self-employment situation, and overlapping funding.",
-    "date": 1784390977693
+    "state": "cancelled",
+    "comment": "Answered by Felix, 2026-10-16: not eligible.",
+    "date": 1792122506282
   },
   "intrinsicValue": 0,
   "cost": 1,

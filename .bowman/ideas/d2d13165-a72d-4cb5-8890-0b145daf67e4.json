@@ -32,14 +32,6 @@
       "weight": 1
     },
     {
-      "ideaId": "826b4e21-7690-4a9c-b6d1-433b2acef4b7",
-      "relativePosition": [
-        -2.2828617069214565,
-        -1.0190890182273844
-      ],
-      "weight": 1
-    },
-    {
       "ideaId": "1d9cecd8-4269-46b4-96a7-1617a09fe9b7",
       "relativePosition": [
         -0.9956813634327679,
@@ -73,9 +65,9 @@
     "2cb2e798-c679-489e-b168-8c02c89f78cd"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Application preparation is ready or under review. Felix must confirm residence/tax and funded-period self-employment eligibility, approve the final framing, and submit through the institution’s portal in the October–November window.",
-    "date": 1785399138641
+    "state": "cancelled",
+    "comment": "Felix, 2026-10-16: 'forget about prototype fund. We're not eligible.' Also: no more grants; resources through excellent, fair competition. Drafts stay in meta/applications/prototype-fund-2026/ for reference.",
+    "date": 1792122505185
   },
   "intrinsicValue": 0,
   "cost": 2,
