@@ -14,9 +14,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Design settled in outline; open: (1) with one person committing by hand, git blames that person for everyone's edits; should the server keep a local log of who changed what (gitignored), so the committer can attribute or co-author? (2) one shared read password or none for guests? (3) how accounts are created: a CLI on the server, or a settings page for an admin account?",
-    "date": 1792178069631
+    "state": "open",
+    "comment": "Decided by Felix 2026-10-16: (1) The git account that commits is responsible for all changes made by people it gave access to; no per-user change log for now. (2) Reading needs no password: the ideas are public, to invite contribution. (3) Three roles: admin (manages accounts, writes), write, read; visitors without login read. The first admin account is created on the server (one command); after that, admins manage accounts in the UI. Ready to plan.",
+    "date": 1792178814667
   },
   "intrinsicValue": 0,
   "cost": 1,
