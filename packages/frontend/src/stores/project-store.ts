@@ -37,7 +37,8 @@ export const useProjectStore = defineStore('project', {
     currentView: 'columns' as 'columns' | 'graph' | 'voice',
     showWatchdog: localStorage.getItem('aimparency-show-watchdog') === 'true',
     watchdogMaximized: false,
-    showLoop: localStorage.getItem('aimparency-show-loop') === 'true',
+    // Never both: the watchdog wins when both were left open.
+    showLoop: localStorage.getItem('aimparency-show-loop') === 'true' && localStorage.getItem('aimparency-show-watchdog') !== 'true',
     loopMaximized: false,
     loopHasHumanRequests: false,
     showLoopActionsOverlay: false,

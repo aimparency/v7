@@ -145,9 +145,11 @@ const isRefreshingDiscoveredProjects = ref(false)
 const projectSelectionReturnPath = ref('')
 
 // Persist watchdog visibility and handle focus
+// Watchdog and loop share the bottom area: opening one closes the other.
 watch(() => projectStore.showWatchdog, (val) => {
   localStorage.setItem('aimparency-show-watchdog', String(val))
   if (val) {
+    projectStore.showLoop = false
     nextTick(() => {
       watchdogRef.value?.focusWorker()
     })
@@ -156,6 +158,7 @@ watch(() => projectStore.showWatchdog, (val) => {
 
 watch(() => projectStore.showLoop, (val) => {
   localStorage.setItem('aimparency-show-loop', String(val))
+  if (val) projectStore.showWatchdog = false
 })
 
 // Always disconnect/reconnect on project switch — even when the watchdog panel is hidden.
@@ -188,7 +191,7 @@ const resizeWatchdog = (e: MouseEvent) => {
   if (!isResizingWatchdog.value) return
   const newHeight = window.innerHeight - e.clientY
   const nextHeight = Math.max(100, Math.min(newHeight, window.innerHeight - 100))
-  if (projectStore.showLoop && !projectStore.showWatchdog) {
+  if (projectStore.showLoop) {
     loopHeight.value = nextHeight
   } else {
     watchdogHeight.value = nextHeight
@@ -765,7 +768,7 @@ onUnmounted(() => {
         class="watchdog-container"
         :style="{ height: projectStore.loopMaximized ? '100%' : loopHeight + 'px' }"
       >
-        <div class="resize-handle" v-if="!projectStore.loopMaximized && !projectStore.showWatchdog" @mousedown="startResizeWatchdog"></div>
+        <div class="resize-handle" v-if="!projectStore.loopMaximized" @mousedown="startResizeWatchdog"></div>
         <LoopPanel ref="loopRef" />
       </div>
     </div>
