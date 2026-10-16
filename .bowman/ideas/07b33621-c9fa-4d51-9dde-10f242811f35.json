@@ -21,7 +21,7 @@
     "comment": "Requires Felix to establish legal identity, payment receipt, standing external-posting authority, spending limits, prohibited domains, and revocation. The agent must not invent or self-grant these powers.",
     "date": 1785584883295
   },
-  "intrinsicValue": 8,
+  "intrinsicValue": 0,
   "valueRationale": "A durable standing mandate converts repeated ad hoc human approvals into one legitimate boundary for autonomous economic action.",
   "cost": 1,
   "loopWeight": 1,

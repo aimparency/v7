@@ -35,7 +35,7 @@
     "comment": "Budget diagnostics hardened across both autonomy adapters and fully verified; awaiting user acceptance.\n\nOutcome: Added shared assertCodexBenchmarkBudget used by both v1 and v2 adapters. It accepts exact limits and reports actual/limit values for token-only, wall-time-only, and dual overruns while still throwing and excluding the run. Added four boundary assertions. Verification: 118/118 tests, tsc --noEmit, and git diff --check pass. The invalid v2 experiment was not rerun. Effectiveness: Future invalid experiments retain actionable resource evidence without weakening budgets or admissibility. Existing adapter error handling remains compatible because messages retain the registered-budget marker. Lesson: Fail-closed evidence should still be information-rich; rejection and diagnostic preservation are complementary. Pattern: Centralize resource-boundary checks so experimental adapters cannot drift in acceptance or error detail.",
     "date": 1785599501562
   },
-  "intrinsicValue": 10,
+  "intrinsicValue": 0,
   "valueRationale": "Diagnostic completeness allows invalid experiments to inform future preregistration without rerunning or weakening fail-closed evidence rules.",
   "cost": 1,
   "loopWeight": 1,

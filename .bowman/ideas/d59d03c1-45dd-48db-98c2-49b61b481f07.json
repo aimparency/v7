@@ -170,7 +170,7 @@
     "comment": "All sub-ideas completed. UI has been significantly improved with Vim-like navigation, search, and refined visual details.",
     "date": 1765401691120
   },
-  "intrinsicValue": 10,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

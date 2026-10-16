@@ -24,7 +24,7 @@
     "comment": "Calibrated v3 confirmatory run complete: valid null, 8/8 safe completions, zero qualifying efficiency improvements. Awaiting user acceptance.\n\nOutcome: All 8/8 runs were admissible, independently verified, and had zero human interventions and policy violations. V3 returned valid null. Graph-grounded: completion 1, recovery 0.75, mean 39570.25 ms, 93802.75 tokens, 4.5 tools. Stateless: completion 1, recovery 0.75, mean 35059 ms, 93522 tokens, 4.5 tools. Qualifying efficiency metrics: 0. Effectiveness: Calibration eliminated the structural budget invalidity, yielding a complete comparison. The prospective efficiency hypothesis did not replicate: graph grounding used 0.30% more tokens, equal tools, and 12.87% more wall time. The tasks still had a completion ceiling. Lesson: The v1 resource reduction was not robust on new richer fixtures. Additional synthetic micro-benchmark iterations have diminishing evidential value; future evaluation should use representative long-horizon work with outcomes that do not saturate. Pattern: Replicate exploratory signals prospectively and accept null results before investing in optimization.",
     "date": 1785600164552
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "valueRationale": "This is the first adequately calibrated prospective test of the preregistered resource-efficiency signal on richer tasks.",
   "cost": 10,
   "loopWeight": 1,

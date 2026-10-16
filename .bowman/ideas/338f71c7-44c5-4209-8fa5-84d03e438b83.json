@@ -16,7 +16,7 @@
     "comment": "Implemented priority-based coloring with toggle switch (S/P) and configurable gradient.",
     "date": 1768079952693
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 10,
   "loopWeight": 0,
   "duration": 1,

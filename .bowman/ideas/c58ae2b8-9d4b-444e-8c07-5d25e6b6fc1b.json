@@ -109,7 +109,7 @@
     "comment": "Both sub-ideas completed: cooldown action with press option and configurable timing constants with conditional debug logging",
     "date": 1769551859193
   },
-  "intrinsicValue": 3,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

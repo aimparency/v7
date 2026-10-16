@@ -23,7 +23,7 @@
     "comment": "Moved search results container to be between Idea Text input and Description textarea. Updated help text to reflect tab navigation flow.",
     "date": 1765909485121
   },
-  "intrinsicValue": 5,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

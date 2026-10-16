@@ -10,9 +10,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Question for Felix: the flag is .git/aimparency-continue-disabled (per clone, never committed). .bowman/runtime/ is also gitignored and holds the other machine-local state, so it would be easier to find. Move it there (hook script + shared/continue-hook, legacy flag still honored), or keep it?",
-    "date": 1792137690404
+    "state": "review",
+    "comment": "Felix 2026-10-16: move it. The flag is now .bowman/runtime/continue-hook-disabled (gitignored with the rest of runtime/). The hook script, continueHookStatus, enable and disable still honor the old .git flag and clear it on the next toggle; disable also upgrades recognized older hook copies. This clone's flag was moved (hook still off). Tests: continue-hook 4/4 incl. a legacy-flag test, hook contract PASS.",
+    "date": 1792172540872
   },
   "intrinsicValue": 0,
   "cost": 1,

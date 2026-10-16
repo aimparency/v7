@@ -52,7 +52,7 @@
     "comment": "Implementation and internal verification complete; awaiting user acceptance. Full paired live benchmark remains separate follow-up work.\n\nOutcome: Added fresh per-run disposable fixtures, shell-free least-authority Codex JSONL execution, condition-isolated graph injection, external wall-time measurement, authoritative token/tool parsing, independent immutable verification, cleanup, fail-closed telemetry/budget/tamper handling, public export, and deterministic tests. Verification: 106/106 package tests pass; tsc --noEmit passes; git diff --check passes. Effectiveness: The adapter now makes the existing paired runner executable against a real Codex process while preventing treatment leakage and self-reported performance. A benign raw codex --json smoke also confirmed the event and usage shape used by the parser. No full paired experiment was run in this implementation slice. Lesson: The CLI's final turn.completed usage is authoritative enough for frozen-budget comparison, but argv and workspace invariants need their own tests. Exact protected-file comparison plus an external verifier catches both task failure and benchmark tampering.",
     "date": 1785598245792
   },
-  "intrinsicValue": 18,
+  "intrinsicValue": 0,
   "valueRationale": "The graph-grounding hypothesis cannot be tested until matched real runs have isolated fixtures and authoritative resource/outcome telemetry.",
   "cost": 8,
   "loopWeight": 1,

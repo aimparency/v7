@@ -19,7 +19,7 @@
     "comment": "SPC application not submitted (Felix 2026-10-16); deadline passed.",
     "date": 1792172310568
   },
-  "intrinsicValue": 9,
+  "intrinsicValue": 0,
   "valueRationale": "These facts determine eligibility, narrative coherence, and whether the application is truthful.",
   "cost": 1,
   "loopWeight": 1,

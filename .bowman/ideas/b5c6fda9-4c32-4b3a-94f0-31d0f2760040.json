@@ -50,7 +50,7 @@
     "comment": "Implemented Idea search with both backend endpoints and frontend integration. Phase search is implemented in backend.",
     "date": 1765134196965
   },
-  "intrinsicValue": 10,
+  "intrinsicValue": 0,
   "cost": 10,
   "loopWeight": 0,
   "duration": 1,

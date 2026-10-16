@@ -16,7 +16,7 @@
     "comment": "The wrapped-session read→act→reflect loop is implemented. The only remaining gap is real-world effector access, which requires a human-selected external system, authorization, and credentials.\n\nStatus reconciliation on 2026-07-30 used the idea’s existing implementation evidence: watchdog discovery, WORKING execution, WRAPPING_UP reflection, scheduling, and recovery are present. Its stated remainder depends on the human-gated effector layer, so `human-dependent` now reflects the actual boundary better than `partially`.\n\nOutcome: Confirmed the read→act→reflect closed loop is already implemented by the watchdog state machine (cited the exact prompt sites). Marked partially; the only gap is real-world effector actions (6119682f, human-dependent). Did not rebuild. Effectiveness: Evidence-based check via grep prevented rebuilding the very loop executing the check. Lesson: Repeated finding tonight: the autonomy-loop subtree (2b76f62f cluster) is largely BUILT; nearly every 'buildable' open idea there is already realized by the watchdog. The genuine frontier is human-gated (effector credentials) or design-bearing (cooperation-engine UX), not more loop code. Pattern: verify-before-build; autonomy-loop-already-built",
     "date": 1785399198869
   },
-  "intrinsicValue": 8,
+  "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,

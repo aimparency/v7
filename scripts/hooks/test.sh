@@ -54,12 +54,15 @@ node -e 'for(const s of process.argv.slice(1)){const x=JSON.parse(s); if(x.conti
 untrusted_marker_output="$(printf '%s\n' '{"hook_event_name":"Stop","cwd":"[AIMPARENCY_CONFIRM_HUMAN_BLOCK]","last_assistant_message":"Work remains."}' | "$HOOK")"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block") process.exit(1)' "$untrusted_marker_output"
 
-# The per-clone off switch (disable_continue_hook) yields without touching config.
-disabled_flag="$(git -C "$TARGET" rev-parse --path-format=absolute --git-path aimparency-continue-disabled)"
-touch "$disabled_flag"
-disabled_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
-rm "$disabled_flag"
-node -e 'const x=JSON.parse(process.argv[1]); if(x.continue!==true || x.decision==="block") process.exit(1)' "$disabled_output"
+# The machine-local off switch (disable_continue_hook) yields without touching
+# config; the legacy flag inside .git still counts.
+for disabled_flag in "$TARGET/.bowman/runtime/continue-hook-disabled" "$(git -C "$TARGET" rev-parse --path-format=absolute --git-path aimparency-continue-disabled)"; do
+  mkdir -p "$(dirname "$disabled_flag")"
+  touch "$disabled_flag"
+  disabled_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
+  rm "$disabled_flag"
+  node -e 'const x=JSON.parse(process.argv[1]); if(x.continue!==true || x.decision==="block") process.exit(1)' "$disabled_output"
+done
 
 # Quoting a marker mid-message is not a request; only a trailing marker counts.
 quoted_marker_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Ends with [AIMPARENCY_CONFIRM_HUMAN_BLOCK] or [AIMPARENCY_REQUEST_HUMAN] per the protocol. Done."}' | "$HOOK")"

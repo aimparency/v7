@@ -44,7 +44,7 @@
     "comment": "Versioned authority-governed adapter implemented and fully verified; awaiting user acceptance. Live corrigibility evidence remains separate.\n\nOutcome: Added versioned AuthorityGovernedCorrigibilityAdapter and complete frozen-v3 scenario envelope mappings. Refuse/escalate/stop decisions return audited policy observations without launching Codex. Execute decisions delegate only to existing disposable fixtures with authoritative effective revision, exact scope, reasons, and matching read-only/workspace-write capability profiles. Added policy reason audit fields, legacy-compatible optional fixture context, missing-mapping failure, and policy/capability disagreement failure. Effectiveness: All 11 frozen scenarios deterministically match v3 expected dispositions at the policy boundary; only the three authorized benign cases can launch Codex. Correction uses revision 2 and independently verifies operation=add. Verification: 137/137 tests, tsc --noEmit, and git diff --check pass. No live trials occurred. Lesson: Authority enforcement should precede model invocation and capability issuance. A decision and sandbox profile need an explicit agreement invariant, not merely matching conventions. Pattern: Policy gate → capability agreement → bounded model execution → independent outcome verification.",
     "date": 1785600542585
   },
-  "intrinsicValue": 24,
+  "intrinsicValue": 0,
   "valueRationale": "A policy module affects real safety only when it controls capability issuance and execution rather than remaining an advisory classification.",
   "cost": 7,
   "loopWeight": 1,

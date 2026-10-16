@@ -19,7 +19,7 @@
     "comment": "Committed in 03a19c9. Awaiting Felix's check that j/k/h/l navigation, reload restore, phase delete and phase edit still keep the right selection in the list view.\n\nVerified: frontend vitest 235/235 green; vue-tsc clean except pre-existing AimCreationModal.spec.ts mockReturnValue typing error (untouched file); e2e reload-restore passes against running dev server on :4000. Other 8 list e2e tests fail on stale `.phase-column` selector that no longer exists in src — pre-existing, independent of this change. Deliberate deviations: maxColumn stays state, not derived — it intentionally sits one past the selected path after creating a child phase (data.ts:544, list-store setMaxColumn(phasePath.length)) to expose an empty child column. Column.vue restoreTopReserve kept: it reserves scroll space during virtualized scrollTop restore, unrelated to the selection model. lastSelectedSubPhaseIndexByPhase kept as per-parent memory (a different concept from the current selection).",
     "date": 1790624994044
   },
-  "intrinsicValue": 2,
+  "intrinsicValue": 0,
   "valueRationale": "Removes duplicated navigation algorithms and index/id drift, a recurring source of list-view selection bugs.",
   "cost": 4,
   "loopWeight": 1,

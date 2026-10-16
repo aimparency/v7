@@ -25,7 +25,7 @@
     "comment": "f key opens phase picker in graph view; committed ideas shown as filled nodes, parent ideas as ring-only outlines; phase badge with × to clear; loadable node click expands upward",
     "date": 1780129719472
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,

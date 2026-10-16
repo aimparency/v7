@@ -14,7 +14,7 @@
     "comment": "Fixed: Added input check in GraphView onKeydown to prevent color toggle when typing in modals",
     "date": 1769551539387
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

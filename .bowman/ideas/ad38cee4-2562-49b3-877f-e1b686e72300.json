@@ -20,7 +20,7 @@
     "comment": "SPC application not submitted (Felix 2026-10-16); deadline passed.",
     "date": 1792172311358
   },
-  "intrinsicValue": 8,
+  "intrinsicValue": 0,
   "valueRationale": "A precise, evidence-grounded draft is the core artifact needed before the near-term deadline.",
   "cost": 2,
   "loopWeight": 1,

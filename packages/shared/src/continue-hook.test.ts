@@ -63,3 +63,26 @@ test("disable upgrades an old recognized hook copy that lacks the off switch", (
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("the old flag inside .git still disables, and toggling moves it to .bowman/runtime", () => {
+  const root = makeProject();
+  try {
+    enableContinueHook(path.join(root, ".bowman"), "claude");
+    const legacy = path.join(root, ".git", "aimparency-continue-disabled");
+    fs.writeFileSync(legacy, "disabled\n");
+    assert.equal(runHook(root).continue, true);
+    assert.deepEqual(continueHookStatus(root), { installed: true, enabled: false });
+
+    disableContinueHook(path.join(root, ".bowman"));
+    assert.ok(!fs.existsSync(legacy));
+    assert.equal(disabledFlagPath(root), path.join(root, ".bowman", "runtime", "continue-hook-disabled"));
+    assert.ok(fs.existsSync(disabledFlagPath(root)));
+
+    fs.writeFileSync(legacy, "disabled\n");
+    enableContinueHook(path.join(root, ".bowman"));
+    assert.ok(!fs.existsSync(legacy));
+    assert.equal(runHook(root).decision, "block");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});

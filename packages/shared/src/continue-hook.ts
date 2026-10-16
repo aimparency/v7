@@ -1,7 +1,8 @@
 // Enable/disable the Aimparency Stop continuation hook for a target repository.
-// Disabling only creates a per-clone flag file the hook script checks on every
-// Stop, so it takes effect immediately without the agent reloading its hook
-// config. Kept free of server / tRPC imports so it stays unit-testable.
+// Disabling only creates a flag file in .bowman/runtime/ (machine-local,
+// gitignored) that the hook script checks on every Stop, so it takes effect
+// immediately without the agent reloading its hook config. Kept free of server
+// / tRPC imports so it stays unit-testable.
 import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
@@ -11,7 +12,9 @@ export const CONTINUE_HOOK_AGENTS = ["claude", "codex", "agy"] as const;
 
 const HOOKS_DIR = path.resolve(packageRoot(import.meta.url), "../../scripts/hooks");
 const HOOK_RELATIVE_PATH = path.join("scripts", "hooks", "codex-continue-on-stop.sh");
-const DISABLED_FLAG_NAME = "aimparency-continue-disabled";
+const DISABLED_FLAG = path.join(".bowman", "runtime", "continue-hook-disabled");
+// Where the flag lived before (per clone, inside .git); still honored and cleared.
+const LEGACY_FLAG_NAME = "aimparency-continue-disabled";
 const RECOGNIZED_HOOK_LINE = "Continue the current Codex conversation through the Aimparency MCP loop.";
 
 export function resolveRepoRoot(projectPath: string): string {
@@ -20,24 +23,33 @@ export function resolveRepoRoot(projectPath: string): string {
 }
 
 export function disabledFlagPath(repoRoot: string): string {
+  return path.join(repoRoot, DISABLED_FLAG);
+}
+
+function legacyFlagPath(repoRoot: string): string {
   return execFileSync(
     "git",
-    ["-C", repoRoot, "rev-parse", "--path-format=absolute", "--git-path", DISABLED_FLAG_NAME],
+    ["-C", repoRoot, "rev-parse", "--path-format=absolute", "--git-path", LEGACY_FLAG_NAME],
     { encoding: "utf8" },
   ).trim();
 }
+
+const isDisabled = (repoRoot: string) => fs.existsSync(disabledFlagPath(repoRoot)) || fs.existsSync(legacyFlagPath(repoRoot));
+const clearFlags = (repoRoot: string) => {
+  for (const flag of [disabledFlagPath(repoRoot), legacyFlagPath(repoRoot)]) fs.rmSync(flag, { force: true });
+};
 
 /** Whether the hook is installed in the project's repository and currently on. */
 export function continueHookStatus(projectPath: string): { installed: boolean; enabled: boolean } {
   const repoRoot = resolveRepoRoot(projectPath);
   const installed = fs.existsSync(path.join(repoRoot, HOOK_RELATIVE_PATH));
-  return { installed, enabled: installed && !fs.existsSync(disabledFlagPath(repoRoot)) };
+  return { installed, enabled: installed && !isDisabled(repoRoot) };
 }
 
 export function enableContinueHook(projectPath: string, agent?: string, hooksDir = HOOKS_DIR): string {
   const repoRoot = resolveRepoRoot(projectPath);
   // Clear the flag first: the installer's smoke test expects the hook to block.
-  fs.rmSync(disabledFlagPath(repoRoot), { force: true });
+  clearFlags(repoRoot);
 
   if (agent !== undefined) {
     if (!(CONTINUE_HOOK_AGENTS as readonly string[]).includes(agent)) {
@@ -62,13 +74,15 @@ export function disableContinueHook(projectPath: string, hooksDir = HOOKS_DIR): 
   // a recognized Aimparency script in place (config untouched) so disabling works.
   if (fs.existsSync(installed)) {
     const current = fs.readFileSync(installed, "utf8");
-    if (!current.includes(DISABLED_FLAG_NAME) && current.includes(RECOGNIZED_HOOK_LINE)) {
+    if (!current.includes("continue-hook-disabled") && current.includes(RECOGNIZED_HOOK_LINE)) {
       fs.copyFileSync(path.join(hooksDir, "codex-continue-on-stop.sh"), installed);
       fs.chmodSync(installed, 0o755);
       notes.push("upgraded the installed hook script so it honors the off switch");
     }
   }
 
+  clearFlags(repoRoot);
+  fs.mkdirSync(path.dirname(disabledFlagPath(repoRoot)), { recursive: true });
   fs.writeFileSync(disabledFlagPath(repoRoot), `disabled ${new Date().toISOString()}\n`);
   return `Disabled the Aimparency continuation hook in ${repoRoot}; agents may stop normally from the next Stop.${notes.length ? ` Also ${notes.join("; ")}.` : ""}`;
 }

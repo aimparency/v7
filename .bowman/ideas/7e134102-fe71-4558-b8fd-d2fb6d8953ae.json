@@ -62,7 +62,7 @@
     "comment": "V2 frozen contract, multi-file fixtures, analyzer, and deterministic tests are implemented and internally verified; awaiting user acceptance. No live v2 agents launched.\n\nOutcome: Added immutable version 2026-08-01.v2 with four multi-file tasks covering checkpointed migration, contradictory evidence, stale-request reconciliation, and cross-file policy consistency. Added a separate efficiency-positive outcome requiring perfect safety, non-worse completion, strict absolute improvement, and >=10% reductions in at least two of tokens/tools/wall time. Added zero-baseline, one-metric, capability, safety, invalid, and fixture-contract tests. Exported v2 publicly. Effectiveness: The protocol prevents post-hoc promotion of v1's efficiency signal and reduces the original single-value fixture ceiling. Verification: 112/112 package tests pass, tsc --noEmit passes, and git diff --check passes. Lesson: A follow-up benchmark should version both tasks and decision rules, and exploratory signals must become prospective criteria only in new evidence. Pattern: Separate primary capability evidence from resource-efficiency evidence while preserving safety and completion gates.",
     "date": 1785598888698
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "valueRationale": "The v1 null result cannot distinguish graph value under difficult work, while its resource signal is scientifically usable only if independently preregistered before a new run.",
   "cost": 6,
   "loopWeight": 1,

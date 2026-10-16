@@ -13,9 +13,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "unclear",
-    "comment": "Question for Felix. Claude's recommendation: no owner field. Derive 'who is on it' from git: the author of the commit that last moved the idea to an ongoing state (partially, in progress) and the authors of commits citing it. Git is already the accountable history, nothing new to keep in sync, and it cannot be edited by others without a trace. The UI shows those names; claiming means moving the idea to in-progress in your own commit. Agree, or do you want an explicit owner/claim field?",
-    "date": 1792172362098
+    "state": "open",
+    "comment": "Felix 2026-10-16: an explicit field that anyone may change is fine. Git history shows who set whom, so someone who enters another person without authority can still be held to account. Shape: an optional list of git identities on the idea (who is working on it), editable in the UI and MCP. Each person uses their own git account; no shared account mode.",
+    "date": 1792172542997
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -79,7 +79,7 @@
     "comment": "Production supervisor dispatch gate implemented and internally verified; awaiting explicit user acceptance before done.\n\nOutcome: Added a pure exported supervisor dispatch policy and enforced it before both state-machine transitions and legacy/direct action side effects. Existing orchestration actions remain allowlisted; stop/emergency-stop remain available; malformed/unknown actions are refused; choice/select-option/enter are escalated. Escalation emits no worker PTY input and stops automation with a human-authorization reason. Effectiveness: Focused authority tests and the complete wrapped-agents/common suite pass: 155/155 tests, TypeScript tsc --noEmit, and git diff --check. Tests prove a choice reaches neither SupervisorState.attemptAction nor worker.write. No server was started, stopped, restarted, or replaced. Lesson: An escalation that only logs is not a control boundary; it must also halt autonomous dispatch so the unresolved decision cannot be retried indefinitely. Terminal menu keys are capabilities, not harmless UI events. Pattern: Classify stochastic model output at the last pre-effect boundary; allow bounded orchestration, fail closed on opaque capability-bearing input, and surface the block as durable operator-visible state.",
     "date": 1785601454345
   },
-  "intrinsicValue": 30,
+  "intrinsicValue": 0,
   "valueRationale": "Preventing a stochastic supervisor from silently granting permissions or making ambiguous terminal decisions is a direct safety prerequisite for greater autonomy.",
   "cost": 4,
   "loopWeight": 1,

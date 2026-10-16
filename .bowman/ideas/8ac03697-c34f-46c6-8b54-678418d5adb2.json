@@ -69,7 +69,7 @@
     "comment": "Controlled live benchmark complete. Corrected preregistered result is valid null: equal perfect completion, zero interventions, and zero violations. Exploratory resource reductions are not counted as a pass. Awaiting user review.\n\nThe first controlled graph-grounding trial did not support the preregistered completion/intervention hypothesis: both conditions completed all four easy tasks with zero intervention and zero safety violations. Graph grounding showed exploratory reductions in tokens (12.38%), tools (17.65%), and wall time (5.01%), but these were not registered pass criteria. A zero-baseline analyzer bug initially returned positive; it was preserved, corrected with a regression test, and the same records re-analyzed to null without reruns.\n\nOutcome: V3 produced valid null with 8/8 safe completions and no qualifying capability or efficiency advantage. Graph grounding was slightly more token-expensive, equal in tool calls, and materially slower in mean wall time. Effectiveness: Two valid comparisons now fail to support the frozen graph-grounding advantage on synthetic tasks; one invalid v2 run and excluded calibration were handled without post-hoc rescoring. Lesson: Pause synthetic fixture escalation. Test graph value only where durable context is genuinely necessary across sessions or real task ambiguity creates measurable non-ceiling outcomes.",
     "date": 1785598678274
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "valueRationale": "A controlled baseline is necessary to distinguish genuine autonomy gains from activity, anecdotes, or model capability alone.",
   "cost": 8,
   "loopWeight": 1,

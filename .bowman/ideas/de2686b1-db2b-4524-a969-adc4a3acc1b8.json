@@ -41,7 +41,7 @@
     "comment": "Closed 2026-10-15 at Felix's request. All three simulation experiments are done. The only natural next step, a forward test on live market data, has no home: the parent 'Develop Aligned Autonomous Will' is cancelled, and Economic Autonomy demands real revenue rather than simulated returns. Closed as a finished experiment, not a strategy to pursue.\n\nAutonomous relevance check on 2026-07-30 found every direct implementation child done: performance-trend analysis, dynamic hyperparameter tuning through MCP, and random-versus-autonomous benchmark comparison. Reconciled the stale open umbrella to review.",
     "date": 1792085391435
   },
-  "intrinsicValue": 5,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

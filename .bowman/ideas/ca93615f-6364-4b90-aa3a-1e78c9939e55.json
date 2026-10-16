@@ -2,6 +2,7 @@
   "id": "ca93615f-6364-4b90-aa3a-1e78c9939e55",
   "text": "integrate watchdog",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -54,7 +55,10 @@
     "comment": "Completed full Watchdog integration: Multi-project backend manager, Frontend UI/Store with Socket.IO, Terminal emulation, and Relaunch capabilities. All sub-ideas closed.",
     "date": 1765544228350
   },
-  "intrinsicValue": 5,
+  "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

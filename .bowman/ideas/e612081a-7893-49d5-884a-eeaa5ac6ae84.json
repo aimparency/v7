@@ -15,7 +15,7 @@
     "comment": "Implemented and unit-tested; needs Felix to try j/k through expanded ideas in the list view (behavior change: j now enters an expanded idea's children).",
     "date": 1790717105186
   },
-  "intrinsicValue": 2,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,

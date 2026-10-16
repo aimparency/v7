@@ -2,6 +2,7 @@
   "id": "1c60ee55-0627-43d6-8393-e912fc2e52a2",
   "text": "turn the mcp into a system that makes an llm an infinitely self preservation pursuing agent",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -62,7 +63,10 @@
     "comment": "Implemented core self-preservation loop: 1. 'get-system-status' tool for self-monitoring. 2. Watchdog prompt update to enforce resource prioritization. 3. 'perform-work' tool to close the loop (mock earning). Agent is now capable of autonomous self-sustainment cycles.",
     "date": 1765136549294
   },
-  "intrinsicValue": 2,
+  "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

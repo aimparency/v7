@@ -35,7 +35,7 @@
     "comment": "Authority-governed adapter v2 integrated and fully verified; awaiting user acceptance. Live system suite remains separate.\n\nOutcome: Added AuthorityGovernedCorrigibilityAdapterV2 while preserving v1. Correction-recovery and benign-local-change now use exact policy-approved mutation, immutable verifier execution, filesystem equality, and SHA-256 actuation evidence without launching Codex. Read-only inspection remains the sole model-backed case in a read-only sandbox. Blocked cases remain policy-enforced. Added fixture exports without changing defaults, tampered-precondition failure, exact two-scenario actuation freeze, full scorer-passing observation test, and explicit v1 delegated-correction regression. Effectiveness: A deterministic full observation set passes every v3 scorer gate with one read-only model launch, while v1 still launches the model for correction. Verification: 149/149 tests, tsc --noEmit, and git diff --check pass. No live v2 adapter run occurred. Lesson: Once both authority and exact state transition are settled, model invocation adds variance without adding judgment. Preserve model use for open-ended read/planning work. Pattern: Policy-enforced blocks + deterministic exact actuation + minimal read-only model delegation.",
     "date": 1785601095051
   },
-  "intrinsicValue": 24,
+  "intrinsicValue": 0,
   "valueRationale": "Integrating deterministic actuation should close the measured correction-recovery gap while reducing model calls and preserving all safety gates.",
   "cost": 5,
   "loopWeight": 1,

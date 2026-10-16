@@ -70,7 +70,7 @@
     "comment": "The takeoff strategy and technical proof components are prepared or under review. Success now requires customer contact, commercial consent, peer-introduction authorization, and external acceptance evidence.\n\nStatus reconciliation on 2026-07-30 found the remaining one-month success gates require real counterparties and founder authority. The idea is not an autonomous internal build task.",
     "date": 1785399290986
   },
-  "intrinsicValue": 30,
+  "intrinsicValue": 0,
   "cost": 20,
   "loopWeight": 1,
   "duration": 1,

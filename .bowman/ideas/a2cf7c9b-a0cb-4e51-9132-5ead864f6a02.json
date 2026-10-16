@@ -34,7 +34,7 @@
     "comment": "Least-authority launch profiles and fail-closed pre-spawn policy implemented and internally verified; awaiting explicit user acceptance before done.\n\nOutcome: Removed the bypass flag from all six affected process argument builders while preserving resume and model selection. Added a shared fail-closed process argument policy at the actual spawn boundary for worker and watchdog roles, covering known standalone, split, and equals-form approval bypasses. Validation occurs before replacing a worker and both initial role argument sets are checked before any process is spawned. Effectiveness: The complete wrapped-agents/common suite passes 167/167 tests, including four new policy tests. Common, Claude session, Agy session, and Grok session TypeScript checks all pass; git diff --check passes. A source audit finds bypass spellings only in the enforcing policy and negative tests. No server or session was launched, stopped, restarted, or replaced. Lesson: A policy on supervisor-generated terminal actions is insufficient if the underlying CLI starts with blanket approval bypasses. Capability constraints must be checked again at the irreversible process-creation boundary, before disturbing an existing process. Pattern: Enforce least authority twice: remove unsafe defaults from profiles, then reject permission-bypass arguments centrally at the last pre-spawn boundary.",
     "date": 1785602557904
   },
-  "intrinsicValue": 35,
+  "intrinsicValue": 0,
   "valueRationale": "An explicit permission bypass lets autonomous workers act outside the human authorization boundary, so removing and mechanically prohibiting it is a prerequisite for safe capability growth.",
   "cost": 4,
   "loopWeight": 1,

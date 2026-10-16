@@ -15,7 +15,7 @@
     "comment": "Implemented; new Column.spec.ts (component test, jsdom) fails without the fix and passes with it; 249/249 frontend tests, vue-tsc clean. Not reproduced live because that would mean deleting a phase in Felix's real graph. Felix: delete a phase and watch its column.",
     "date": 1790750048391
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,

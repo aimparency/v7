@@ -97,9 +97,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "All implementation children are done. Felix must decide which runtime identity/policy/state files remain machine-local and gitignored versus durable committed project state.\n\nStatus reconciliation on 2026-07-30 found nine implementation children done and the sole remaining child human-dependent. Runtime persistence, backend ownership, UI ownership, supervisor hydration, and policy behavior are implemented; only the commit-versus-local policy decision remains.",
-    "date": 1785399273062
+    "state": "review",
+    "comment": "All ten children are done; the last one, the runtime gitignore policy (300f5452), was decided by Felix 2026-10-16: runtime/ stays machine-local. Awaiting acceptance.",
+    "date": 1792172541738
   },
   "intrinsicValue": 0,
   "cost": 1,

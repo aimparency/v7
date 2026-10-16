@@ -11,11 +11,11 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Waiting on Felix's decision about the overall selection model (asked 2026-09-29, alongside the phase auto-scroll fix): a single focused entry with derived path vs. the current per-column/per-level state.",
-    "date": 1790717116535
+    "state": "open",
+    "comment": "Decided by Felix 2026-10-16: a single focused entry in the list UI, with the path derived from it. Phase columns already work this way (selectedEntryKeyByColumn: one key per column, index and phase derived). The idea cursor does not yet: it still lives in phase.selectedIdeaIndex on data-store Phase entities, floatingIdeaIndex, and selectedIncomingIndex chains in the idea UI states. Next: one focused idea row key per list, the same way.",
+    "date": 1792172553980
   },
-  "intrinsicValue": 2,
+  "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,

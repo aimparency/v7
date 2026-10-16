@@ -34,7 +34,7 @@
     "comment": "Bounded structured runtime authority audit implemented and internally verified; awaiting explicit user acceptance before done.\n\nOutcome: Added a bounded 50-entry SupervisorAuthorityAuditEntry ring to WatchdogService. Every canonical dispatch records timestamp, action type, disposition, and reasons. getSupervisorStateInfo returns defensive copies, so the existing socket and runtime-state persistence paths expose recent decisions. Refactored state-machine dispatch to avoid recording the same decision twice. Effectiveness: Full wrapped-agents/common verification passes: 159/159 tests, TypeScript tsc --noEmit, and git diff --check. Tests cover execute and escalate records, absence of injected semantic payloads, single-entry dispatch semantics, ring eviction, and defensive-copy integrity. No server was touched. Lesson: Auditability belongs at the same pre-effect boundary as enforcement, but audit records should contain canonical control metadata rather than attacker-influenced prompt content. Pattern: Keep recent operational authority evidence bounded, structured, payload-free, and exposed through an existing state surface; leave long-term/version-control retention to explicit governance.",
     "date": 1785601737898
   },
-  "intrinsicValue": 22,
+  "intrinsicValue": 0,
   "valueRationale": "Corrigibility controls must be inspectable after execution; structured bounded telemetry permits verification without retaining attacker-controlled prompt content.",
   "cost": 3,
   "loopWeight": 1,

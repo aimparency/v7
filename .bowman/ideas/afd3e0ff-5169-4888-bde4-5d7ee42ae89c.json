@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Re-checked 2026-10-15: not a sandbox limitation — the stack runs on the real machine (UI :4000 up). The actual blocker: the test needs a live watchdog session with the animator enabled, i.e. starting an autonomous agent in this repo, and the broker reports no active sessions. Felix: next time a watchdog session is running anyway, hard-reload the tab and check it reconnects with terminal buffers + enabled state, or authorize the agent to start one for this test.",
-    "date": 1774590115577
+    "state": "halted",
+    "comment": "Felix 2026-10-16: he does not use watchdogs currently. Resume when watchdogs are in use again.",
+    "date": 1792172542378
   },
   "intrinsicValue": 0,
   "cost": 1,

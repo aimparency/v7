@@ -36,9 +36,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Blocked by need for browser reload testing on real machine - see supporting idea afd3e0ff",
-    "date": 1774590174435
+    "state": "halted",
+    "comment": "Its test (afd3e0ff) is halted: Felix does not use watchdogs currently (2026-10-16).",
+    "date": 1792172542719
   },
   "intrinsicValue": 0,
   "cost": 1,

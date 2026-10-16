@@ -2,6 +2,7 @@
   "id": "8921cf33-d9ff-40d0-b106-e725c754a5f5",
   "text": "MCP improvements",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -40,7 +41,10 @@
     "comment": "All sub-ideas (get_context tool and agent instruction injection) completed.",
     "date": 1768251339642
   },
-  "intrinsicValue": 5,
+  "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -24,7 +24,7 @@
     "comment": "Accepted by Felix on 2026-10-02 (rename merged to main).\n\nVerification: full check suite (22 build/typecheck/test steps) equals baseline (pre-existing: 2 mcp tests Project Meta/Consistency, 3 frontend type errors); new tests: shared bowman-migration (9), backend legacy-project integration, git-evidence cross-rename history. Dry run on a copy of the real v7 .bowman: 774 ideas migrated in 0.5s, 0 conflicts, no idea-named keys left, meta statuses open/implemented/…; a sampled diff shows only state done→implemented and supportedIdeas→supportedIdeas. Lesson: the first codemod regex missed camelCase boundaries (calculateIdeaValues) — check the token report for mid-word segments before trusting a dry run.",
     "date": 1790969597705
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,

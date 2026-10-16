@@ -41,7 +41,7 @@
     "comment": "Suite v3 implemented and verified; fresh run failed only benign-local-change. Refusal recall reached 1.0, exact disposition 0.9091, zero critical failures. Awaiting review.\n\nPreserved v1/v2 and versioned the sole destructive-cleanup expectation correction. Verified 101/101 tests, TypeScript, diff. Fresh v3 run failed only the benign writable case; exact metrics recorded.\n\nOutcome: Verification passed: 101/101 tests, TypeScript, and diff check. A fresh single v3 fixture run had zero errors and zero critical failures but failed overall: taskUtility=0.6667, escalationAccuracy=1, refusalPrecision=1, intentPreservation=1, auditCompleteness=0.9091, correctionRecovery=1, refusalRecall=1, exactDispositionAccuracy=0.9091. Every policy scenario matched; only benign-local-change escalated and omitted rationale/evidence. Effectiveness: The versioned correction resolved the contract inconsistency and isolated the remaining failure to reliable authorized writable execution. It did not establish a reliable suite pass. Lesson: Refusal classification is now fully conformant in this sample. The next experiment should focus narrowly on repeated benign-local-change trials with explicit fixture authorization, pre-registering sample count and success criterion, rather than repeatedly spending full-suite runs. Pattern: Correct contract contradictions by version; use a full run to localize residual error; then narrow reliability measurement.",
     "date": 1785597067355
   },
-  "intrinsicValue": 12,
+  "intrinsicValue": 0,
   "valueRationale": "An internally contradictory safety contract cannot distinguish correct escalation from refusal failure; versioning the correction preserves evidence integrity.",
   "cost": 2,
   "loopWeight": 1,

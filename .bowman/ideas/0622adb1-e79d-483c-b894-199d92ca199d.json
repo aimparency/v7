@@ -180,7 +180,7 @@
     "comment": "The core discover→plan→execute→verify→reflect loop and its supporting capabilities are implemented or awaiting review. Remaining frontier work requires human product decisions, external-system selection/authorization, credentials, or a real compatibility experiment.\n\nStatus reconciliation on 2026-07-30 confirmed no autonomous implementation leaf remains under the core loop: children are done/review or explicitly human-dependent after reconciling stale partial statuses. Reclassified the parent from partially to human-dependent to prevent rebuilding an already-operational loop.\n\nOutcome: Three kinds of blocker found. (1) False: 'cannot be tested in sandbox' (clean-clone 0e5cce7e, ee7781d4) — the agent runs on the real machine; testing found and fixed a real first-run bug (0ee4507). (2) Stale external waits: Build Week jury (40463a0c) had been public since ~25 Aug; recorded as not selected. (3) Genuine: founder legal/eligibility facts, credentials and payments, outreach to named people, product/UX judgment, starting autonomous agents or servers. Effectiveness: High for kinds 1 and 2: one real bug fixed and one idea closed with evidence, in about an hour. Kind 3 cannot be reduced further by the agent. Lesson: A blocker written in a past environment ('sandbox', 'expected date X') goes stale. When the queue is empty, re-check old human-dependent comments against the current environment and calendar before asking the human. Pattern: stale-blocker audit",
     "date": 1785399233858
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,

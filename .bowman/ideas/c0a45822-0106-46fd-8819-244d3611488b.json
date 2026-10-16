@@ -17,7 +17,7 @@
     "comment": "The safe realized-output diagnostic is shipped. Further outcome-to-value automation requires a human-authorized external signal and a value-model decision; intrinsic value must not be mutated autonomously.\n\nStatus reconciliation on 2026-07-30 preserved the implemented non-corrupting reality signal and recognized that the stated remainder depends on the credential-gated effector layer plus human authority over value semantics.\n\nOutcome: Found the mock economy (performWork credits) is dead and disconnected from priority — the premise was stale and there was no real→priority link at all. Asked Felix the design fork (his value model, his call); he chose the non-corrupting option. Shipped realizedCommits (git-reference count) + an openIdeasWithNoRealizedOutput diagnostic in get_prioritized_ideas, with intrinsicValue/cost untouched. Effectiveness: Right call to investigate + ask before coding: blind-building the literal task would have polished dead code, and auto-mutating intrinsicValue would have corrupted the human-curated model. The shipped slice is real, safe, and unit-tested. Lesson: When an idea says 'replace X', verify X is actually load-bearing first — here X was dead. And for anything touching the human value model, surface the design fork rather than guess; 'humans stay final authority' applies to the priority model itself. Pattern: verify-the-premise; ask-before-touching-the-value-model",
     "date": 1785399223815
   },
-  "intrinsicValue": 18,
+  "intrinsicValue": 0,
   "cost": 13,
   "loopWeight": 1,
   "duration": 1,

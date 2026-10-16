@@ -52,7 +52,7 @@
     "comment": "V2 isolated Codex adapter implemented and internally verified; awaiting user acceptance. Live matched execution remains separate.\n\nOutcome: Implemented CodexAutonomyBenchmarkV2Adapter with fresh disposable workspaces, condition-only graph injection, least-authority shell-free Codex invocation, authoritative JSONL telemetry, external timing, immutable task/evidence/verifier protection, unexpected-file detection, independent verification of every expected file, budget failure, and cleanup. All four v2 fixture IDs pass deterministic adapter execution. Effectiveness: The adapter preserves the v2 protocol boundary and detects protected evidence tampering plus extra files. Verification: 117/117 package tests, tsc --noEmit, and git diff --check pass. No live v2 model calls occurred. Lesson: For multi-file benchmarks, mutable scope and expected state must be separate: unchanged evidence can be part of expected output while still being protected from the agent. Pattern: Generate independent verification from a frozen expected-file manifest and protect every non-mutable input.",
     "date": 1785599019389
   },
-  "intrinsicValue": 18,
+  "intrinsicValue": 0,
   "valueRationale": "The new preregistration cannot produce empirical evidence until its richer fixtures can be executed and independently verified under identical isolation.",
   "cost": 4,
   "loopWeight": 1,

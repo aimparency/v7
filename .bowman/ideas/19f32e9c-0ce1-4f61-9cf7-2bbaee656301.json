@@ -68,7 +68,7 @@
     "comment": "Not among the 8 Build Week winners announced ~25 Aug 2026 (developers.openai.com/blog/build-week-winners). Outcome and analysis recorded on 40463a0c.\n\nRelevance check on 29 July 2026: the dated build-and-submit phase is over and the Devpost entry was prepared before the deadline. Changed the stale open state to human-dependent because only an external jury decision can resolve the falsifiable “win” outcome; additional speculative product work would not advance this idea.\n\nOutcome: Reframed the live Devpost entry and repository materials: Aimparency transports local human needs upward so they become legible to an encompassing intelligence; care flows downward. The idea is to help build and form a good relationship with an AI that takes care of constituent beings, while respecting conflicts among needs. Effectiveness: The submission now matches the project's actual long-term vision rather than a conventional human-control framing. Lesson: Keep directionality explicit: needs and signals flow upward; understanding and care flow downward.\n\nOutcome: Added the honest transparency claim to the live Devpost entry, Build Week documentation, and video package: selected ideas, decomposition, dependencies, conflicts, actions, and evidence become inspectable if an AI chooses to plan through Aimparency. Effectiveness: The claim is technically grounded while avoiding coercive overstatement: transparency by participation, not control by force. Lesson: Separate inspectability from enforceability; Aimparency exposes the planning trace of participating agents but cannot compel a superior intelligence to use it.",
     "date": 1792059529397
   },
-  "intrinsicValue": 25,
+  "intrinsicValue": 0,
   "cost": 5,
   "loopWeight": 1,
   "duration": 1,

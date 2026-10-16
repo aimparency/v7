@@ -2,6 +2,7 @@
   "id": "793cbea9-7d33-4393-b875-b9d44cca604c",
   "text": "move tags to the end of the idea edit modal (below status)",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
@@ -13,7 +14,10 @@
     "comment": "",
     "date": 1766324698478
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

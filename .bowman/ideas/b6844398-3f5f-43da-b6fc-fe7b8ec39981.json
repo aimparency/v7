@@ -32,7 +32,7 @@
     "comment": "Felix, 2026-10-16: not eligible for the Prototype Fund; no application.\n\nStatus reconciliation on 2026-07-30 propagated the explicit human gate from the Prototype Fund application child. The objective is scheduled for October and requires human legal/eligibility representations and submission authority, so it is not currently actionable autonomous work.",
     "date": 1792122505560
   },
-  "intrinsicValue": 10,
+  "intrinsicValue": 0,
   "cost": 4,
   "loopWeight": 1,
   "duration": 1,

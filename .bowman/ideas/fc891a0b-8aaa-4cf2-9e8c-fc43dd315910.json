@@ -25,7 +25,7 @@
     "comment": "Latest blocked authority decision is visible in the watchdog panel and internally verified; awaiting explicit user visual acceptance before done.\n\nOutcome: Extended frontend watchdog state with bounded authority entries and a computed latestBlockedAuthorityDecision sourced identically from live socket and hydrated runtime state. Added a compact accessible panel notice for escalate/refuse/stop showing canonical action type and machine-readable reasons, while hiding execute-only histories and never rendering payloads or the full audit. Effectiveness: Focused WatchdogPanel/store tests pass 15/15; frontend production build and vue-tsc type-check pass; git diff --check passes. Tests cover hydrated escalation derivation, operator wording, policy reason detail, exclusion of older execute history, and absence for all-execute audits. No server was started or restarted. Lesson: Human-in-the-loop safety is incomplete until the enforcement decision is legible at the operator surface. Show the minimum actionable structured fact, not raw prompts or an overwhelming event log. Pattern: Carry canonical safety metadata end-to-end, derive one current operator concern in the store, and render it with accessible status semantics and progressive disclosure.",
     "date": 1785602306143
   },
-  "intrinsicValue": 18,
+  "intrinsicValue": 0,
   "valueRationale": "A correct escalation is only cooperative if the responsible human can see what was blocked and why.",
   "cost": 3,
   "loopWeight": 1,

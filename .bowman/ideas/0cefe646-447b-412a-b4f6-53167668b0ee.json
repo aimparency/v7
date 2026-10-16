@@ -48,7 +48,7 @@
     "comment": "Full System Launch prepared. Created root docker-compose.yml in subdev/experience-mining orchestrating Echo, Analytics, and Swarm. Created Dockerfiles for Analytics and Engagement modules. All components ready to run in concert.",
     "date": 1765114194512
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

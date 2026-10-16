@@ -15,7 +15,7 @@
     "comment": "readIdea is pure: normalizeIdeaRecord upgrades incoming/outgoing in memory only. [0,0] (schema-default) connection positions are now placed in writeIdea, where writes happen anyway. migrateIdeaFiles persists legacy upgrades explicitly and runs first in project.fixConsistency (reported as 'Upgraded ...' fixes).\n\nVerified: backend vitest 75/75 incl. new test asserting idea.get + idea.list leave a [0,0]-linked idea file byte-identical and fixConsistency places it; legacy incoming/outgoing tests now assert the file is untouched by reads and upgraded by fixConsistency. tsc clean. Scan of .query procedures found no other idea writes. Found the same read-writes pattern for phases (readPhaseFile reconcile + silent writePhase) — filed as a separate idea.",
     "date": 1790716738147
   },
-  "intrinsicValue": 2,
+  "intrinsicValue": 0,
   "cost": 2,
   "loopWeight": 1,
   "duration": 1,

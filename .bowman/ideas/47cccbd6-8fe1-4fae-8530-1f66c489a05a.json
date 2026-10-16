@@ -172,7 +172,7 @@
     "comment": "All phase-refactor implementation children are done or review and fresh integrated tests pass; awaiting user acceptance.\n\nUmbrella status reconciliation confirms the ordered, cursor-based phase refactor is implementation-complete: all nine child ideas are done or review. Canonical root/child arrays and lazy legacy migration are implemented; temporal UI is removed; insertion-order creation/editing, cursor persistence/active path, concatenated multi-parent columns, separators/placeholders/windowing, cross-parent navigation, parent-edit refresh, and ancestry-aware search are present. Fresh verification on 2026-07-29: backend suite 68/68 and focused frontend phase/navigation/search/creation suites 18/18 passed. The lazy-migration and ancestry-search children remain in review only because repository policy requires user acceptance, not because implementation work remains.",
     "date": 1785325322604
   },
-  "intrinsicValue": 10,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,

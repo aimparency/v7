@@ -2,6 +2,7 @@
   "id": "865e4b34-0c68-4e34-9361-809c4d90db4c",
   "text": "Improve backend api and data model",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -86,7 +87,10 @@
     "comment": "Implemented extensive regression tests (e2e/regression.spec.ts) covering: Nesting, Linking (search+attach), Reordering (J/K), Indenting/Outdenting (L/H). Fixed search reliability by adding a fallback simple-text filter in backend (server.ts) to cover for FlexSearch indexing race/failure on transient seeded data. All tests passed.",
     "date": 1765113163499
   },
-  "intrinsicValue": 5,
+  "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

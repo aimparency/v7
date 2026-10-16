@@ -18,9 +18,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "See detailed decision options in supporting idea\n\nWaiting for human architectural decision",
-    "date": 1774590240842
+    "state": "implemented",
+    "comment": "Decided by Felix 2026-10-16: everything in .bowman/runtime/ stays machine-local and gitignored (as the default .bowman/.gitignore already does). Durable project state lives outside runtime/.",
+    "date": 1792172541493
   },
   "intrinsicValue": 0,
   "cost": 1,

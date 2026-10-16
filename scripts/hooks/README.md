@@ -57,11 +57,11 @@ Codex from a repository subdirectory still works.
 
 The Aimparency MCP exposes `enable_continue_hook` and `disable_continue_hook`,
 plus matching prompts (in Claude Code: `/mcp__aimparency__enable-hook [projectPath] [agent]`
-and `/mcp__aimparency__disable-hook`). Disabling writes a per-clone flag,
-`$(git rev-parse --git-path aimparency-continue-disabled)`, that the hook checks
+and `/mcp__aimparency__disable-hook`). Disabling writes a machine-local flag,
+`.bowman/runtime/continue-hook-disabled` (gitignored), that the hook checks
 on every Stop, so it takes effect immediately without reloading agent hook
 config. Enabling removes the flag; with an agent it also (re)installs the hook.
-Manually: `touch "$(git rev-parse --git-path aimparency-continue-disabled)"`.
+Manually: `touch .bowman/runtime/continue-hook-disabled`.
 
 ## Continuation contract
 

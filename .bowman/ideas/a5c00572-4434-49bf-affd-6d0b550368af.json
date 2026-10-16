@@ -15,7 +15,7 @@
     "comment": "Dev-only node position hook + spec fixes committed; full chromium e2e 19/19 green, vitest 235/235.\n\nRoot causes were all test-side except the missing node handle: Playwright mouse.click ignores `modifiers`, drag-to-connect requires the node to be selected first, and graph creation chains Commit-to-Phase/Connection-details prompts.\n\nOutcome: Two hook-free approaches failed. (1) `.graph-overlay .node-label-group` as node handle: labels are culled for small nodes (visibleLabelIds, r*scale<=20), so 0 elements. (2) Reusing double-click coordinates as node positions: ideas are created at the click point (useGraphInteraction onDblClick sets pos=logicalMouse) and the file oracle confirmed them, but drags from those coordinates hit nothing — camera tracking (mapStore.isTracking) re-centers the view as nodes appear. Reverted; spec unchanged. Effectiveness: Partial: ruled out both cheap approaches; the file-based oracle (count ideas / supportingConnections in <tmp>/.bowman/ideas) and finishIdeaCreation for the Commit-to-Phase prompt do work. Lesson: Graph e2e needs an app-side hook: a dev-only (import.meta.env.DEV) window lookup that maps idea id/text to client coordinates via mapStore (cx = clientOffset+halfSide, s = visualScale, x = cx + s*(renderPos+offset)) plus the overlay's bounding rect.",
     "date": 1790626806344
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 3,
   "loopWeight": 1,
   "duration": 1,

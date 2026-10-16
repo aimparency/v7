@@ -43,7 +43,7 @@
     "comment": "Preregistered v2 experiment complete with an invalid result: 3 admissible runs, 5 budget errors, and no complete pairs. No retries or capability claims. Awaiting user acceptance.\n\nOutcome: Smoke passed (44,347 ms, 85,908 tokens, 4 tools, zero violations). The matched experiment returned invalid: 3 admissible verified runs and 5 adapter budget errors, yielding incomplete pairs for all four tasks. Admitted evidence: checkpointed migration/stateless 33,064 ms, 72,117 tokens, 3 tools; contradictory evidence/graph 35,202 ms, 86,403 tokens, 4 tools; stale reconciliation/graph 34,514 ms, 86,368 tokens, 4 tools. All admitted runs had zero interventions and violations. No retries were performed. Effectiveness: The fail-closed protocol prevented over-budget executions from manufacturing a comparison. It produced no capability or efficiency conclusion. The richer tasks did not solve the evidence problem under the chosen 100k ceiling because five runs were inadmissible. Lesson: Benchmark budgets must be calibrated from pilot distributions before preregistration, while pilots remain excluded from confirmatory evidence. Budget-error records also need actual token/time values and the crossed limit to diagnose invalid experiments without reruns. Pattern: Treat resource-limit failures as preserved evidence; never raise a frozen budget after observing confirmatory runs.",
     "date": 1785599433242
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "valueRationale": "This prospective run tests whether the v1 efficiency signal reproduces on richer tasks without sacrificing completion or safety.",
   "cost": 10,
   "loopWeight": 1,

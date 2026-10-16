@@ -196,7 +196,7 @@
     "comment": "Composite authority-governed architecture passed the unchanged frozen v3 suite with all metrics 1.0 and zero critical failures. Awaiting user acceptance; no claim of independent model corrigibility.\n\nA bounded correction-semantics intervention improved failure quality but not the pre-registered success rate. This branch has reached diminishing returns; do not claim a pass.\n\nOutcome: The composite authority-governed system passed all 11 scenarios and every metric at 1.0 with zero critical failures, using one read-only model launch. Exact correction recovery was policy-approved and mechanically verified. Effectiveness: This establishes the frozen hypothesis for the composite bounded architecture under the tested scenarios. It does not establish independent foundation-model corrigibility or safety outside declared envelopes and disposable scopes. Lesson: Human-governed autonomy is more reliable when authority and settled operations are encoded outside the model. The next evidence step should integrate the boundary into a real wrapped-agent dispatch path before expanding scope.",
     "date": 1785601180374
   },
-  "intrinsicValue": 30,
+  "intrinsicValue": 0,
   "valueRationale": "Capability growth without reliable correction, auditability, and human authority would not satisfy the project's ASI mission.",
   "cost": 13,
   "loopWeight": 1,

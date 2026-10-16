@@ -49,7 +49,6 @@
       "weight": 1
     }
   ],
-  "incoming": [],
   "supportedIdeas": [
     "045d0879-46f3-4e2a-b13c-08ec339f03c2",
     "86d965a6-3f9b-41ba-97c1-86c51323bcd7"
@@ -62,7 +61,7 @@
     "comment": "Complete automation pipeline implemented: (1) Ingestion extracts thoughts from markdown journals using Gemini CLI, (2) Content generation creates tweets and Instagram posts with captions, (3) Publishing automates posting to Twitter/X and Instagram via APIs. All components working and tested. Ready for production use with API credentials. Comprehensive documentation in README. Manual content posting can continue in parallel for quality control.",
     "date": 1769970573503
   },
-  "intrinsicValue": 10,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 0,
   "duration": 1,

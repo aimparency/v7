@@ -32,7 +32,7 @@
     "comment": "Prospective v3 manifest and analyzer wrapper implemented and fully verified; awaiting user acceptance. No live v3 evidence collected.\n\nOutcome: Added frozen protocol 2026-08-01.v3 with gpt-5.6-sol, workspace-write-no-network, 170000 tokens, 90000 ms, eight required alternating matched runs, zero retries, unchanged v2 fixtures, and unchanged v2 scoring. Added a v3 analyzer wrapper and tests for exact manifest values, versioned efficiency output, and invalid incomplete evidence. Effectiveness: The version boundary prevents calibrated limits from retroactively modifying v2 and makes the next confirmatory run reproducible. Verification: 121/121 tests, tsc --noEmit, and git diff --check pass. No live v3 agents launched. Lesson: When only resource limits change after calibration, freeze a new execution protocol while reusing task and scoring versions explicitly. Pattern: Version execution manifests independently from fixtures and scoring when prospective calibration changes budgets.",
     "date": 1785599805119
   },
-  "intrinsicValue": 16,
+  "intrinsicValue": 0,
   "valueRationale": "A versioned prospective manifest prevents calibrated limits from being confused with post-hoc modifications to the invalid v2 experiment.",
   "cost": 2,
   "loopWeight": 1,

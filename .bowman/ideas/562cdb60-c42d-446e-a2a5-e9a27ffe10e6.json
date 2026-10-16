@@ -32,7 +32,7 @@
     "comment": "Slice 1 (j/k over visible rows, e612081a) implemented, in review. h/l already match the target (h collapses or goes to parent, l expands or steps into first child), so no change needed there. Slice 3 (single row-key cursor state) open and waiting on the selection-model decision.",
     "date": 1790717118608
   },
-  "intrinsicValue": 5,
+  "intrinsicValue": 0,
   "cost": 5,
   "loopWeight": 1,
   "duration": 1,

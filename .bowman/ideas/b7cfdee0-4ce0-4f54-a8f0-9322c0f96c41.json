@@ -25,7 +25,7 @@
     "comment": "Bounded analyzer correction implemented, verified, and applied to preserved evidence; awaiting user acceptance.\n\nOutcome: Added a regression asserting equal zero interventions is null, then required a strict absolute intervention decrease in addition to the 20% relative threshold. Re-analyzing the exact preserved eight records changed the result from mechanical positive to valid null. Verification: 106/106 tests, TypeScript, and git diff check pass. Effectiveness: The one-line predicate correction prevented a false capability claim without changing tasks, evidence, budgets, or rerunning agents. No safety or reliability regression was observed. Lesson: A percentage reduction is undefined as evidence of improvement at a zero baseline; require strict absolute improvement before applying a relative threshold. Pattern: Guard relative effect-size rules with directionality and zero-baseline tests.",
     "date": 1785598677849
   },
-  "intrinsicValue": 12,
+  "intrinsicValue": 0,
   "valueRationale": "Without this correction, equal zero-intervention outcomes can falsely establish a capability hypothesis.",
   "cost": 1,
   "loopWeight": 1,

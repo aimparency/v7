@@ -2,6 +2,7 @@
   "id": "d0e50505-9ab9-42aa-bec5-728953756c85",
   "text": "it seems like newly created ideas do not get analyzed and assigned 3 most close and most distant other ideas. At least this information does not make it to the graph UI where the user can hold the button for embedding alignment",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [],
@@ -13,7 +14,10 @@
     "comment": "Fixed by invalidating semantic graph cache when embeddings are created/updated/deleted. Changes in backend/src/forces.ts (added invalidateSemanticCache function) and backend/src/server.ts (called cache invalidation after embedding operations)",
     "date": 1769003953302
   },
-  "intrinsicValue": 1,
+  "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0
+  "loopWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -76,7 +76,7 @@ If the assistant determines human intervention (credentials, explicit authorizat
 3. If human action is still strictly required, the assistant re-states the request and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
 ### Enable / Disable
-Use the \`enable_continue_hook\` / \`disable_continue_hook\` tools (or the \`enable-hook\` / \`disable-hook\` prompts) only when the human asks. Disabling writes a per-clone flag (\`$(git rev-parse --git-path aimparency-continue-disabled)\`) checked on every Stop — no hook-config reload needed.
+Use the \`enable_continue_hook\` / \`disable_continue_hook\` tools (or the \`enable-hook\` / \`disable-hook\` prompts) only when the human asks. Disabling writes a machine-local flag (\`.bowman/runtime/continue-hook-disabled\`, gitignored) checked on every Stop — no hook-config reload needed.
 
 ### Deliberate Exit
 To allow the coding assistant to exit normally without triggering continuation:

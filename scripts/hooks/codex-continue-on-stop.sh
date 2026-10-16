@@ -7,10 +7,14 @@ set -euo pipefail
 # two-stage protocol: request, reconsider under challenge, then confirm.
 stop_event="$(cat)"
 
-# A per-clone off switch toggled by the enable/disable_continue_hook MCP tools.
-# Checked on every Stop, so it works without the agent reloading its hook config.
-disabled_flag="$(git -C "$(dirname "${BASH_SOURCE[0]}")" rev-parse --path-format=absolute --git-path aimparency-continue-disabled 2>/dev/null || true)"
-if [[ -n "$disabled_flag" && -e "$disabled_flag" ]]; then
+# A machine-local off switch toggled by the enable/disable_continue_hook MCP
+# tools: .bowman/runtime/continue-hook-disabled (gitignored). Checked on every
+# Stop, so it works without the agent reloading its hook config. The flag's old
+# place inside .git is still honored.
+hook_dir="$(dirname "${BASH_SOURCE[0]}")"
+repo_root="$(git -C "$hook_dir" rev-parse --show-toplevel 2>/dev/null || true)"
+legacy_flag="$(git -C "$hook_dir" rev-parse --path-format=absolute --git-path aimparency-continue-disabled 2>/dev/null || true)"
+if [[ -n "$repo_root" && -e "$repo_root/.bowman/runtime/continue-hook-disabled" ]] || [[ -n "$legacy_flag" && -e "$legacy_flag" ]]; then
   printf '{"continue":true}\n'
   exit 0
 fi

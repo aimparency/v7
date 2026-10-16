@@ -34,7 +34,7 @@
     "comment": "Backend runtime schema and merge now preserve bounded supervisor authority audits; internally verified and awaiting explicit user acceptance.\n\nOutcome: Extracted focused watchdog runtime Zod schemas, including payload-free bounded authority entries and supervisor state. Added a pure control-state merge that preserves supervisorState, switched the project router to it, strips unknown audit fields, and retains the newest 50 entries. Effectiveness: Backend focused tests 2/2 and full suite 70/70 pass; backend TypeScript build passes. Wrapped-agents/common remains green at 161/161 with tsc --noEmit, and git diff --check passes. No backend or development server was started or restarted. Lesson: Cross-component persistence contracts fail when each boundary owns an incomplete ad hoc schema. Unrelated partial updates must merge through a tested function that explicitly preserves opaque higher-level state. Pattern: Extract shared-within-service persistence schemas and pure merge functions; test both field continuity and payload stripping at the component that rewrites the file.",
     "date": 1785601972201
   },
-  "intrinsicValue": 20,
+  "intrinsicValue": 0,
   "valueRationale": "Safety evidence must not be silently erased by an unrelated control-state update at another runtime boundary.",
   "cost": 3,
   "loopWeight": 1,

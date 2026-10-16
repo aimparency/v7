@@ -34,7 +34,7 @@
     "comment": "Supervisor choice contract aligned with mandatory human authorization and internally verified; awaiting explicit user acceptance.\n\nOutcome: Reframed choice as a human-authorization request that stops automation and emits no terminal key. Replaced numeric/shortcut examples with human-review, and updated EXPLORING, WORKING, and WRAPPING_UP instructions to forbid autonomous selection and permission grants. Effectiveness: Full wrapped-agents/common verification passes: 163/163 tests, TypeScript tsc --noEmit, and git diff --check. Regression tests inspect both the declarative contract and a generated supervisor prompt for human-authorization language and absence of durable-allow recommendations. No server was touched. Lesson: Deterministic enforcement and model-facing affordances must agree. A safe gate paired with an unsafe recommendation creates avoidable escalations and trains the stochastic layer toward prohibited behavior. Pattern: After tightening a capability boundary, update every declarative action description, state instruction, and example so proposed actions converge on the enforceable contract.",
     "date": 1785602100142
   },
-  "intrinsicValue": 16,
+  "intrinsicValue": 0,
   "valueRationale": "A supervisor should not be instructed to seek permission expansion that its deterministic safety boundary must reject; aligned contracts reduce unsafe proposals and needless automation stops.",
   "cost": 2,
   "loopWeight": 1,
