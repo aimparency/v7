@@ -95,9 +95,9 @@
     "d3c486d6-60a9-4843-a16f-b545c086fcc2"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "The funding strategy and materials are prepared. Contractually committed funding requires Felix’s financing-instrument and legal-vehicle decisions, personal outreach, negotiations, and signatures.\n\nStatus reconciliation on 2026-07-30 followed the existing comment: remaining execution consists of founder decisions and institutionally human financing actions. Reclassified from partially to human-dependent.",
-    "date": 1785399290909
+    "state": "failed",
+    "comment": "Felix 2026-10-16: did not happen. No funding was contractually committed by 31 August 2026 (committed meant signed: a grant award, an investment agreement or a paid contract, not revenue earned).",
+    "date": 1792172311612
   },
   "intrinsicValue": 20,
   "cost": 6,

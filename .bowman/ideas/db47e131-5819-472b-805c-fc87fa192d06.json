@@ -1,0 +1,26 @@
+{
+  "id": "db47e131-5819-472b-805c-fc87fa192d06",
+  "text": "Who works on what: attribute work on ideas to git accounts",
+  "description": "Felix 2026-10-16: with several people on one graph, we need a \"who is working on something\" system: not a status, rather an owner. But any git user could change an owner field. Each person should use Aimparency through their own git account, so changes stay accountable; a shared \"common git account mode\" is probably not a good idea.",
+  "archived": false,
+  "color": "#37662d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3"
+  ],
+  "committedIn": [
+    "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
+  ],
+  "status": {
+    "state": "unclear",
+    "comment": "Question for Felix. Claude's recommendation: no owner field. Derive 'who is on it' from git: the author of the commit that last moved the idea to an ongoing state (partially, in progress) and the authors of commits citing it. Git is already the accountable history, nothing new to keep in sync, and it cannot be edited by others without a trace. The UI shows those names; claiming means moving the idea to in-progress in your own commit. Agree, or do you want an explicit owner/claim field?",
+    "date": 1792172362098
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

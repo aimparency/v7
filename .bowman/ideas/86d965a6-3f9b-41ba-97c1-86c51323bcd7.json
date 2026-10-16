@@ -30,9 +30,9 @@
     "8497d7b8-7729-4dde-b868-3cdcd2a749d6"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "The preparatory implementation branch is done. The September field test requires Felix to select diary entries and photos, use the pipeline during the trip, review drafts, and decide whether anything is kept or published.\n\nStatus reconciliation on 2026-07-30 found the only implementation child done. The remaining success criterion is repeated real use with Felix’s personal materials and explicit review during the September trip, so the parent is human-dependent rather than an open code task.",
-    "date": 1785399138494
+    "state": "cancelled",
+    "comment": "Felix 2026-10-16: the September field test did not really happen.",
+    "date": 1792172312656
   },
   "intrinsicValue": 0,
   "cost": 5,

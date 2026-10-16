@@ -232,6 +232,23 @@
         0.16
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
+      "relativePosition": [
+        2.49,
+        0.21
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
+      "relativePosition": [
+        -2.46,
+        -0.45
+      ],
+      "weight": 1,
+      "hypothesis": "A shared ideation graph for a real group of people is the cooperation engine in its simplest live form."
     }
   ],
   "supportedIdeas": [

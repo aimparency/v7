@@ -1,0 +1,55 @@
+{
+  "id": "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
+  "text": "Plant Aimparency at Commons Hub as its shared ideation graph",
+  "description": "Felix 2026-10-16: establish Aimparency as the core ideation tool at Commons Hub (\"plant it here\"). The hub's ideas live in one git repo with a .bowman graph; members open it in Aimparency, each through their own git account, and ask an assistant what they can do today. This is the first real outside use and the exposure path for the project (no grant currently fits, see 28ddbcb0).",
+  "archived": false,
+  "color": "#6c5b30",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "90656db4-c47f-491c-82aa-4f5631d7c264",
+      "relativePosition": [
+        1.07,
+        2.26
+      ],
+      "weight": 1,
+      "hypothesis": "Members engage when the graph answers 'what can I do today?' instead of asking them to read it."
+    },
+    {
+      "ideaId": "ee7781d4-83fc-4d56-be3f-c901b586ddaf",
+      "relativePosition": [
+        1.81,
+        -1.73
+      ],
+      "weight": 1,
+      "hypothesis": "Newcomers install from a fresh clone; if that first start breaks, the hub never adopts it."
+    },
+    {
+      "ideaId": "db47e131-5819-472b-805c-fc87fa192d06",
+      "relativePosition": [
+        -0.27,
+        2.49
+      ],
+      "weight": 1,
+      "hypothesis": "Several people on one graph need to see who is on what, or they collide or wait on each other."
+    }
+  ],
+  "supportedIdeas": [
+    "8f002aaf-7628-4b04-a814-8c52db56b6f7",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [
+    "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
+  ],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix sets it up at Commons Hub. Before that: a clean-clone run of pnpm start (ee7781d4) so a newcomer's first start works.",
+    "date": 1792172360892
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

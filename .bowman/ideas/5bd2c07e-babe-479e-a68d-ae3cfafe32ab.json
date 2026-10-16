@@ -23,9 +23,9 @@
     "111d2965-0ca2-4b07-ab5c-eef1571a820a"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Call with Robin is scheduled for the weekend of 1–2 August 2026. Felix must ask for a concrete overflow/subcontracting opportunity and agree roles/commercial boundaries; the agent can prepare, scope, implement, and verify authorized work afterward.",
-    "date": 1785354627814
+    "state": "cancelled",
+    "comment": "Felix 2026-10-16: the August call with Robin did not happen.",
+    "date": 1792172312093
   },
   "intrinsicValue": 0,
   "cost": 2,

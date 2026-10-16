@@ -23,9 +23,9 @@
     "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Felix contacted Rüdger at Herzog Records on 29 July 2026. Await the response; if interested, schedule the owner/operator discovery call and obtain permission to reconstruct one real workflow before proposing automation.\n\nReal-world progress on 29 July 2026: Felix reports that he contacted Rüdger. This replaces the previous unsent-outreach blocker with a response/meeting boundary. No customer interest, workflow access, or commercial consent is inferred until Rüdger replies.",
-    "date": 1784740519732
+    "state": "cancelled",
+    "comment": "Felix 2026-10-16: in contact with Herzog Records, but through another app (entour), not much related to Aimparency.",
+    "date": 1792172312399
   },
   "intrinsicValue": 0,
   "cost": 1,

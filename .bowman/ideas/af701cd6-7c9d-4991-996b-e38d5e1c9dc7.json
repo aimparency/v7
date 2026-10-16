@@ -1,0 +1,27 @@
+{
+  "id": "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
+  "text": "Read-only MCP for everyone: read the graph, at most move an idea to review",
+  "description": "A restricted MCP mode anyone can be given: all read tools (search, context, prioritized ideas, phases), and as its only write, moving an idea to review with a status comment (claiming \"I think this is done, here is the evidence\"). No creating, deleting, linking, or value changes. Likely a server flag (e.g. AIMPARENCY_MCP_MODE=read-only) that registers only the allowed tools, plus a backend guard so the restriction does not depend on the client.",
+  "archived": false,
+  "color": "#662f2d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "90656db4-c47f-491c-82aa-4f5631d7c264"
+  ],
+  "committedIn": [
+    "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792172339901
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

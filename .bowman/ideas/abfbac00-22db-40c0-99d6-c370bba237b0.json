@@ -17,9 +17,9 @@
     "e4c477a4-009b-4354-a2ad-2b4616ca3377"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Founder decision plus qualified German legal/tax advice required. This is the gating path for investment.",
-    "date": 1784387911992
+    "state": "cancelled",
+    "comment": "The August commitment it served did not happen (cabe6e06 failed); a legal vehicle is no longer needed on that timeline.",
+    "date": 1792172311892
   },
   "intrinsicValue": 0,
   "cost": 1,

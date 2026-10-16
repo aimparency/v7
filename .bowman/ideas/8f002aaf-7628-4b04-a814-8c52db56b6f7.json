@@ -44,6 +44,15 @@
         1.9
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
+      "relativePosition": [
+        1.47,
+        -2.02
+      ],
+      "weight": 1,
+      "hypothesis": "A whole community using the graph daily yields more outside feedback than inviting single maintainers one by one."
     }
   ],
   "supportedIdeas": [

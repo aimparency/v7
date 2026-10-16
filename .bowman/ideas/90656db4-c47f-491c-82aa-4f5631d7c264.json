@@ -1,0 +1,36 @@
+{
+  "id": "90656db4-c47f-491c-82aa-4f5631d7c264",
+  "text": "Ask the graph \"what can I do today?\": an assistant for Commons Hub members",
+  "description": "An LLM over the hub's graph that anyone can ask \"what can I do today?\" and that answers with a few concrete ideas fitting the person (their interests, time, what is unblocked and valuable), with the path to why each matters. It reads through the read-only MCP (af701cd6), so it cannot damage the graph; picking something up happens in the person's own git account. Related: conversational idea elicitation (0697d033) turns a person's goal into proposed ideas, the reverse direction.",
+  "archived": false,
+  "color": "#2d6633",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
+      "relativePosition": [
+        -2.47,
+        0.4
+      ],
+      "weight": 1,
+      "hypothesis": "A read-only tool surface lets anyone use the assistant without write access to the graph."
+    }
+  ],
+  "supportedIdeas": [
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3"
+  ],
+  "committedIn": [
+    "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792172340123
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
