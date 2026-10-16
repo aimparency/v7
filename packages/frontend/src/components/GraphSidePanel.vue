@@ -7,6 +7,8 @@ import { useMapStore } from '../stores/map'
 import type { Idea, Connection } from 'shared'
 import { formatWithK, parseK } from '../utils/number-format'
 import NumericTextInput from './NumericTextInput.vue'
+import { useUIModalStore } from '../stores/ui/modal-store'
+import { deleteIdeasAsking } from '../stores/ui/idea-removal'
 
 const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
@@ -204,6 +206,22 @@ const onWeightChange = async () => {
     await updateConnection()
 }
 
+// Touch equivalents of e and d d for the selected idea.
+const editSelectedIdea = () => {
+    if (selectedIdea.value) useUIModalStore().openIdeaEditModal(selectedIdea.value.id)
+}
+
+const deleteSelectedIdea = async () => {
+    const ideaId = selectedIdea.value?.id
+    if (!ideaId) return
+    if (graphUIStore.pendingDeleteIdeaId !== ideaId) {
+        graphUIStore.setPendingDeleteIdea(ideaId)
+        return
+    }
+    graphUIStore.setPendingDeleteIdea(null)
+    if (await deleteIdeasAsking(dataStore, projectStore.projectPath, [ideaId])) graphUIStore.setGraphSelection(null)
+}
+
 const removeConnection = async () => {
     if (!isConfirmingDelete.value) {
         isConfirmingDelete.value = true
@@ -360,6 +378,17 @@ const isOpaque = computed(() => !hasInteracted.value)
         <div v-else-if="selectedIdea" class="panel-content">
             <h3>{{ selectedIdea.text }}</h3>
             <div class="idea-status" :style="{ color: statusColor }">{{ selectedIdea.status.state }}</div>
+            <div class="idea-actions">
+                <button class="edit-btn" @click="editSelectedIdea">Edit</button>
+                <button
+                    class="danger-btn"
+                    :class="{ confirm: graphUIStore.pendingDeleteIdeaId === selectedIdea.id }"
+                    @click="deleteSelectedIdea"
+                    @blur="graphUIStore.setPendingDeleteIdea(null)"
+                >
+                    {{ graphUIStore.pendingDeleteIdeaId === selectedIdea.id ? 'Confirm delete' : 'Delete' }}
+                </button>
+            </div>
             
             <div class="metrics-section">
                 <h4>Value</h4>
@@ -729,6 +758,26 @@ textarea.input-field {
 
 .resize-handle:hover, .side-panel:hover .resize-handle {
     background: rgba(255, 255, 255, 0.05);
+}
+
+.idea-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+
+    & button {
+        flex: 1;
+        margin-top: 0;
+    }
+
+    & .edit-btn {
+        padding: 0.6rem;
+        background: #2a2a2a;
+        border: 1px solid #444;
+        color: inherit;
+        border-radius: 4px;
+        cursor: pointer;
+    }
 }
 
 .idea-status {
