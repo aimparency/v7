@@ -19,9 +19,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Narrowed: install/build/port-fallback/check verified by agent 2026-10-15. Only remaining: Felix runs pnpm start in a fresh clone, opens UI, switches to a nearby .bowman project (agent may not start servers).\n\nAgent-run on the real machine (Manjaro, Node 22.20, pnpm 11.3), 2026-10-15, fresh git clone at 43bc4ea: pnpm install OK (3m, native node-pty/onnxruntime built), pnpm build + build:optional green, validate:local-runtime PASS incl. occupied-default-port fallback. First pnpm check failed (embedding model cold-cache download timing out 5 backend tests) → fixed in 0ee4507, cold rerun 105/105. NOT done: steps 4–6 that require starting servers (pnpm dev/start, UI connect, nearby-project discovery) — AGENTS.md forbids the agent starting servers. Procedure commands are now pnpm, not npm.",
-    "date": 1774590115450
+    "state": "implemented",
+    "comment": "Felix confirmed (2026-10-16): fresh https clone on the Commons Hub server, pnpm install, then pnpm start (interactive setup, build) ran; the hosted server is up. Only note: pnpm install warns that the loop-worker's aimparency-mcp bin can't be linked before the MCP is built (harmless).",
+    "date": 1792183637658
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -42,9 +42,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Felix sets it up at Commons Hub. Before that: a clean-clone run of pnpm start (ee7781d4) so a newcomer's first start works.",
-    "date": 1792172360892
+    "state": "partially",
+    "comment": "Server running on the Commons Hub machine (system user aimparency, /srv/aimparency, hosted mode on 127.0.0.1:4000). Open: nginx + TLS in front, systemd unit, git credentials for committing, first accounts for housemates, try login and MCP link.",
+    "date": 1792183638078
   },
   "intrinsicValue": 0,
   "cost": 1,
