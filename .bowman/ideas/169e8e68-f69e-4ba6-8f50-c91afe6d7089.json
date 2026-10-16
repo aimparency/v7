@@ -2,7 +2,6 @@
   "id": "169e8e68-f69e-4ba6-8f50-c91afe6d7089",
   "text": "Button shows either \"new project\" or \"open project\" - depending on whether .bowman folder exists",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -12,7 +11,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and internally verified; needs acceptance in the project selection UI because no frontend runtime is currently running.",
+    "comment": "Implemented and internally verified; needs acceptance in the project selection UI because no frontend runtime is currently running.\n\nAdded project.inspectPath as a read-only backend primitive that recognizes initialized, active, and archived-only .bowman graphs. Project selection performs a debounced, revision-guarded inspection of the typed path and displays Open Project for an existing graph or New Project otherwise. Verification: focused selector tests 2/2, backend tests 62/62, frontend tests 196/196, frontend production build/type-check, and git diff --check passed.",
     "date": 1784893129707
   },
   "intrinsicValue": 0,
@@ -20,6 +19,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Added project.inspectPath as a read-only backend primitive that recognizes initialized, active, and archived-only .bowman graphs. Project selection performs a debounced, revision-guarded inspection of the typed path and displays Open Project for an existing graph or New Project otherwise. Verification: focused selector tests 2/2, backend tests 62/62, frontend tests 196/196, frontend production build/type-check, and git diff --check passed."
+  "valueVariance": 0
 }

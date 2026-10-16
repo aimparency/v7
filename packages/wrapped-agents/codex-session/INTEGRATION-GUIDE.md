@@ -331,7 +331,7 @@ private async executeVerifyComplete(notes: string): Promise<void> {
   await this.waitForWorkerIdle();
 
   // Step 3: Reflect
-  await this.post(this.worker, 'Add reflection using addReflection MCP tool.');
+  await this.post(this.worker, 'Record the evidence in the status comment and reflect on each parent connection\'s hypothesis.');
   await this.waitForWorkerIdle();
 
   // Step 4: Compact

@@ -33,17 +33,20 @@ test('the registry ends at the current data model version, in order', () => {
   assert.equal(versions[versions.length - 1], CURRENT_DATA_MODEL_VERSION);
 });
 
-for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3']) {
+for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-model-v4']) {
   test(`${fixture} migrates to the current version with an unchanged graph`, async () => {
     const bowman = await copyFixture(fixture);
     const before = await readGraphSignature(bowman);
 
     const result = await migrateBowman(bowman);
     assert.equal(result.to, CURRENT_DATA_MODEL_VERSION);
-    if (fixture !== 'data-model-v3') {
+    if (fixture === 'data-model-v1' || fixture === 'data-model-v2') {
       assert.ok(result.applied.some((step) => step.startsWith('3:')), 'the ideas layout migration ran');
     }
-    assert.ok(result.applied.some((step) => step.startsWith('4:')), 'the connection hypothesis migration ran');
+    if (fixture !== 'data-model-v4') {
+      assert.ok(result.applied.some((step) => step.startsWith('4:')), 'the connection hypothesis migration ran');
+    }
+    assert.ok(result.applied.some((step) => step.startsWith('5:')), 'the two-notes migration ran');
     assert.deepStrictEqual(result.conflicts, []);
 
     assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), []);

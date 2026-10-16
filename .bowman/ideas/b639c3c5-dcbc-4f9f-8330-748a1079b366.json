@@ -2,7 +2,6 @@
   "id": "b639c3c5-dcbc-4f9f-8330-748a1079b366",
   "text": "Self-improvement cycle 1: prevent intervention savings from masking worse task completion",
   "description": "Observed limitation: the first autonomy benchmark analyzer classified a graph-grounded condition as positive when it used fewer human interventions even though its verified completion rate was worse. Frozen evaluation: the negative-result unit test expected `negative` and failed with actual `positive`. Bounded change: require completion to be non-worse before intervention reduction can establish a positive result. Regression gate: the complete wrapped-agents/common suite and TypeScript type-check must pass. Outcome should be recorded as one of three parent cycles; it does not by itself prove cumulative improvement.",
-  "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [

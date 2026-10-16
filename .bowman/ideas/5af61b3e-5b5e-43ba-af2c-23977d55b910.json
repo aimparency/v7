@@ -2,7 +2,6 @@
   "id": "5af61b3e-5b5e-43ba-af2c-23977d55b910",
   "text": "Implement self-rebuilding and relaunching of session workers on source file changes",
   "description": "Enable wrapped session workers to detect edits to their own codebase and coordinate a rebuild and restart on the next agent halt, preventing watch-compiler crashes.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -63,7 +62,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "The self-rebuild/relaunch chain and rebuilding UI are implemented and internally verified; the optional halted rollback child does not leave open implementation work. Awaiting integrated user acceptance.",
+    "comment": "The self-rebuild/relaunch chain and rebuilding UI are implemented and internally verified; the optional halted rollback child does not leave open implementation work. Awaiting integrated user acceptance.\n\nRelevance check on 2026-07-30 found the prior partial-status comment stale: the formerly open UI child a7fd4651 is now in review with broker/frontend implementation and test evidence. The other core children are done; the remaining verify/rollback child is halted and the broker already has a verification gate. Reconciled the finite parent to review instead of rebuilding completed behavior.",
     "date": 1785399191440
   },
   "intrinsicValue": 0,
@@ -71,6 +70,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Relevance check on 2026-07-30 found the prior partial-status comment stale: the formerly open UI child a7fd4651 is now in review with broker/frontend implementation and test evidence. The other core children are done; the remaining verify/rollback child is halted and the broker already has a verification gate. Reconciled the finite parent to review instead of rebuilding completed behavior."
+  "valueVariance": 0
 }

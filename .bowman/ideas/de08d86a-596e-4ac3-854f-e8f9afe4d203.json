@@ -2,7 +2,6 @@
   "id": "de08d86a-596e-4ac3-854f-e8f9afe4d203",
   "text": "Merged cross-repo value flow (external intrinsics zeroed)",
   "description": "PARKED HISTORICAL IDEA-LEVEL DESIGN — not the implemented repo-node model. This proposal would load referenced external ideas, zero their intrinsic values, and eventually cascade into their subtrees when expanded. It was halted by the 2026-06-27 decision to use opaque whole-repository boundaries. The implemented successor is 3023ebec: exactly one zero-intrinsic leaf-sink node per linked repository, with no external graph loading or cascade.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "cross-repo",
@@ -40,7 +39,7 @@
   "committedIn": [],
   "status": {
     "state": "cancelled",
-    "comment": "Cancelled 2026-09-20: merged value flow over loaded external ideas (zeroed intrinsics, cascade-on-expand) needs the other repo's internals. Superseded by 3023ebec: one zero-intrinsic leaf-sink node per linked repo, no external graph loading.",
+    "comment": "Cancelled 2026-09-20: merged value flow over loaded external ideas (zeroed intrinsics, cascade-on-expand) needs the other repo's internals. Superseded by 3023ebec: one zero-intrinsic leaf-sink node per linked repo, no external graph loading.\n\nCancelled, not parked: the leaf-sink model is simpler and is what shipped; the idea-level cascade has no revival path under black-box repos.",
     "date": 1789935649478
   },
   "intrinsicValue": 0,
@@ -48,6 +47,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Cancelled, not parked: the leaf-sink model is simpler and is what shipped; the idea-level cascade has no revival path under black-box repos."
+  "valueVariance": 0
 }

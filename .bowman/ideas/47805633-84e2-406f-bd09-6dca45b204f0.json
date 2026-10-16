@@ -2,7 +2,6 @@
   "id": "47805633-84e2-406f-bd09-6dca45b204f0",
   "text": "get_prioritized_ideas returns the top idea's context (one call per loop step)",
   "description": "From MCP-agent feedback (2026-10-16): every loop step called get_prioritized_ideas then get_idea_context. get_prioritized_ideas now includes topIdeaContext (exactly what get_idea_context returns, built by the shared ideaContext helper with the already-loaded graph). The Stop hook text says so.",
-  "reflections": [],
   "archived": false,
   "color": "#31662d",
   "tags": [

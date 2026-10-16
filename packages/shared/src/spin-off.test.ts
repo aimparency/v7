@@ -12,7 +12,6 @@ function idea(id: string, parents: string[], children: string[], committedIn: st
   return {
     id,
     text: id,
-    reflections: [],
     archived: false,
     tags: [],
     supportingConnections: children.map(conn),

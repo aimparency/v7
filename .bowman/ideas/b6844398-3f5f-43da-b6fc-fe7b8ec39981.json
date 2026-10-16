@@ -2,8 +2,6 @@
   "id": "b6844398-3f5f-43da-b6fc-fe7b8ec39981",
   "text": "Submit a compelling \"Prototype Fund\" application in October",
   "description": "Use October to turn the Prototype Fund opportunity into a submitted-quality application early in the 1 October-30 November window. Target an internal complete draft by 15 October and submission by 31 October, leaving November for corrections if the platform permits. Frame the funded project as a concrete new open-source software-infrastructure module, not as general operating support for an already-built application.",
-  "reflection": "Status reconciliation on 2026-07-30 propagated the explicit human gate from the Prototype Fund application child. The objective is scheduled for October and requires human legal/eligibility representations and submission authority, so it is not currently actionable autonomous work.",
-  "reflections": [],
   "archived": false,
   "color": null,
   "tags": [
@@ -20,7 +18,7 @@
         0.5071565996301379
       ],
       "weight": 1,
-      "evaluation": "Never submitted: not eligible (Felix, 2026-10-16)."
+      "reflection": "Never submitted: not eligible (Felix, 2026-10-16)."
     }
   ],
   "supportedIdeas": [
@@ -31,7 +29,7 @@
   ],
   "status": {
     "state": "cancelled",
-    "comment": "Felix, 2026-10-16: not eligible for the Prototype Fund; no application.",
+    "comment": "Felix, 2026-10-16: not eligible for the Prototype Fund; no application.\n\nStatus reconciliation on 2026-07-30 propagated the explicit human gate from the Prototype Fund application child. The objective is scheduled for October and requires human legal/eligibility representations and submission authority, so it is not currently actionable autonomous work.",
     "date": 1792122505560
   },
   "intrinsicValue": 10,

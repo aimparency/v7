@@ -35,7 +35,7 @@ const editingIdeas = computed(() => {
 })
 const isBulk = computed(() => editingIdeas.value.length > 1)
 type BulkField = 'intrinsicValue' | 'valueRationale' | 'cost' | 'duration' | 'loopWeight' | 'tags' |
-  'status' | 'statusComment' | 'archived' | 'color' | 'reflection'
+  'status' | 'statusComment' | 'archived' | 'color'
 const mixedFields = ref<Set<BulkField>>(new Set())
 const overriddenFields = ref<Set<BulkField>>(new Set())
 const isMixed = (field: BulkField) => isBulk.value && mixedFields.value.has(field) && !overriddenFields.value.has(field)
@@ -119,7 +119,6 @@ const canArchive = computed(() => {
 watch(canArchive, (allowed) => {
   if (!allowed) archived.value = false
 })
-const reflection = ref('')
 const supportedIdeasList = ref<{ id: string, text: string, weight: number }[]>([])
 const committedPhasesList = ref<{ id: string, name: string }[]>([])
 // Repo-level cross-repo links: whole external repos that support this idea
@@ -180,7 +179,6 @@ const serializeFormState = () => JSON.stringify({
   statusComment: statusComment.value,
   archived: archived.value,
   color: ideaColor.value,
-  reflection: reflection.value,
   supportedIdeas: supportedIdeasList.value.map((entry) => ({ id: entry.id, weight: entry.weight })),
   committedPhases: committedPhasesList.value.map((phase) => phase.id),
   linkedRepos: linkedReposList.value.map((entry) => entry.repoId),
@@ -191,8 +189,6 @@ const isDirty = computed(() => serializeFormState() !== dirtySnapshot.value)
 
 const ideaTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
-const statusCommentInput = ref<HTMLInputElement>()
-const reflectionInput = ref<HTMLTextAreaElement>()
 const loopWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const addPhaseBtn = ref<HTMLButtonElement>()
@@ -310,8 +306,7 @@ watch(() => props.show, async (show) => {
       status: targets.map((entry) => entry.status.state),
       statusComment: targets.map((entry) => entry.status.comment || ''),
       archived: targets.map((entry) => entry.archived ?? false),
-      color: targets.map((entry) => entry.color ?? ''),
-      reflection: targets.map((entry) => entry.reflection || '')
+      color: targets.map((entry) => entry.color ?? '')
     }
     mixedFields.value = new Set(
       (Object.keys(fieldValues) as BulkField[]).filter((field) => !sameValue(fieldValues[field]))
@@ -334,7 +329,6 @@ watch(() => props.show, async (show) => {
     statusComment.value = isMixed('statusComment') ? '' : (idea.value.status.comment || '')
     archived.value = isMixed('archived') ? false : (idea.value.archived ?? false)
     ideaColor.value = isMixed('color') ? '' : (idea.value.color ?? '')
-    reflection.value = isMixed('reflection') ? '' : (idea.value.reflection || '')
 
     supportedIdeasList.value = []
     committedPhasesList.value = []
@@ -463,13 +457,6 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const handleStatusCommentNext = (event: KeyboardEvent) => {
-  if (event.key === 'Tab' && !event.shiftKey) {
-    event.preventDefault()
-    reflectionInput.value?.focus()
-  }
-}
-
 const handleLoopWeightNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
@@ -485,20 +472,20 @@ const handleTagNext = () => {
   submitBtn.value?.focus()
 }
 
-const promptsEvaluation = (state: string) =>
-  !!statuses.value.find((status: { key: string; promptsEvaluation?: boolean }) => status.key === state)?.promptsEvaluation
+const promptsReflection = (state: string) =>
+  !!statuses.value.find((status: { key: string; promptsReflection?: boolean }) => status.key === state)?.promptsReflection
 
-// A settled idea (moved into a status that prompts evaluation) asks for an
-// evaluation of each parent connection's hypothesis not evaluated yet.
-const promptEvaluations = async (settledIdeas: Array<{ ideaId: string; parentIds: string[] }>) => {
+// A settled idea (moved into a status that prompts reflection) asks for a
+// reflection on each parent connection's hypothesis that has none yet.
+const promptReflections = async (settledIdeas: Array<{ ideaId: string; parentIds: string[] }>) => {
   const parentIds = [...new Set(settledIdeas.flatMap((settled) => settled.parentIds))]
   if (parentIds.length === 0) return
   await dataStore.loadIdeas(projectStore.projectPath, parentIds)
-  modalStore.promptConnectionEvaluations(settledIdeas.flatMap(({ ideaId, parentIds }) =>
+  modalStore.promptConnectionReflections(settledIdeas.flatMap(({ ideaId, parentIds }) =>
     parentIds
       .filter((parentId) => {
         const connection = dataStore.ideas[parentId]?.supportingConnections?.find((c) => c.ideaId === ideaId)
-        return connection && !connection.evaluation?.trim()
+        return connection && !connection.reflection?.trim()
       })
       .map((parentId) => ({ parentId, childId: ideaId }))
   ))
@@ -530,7 +517,6 @@ const handleSave = async () => {
     if (shouldWrite('duration')) updates.duration = ideaDuration.value
     if (shouldWrite('loopWeight')) updates.loopWeight = ideaLoopWeight.value
     if (shouldWrite('tags')) updates.tags = ideaTags.value
-    if (shouldWrite('reflection')) updates.reflection = reflection.value || undefined
     if (shouldWrite('archived')) updates.archived = archived.value
     if (shouldWrite('color')) updates.color = ideaColor.value || null
     if (shouldWrite('status') || shouldWrite('statusComment')) {
@@ -541,7 +527,7 @@ const handleSave = async () => {
       }
     }
     if (!isBulk.value) updates.supportedIdeas = supportedIdeasList.value.map((entry) => entry.id)
-    if (updates.status && updates.status.state !== target.status.state && promptsEvaluation(updates.status.state)) {
+    if (updates.status && updates.status.state !== target.status.state && promptsReflection(updates.status.state)) {
       settledIdeas.push({ ideaId: target.id, parentIds: updates.supportedIdeas ?? target.supportedIdeas ?? [] })
     }
     await dataStore.updateIdea(projectStore.projectPath, target.id, updates)
@@ -549,7 +535,7 @@ const handleSave = async () => {
 
   if (isBulk.value) {
     emit('close')
-    await promptEvaluations(settledIdeas)
+    await promptReflections(settledIdeas)
     return
   }
   const currentCommittedPhaseIds = committedPhasesList.value.map((phase) => phase.id)
@@ -583,7 +569,7 @@ const handleSave = async () => {
   }
 
   emit('close')
-  await promptEvaluations(settledIdeas)
+  await promptReflections(settledIdeas)
 }
 
 const handleCancel = () => {
@@ -737,15 +723,13 @@ const discardChanges = () => {
 
       <div class="form-section" :class="{ 'mixed-field': isMixed('statusComment') }" @click="activateOverride('statusComment')">
         <label>Status Comment</label>
-        <input
-          ref="statusCommentInput"
+        <textarea
           v-model="statusComment"
-          type="text"
-          :placeholder="mixedPlaceholder('statusComment', 'Optional comment about status...')"
+          :placeholder="mixedPlaceholder('statusComment', 'Why is it in this state? Evidence, blocker, open question...')"
           :readonly="isMixed('statusComment')"
-          class="text-input"
-          @keydown="handleInputKeydown"
-          @keydown.tab.exact="handleStatusCommentNext"
+          class="textarea-input"
+          rows="3"
+          @keydown="handleTextareaKeydown"
         />
       </div>
 
@@ -767,19 +751,6 @@ const discardChanges = () => {
           />
           <span>Archive this idea</span>
         </label>
-      </div>
-
-      <div class="form-section" :class="{ 'mixed-field': isMixed('reflection') }" @click="activateOverride('reflection')">
-        <label>Reflection</label>
-        <textarea
-          ref="reflectionInput"
-          v-model="reflection"
-          :placeholder="mixedPlaceholder('reflection', 'How did this idea go? What did you learn?')"
-          :readonly="isMixed('reflection')"
-          class="textarea-input"
-          rows="4"
-          @keydown="handleTextareaKeydown"
-        />
       </div>
 
       <div v-if="!isBulk" class="form-section">

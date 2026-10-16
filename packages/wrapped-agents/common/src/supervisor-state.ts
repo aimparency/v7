@@ -4,7 +4,7 @@
  * Manages the autonomous loop state with 3 explicit states:
  * - EXPLORING: Find work, break down ideas, ideate
  * - WORKING: Push supervised session to complete idea
- * - WRAPPING_UP: Verify, update state/reflection, commit, and go explore again
+ * - WRAPPING_UP: Verify, update status comment and connection reflections, commit, and go explore again
  */
 
 import { getTargetState, getValidActionNames } from './state-machine-definition'

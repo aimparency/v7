@@ -2,7 +2,6 @@
   "id": "aacfc1ff-8f7d-46e8-98a4-c60671da998e",
   "text": "Commit from the UI: review the changed files and enter a commit message",
   "description": "Felix 2026-10-16: a commit dialog lists the uncommitted files (idea files shown by their idea text), lets the human pick which to include (all by default), takes a message and commits. Stage only the chosen paths, never blanket-stage: agents share the working tree.",
-  "reflections": [],
   "archived": false,
   "color": "#39662d",
   "tags": [],

@@ -48,10 +48,10 @@ const statusColor = computed(() => {
 })
 
 // Editing state
-type ConnectionTextField = 'hypothesis' | 'evaluation'
+type ConnectionTextField = 'hypothesis' | 'reflection'
 const editingTextField = ref<ConnectionTextField | null>(null)
 const editedHypothesis = ref('')
-const editedEvaluation = ref('')
+const editedReflection = ref('')
 const editedWeight = ref(1)
 const isConfirmingDelete = ref(false)
 const editingConnectionRef = ref<{ parentId: string, childId: string } | null>(null)
@@ -67,7 +67,7 @@ const editedLoopWeightStr = ref('0')
 
 const syncEditedConnectionFields = (link: NonNullable<typeof selectedLink.value>) => {
     editedHypothesis.value = link.connection.hypothesis || ''
-    editedEvaluation.value = link.connection.evaluation || ''
+    editedReflection.value = link.connection.reflection || ''
     editedWeight.value = link.connection.weight
     isConfirmingDelete.value = false
 }
@@ -185,7 +185,7 @@ const updateConnection = async (options?: { linkRef?: { parentId: string, childI
         await dataStore.updateConnectionDetails(projectStore.projectPath, parent.id, child.id, {
             weight: editedWeight.value,
             hypothesis: editedHypothesis.value.trim() || undefined,
-            evaluation: editedEvaluation.value.trim() || undefined
+            reflection: editedReflection.value.trim() || undefined
         })
     } catch (e) {
         console.error('Failed to update connection', e)
@@ -351,13 +351,13 @@ const isOpaque = computed(() => !hasInteracted.value)
             </div>
 
             <div class="field-group">
-                <label>Evaluation</label>
-                <div v-if="editingTextField !== 'evaluation'" class="hypothesis-view evaluation-view" @click="startEditingTextField('evaluation')">
-                    {{ selectedLink.connection.evaluation || 'Add evaluation...' }}
+                <label>Reflection</label>
+                <div v-if="editingTextField !== 'reflection'" class="hypothesis-view reflection-view" @click="startEditingTextField('reflection')">
+                    {{ selectedLink.connection.reflection || 'Add reflection...' }}
                 </div>
                 <textarea 
                     v-else 
-                    v-model="editedEvaluation" 
+                    v-model="editedReflection" 
                     @blur="saveEditedTextField" 
                     placeholder="How did it actually contribute?"
                     class="input-field"

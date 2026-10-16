@@ -1,7 +1,6 @@
 {
   "id": "eb0e448a-c009-459f-82e8-8f6f9678e2b5",
   "text": "Header button toggles the agents' Stop continuation hook (same switch as the enable-hook / disable-hook prompts)",
-  "reflections": [],
   "archived": false,
   "color": "#2d3266",
   "tags": [],

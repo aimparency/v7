@@ -2,15 +2,6 @@
   "id": "3d09a7a1-d337-4595-b9aa-4b2fe5b6e381",
   "text": "Keep delete highlighting in rendered idea UI state",
   "description": "Delete confirmation/highlight in recursive list views belongs to the rendered AimUIState, like expanded, rather than a global idea-ID flag. Graph confirmation remains graph-scoped.",
-  "reflections": [
-    {
-      "date": 1784751613611,
-      "context": "Delete confirmation was stored globally by idea ID although an idea can be rendered recursively in multiple list locations.",
-      "outcome": "Moved pendingDelete into AimUIState, updated keyboard/navigation clearing, removed it from the list store, and isolated graph confirmation in graph UI state. Added regression tests.",
-      "effectiveness": "Focused Vitest run passes 7/7. Frontend type-check is currently stopped by the repository's existing TypeScript 6 baseUrl deprecation configuration before source checking.",
-      "lesson": "Ephemeral interaction feedback should be owned at the same rendering scope as expansion/selection; view-specific confirmation must not leak through a shared domain-ID flag."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -25,7 +16,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and internally verified; awaiting user acceptance.",
+    "comment": "Implemented and internally verified; awaiting user acceptance.\n\nOutcome: Moved pendingDelete into AimUIState, updated keyboard/navigation clearing, removed it from the list store, and isolated graph confirmation in graph UI state. Added regression tests. Effectiveness: Focused Vitest run passes 7/7. Frontend type-check is currently stopped by the repository's existing TypeScript 6 baseUrl deprecation configuration before source checking. Lesson: Ephemeral interaction feedback should be owned at the same rendering scope as expansion/selection; view-specific confirmation must not leak through a shared domain-ID flag.",
     "date": 1784751605329
   },
   "intrinsicValue": 0,

@@ -1,7 +1,6 @@
 {
   "id": "53786982-f7cc-4beb-bc65-fda0af8e4127",
   "text": "Keep the hook-off flag in .git or move it to .bowman/runtime?",
-  "reflections": [],
   "archived": false,
   "color": "#2b3068",
   "tags": [],

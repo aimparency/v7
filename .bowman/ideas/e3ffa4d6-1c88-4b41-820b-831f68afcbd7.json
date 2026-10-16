@@ -2,16 +2,6 @@
   "id": "e3ffa4d6-1c88-4b41-820b-831f68afcbd7",
   "text": "Restore authority audit safely across watchdog session restarts",
   "description": "Complete local runtime continuity for the bounded authority audit. Add a WatchdogService restoration boundary that accepts unknown persisted data, validates timestamp/action/disposition/reasons, recomputes each policy decision from canonical action type instead of trusting stored authority claims, drops malformed or mismatched entries, and retains only the newest 50. Wire session-server startup to restore the validated audit from the existing supervisor runtime snapshot before emitting state. Add tests for valid restoration, tampering rejection, payload stripping, and retention bounds. This does not change the separate policy for version-controlled durable audit data and must not restart the running stack.",
-  "reflections": [
-    {
-      "date": 1785601835523,
-      "context": "The authority audit was included in watchdog runtime snapshots but a newly constructed WatchdogService ignored it, so safety evidence disappeared across process replacement.",
-      "outcome": "Added restoreAuthorityAudit(unknown), which validates record shape and timestamp, recomputes the authoritative decision from canonical action type, requires exact disposition/reason agreement, reconstructs payload-free records, and keeps only the newest 50. Session startup restores this audit before enablement and state emission.",
-      "effectiveness": "Full wrapped-agents/common verification passes: 161/161 tests, TypeScript tsc --noEmit, and git diff --check. Tests prove valid continuity, rejection of a forged execute claim for choice, malformed-record rejection, extra-payload stripping, and 50-entry retention. No server was started or restarted.",
-      "lesson": "Persisted audit data is evidence, not authority. On restoration, recompute policy outcomes rather than deserializing prior permission claims as trusted state.",
-      "pattern": "Restore untrusted operational state through a validating reconstruction boundary, never by assigning parsed JSON directly to safety-critical structures."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -41,7 +31,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Validated authority-audit restart restoration implemented and internally verified; awaiting explicit user acceptance before done.",
+    "comment": "Validated authority-audit restart restoration implemented and internally verified; awaiting explicit user acceptance before done.\n\nOutcome: Added restoreAuthorityAudit(unknown), which validates record shape and timestamp, recomputes the authoritative decision from canonical action type, requires exact disposition/reason agreement, reconstructs payload-free records, and keeps only the newest 50. Session startup restores this audit before enablement and state emission. Effectiveness: Full wrapped-agents/common verification passes: 161/161 tests, TypeScript tsc --noEmit, and git diff --check. Tests prove valid continuity, rejection of a forged execute claim for choice, malformed-record rejection, extra-payload stripping, and 50-entry retention. No server was started or restarted. Lesson: Persisted audit data is evidence, not authority. On restoration, recompute policy outcomes rather than deserializing prior permission claims as trusted state. Pattern: Restore untrusted operational state through a validating reconstruction boundary, never by assigning parsed JSON directly to safety-critical structures.",
     "date": 1785601835561
   },
   "intrinsicValue": 18,

@@ -28,25 +28,25 @@ export function verificationHintForIdea(
 }
 
 /**
- * Entering a status configured with promptsEvaluation settles the idea: ask to
- * evaluate each parent connection's hypothesis that has no evaluation yet.
+ * Entering a status configured with promptsReflection settles the idea: ask to
+ * reflect on each parent connection's hypothesis that has no reflection yet.
  */
-async function evaluationNudgeFor(trpcClient: BackendClient, projectPath: string, ideaId: string, state: string): Promise<string> {
+async function reflectionNudgeFor(trpcClient: BackendClient, projectPath: string, ideaId: string, state: string): Promise<string> {
   const meta = await trpcClient.project.getMeta.query({ projectPath }).catch(() => null);
   const statuses = meta?.statuses ?? INITIAL_STATES;
-  if (!statuses.find((status) => status.key === state)?.promptsEvaluation) return "";
+  if (!statuses.find((status) => status.key === state)?.promptsReflection) return "";
 
   const idea = await trpcClient.idea.get.query({ projectPath, ideaId });
   const lines: string[] = [];
   for (const parentId of idea?.supportedIdeas ?? []) {
     const parent = await trpcClient.idea.get.query({ projectPath, ideaId: parentId }).catch(() => null);
     const connection = parent?.supportingConnections?.find((c) => c.ideaId === ideaId);
-    if (!parent || !connection || connection.evaluation?.trim()) continue;
+    if (!parent || !connection || connection.reflection?.trim()) continue;
     const hypothesis = connection.hypothesis?.trim() ? ` — hypothesis: "${connection.hypothesis.trim()}"` : " — no hypothesis recorded";
     lines.push(`- ${parent.text} (${parentId})${hypothesis}`);
   }
   if (lines.length === 0) return "";
-  return `\n\n'${state}' settles this idea: evaluate how it actually contributed to each parent, via update_idea addSupportedIdeas: [{ ideaId: <parent>, evaluation: "..." }]:\n${lines.join("\n")}`;
+  return `\n\n'${state}' settles this idea: reflect on each parent's hypothesis (did it hold?), via update_idea addSupportedIdeas: [{ ideaId: <parent>, reflection: "..." }]:\n${lines.join("\n")}`;
 }
 
 // The review is about what the idea is, so the token binds only its text:
@@ -230,7 +230,7 @@ export const ideaTools: ToolDefinition[] = [
           type: "object",
           properties: {
             state: { type: "string", description: IDEA_STATES_DESCRIPTION },
-            comment: { type: "string" },
+            comment: { type: "string", description: "Why the idea is in this state: evidence, blocker, or open question." },
             reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
           },
         },
@@ -354,7 +354,7 @@ export const ideaTools: ToolDefinition[] = [
   },
   {
     name: "update_idea",
-    description: "Update idea fields; only the given ones change. Links change through add*/remove*. reflection is a free-text note; set it with status=implemented to record verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with a comment.",
+    description: "Update idea fields; only the given ones change. Links change through add*/remove*. status.comment is the idea's one note: with status=implemented it records the verification evidence (verified-done, not claimed-done). When blocked set unclear/human-dependent with the question in the comment. Reflect on a hypothesis on the connection: addSupportedIdeas [{ ideaId: <parent>, reflection }].",
     inputSchema: {
       type: "object",
       properties: {
@@ -362,19 +362,18 @@ export const ideaTools: ToolDefinition[] = [
         ideaId: { type: "string" },
         text: { type: "string" },
         description: { type: "string" },
-        reflection: { type: "string", description: "Free-text note/reflection on the idea; can be updated together with status without changing other fields." },
         tags: { type: "array", items: { type: "string" } },
         status: {
           type: "object",
           properties: {
             state: { type: "string", description: IDEA_STATES_DESCRIPTION },
-            comment: { type: "string" },
+            comment: { type: "string", description: "Why the idea is in this state: evidence, blocker, or open question." },
             reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
           },
         },
-        addSupportingConnections: connectionInputSchema("Add child links, or update weight/hypothesis/evaluation of existing ones."),
+        addSupportingConnections: connectionInputSchema("Add child links, or update weight/hypothesis/reflection of existing ones."),
         removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink." },
-        addSupportedIdeas: connectionInputSchema("Add parent links, or update weight/hypothesis/evaluation of the parent→this-idea edge (evaluate it once this idea is settled)."),
+        addSupportedIdeas: connectionInputSchema("Add parent links, or update weight/hypothesis/reflection of the parent→this-idea edge (reflect on the hypothesis once this idea is settled)."),
         removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink." },
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
@@ -389,7 +388,6 @@ export const ideaTools: ToolDefinition[] = [
       const updateData: BackendInputs["idea"]["update"]["idea"] = {};
       if (fields.text) updateData.text = fields.text;
       if (fields.description !== undefined) updateData.description = fields.description;
-      if (fields.reflection !== undefined) updateData.reflection = fields.reflection;
       if (fields.tags) updateData.tags = fields.tags;
       if (fields.status) updateData.status = fields.status;
       if (fields.intrinsicValue !== undefined) updateData.intrinsicValue = fields.intrinsicValue;
@@ -397,7 +395,7 @@ export const ideaTools: ToolDefinition[] = [
       if (fields.cost !== undefined) updateData.cost = fields.cost;
       if (fields.duration !== undefined) updateData.duration = fields.duration;
 
-      const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; hypothesis?: string; evaluation?: string }> = [];
+      const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; hypothesis?: string; reflection?: string }> = [];
 
       if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
           args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
@@ -430,7 +428,7 @@ export const ideaTools: ToolDefinition[] = [
             const parent = normalizeConnectionInput(input);
             parentIds.add(parent.ideaId);
             if (typeof input !== "string") {
-              parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, hypothesis: parent.hypothesis, evaluation: parent.evaluation });
+              parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, hypothesis: parent.hypothesis, reflection: parent.reflection });
             }
           }
           updateData.supportedIdeas = Array.from(parentIds);
@@ -444,7 +442,7 @@ export const ideaTools: ToolDefinition[] = [
       });
 
       for (const parent of parentMetadataToApply) {
-        if (parent.weight === undefined && parent.hypothesis === undefined && parent.evaluation === undefined) continue;
+        if (parent.weight === undefined && parent.hypothesis === undefined && parent.reflection === undefined) continue;
 
         const parentIdea = await trpcClient.idea.get.query({
           projectPath: args.projectPath as string,
@@ -460,7 +458,7 @@ export const ideaTools: ToolDefinition[] = [
           relativePosition: previous?.relativePosition ?? [0, 0] as [number, number],
           weight: parent.weight ?? previous?.weight ?? 1,
           ...(parent.hypothesis !== undefined ? { hypothesis: parent.hypothesis } : {}),
-          ...(parent.evaluation !== undefined ? { evaluation: parent.evaluation } : {}),
+          ...(parent.reflection !== undefined ? { reflection: parent.reflection } : {}),
         };
         if (existingIndex === -1) {
           supportingConnections.push(next);
@@ -475,8 +473,8 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       // Verification gate (soft): closing an idea should mean verified-done,
-      // not claimed-done. When status is set to implemented without any reflection
-      // recording evidence, nudge the agent to addReflection. Non-blocking
+      // not claimed-done. When status is set to implemented with an empty status
+      // comment, nudge the agent to record the evidence there. Non-blocking
       // and best-effort — never fails the update.
       let verificationNudge = "";
       if ((args.status as { state?: string } | undefined)?.state === "implemented") {
@@ -485,12 +483,9 @@ export const ideaTools: ToolDefinition[] = [
             projectPath: args.projectPath as string,
             ideaId: args.ideaId as string,
           });
-          const hasReflection =
-            (typeof idea?.reflection === "string" && idea.reflection.trim().length > 0) ||
-            (Array.isArray(idea?.reflections) && idea.reflections.length > 0);
-          if (!hasReflection) {
+          if (!idea?.status?.comment?.trim()) {
             verificationNudge =
-              "\n\nReminder: marked implemented without a reflection. Record the verification evidence in update_idea.reflection or addReflection — " +
+              "\n\nReminder: marked implemented without evidence. Record it in status.comment — " +
               verificationHintForIdea(idea) +
               " — so the graph reflects verified-done rather than claimed-done.";
           }
@@ -500,15 +495,15 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       const newState = (args.status as { state?: string } | undefined)?.state;
-      const evaluationNudge = newState
-        ? await evaluationNudgeFor(trpcClient, args.projectPath as string, args.ideaId as string, newState).catch(() => "")
+      const reflectionNudge = newState
+        ? await reflectionNudgeFor(trpcClient, args.projectPath as string, args.ideaId as string, newState).catch(() => "")
         : "";
 
       return {
         content: [
           {
             type: "text",
-            text: `Updated idea ${args.ideaId}${verificationNudge}${evaluationNudge}`,
+            text: `Updated idea ${args.ideaId}${verificationNudge}${reflectionNudge}`,
           },
         ],
       };
@@ -543,46 +538,8 @@ export const ideaTools: ToolDefinition[] = [
     },
   },
   {
-    name: "addReflection",
-    description: "Append a structured reflection (context, outcome, effectiveness, lesson) without changing idea status. For a simple free-text note, use update_idea.reflection.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
-        ideaId: { type: "string" },
-        reflection: {
-          type: "object",
-          properties: {
-            context: { type: "string" },
-            outcome: { type: "string" },
-            effectiveness: { type: "string" },
-            lesson: { type: "string" },
-            pattern: { type: "string" }
-          },
-          required: ["context", "outcome", "effectiveness", "lesson"]
-        }
-      },
-      required: ["projectPath", "ideaId", "reflection"],
-    },
-    handler: async (args, trpcClient) => {
-      await trpcClient.idea.addReflection.mutate({
-        projectPath: args.projectPath as string,
-        ideaId: args.ideaId as string,
-        reflection: args.reflection as BackendInputs["idea"]["addReflection"]["reflection"],
-      });
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Added reflection to idea ${args.ideaId}`,
-          },
-        ],
-      };
-    },
-  },
-  {
     name: "merge_ideas",
-    description: "Merge source idea B into target idea A: rewires B's parents, children, and phase commitments onto A (deduplicating), copies B's reflections to A, then archives B. Use after finding duplicates via search_ideas_semantic, or to collapse a redundant child into its parent. Guards against self-merge only; a direct parent-child pair is merged cleanly (the connecting edge is dropped).",
+    description: "Merge source idea B into target idea A: rewires B's parents, children, and phase commitments onto A (deduplicating), appends B's status comment to A's, then archives B. Use after finding duplicates via search_ideas_semantic, or to collapse a redundant child into its parent. Guards against self-merge only; a direct parent-child pair is merged cleanly (the connecting edge is dropped).",
     inputSchema: {
       type: "object",
       properties: {
@@ -606,7 +563,7 @@ export const ideaTools: ToolDefinition[] = [
 ];
 
 // Several update_idea calls in one: the end of a work chunk usually settles a
-// few ideas at once (status, reflection, links).
+// few ideas at once (status, links).
 const updateIdea = ideaTools.find((tool) => tool.name === "update_idea")!;
 const { projectPath: _projectPath, ...updateFields } = (updateIdea.inputSchema.properties ?? {}) as Record<string, object>;
 ideaTools.push({

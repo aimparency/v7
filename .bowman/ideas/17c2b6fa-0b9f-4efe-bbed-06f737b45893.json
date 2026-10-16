@@ -1,7 +1,6 @@
 {
   "id": "17c2b6fa-0b9f-4efe-bbed-06f737b45893",
   "text": "Watchdog: auto-compact when context < 20%",
-  "reflections": [],
   "archived": false,
   "tags": [
     "watchdog",

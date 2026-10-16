@@ -2,7 +2,6 @@
   "id": "d8bc9a95-68ab-4d38-8184-a16e6e5830d0",
   "text": "Automated loop tests against a scripted fake model",
   "description": "A local fake OpenAI-compatible server that answers from a fixed script per scenario (e.g. first request → call update_idea, second → plain text), so a full loop-worker cycle runs deterministically, offline and free. Proven manually on 2026-10-15 (see dc35aef6). Turn it into committed tests: cycle executes a tool through the backend, stop policies end the instance, provider errors are reported, human_action_required pauses. Later: replay recorded real model transcripts as scripts.",
-  "reflections": [],
   "archived": false,
   "color": "#662d4d",
   "tags": [
@@ -16,7 +15,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Three committed end-to-end loop tests run in pnpm check; they found and the commit fixes a lost-update race on loops.json.",
+    "comment": "Three committed end-to-end loop tests run in pnpm check; they found and the commit fixes a lost-update race on loops.json.\n\npackages/backend/src/loop-cycle.test.ts: real backend router on a private WS port (PORT_BACKEND_WS inherited by the spawned worker), loop.startInstance spawns the real loop-worker from source, scripted fake OpenAI-compatible SSE server. Scenarios: (1) model calls update_idea through the backend, phase_done ends the instance as done, tools offered include update_idea + get_prioritized_ideas; (2) HTTP 401 ends in error naming LOOP_API_KEY; (3) human_action_required -> waiting_for_human, sendHumanMessage resumes, answer reaches the model as tool result, cycle completes. ~11 s, 3/3 stable over 3 runs plus pnpm check 25/25 (teardown waits for worker pids).\n\nBug found by scenario 3: backend and workers did unlocked read-modify-write on runtime/loops.json (backend refreshLoopProcessStates wrote a stale snapshot), dropping worker messages/status. Fixed with shared withProcessFileLock (node-entry, atomic mkdir + stale takeover, unit-tested) in both mutate paths and the refresh. Not yet covered: stop policies asap/target_halted, waiting_for_external, replay of recorded real transcripts.",
     "date": 1792071260439
   },
   "intrinsicValue": 0,
@@ -24,6 +23,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "packages/backend/src/loop-cycle.test.ts: real backend router on a private WS port (PORT_BACKEND_WS inherited by the spawned worker), loop.startInstance spawns the real loop-worker from source, scripted fake OpenAI-compatible SSE server. Scenarios: (1) model calls update_idea through the backend, phase_done ends the instance as done, tools offered include update_idea + get_prioritized_ideas; (2) HTTP 401 ends in error naming LOOP_API_KEY; (3) human_action_required -> waiting_for_human, sendHumanMessage resumes, answer reaches the model as tool result, cycle completes. ~11 s, 3/3 stable over 3 runs plus pnpm check 25/25 (teardown waits for worker pids).\n\nBug found by scenario 3: backend and workers did unlocked read-modify-write on runtime/loops.json (backend refreshLoopProcessStates wrote a stale snapshot), dropping worker messages/status. Fixed with shared withProcessFileLock (node-entry, atomic mkdir + stale takeover, unit-tested) in both mutate paths and the refresh. Not yet covered: stop policies asap/target_halted, waiting_for_external, replay of recorded real transcripts."
+  "valueVariance": 0
 }

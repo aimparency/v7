@@ -2,7 +2,6 @@
   "id": "bd804d6f-dc19-46e1-befa-49677823270c",
   "text": "help with entering path",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -31,7 +30,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Folder-only path autocomplete and existing/new project detection are implemented and internally verified; awaiting UI acceptance.",
+    "comment": "Folder-only path autocomplete and existing/new project detection are implemented and internally verified; awaiting UI acceptance.\n\nThe two concrete children now cover this outcome: the button distinguishes existing .bowman graphs from new projects, and folder paths expose subdued common-prefix completion accepted with Tab. Both share backend path inspection/completion utilities. Full backend/frontend tests and builds passed in their implementation commits; visual/keyboard acceptance remains.",
     "date": 1784893977236
   },
   "intrinsicValue": 0,
@@ -39,6 +38,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "The two concrete children now cover this outcome: the button distinguishes existing .bowman graphs from new projects, and folder paths expose subdued common-prefix completion accepted with Tab. Both share backend path inspection/completion utilities. Full backend/frontend tests and builds passed in their implementation commits; visual/keyboard acceptance remains."
+  "valueVariance": 0
 }

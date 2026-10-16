@@ -2,8 +2,6 @@
   "id": "01fe0313-b467-40fd-9a3d-ae4a93af38ba",
   "text": "bugfixes and sidequests",
   "description": "",
-  "reflection": "Status reconciliation on 2026-07-30 found the sole child completed and no other specified work. Moved the finite bucket from open to review.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -32,7 +30,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "The only tracked bugfix child is done; awaiting acceptance of this finite maintenance bucket.",
+    "comment": "The only tracked bugfix child is done; awaiting acceptance of this finite maintenance bucket.\n\nStatus reconciliation on 2026-07-30 found the sole child completed and no other specified work. Moved the finite bucket from open to review.",
     "date": 1785399382373
   },
   "intrinsicValue": 0,

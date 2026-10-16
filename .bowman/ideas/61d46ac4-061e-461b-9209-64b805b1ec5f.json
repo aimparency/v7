@@ -2,7 +2,6 @@
   "id": "61d46ac4-061e-461b-9209-64b805b1ec5f",
   "text": "Specify the propose → edit → approve idea-subtree contract",
   "description": "Define the transient proposal schema, human approval boundary, revision/idempotency rules, persistence failure semantics, context minimization, UI states, limits, acceptance tests, and implementation sequence before connecting any model to graph writes.",
-  "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [

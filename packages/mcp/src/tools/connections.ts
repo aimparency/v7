@@ -2,7 +2,7 @@ export type ConnectionInput = string | {
   ideaId: string;
   weight?: number;
   hypothesis?: string;
-  evaluation?: string;
+  reflection?: string;
 };
 
 export function connectionInputSchema(description: string) {
@@ -18,7 +18,7 @@ export function connectionInputSchema(description: string) {
             ideaId: { type: "string" },
             weight: { type: "number" },
             hypothesis: { type: "string", description: "Why the child is expected to contribute to the parent" },
-            evaluation: { type: "string", description: "How that turned out, once the child idea is settled" },
+            reflection: { type: "string", description: "Whether the hypothesis held: how the child actually contributed, once it is settled" },
           },
           required: ["ideaId"],
         },
@@ -38,6 +38,6 @@ export function toStoredConnection(input: ConnectionInput) {
     ideaId: conn.ideaId,
     ...(conn.weight !== undefined ? { weight: conn.weight } : {}),
     ...(conn.hypothesis !== undefined ? { hypothesis: conn.hypothesis } : {}),
-    ...(conn.evaluation !== undefined ? { evaluation: conn.evaluation } : {}),
+    ...(conn.reflection !== undefined ? { reflection: conn.reflection } : {}),
   };
 }

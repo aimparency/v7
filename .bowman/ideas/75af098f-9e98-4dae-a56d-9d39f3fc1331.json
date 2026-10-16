@@ -2,7 +2,6 @@
   "id": "75af098f-9e98-4dae-a56d-9d39f3fc1331",
   "text": "Duplicate-idea finder (embedding-based, read-only report)",
   "description": "Use the existing semantic/embedding index (build_search_index / search_ideas_semantic) to report pairs/clusters of ideas above a similarity threshold (e.g. >0.92) as merge candidates. Read-only, so zero risk. Known true positive to validate against: 2a9e3aba and f592b156 are byte-identical. Output should be a ranked list of candidate pairs with similarity score so a human (or the merge tool) can act on them.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

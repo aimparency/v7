@@ -40,7 +40,6 @@ const idea = (
   duration: 1,
   costVariance: 0,
   valueVariance: 0,
-  reflections: []
 })
 
 describe('phase priority ranking', () => {

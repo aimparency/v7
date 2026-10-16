@@ -36,10 +36,10 @@ const sole = computed(() => isSoleContributor(siblingWeightSum.value, loopWeight
 
 const sharePct = ref(0)
 const hypothesis = ref('')
-const evaluation = ref('')
-const evaluating = computed(() => modalStore.connectionDetailsEvaluate)
-// Evaluation belongs to settled children: shown when asked for or already written.
-const showEvaluation = computed(() => evaluating.value || !!thisConn.value?.evaluation)
+const reflection = ref('')
+const reflecting = computed(() => modalStore.connectionDetailsReflect)
+// Reflection belongs to settled children: shown when asked for or already written.
+const showReflection = computed(() => reflecting.value || !!thisConn.value?.reflection)
 const capHintVisible = ref(false)
 
 const maxPct = Math.round(MAX_SHARE * 100)
@@ -50,7 +50,7 @@ watch(
   (conn) => {
     if (!conn) return
     hypothesis.value = conn.hypothesis ?? ''
-    evaluation.value = conn.evaluation ?? ''
+    reflection.value = conn.reflection ?? ''
     sharePct.value = sole.value
       ? 100
       : Math.round(weightToShare(conn.weight ?? 1, siblingWeightSum.value, loopWeight.value) * 100)
@@ -99,7 +99,7 @@ const confirm = async () => {
   const save = dataStore.updateConnectionDetails(projectStore.projectPath, p.id, cid, {
     weight: resolvedWeight.value,
     hypothesis: hypothesis.value.trim() || undefined,
-    evaluation: evaluation.value.trim() || undefined
+    reflection: reflection.value.trim() || undefined
   })
   modalStore.closeConnectionDetailsModal()
   try {
@@ -110,7 +110,7 @@ const confirm = async () => {
 }
 
 const pctInput = ref<HTMLInputElement>()
-const evaluationInput = ref<HTMLTextAreaElement>()
+const reflectionInput = ref<HTMLTextAreaElement>()
 
 const handleWindowKeydown = (event: KeyboardEvent) => {
   if (event.key === 'Enter') {
@@ -126,8 +126,8 @@ const handleWindowKeydown = (event: KeyboardEvent) => {
 onMounted(async () => {
   window.addEventListener('keydown', handleWindowKeydown)
   await nextTick()
-  if (evaluating.value && evaluationInput.value) {
-    evaluationInput.value.focus()
+  if (reflecting.value && reflectionInput.value) {
+    reflectionInput.value.focus()
   } else if (pctInput.value) {
     pctInput.value.focus()
     pctInput.value.select()
@@ -145,7 +145,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
 <template>
   <FormModalShell
     :show="true"
-    :title="evaluating ? 'Evaluate connection' : 'Connection details'"
+    :title="reflecting ? 'Reflect on the hypothesis' : 'Connection details'"
     width="min(90vw, 32rem)"
     @request-close="cancel"
   >
@@ -196,19 +196,19 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
         ></textarea>
       </div>
 
-      <div v-if="showEvaluation" class="form-group">
-        <label>Evaluation</label>
+      <div v-if="showReflection" class="form-group">
+        <label>Reflection</label>
         <textarea
-          ref="evaluationInput"
-          v-model="evaluation"
+          ref="reflectionInput"
+          v-model="reflection"
           rows="3"
-          placeholder="How did it actually contribute?"
+          placeholder="Did the hypothesis hold? How did it actually contribute?"
         ></textarea>
       </div>
     </div>
 
     <template #footer>
-      <button class="btn" @click="cancel">{{ evaluating ? 'Skip' : 'Cancel' }}</button>
+      <button class="btn" @click="cancel">{{ reflecting ? 'Skip' : 'Cancel' }}</button>
       <button class="btn btn-primary" @click="confirm">Save</button>
     </template>
   </FormModalShell>

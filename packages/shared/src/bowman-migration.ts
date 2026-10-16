@@ -19,6 +19,7 @@ import path from 'node:path';
 import { CURRENT_DATA_MODEL_VERSION } from './constants.js';
 import { migrateIdeasLayout, needsIdeasLayoutMigration } from './bowman-migrations/v3-ideas-layout.js';
 import { migrateConnectionHypothesis, needsConnectionHypothesisMigration } from './bowman-migrations/v4-connection-hypothesis.js';
+import { migrateTwoNotes, needsTwoNotesMigration } from './bowman-migrations/v5-two-notes.js';
 
 export {
   IMPLEMENTED_STATE,
@@ -57,6 +58,12 @@ export const BOWMAN_MIGRATIONS: BowmanMigration[] = [
     name: 'connection hypothesis and evaluation',
     pending: needsConnectionHypothesisMigration,
     run: migrateConnectionHypothesis
+  },
+  {
+    version: 5,
+    name: 'status comment on the idea, hypothesis and reflection on the connection',
+    pending: needsTwoNotesMigration,
+    run: migrateTwoNotes
   }
 ];
 

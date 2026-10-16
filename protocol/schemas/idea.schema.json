@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/aimparency/v7/blob/main/protocol/schemas/idea.schema.json",
   "title": "Aimparency idea",
-  "description": ".bowman/ideas/<id>.json and .bowman/archived-ideas/<id>.json: one idea and its outgoing links. Data model version 4.",
+  "description": ".bowman/ideas/<id>.json and .bowman/archived-ideas/<id>.json: one idea and its outgoing links. Data model version 5.",
   "type": "object",
   "properties": {
     "id": {
@@ -14,44 +14,6 @@
     },
     "description": {
       "type": "string"
-    },
-    "reflection": {
-      "type": "string"
-    },
-    "reflections": {
-      "type": "array",
-      "items": {
-        "type": "object",
-        "properties": {
-          "date": {
-            "type": "number"
-          },
-          "context": {
-            "type": "string"
-          },
-          "outcome": {
-            "type": "string"
-          },
-          "effectiveness": {
-            "type": "string"
-          },
-          "lesson": {
-            "type": "string"
-          },
-          "pattern": {
-            "type": "string"
-          }
-        },
-        "required": [
-          "date",
-          "context",
-          "outcome",
-          "effectiveness",
-          "lesson"
-        ],
-        "additionalProperties": false
-      },
-      "default": []
     },
     "archived": {
       "type": "boolean",
@@ -108,7 +70,7 @@
           "hypothesis": {
             "type": "string"
           },
-          "evaluation": {
+          "reflection": {
             "type": "string"
           }
         },
@@ -152,7 +114,7 @@
           "hypothesis": {
             "type": "string"
           },
-          "evaluation": {
+          "reflection": {
             "type": "string"
           }
         },

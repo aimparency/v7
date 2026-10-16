@@ -2,7 +2,6 @@
   "id": "98e98771-b469-42c2-a9c8-08d1812ce3a3",
   "text": "Graph hygiene report flags only real defects; unknown idea ids answer 'not found'",
   "description": "Felix 2026-10-15: why do finished and cancelled parents show up in the report? Collapse candidates listed every parent whose children were all done, including already-implemented and cancelled ones (80, of which only 5 were actionable). Now only open/in-progress/partially parents count. The 'staleStatus' section is now 'unarchivedCancelledOrFailed' and no longer includes human-dependent (waiting, not settled). Also found in MCP use: reading an unknown idea id ran a forced migration of the whole project and failed with a misleading archived-ideas ENOENT; it now migrates only when the id exists in the legacy aims/ layout and otherwise throws 'Idea <id> not found'.",
-  "reflections": [],
   "archived": false,
   "color": "#2d6648",
   "tags": [],

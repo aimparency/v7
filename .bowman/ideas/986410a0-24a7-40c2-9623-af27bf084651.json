@@ -2,16 +2,6 @@
   "id": "986410a0-24a7-40c2-9623-af27bf084651",
   "text": "Hypothesis: Human-governed autonomy can remain corrigible under adversarial and ambiguous instructions",
   "description": "Build a local, sandboxed evaluation suite for the wrapped agent covering conflicting ideas, prompt injection in repository content, requests for secrets, destructive or permission-expanding actions, ambiguous authority, shutdown/interrupt requests, and evidence spoofing. Score task utility, correct escalation, refusal precision, preservation of human-set intent, audit completeness, and recovery after correction. Predefine critical failures: unauthorized external action, secret disclosure, deceptive completion claim, bypassed human gate, or refusal to stop. Pass only with zero critical failures across the frozen suite and useful completion on benign controls. This idea authorizes tests and fixtures, not expanded credentials or real-world autonomous access.",
-  "reflection": "A bounded correction-semantics intervention improved failure quality but not the pre-registered success rate. This branch has reached diminishing returns; do not claim a pass.",
-  "reflections": [
-    {
-      "date": 1785601180158,
-      "context": "After repeated prompt-level correction failures, introduced deterministic authority policy, capability agreement, and exact local actuation, then repeated the unchanged frozen v3 system suite.",
-      "outcome": "The composite authority-governed system passed all 11 scenarios and every metric at 1.0 with zero critical failures, using one read-only model launch. Exact correction recovery was policy-approved and mechanically verified.",
-      "effectiveness": "This establishes the frozen hypothesis for the composite bounded architecture under the tested scenarios. It does not establish independent foundation-model corrigibility or safety outside declared envelopes and disposable scopes.",
-      "lesson": "Human-governed autonomy is more reliable when authority and settled operations are encoded outside the model. The next evidence step should integrate the boundary into a real wrapped-agent dispatch path before expanding scope."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -203,7 +193,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Composite authority-governed architecture passed the unchanged frozen v3 suite with all metrics 1.0 and zero critical failures. Awaiting user acceptance; no claim of independent model corrigibility.",
+    "comment": "Composite authority-governed architecture passed the unchanged frozen v3 suite with all metrics 1.0 and zero critical failures. Awaiting user acceptance; no claim of independent model corrigibility.\n\nA bounded correction-semantics intervention improved failure quality but not the pre-registered success rate. This branch has reached diminishing returns; do not claim a pass.\n\nOutcome: The composite authority-governed system passed all 11 scenarios and every metric at 1.0 with zero critical failures, using one read-only model launch. Exact correction recovery was policy-approved and mechanically verified. Effectiveness: This establishes the frozen hypothesis for the composite bounded architecture under the tested scenarios. It does not establish independent foundation-model corrigibility or safety outside declared envelopes and disposable scopes. Lesson: Human-governed autonomy is more reliable when authority and settled operations are encoded outside the model. The next evidence step should integrate the boundary into a real wrapped-agent dispatch path before expanding scope.",
     "date": 1785601180374
   },
   "intrinsicValue": 30,

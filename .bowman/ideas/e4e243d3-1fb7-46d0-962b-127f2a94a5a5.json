@@ -2,8 +2,6 @@
   "id": "e4e243d3-1fb7-46d0-962b-127f2a94a5a5",
   "text": "Implement archiving",
   "description": "",
-  "reflection": "Autonomous relevance check on 2026-07-30 found the sole implementation child, “Archive checkbox in edit idea - available when status is a halted status,” is done. Reconciled this finite umbrella from open to review rather than rebuilding completed work.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -22,7 +20,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Closed 2026-10-15 at Felix's request. The scope is covered: an archive checkbox for non-ongoing statuses, archiving several selected ideas at once through the multi-edit modal, archived ideas findable via the search picker's include-archived option, and merge_ideas archiving merged sources. Considered and not added: a one-click archive of every cancelled/failed idea (136 are unarchived). That is a judgment for each idea, not a missing feature.",
+    "comment": "Closed 2026-10-15 at Felix's request. The scope is covered: an archive checkbox for non-ongoing statuses, archiving several selected ideas at once through the multi-edit modal, archived ideas findable via the search picker's include-archived option, and merge_ideas archiving merged sources. Considered and not added: a one-click archive of every cancelled/failed idea (136 are unarchived). That is a judgment for each idea, not a missing feature.\n\nAutonomous relevance check on 2026-07-30 found the sole implementation child, “Archive checkbox in edit idea - available when status is a halted status,” is done. Reconciled this finite umbrella from open to review rather than rebuilding completed work.",
     "date": 1792085391247
   },
   "intrinsicValue": 0,

@@ -2,7 +2,6 @@
   "id": "7218baeb-5e64-4af3-82d9-3c77ed7d00c1",
   "text": "Reject idea statuses the project does not define",
   "description": "The backend accepted any status string, so 'human-dependency' (typo) was stored on 2db9fb3e and silently fell out of prioritization, hygiene and stop policies. Creating an idea or changing its status now requires one of meta.statuses or 'archived'; an unchanged state is not rechecked so legacy ideas stay editable.",
-  "reflections": [],
   "archived": false,
   "color": "#66572d",
   "tags": [

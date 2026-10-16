@@ -2,7 +2,6 @@
   "id": "42c92b27-ed17-4319-9f1a-f2f57af54651",
   "text": "Make requireCommitBeforeCompact actually drive watchdog behavior",
   "description": "The autonomy policy now stores requireCommitBeforeCompact, but the watchdog prompt/runtime flow still hardcodes commit-before-compact behavior. Make the session/watchdog logic read and apply that policy explicitly.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "autonomy",

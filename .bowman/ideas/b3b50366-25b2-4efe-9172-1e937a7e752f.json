@@ -2,7 +2,6 @@
   "id": "b3b50366-25b2-4efe-9172-1e937a7e752f",
   "text": "/dream: consolidating sleep that remembers since the last dream",
   "description": "MCP prompt /mcp__aimparency__dream, usable in every Aimparency project. It recalls the window since the newest \"Dream:\" reflection (fallback: 14 days of .bowman git history), consolidates it into at most 5 lessons, dreams from the ideas carrying intrinsic value (love = what is valued for its own sake), and wakes with \"I just woke up from dreaming, here is what I remember:\". It always records its memory as a reflection on the top root; other graph mutations need writeBack=true. Commit 7678a8a.",
-  "reflections": [],
   "archived": false,
   "color": "#2d3266",
   "tags": [

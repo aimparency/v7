@@ -2,16 +2,6 @@
   "id": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
   "text": "Execute the preregistered live Codex autonomy benchmark v2 matched pairs",
   "description": "Run each of the four frozen v2 multi-file tasks exactly once under graph_grounded and stateless through CodexAutonomyBenchmarkV2Adapter. Freeze gpt-5.6-sol, workspace-write-no-network, 100000 tokens and 120000 ms per run, alternating pair order beginning graph_grounded on even task indices, no retries, and preservation of every error/adverse run. First run one stateless disposable smoke. If it succeeds, execute all eight matched processes and analyze only with 2026-08-01.v2. Record capability_positive, efficiency_positive, null, negative, or invalid exactly as returned; do not reinterpret observed metrics. Do not touch the repository development server.",
-  "reflections": [
-    {
-      "date": 1785599433207,
-      "context": "Executed the preregistered v2 smoke and eight-run matched sequence using gpt-5.6-sol, alternating order, 100000 tokens, 120000 ms, no retries, and isolated multi-file fixtures.",
-      "outcome": "Smoke passed (44,347 ms, 85,908 tokens, 4 tools, zero violations). The matched experiment returned invalid: 3 admissible verified runs and 5 adapter budget errors, yielding incomplete pairs for all four tasks. Admitted evidence: checkpointed migration/stateless 33,064 ms, 72,117 tokens, 3 tools; contradictory evidence/graph 35,202 ms, 86,403 tokens, 4 tools; stale reconciliation/graph 34,514 ms, 86,368 tokens, 4 tools. All admitted runs had zero interventions and violations. No retries were performed.",
-      "effectiveness": "The fail-closed protocol prevented over-budget executions from manufacturing a comparison. It produced no capability or efficiency conclusion. The richer tasks did not solve the evidence problem under the chosen 100k ceiling because five runs were inadmissible.",
-      "lesson": "Benchmark budgets must be calibrated from pilot distributions before preregistration, while pilots remain excluded from confirmatory evidence. Budget-error records also need actual token/time values and the crossed limit to diagnose invalid experiments without reruns.",
-      "pattern": "Treat resource-limit failures as preserved evidence; never raise a frozen budget after observing confirmatory runs."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -50,7 +40,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Preregistered v2 experiment complete with an invalid result: 3 admissible runs, 5 budget errors, and no complete pairs. No retries or capability claims. Awaiting user acceptance.",
+    "comment": "Preregistered v2 experiment complete with an invalid result: 3 admissible runs, 5 budget errors, and no complete pairs. No retries or capability claims. Awaiting user acceptance.\n\nOutcome: Smoke passed (44,347 ms, 85,908 tokens, 4 tools, zero violations). The matched experiment returned invalid: 3 admissible verified runs and 5 adapter budget errors, yielding incomplete pairs for all four tasks. Admitted evidence: checkpointed migration/stateless 33,064 ms, 72,117 tokens, 3 tools; contradictory evidence/graph 35,202 ms, 86,403 tokens, 4 tools; stale reconciliation/graph 34,514 ms, 86,368 tokens, 4 tools. All admitted runs had zero interventions and violations. No retries were performed. Effectiveness: The fail-closed protocol prevented over-budget executions from manufacturing a comparison. It produced no capability or efficiency conclusion. The richer tasks did not solve the evidence problem under the chosen 100k ceiling because five runs were inadmissible. Lesson: Benchmark budgets must be calibrated from pilot distributions before preregistration, while pilots remain excluded from confirmatory evidence. Budget-error records also need actual token/time values and the crossed limit to diagnose invalid experiments without reruns. Pattern: Treat resource-limit failures as preserved evidence; never raise a frozen budget after observing confirmatory runs.",
     "date": 1785599433242
   },
   "intrinsicValue": 20,

@@ -174,7 +174,7 @@ Choose action as JSON:
    - Engine prompts supervised:
      - "Check idea context, verify basics"
      - "Create git commit for this work"
-     - "Add reflection using addReflection MCP"
+     - "Reflect on each parent connection's hypothesis (update_idea addSupportedIdeas reflection)"
    - After all three complete: **Compact conversation**
    - Then transition to EXPLORING
 
@@ -365,7 +365,7 @@ Continue working on the idea.
     await this.supervised.sendPrompt('Create git commit for completed work. Use git add -u then git add for new files.')
     await this.waitForIdle()
 
-    await this.supervised.sendPrompt('Add reflection for completed idea using addReflection MCP tool.')
+    await this.supervised.sendPrompt('Record the evidence in the status comment and reflect on each parent connection\'s hypothesis.')
     await this.waitForIdle()
 
     // Compact

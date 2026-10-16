@@ -2,7 +2,6 @@
   "id": "687a7c08-d9ce-426a-a30d-51d03d1c8fdd",
   "text": "Refactor phase APIs and selection logic around ordered hierarchy instead of time",
   "description": "Remove activeAt and smart-date semantics from phase queries. Define the active path as the phases pointed to by the stored cursor chain. Update backend routers and frontend selection/bootstrap logic so phase traversal follows explicit order plus cursor state.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "phase-refactor",

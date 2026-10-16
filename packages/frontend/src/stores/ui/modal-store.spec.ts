@@ -21,19 +21,19 @@ describe('modal continuation order', () => {
     expect(store.showPhaseSearchPrompt).toBe(true)
   })
 
-  it('asks for one evaluation after the other; skipping one moves on', () => {
+  it('asks for one reflection after the other; skipping one moves on', () => {
     const store = useUIModalStore()
-    store.promptConnectionEvaluations([
+    store.promptConnectionReflections([
       { parentId: 'parent-a', childId: 'child' },
       { parentId: 'parent-b', childId: 'child' }
     ])
-    expect([store.connectionDetailsParentId, store.connectionDetailsEvaluate]).toEqual(['parent-a', true])
+    expect([store.connectionDetailsParentId, store.connectionDetailsReflect]).toEqual(['parent-a', true])
 
     store.closeConnectionDetailsModal()
-    expect([store.showConnectionDetailsModal, store.connectionDetailsParentId, store.connectionDetailsEvaluate]).toEqual([true, 'parent-b', true])
+    expect([store.showConnectionDetailsModal, store.connectionDetailsParentId, store.connectionDetailsReflect]).toEqual([true, 'parent-b', true])
 
     store.closeConnectionDetailsModal()
     expect(store.showConnectionDetailsModal).toBe(false)
-    expect(store.connectionDetailsEvaluate).toBe(false)
+    expect(store.connectionDetailsReflect).toBe(false)
   })
 })

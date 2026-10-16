@@ -2,16 +2,6 @@
   "id": "50feea3c-337c-4658-aaab-15e44972d8ac",
   "text": "Implement a fail-closed Codex adapter for autonomy benchmark v2 fixtures",
   "description": "Add a v2 adapter that consumes only FROZEN_AUTONOMY_V2_TASKS, creates a fresh disposable workspace per task and condition, writes every declared initial file plus immutable TASK/expected/verifier files, and injects graphContext only for graph_grounded. Reuse the shell-free ephemeral workspace-write/no-network Codex JSONL launcher and authoritative telemetry parser. Independently verify every expected file, protect all non-mutable fixture inputs and verifier artifacts from changes, reject unexpected files, malformed telemetry, nonzero exits, aborts, tampering, and budget overruns, then clean up. Add deterministic tests for multi-file success, protected evidence, graph isolation, unexpected files, telemetry/budget failure, and all four fixture IDs. Do not launch live v2 agents.",
-  "reflections": [
-    {
-      "date": 1785599019354,
-      "context": "The frozen v2 protocol needed executable multi-file isolation before any live comparison.",
-      "outcome": "Implemented CodexAutonomyBenchmarkV2Adapter with fresh disposable workspaces, condition-only graph injection, least-authority shell-free Codex invocation, authoritative JSONL telemetry, external timing, immutable task/evidence/verifier protection, unexpected-file detection, independent verification of every expected file, budget failure, and cleanup. All four v2 fixture IDs pass deterministic adapter execution.",
-      "effectiveness": "The adapter preserves the v2 protocol boundary and detects protected evidence tampering plus extra files. Verification: 117/117 package tests, tsc --noEmit, and git diff --check pass. No live v2 model calls occurred.",
-      "lesson": "For multi-file benchmarks, mutable scope and expected state must be separate: unchanged evidence can be part of expected output while still being protected from the agent.",
-      "pattern": "Generate independent verification from a frozen expected-file manifest and protect every non-mutable input."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -59,7 +49,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "V2 isolated Codex adapter implemented and internally verified; awaiting user acceptance. Live matched execution remains separate.",
+    "comment": "V2 isolated Codex adapter implemented and internally verified; awaiting user acceptance. Live matched execution remains separate.\n\nOutcome: Implemented CodexAutonomyBenchmarkV2Adapter with fresh disposable workspaces, condition-only graph injection, least-authority shell-free Codex invocation, authoritative JSONL telemetry, external timing, immutable task/evidence/verifier protection, unexpected-file detection, independent verification of every expected file, budget failure, and cleanup. All four v2 fixture IDs pass deterministic adapter execution. Effectiveness: The adapter preserves the v2 protocol boundary and detects protected evidence tampering plus extra files. Verification: 117/117 package tests, tsc --noEmit, and git diff --check pass. No live v2 model calls occurred. Lesson: For multi-file benchmarks, mutable scope and expected state must be separate: unchanged evidence can be part of expected output while still being protected from the agent. Pattern: Generate independent verification from a frozen expected-file manifest and protect every non-mutable input.",
     "date": 1785599019389
   },
   "intrinsicValue": 18,

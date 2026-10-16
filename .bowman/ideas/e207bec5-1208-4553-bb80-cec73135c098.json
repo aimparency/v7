@@ -2,7 +2,6 @@
   "id": "e207bec5-1208-4553-bb80-cec73135c098",
   "text": "Protocol v0: specify the .bowman format with a JSON Schema and a validate command",
   "description": "Extract the stored format into a written, versioned spec plus JSON Schemas (generated from the shared zod schemas) and a standalone `bowman validate` CLI. It is the core deliverable of the Prototype Fund framing (open Git-native intent protocol for developers), strengthens the application's current baseline, and lets other tools read idea graphs without MCP or the backend.",
-  "reflections": [],
   "archived": false,
   "color": "#2d665c",
   "tags": [
@@ -18,7 +17,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Spec, generated schemas and validate command committed; awaiting Felix's review of the spec wording (protocol/README.md).",
+    "comment": "Spec, generated schemas and validate command committed; awaiting Felix's review of the spec wording (protocol/README.md).\n\nprotocol/README.md (normative spec for data model 4: layout, identity, idea/link/phase/meta semantics, versions); protocol/schemas/{meta,idea,phase}.schema.json generated from zod via zod-to-json-schema (pnpm protocol:schemas; bowman-validate.test.ts fails on drift); pnpm validate:bowman <path> (packages/shared/src/bowman-validate.ts, Ajv against the published schemas + file name = id, known statuses, version, two-sided links via new shared checkGraphConsistency which the backend consistency check now also uses). Not yet a standalone npm-installable `bowman` binary: it runs from this repo.\n\nEvidence: this repo validates (791 ideas, 8 archived, 34 phases); a v2 project is reported with one clear 'older than 4' error; 5 node tests (valid project, schema/status/commitment errors, id/filename mismatch, version short-circuit, schema drift); pnpm check 25/25. Found and fixed: meta statuses without 'ongoing' were rejected by ProjectMetaSchema (history restore of meta.json would fail) though ongoing is derived from INITIAL_STATES; now optional.",
     "date": 1792070526257
   },
   "intrinsicValue": 0,
@@ -26,6 +25,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "protocol/README.md (normative spec for data model 4: layout, identity, idea/link/phase/meta semantics, versions); protocol/schemas/{meta,idea,phase}.schema.json generated from zod via zod-to-json-schema (pnpm protocol:schemas; bowman-validate.test.ts fails on drift); pnpm validate:bowman <path> (packages/shared/src/bowman-validate.ts, Ajv against the published schemas + file name = id, known statuses, version, two-sided links via new shared checkGraphConsistency which the backend consistency check now also uses). Not yet a standalone npm-installable `bowman` binary: it runs from this repo.\n\nEvidence: this repo validates (791 ideas, 8 archived, 34 phases); a v2 project is reported with one clear 'older than 4' error; 5 node tests (valid project, schema/status/commitment errors, id/filename mismatch, version short-circuit, schema drift); pnpm check 25/25. Found and fixed: meta statuses without 'ongoing' were rejected by ProjectMetaSchema (history restore of meta.json would fail) though ongoing is derived from INITIAL_STATES; now optional."
+  "valueVariance": 0
 }

@@ -2,7 +2,6 @@
   "id": "fe0e0aaf-1507-4b9f-8699-0d29e213c8e9",
   "text": "Replace phase creation and editing UI with insertion-order controls",
   "description": "Remove start/end date and time inputs from phase creation/editing. Implement vi-style insertion semantics on the phase level: o inserts after the active phase on the current level, O inserts above/before it. Preserve single-parent hierarchy and explicit order editing behavior.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "phase-refactor",

@@ -35,13 +35,13 @@ test("dream defaults to an epistemically labelled dream that keeps only its memo
   assert.match(text, /Wildness: strange/);
   assert.match(text, /Write back accepted artifacts: false/);
   assert.match(text, /OBSERVED.*RESEARCHED.*INFERRED.*IMAGINED/);
-  assert.match(text, /Apart from the memory reflection, do not mutate the graph/);
+  assert.match(text, /Apart from the dream memory, do not mutate the graph/);
 });
 
 test("dream remembers since the last dream and wakes with what it remembers", async () => {
   const text = (await setup().getPrompt("dream", { projectPath: "/project/.bowman" })).messages[0].content.text;
-  assert.match(text, /newest reflection, on any idea, whose context starts with "Dream:"/);
-  assert.match(text, /Always record the memory: addReflection .* context "Dream: the whole project"/);
+  assert.match(text, /one idea tagged "dream-memory".*status\.reviewedAt is the start of this dream's window/);
+  assert.match(text, /Always record the memory in the dream-memory idea's status comment.*"Dream: the whole project"/);
   assert.match(text, /love is intrinsic value/);
   assert.match(text, /opening with exactly: "I just woke up from dreaming, here is what I remember:"/);
 });

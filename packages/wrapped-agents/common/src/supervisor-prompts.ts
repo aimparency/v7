@@ -209,7 +209,7 @@ export const ActionPrompts = {
   revisit: (text?: string) => text ? `finish implementation. ${text}` : 'finish implementation',
   
   wrapUp: (text?: string) => {
-    const defaultPrompt = 'use Aimparency MCP to update idea status and comment and reflection if not done already';
+    const defaultPrompt = 'use Aimparency MCP to update idea status with the evidence in its status comment, and reflect on the hypotheses of its parent connections, if not done already';
     return text ? `${defaultPrompt}. ${text}` : defaultPrompt;
   },
   

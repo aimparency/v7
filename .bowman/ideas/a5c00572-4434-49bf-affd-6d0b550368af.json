@@ -2,15 +2,6 @@
   "id": "a5c00572-4434-49bf-affd-6d0b550368af",
   "text": "Graph e2e: give Playwright a way to locate WebGL nodes",
   "description": "e2e/graph-idea-drag-create.spec.ts (3 tests) fails because it queries `.graph-node`/`.graph-link` DOM elements that the WebGL renderer no longer creates. The SVG overlay's `.node-label-group` is not a substitute: labels are culled when `node.r * scale <= 20`, so small new nodes have no DOM. Needs a small test hook (e.g. data attributes on an always-rendered hit layer, or a window-exposed node screen-position lookup behind a dev flag) so tests can drag between nodes. Links can be asserted from persisted ideas (sum of supportingConnections in <tmp>/.bowman/ideas). Creating ideas in graph view also opens a \"Commit to Phase\" prompt — use finishIdeaCreation from e2e/test-utils.ts. The removed multi-select bar test should assert `.idea-item.multi-selected` in the list view instead.",
-  "reflections": [
-    {
-      "date": 1790626157389,
-      "context": "Tried to fix the 3 graph e2e tests without touching app code.",
-      "outcome": "Two hook-free approaches failed. (1) `.graph-overlay .node-label-group` as node handle: labels are culled for small nodes (visibleLabelIds, r*scale<=20), so 0 elements. (2) Reusing double-click coordinates as node positions: ideas are created at the click point (useGraphInteraction onDblClick sets pos=logicalMouse) and the file oracle confirmed them, but drags from those coordinates hit nothing — camera tracking (mapStore.isTracking) re-centers the view as nodes appear. Reverted; spec unchanged.",
-      "effectiveness": "Partial: ruled out both cheap approaches; the file-based oracle (count ideas / supportingConnections in <tmp>/.bowman/ideas) and finishIdeaCreation for the Commit-to-Phase prompt do work.",
-      "lesson": "Graph e2e needs an app-side hook: a dev-only (import.meta.env.DEV) window lookup that maps idea id/text to client coordinates via mapStore (cx = clientOffset+halfSide, s = visualScale, x = cx + s*(renderPos+offset)) plus the overlay's bounding rect."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [],
@@ -21,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Dev-only node position hook + spec fixes committed; full chromium e2e 19/19 green, vitest 235/235.",
+    "comment": "Dev-only node position hook + spec fixes committed; full chromium e2e 19/19 green, vitest 235/235.\n\nRoot causes were all test-side except the missing node handle: Playwright mouse.click ignores `modifiers`, drag-to-connect requires the node to be selected first, and graph creation chains Commit-to-Phase/Connection-details prompts.\n\nOutcome: Two hook-free approaches failed. (1) `.graph-overlay .node-label-group` as node handle: labels are culled for small nodes (visibleLabelIds, r*scale<=20), so 0 elements. (2) Reusing double-click coordinates as node positions: ideas are created at the click point (useGraphInteraction onDblClick sets pos=logicalMouse) and the file oracle confirmed them, but drags from those coordinates hit nothing — camera tracking (mapStore.isTracking) re-centers the view as nodes appear. Reverted; spec unchanged. Effectiveness: Partial: ruled out both cheap approaches; the file-based oracle (count ideas / supportingConnections in <tmp>/.bowman/ideas) and finishIdeaCreation for the Commit-to-Phase prompt do work. Lesson: Graph e2e needs an app-side hook: a dev-only (import.meta.env.DEV) window lookup that maps idea id/text to client coordinates via mapStore (cx = clientOffset+halfSide, s = visualScale, x = cx + s*(renderPos+offset)) plus the overlay's bounding rect.",
     "date": 1790626806344
   },
   "intrinsicValue": 1,
@@ -29,6 +20,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Root causes were all test-side except the missing node handle: Playwright mouse.click ignores `modifiers`, drag-to-connect requires the node to be selected first, and graph creation chains Commit-to-Phase/Connection-details prompts."
+  "valueVariance": 0
 }

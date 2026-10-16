@@ -40,7 +40,6 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
             intrinsicValue: 0,
             cost: 1,
             loopWeight: 1,
-            reflection: '',
             supportedIdeas: [],
             supportingConnections: [],
             incoming: [],
@@ -76,7 +75,6 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
     intrinsicValue: 0,
     cost: 1,
     loopWeight: 1,
-    reflection: '',
     supportedIdeas: [],
     supportingConnections: [],
     committedIn: []
@@ -103,7 +101,6 @@ function mountBulkEditModal() {
             intrinsicValue: 1,
             cost: 1,
             loopWeight: 1,
-            reflection: '',
             supportedIdeas: [],
             supportingConnections: [],
             committedIn: []
@@ -118,7 +115,6 @@ function mountBulkEditModal() {
             intrinsicValue: 2,
             cost: 2,
             loopWeight: 2,
-            reflection: 'Learned',
             supportedIdeas: [],
             supportingConnections: [],
             committedIn: []
@@ -400,7 +396,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
             'idea-1': {
               id: 'idea-1', text: 'Old title', description: '', tags: [],
               status: { state: 'open', comment: '' }, archived: false,
-              intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+              intrinsicValue: 0, cost: 1, loopWeight: 1,
               supportedIdeas: [], supportingConnections: [], incoming: [], committedIn: []
             }
           },
@@ -421,7 +417,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     dataStore.ideas['idea-1'] = {
       id: 'idea-1', text: 'Old title', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
-      intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+      intrinsicValue: 0, cost: 1, loopWeight: 1,
       supportedIdeas: [], supportingConnections: [], committedIn: []
     } as any
 
@@ -464,7 +460,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
             'idea-1': {
               id: 'idea-1', text: 'Old title', description: '', tags: [],
               status: { state: 'open', comment: '' }, archived: false,
-              intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+              intrinsicValue: 0, cost: 1, loopWeight: 1,
               supportedIdeas: [], supportingConnections: [], incoming: [], committedIn: []
             }
           },
@@ -485,7 +481,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     dataStore.ideas['idea-1'] = {
       id: 'idea-1', text: 'Old title', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
-      intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+      intrinsicValue: 0, cost: 1, loopWeight: 1,
       supportedIdeas: [], supportingConnections: [], committedIn: []
     } as any
 
@@ -590,7 +586,7 @@ describe('IdeaEditModal linked repos', () => {
     dataStore.ideas['idea-1'] = {
       id: 'idea-1', text: 'Local idea', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
-      intrinsicValue: 0, cost: 1, loopWeight: 1, reflection: '',
+      intrinsicValue: 0, cost: 1, loopWeight: 1,
       supportedIdeas: [], supportingConnections: [], committedIn: [],
       supportingRepos: [{ repoId: R1, weight: 1, relativePosition: [0, 0] }]
     } as any
@@ -694,15 +690,15 @@ describe('IdeaEditModal custom color', () => {
     )
   })
 
-  it('asks to evaluate the not yet evaluated parent connections when moved into a status that prompts evaluation', async () => {
+  it('asks to reflect on parent connections without a reflection when moved into a status that prompts reflection', async () => {
     const { wrapper, dataStore } = mountEditModal()
     const modalStore = useUIModalStore()
     dataStore.meta = {
-      statuses: [{ key: 'open', color: '#ffffff', ongoing: true }, { key: 'implemented', color: '#00ff00', ongoing: false, promptsEvaluation: true }]
+      statuses: [{ key: 'open', color: '#ffffff', ongoing: true }, { key: 'implemented', color: '#00ff00', ongoing: false, promptsReflection: true }]
     }
     dataStore.ideas['idea-1']!.supportedIdeas = ['parent-a', 'parent-b']
     dataStore.ideas['parent-a'] = { id: 'parent-a', text: 'A', supportingConnections: [{ ideaId: 'idea-1', weight: 1, hypothesis: 'helps' }] } as any
-    dataStore.ideas['parent-b'] = { id: 'parent-b', text: 'B', supportingConnections: [{ ideaId: 'idea-1', weight: 1, evaluation: 'already judged' }] } as any
+    dataStore.ideas['parent-b'] = { id: 'parent-b', text: 'B', supportingConnections: [{ ideaId: 'idea-1', weight: 1, reflection: 'already judged' }] } as any
     vi.mocked(trpc.idea.list.query).mockResolvedValueOnce([dataStore.ideas['parent-a'], dataStore.ideas['parent-b']] as any)
 
     await wrapper.setProps({ show: true })
@@ -711,10 +707,10 @@ describe('IdeaEditModal custom color', () => {
     await wrapper.find('input[placeholder="Idea title..."]').trigger('keydown', { key: 'Enter' })
     await flushPromises()
 
-    expect(modalStore.promptConnectionEvaluations).toHaveBeenCalledWith([{ parentId: 'parent-a', childId: 'idea-1' }])
+    expect(modalStore.promptConnectionReflections).toHaveBeenCalledWith([{ parentId: 'parent-a', childId: 'idea-1' }])
   })
 
-  it('does not ask for evaluations when the status does not prompt them', async () => {
+  it('does not ask for reflections when the status does not prompt them', async () => {
     const { wrapper, dataStore } = mountEditModal('Old description', 'implemented')
     const modalStore = useUIModalStore()
     dataStore.ideas['idea-1']!.supportedIdeas = ['parent-a']
@@ -726,6 +722,6 @@ describe('IdeaEditModal custom color', () => {
     await wrapper.find('input[placeholder="Idea title..."]').trigger('keydown', { key: 'Enter' })
     await flushPromises()
 
-    expect(modalStore.promptConnectionEvaluations).not.toHaveBeenCalled()
+    expect(modalStore.promptConnectionReflections).not.toHaveBeenCalled()
   })
 })

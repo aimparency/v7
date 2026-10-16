@@ -2,7 +2,6 @@
   "id": "9beb3725-e879-4e83-955b-924553ab98fe",
   "text": "Shareable open link: an Aimparency URL that opens a Git repo read-only",
   "description": "A link such as http://localhost:4000/?repo=<git-url> opens that repository read-only directly, so maintainers can put a 'view the idea graph' link in a README and Aimparency users reach it in one click. Depends on opening from a Git URL. Viewers still run Aimparency locally; a public hosted viewer is out of scope unless decided separately.",
-  "reflections": [],
   "archived": false,
   "color": "#6f643a",
   "tags": [
@@ -16,7 +15,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "?repo=<git url> link works in the running app; awaiting acceptance (and a decision whether to put the link in this repo's README).",
+    "comment": "?repo=<git url> link works in the running app; awaiting acceptance (and a decision whether to put the link in this repo's README).\n\nproject-store getRepoUrlParam/setRepoUrlParam; App onMounted: a ?repo= parameter wins over ?project= and runs the Git-URL open flow (clone or fetch, read-only); after opening, repo stays in the address next to project so the URL stays shareable and reloads refresh; opening a local path or closing deletes it. Evidence: navigated the running app to http://localhost:4000/?repo=https://github.com/aimparency/v7.git -> opened 790 ideas with the read-only badge, address kept repo=...; vue-tsc clean; pnpm check 25/25. Not done: a README link for this repo (Felix's call) and a hosted viewer (out of scope by design).",
     "date": 1792072993768
   },
   "intrinsicValue": 0,
@@ -24,6 +23,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "project-store getRepoUrlParam/setRepoUrlParam; App onMounted: a ?repo= parameter wins over ?project= and runs the Git-URL open flow (clone or fetch, read-only); after opening, repo stays in the address next to project so the URL stays shareable and reloads refresh; opening a local path or closing deletes it. Evidence: navigated the running app to http://localhost:4000/?repo=https://github.com/aimparency/v7.git -> opened 790 ideas with the read-only badge, address kept repo=...; vue-tsc clean; pnpm check 25/25. Not done: a README link for this repo (Felix's call) and a hosted viewer (out of scope by design)."
+  "valueVariance": 0
 }

@@ -2,7 +2,6 @@
   "id": "0703434c-c733-452f-a3b7-494b374fad35",
   "text": "dd on a phase does not delete it anymore (regression), restore",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

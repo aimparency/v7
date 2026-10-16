@@ -2,8 +2,6 @@
   "id": "a5735564-9b26-48cd-9c40-af9a05c6b95a",
   "text": "Design a staged and outcome-aligned commercial model for AI transformations",
   "description": "Define paid diagnostic, bounded pilot, operational rollout, and continuing autonomy stewardship. Compare fixed-fee, subscription, and verified outcome-linked components. Require positive delivery margin after model, integration, support, and supervision costs; owner exit rights and data portability; and explicit responsibility boundaries. Never bill or claim success based on agent activity or simulated credits.",
-  "reflection": "Created meta/ai-transformation-commercial-model.md. Defined diagnostic, pilot, rollout, stewardship, and optional capped outcome components; conservative delivery-margin acceptance rules; outcome-attribution safeguards; ownership/responsibility boundaries; anti-consultancy-drift metrics; client qualification; and a five-owner first commercial test. Price bands are labeled unvalidated hypotheses. Synthetic activity and mock revenue are explicitly excluded. Verification: git diff --check passed and all required commercial/economic safeguards are present.",
-  "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -27,7 +25,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Staged, outcome-aligned commercial model drafted and internally checked; price bands remain explicit hypotheses for owner validation.",
+    "comment": "Staged, outcome-aligned commercial model drafted and internally checked; price bands remain explicit hypotheses for owner validation.\n\nCreated meta/ai-transformation-commercial-model.md. Defined diagnostic, pilot, rollout, stewardship, and optional capped outcome components; conservative delivery-margin acceptance rules; outcome-attribution safeguards; ownership/responsibility boundaries; anti-consultancy-drift metrics; client qualification; and a five-owner first commercial test. Price bands are labeled unvalidated hypotheses. Synthetic activity and mock revenue are explicitly excluded. Verification: git diff --check passed and all required commercial/economic safeguards are present.",
     "date": 1784738478496
   },
   "intrinsicValue": 0,

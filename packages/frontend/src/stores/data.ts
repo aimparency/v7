@@ -759,7 +759,7 @@ export const useDataStore = defineStore('data', {
       projectPath: string,
       parentId: string,
       childId: string,
-      updates: Pick<Connection, 'weight' | 'hypothesis' | 'evaluation'>
+      updates: Pick<Connection, 'weight' | 'hypothesis' | 'reflection'>
     ): Promise<void> {
       const parent = this.ideas[parentId]
       if (!parent) throw new Error(`Parent idea ${parentId} is not loaded`)
@@ -823,7 +823,7 @@ export const useDataStore = defineStore('data', {
         // 1. Update local state immediately
         const updatedConnections = [...connections]
         const oldConn = updatedConnections[connectionIndex]!
-        // Keep hypothesis/evaluation: only the position changes.
+        // Keep hypothesis/reflection: only the position changes.
         const relativePosition = roundOffset(newRelativePosition)
         updatedConnections[connectionIndex] = { ...oldConn, relativePosition }
         parent.supportingConnections = updatedConnections

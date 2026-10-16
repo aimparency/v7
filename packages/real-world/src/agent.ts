@@ -3,7 +3,7 @@ import { Composio } from "@composio/core";
 import { VercelProvider } from "@composio/vercel";
 import { createOpenRouter } from "@openrouter/ai-sdk-provider";
 import { stepCountIs, streamText } from "ai";
-import { appendReflection, getTopIdeas, wsClient } from "./idea-client.js";
+import { getTopIdeas, recordRunOutcome, wsClient } from "./idea-client.js";
 
 const projectPath = process.argv[2] ?? process.cwd();
 const act = process.env.REAL_WORLD_ACT === "1";
@@ -48,10 +48,7 @@ async function main() {
   const session = await composio.create(userId);
   const tools = await session.tools();
 
-  const pastLessons = (target.idea.reflections ?? [])
-    .slice(-3)
-    .map((r) => `- ${r.lesson}`)
-    .join("\n");
+  const lastOutcome = target.idea.status.comment?.trim();
 
   let streamError: unknown = null;
   const stream = streamText({
@@ -74,7 +71,7 @@ async function main() {
       `Idea: ${target.idea.text}`,
       target.idea.description ? `Description: ${target.idea.description}` : "",
       `Phase: ${target.phasePath.join(" > ")}`,
-      pastLessons ? `Lessons from past attempts:\n${pastLessons}` : "",
+      lastOutcome ? `Status comment (the last attempt's outcome):\n${lastOutcome}` : "",
       "Make real-world progress on this idea now.",
     ]
       .filter(Boolean)
@@ -98,20 +95,16 @@ async function main() {
   }
   console.log("\n");
 
-  // A failed run must not pollute the idea's reflections with empty lessons.
+  // A failed run must not overwrite the idea's status comment with an empty outcome.
   if (streamError) throw streamError;
 
-  await appendReflection(projectPath, target.idea.id, {
-    context: `real-world agent (${act ? "act" : "plan"} mode, ${modelId}) ran on this idea`,
-    outcome: finalText.slice(0, 2000),
-    effectiveness: act
-      ? "see outcome — actions were taken via Composio tools"
-      : "plan-mode run: investigation only, no mutations",
-    lesson: act
-      ? "review outcome and prune what didn't work"
-      : "re-run with REAL_WORLD_ACT=1 to execute the plan above",
-  });
-  console.log(`reflection written to idea ${target.idea.id}`);
+  // The status comment holds the latest outcome; git keeps the earlier ones.
+  await recordRunOutcome(projectPath, target.idea.id, [
+    `Real-world agent (${act ? "act" : "plan"} mode, ${modelId}):`,
+    finalText.slice(0, 2000),
+    act ? "" : "Re-run with REAL_WORLD_ACT=1 to execute this plan.",
+  ].filter(Boolean).join("\n\n"));
+  console.log(`outcome written to the status comment of idea ${target.idea.id}`);
 }
 
 main()

@@ -2,7 +2,6 @@
   "id": "22c4140b-9ae2-4805-9071-a3f30b1c4ec3",
   "text": "TDD: Write tests before implementing new features",
   "description": "Adopt test-driven development:\n1. Write failing test for desired behavior\n2. Implement minimal code to pass\n3. Refactor while keeping tests green\n\nFocus on:\n- New API endpoints (tRPC routers)\n- Value calculation changes\n- Navigation logic changes\n- Economic system integration\n\nCurrent coverage is minimal for business logic, TDD will improve quality",
-  "reflections": [],
   "archived": false,
   "tags": [
     "testing",

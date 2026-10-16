@@ -2,7 +2,6 @@
   "id": "af4fd5b4-f32e-496f-8579-a5b5be59eeb7",
   "text": "Generate hypotheses from ideas, reflections, and observed project state",
   "description": "Use ideas, reflections, repo state, and runtime observations to propose explicit hypotheses about what actions or strategies might unlock progress. Hypotheses should be inspectable, comparable, and linked back to the ideas they support.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "asi",

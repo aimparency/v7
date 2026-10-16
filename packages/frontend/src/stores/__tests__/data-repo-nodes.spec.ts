@@ -14,7 +14,6 @@ const REPO_ID = '11111111-1111-4111-8111-111111111111'
 function mkIdea(partial: Partial<Idea> & { id: string }): Idea {
   return {
     text: partial.id,
-    reflections: [],
     archived: false,
     tags: [],
     supportingConnections: [],

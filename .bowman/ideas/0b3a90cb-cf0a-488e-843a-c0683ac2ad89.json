@@ -2,15 +2,6 @@
   "id": "0b3a90cb-cf0a-488e-843a-c0683ac2ad89",
   "text": "Rename loopWeight to selfWeight",
   "description": "\"Self weight\" describes the intended meaning (share an idea delivers through its own work). Stored field → needs a data model migration (BOWMAN_MIGRATIONS, bump CURRENT_DATA_MODEL_VERSION, frozen fixture), plus UI labels, MCP tools and the connection-% math. Best done after the value-model decision on how self weight is applied.",
-  "reflections": [
-    {
-      "date": 1792137749394,
-      "context": "Experiment on the real graph (804 ideas) to inform Felix's choice: the current calculation (self weights as stored), full flow solved in one shot (loopWeight 0 everywhere), and Felix's proposal (full flow, pour intrinsic each step, normalize every iteration, 200 iterations). Script: scratchpad value-experiment.ts.",
-      "outcome": "Per-iteration normalization settles at a factor of 1.651 per iteration: a hidden per-hop discount of 0.606. Against the one-shot full flow, every idea's value shrinks to between 0.048 and 0.606 (median 0.222), the deeper the less. The ranking stays similar (Spearman 0.978, top-20 overlap 18). Dropping self weight barely moves aggregated values (Spearman 0.994 vs current) but changes the top 20 noticeably (overlap 11).",
-      "effectiveness": "Turns the objection into numbers: the per-iteration variant is the one-shot model plus a graph-dependent depth discount of about 0.6 per hop, which favors shallow ideas.",
-      "lesson": "If a depth discount is wanted, make it an explicit, named knob (6e1b0b0e) rather than a side effect of normalization, whose size changes whenever the graph changes."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [],
@@ -21,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "unclear",
-    "comment": "Felix 2026-10-16: back to full flow to the children, pouring intrinsic value in each step, normalizing each iteration; units per project (meta.costUnit already exists, default ''). Claude's objection: the exact solve already is the limit of 'pour intrinsic, flow to children' iterations, normalized once. Normalizing every iteration adds a hidden per-hop discount, the issue of 6e1b0b0e. 'Full flow' maps to self weight 0 everywhere: drop loopWeight by migration (today 496 ideas have 1, 228 have 0, 80 unset), so only leaves realize value. Question: drop self weight and keep the one-shot solve?",
+    "comment": "Felix 2026-10-16: back to full flow to the children, pouring intrinsic value in each step, normalizing each iteration; units per project (meta.costUnit already exists, default ''). Claude's objection: the exact solve already is the limit of 'pour intrinsic, flow to children' iterations, normalized once. Normalizing every iteration adds a hidden per-hop discount, the issue of 6e1b0b0e. 'Full flow' maps to self weight 0 everywhere: drop loopWeight by migration (today 496 ideas have 1, 228 have 0, 80 unset), so only leaves realize value. Question: drop self weight and keep the one-shot solve?\n\nOutcome: Per-iteration normalization settles at a factor of 1.651 per iteration: a hidden per-hop discount of 0.606. Against the one-shot full flow, every idea's value shrinks to between 0.048 and 0.606 (median 0.222), the deeper the less. The ranking stays similar (Spearman 0.978, top-20 overlap 18). Dropping self weight barely moves aggregated values (Spearman 0.994 vs current) but changes the top 20 noticeably (overlap 11). Effectiveness: Turns the objection into numbers: the per-iteration variant is the one-shot model plus a graph-dependent depth discount of about 0.6 per hop, which favors shallow ideas. Lesson: If a depth discount is wanted, make it an explicit, named knob (6e1b0b0e) rather than a side effect of normalization, whose size changes whenever the graph changes.",
     "date": 1792122466943
   },
   "intrinsicValue": 0,

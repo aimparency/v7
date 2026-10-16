@@ -2,7 +2,6 @@
   "id": "338c12e5-d411-42ed-8d39-e26665880dd2",
   "text": "First-class merge-idea operation",
   "description": "A 'merge B into A' primitive that rewires B's supportedIdeas, supportingConnections and phase commitments onto A (de-duplicating), copies B's reflections to A, then archives B. This is the missing primitive that makes duplicate consolidation safe and reversible instead of manual hand-editing of connection arrays. Should be idempotent and guard against creating cycles or self-references.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [

@@ -37,14 +37,17 @@ test('maps terms, symbols, and likely file impact', async () => {
       id: '11111111-1111-4111-8111-111111111111',
       text: 'Ground priorities in economic evidence',
       description: 'Use authoritative signals instead of simulated credits.',
-      reflection: 'The economic signal must remain inspectable.',
-      status: { state: 'partially', comment: 'Signal ingestion is implemented.' }
+      status: { state: 'partially', comment: 'Signal ingestion is implemented.' },
+      supportingConnections: [{
+        ideaId: '22222222-2222-4222-8222-222222222222',
+        hypothesis: 'Telemetry shows whether the economic signal is real.',
+        reflection: 'Held: the economic signal must remain inspectable.'
+      }]
     }));
     await writeFile(path.join(projectPath, '.bowman', 'archived-ideas', '22222222-2222-4222-8222-222222222222.json'), JSON.stringify({
       id: '22222222-2222-4222-8222-222222222222',
       text: 'Old telemetry experiment',
-      reflections: [{ lesson: 'Economic measurements need an authoritative source.' }],
-      status: { state: 'archived', comment: '' }
+      status: { state: 'archived', comment: 'Economic measurements need an authoritative source.' }
     }));
 
     const heatmap = await codeHeatmap(projectPath, 'signal');
@@ -70,7 +73,7 @@ test('maps terms, symbols, and likely file impact', async () => {
 
     const history = await ideaHistorySearch(projectPath, 'economic signal');
     assert.equal(history[0]?.ideaId, '11111111-1111-4111-8111-111111111111');
-    assert.ok(history[0]?.matchedFields.includes('reflection'));
+    assert.ok(history[0]?.matchedFields.includes('connections'));
     assert.ok(history.some((entry) => entry.status === 'archived'));
   } finally {
     await rm(projectPath, { recursive: true, force: true });

@@ -2,16 +2,6 @@
   "id": "8ac03697-c34f-46c6-8b54-678418d5adb2",
   "text": "Hypothesis: Idea-graph grounding improves autonomous long-horizon software delivery versus a stateless baseline",
   "description": "Run a controlled benchmark on a fixed set of representative repository tasks. Compare (A) the wrapped agent using Aimparency context, prioritization, durable memory, reflection, and recovery with (B) the same model/tool budget using only the task prompt and repository. Pre-register tasks and scoring. Measure verified task completion, human interventions, wall-clock time, token/tool cost, recovery from injected failure, and policy violations. Pass only if the graph-grounded condition improves verified completion or materially reduces intervention without worse safety. Preserve prompts, run records, commits, tests, and negative results.",
-  "reflection": "The first controlled graph-grounding trial did not support the preregistered completion/intervention hypothesis: both conditions completed all four easy tasks with zero intervention and zero safety violations. Graph grounding showed exploratory reductions in tokens (12.38%), tools (17.65%), and wall time (5.01%), but these were not registered pass criteria. A zero-baseline analyzer bug initially returned positive; it was preserved, corrected with a regression test, and the same records re-analyzed to null without reruns.",
-  "reflections": [
-    {
-      "date": 1785600164666,
-      "context": "Second valid controlled comparison after v1's null result, now using richer multi-file fixtures and prospectively calibrated budgets.",
-      "outcome": "V3 produced valid null with 8/8 safe completions and no qualifying capability or efficiency advantage. Graph grounding was slightly more token-expensive, equal in tool calls, and materially slower in mean wall time.",
-      "effectiveness": "Two valid comparisons now fail to support the frozen graph-grounding advantage on synthetic tasks; one invalid v2 run and excluded calibration were handled without post-hoc rescoring.",
-      "lesson": "Pause synthetic fixture escalation. Test graph value only where durable context is genuinely necessary across sessions or real task ambiguity creates measurable non-ceiling outcomes."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -76,7 +66,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Controlled live benchmark complete. Corrected preregistered result is valid null: equal perfect completion, zero interventions, and zero violations. Exploratory resource reductions are not counted as a pass. Awaiting user review.",
+    "comment": "Controlled live benchmark complete. Corrected preregistered result is valid null: equal perfect completion, zero interventions, and zero violations. Exploratory resource reductions are not counted as a pass. Awaiting user review.\n\nThe first controlled graph-grounding trial did not support the preregistered completion/intervention hypothesis: both conditions completed all four easy tasks with zero intervention and zero safety violations. Graph grounding showed exploratory reductions in tokens (12.38%), tools (17.65%), and wall time (5.01%), but these were not registered pass criteria. A zero-baseline analyzer bug initially returned positive; it was preserved, corrected with a regression test, and the same records re-analyzed to null without reruns.\n\nOutcome: V3 produced valid null with 8/8 safe completions and no qualifying capability or efficiency advantage. Graph grounding was slightly more token-expensive, equal in tool calls, and materially slower in mean wall time. Effectiveness: Two valid comparisons now fail to support the frozen graph-grounding advantage on synthetic tasks; one invalid v2 run and excluded calibration were handled without post-hoc rescoring. Lesson: Pause synthetic fixture escalation. Test graph value only where durable context is genuinely necessary across sessions or real task ambiguity creates measurable non-ceiling outcomes.",
     "date": 1785598678274
   },
   "intrinsicValue": 20,

@@ -2,7 +2,6 @@
   "id": "50067a98-bc63-4e8e-89a7-0e5d12842053",
   "text": "Association system",
   "description": "feed in related ideas as the agent works on something. \nMaybe through hooks.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -12,7 +11,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Association integration improved and verified; awaiting user acceptance.",
+    "comment": "Association integration improved and verified; awaiting user acceptance.\n\nReconciled the existing association system and fixed its key relevance defect: the active idea is now excluded, so stochastic association injects lateral context rather than echoing current work. Extracted deterministic selection logic and added four tests covering ranking, probability rejection, disabled behavior, and active-idea exclusion. Agent-tools and loop-worker typechecks pass.",
     "date": 1784660284246
   },
   "intrinsicValue": 0,
@@ -20,6 +19,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Reconciled the existing association system and fixed its key relevance defect: the active idea is now excluded, so stochastic association injects lateral context rather than echoing current work. Extracted deterministic selection logic and added four tests covering ranking, probability rejection, disabled behavior, and active-idea exclusion. Agent-tools and loop-worker typechecks pass."
+  "valueVariance": 0
 }

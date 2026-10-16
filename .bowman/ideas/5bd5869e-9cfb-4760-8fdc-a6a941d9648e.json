@@ -2,16 +2,6 @@
   "id": "5bd5869e-9cfb-4760-8fdc-a6a941d9648e",
   "text": "Make local .bowman project connection intuitive",
   "description": "The running local service should clearly let the user connect to nearby repositories or workspaces that contain a .bowman directory. The UX should make it obvious what project is open, how projects are discovered or selected, and what Aimparency writes into the local repo.",
-  "reflections": [
-    {
-      "date": 1774556009189,
-      "context": "Make the local .bowman project connection flow intuitive for first-time open source users.",
-      "outcome": "Completed three core UX improvements: documented .bowman layout in README, added visible project path in app header, and implemented explicit local project discovery with click-to-open suggestions. One supporting idea (watchdog reconnection) remains partially complete but is polish rather than core functionality.",
-      "effectiveness": "Breaking the UX goal into specific, testable sub-ideas allowed focused implementation. Each piece improved orientation independently: docs for understanding, header for runtime awareness, discovery for reducing manual path entry.",
-      "lesson": "When a parent idea has mostly-complete supporting work, mark the parent done once core functionality is delivered. Don't let polish items block completion signals.",
-      "pattern": "This follows the documentation idea pattern: verify supporting work is substantially complete, then mark parent done to keep the idea graph accurate."
-    }
-  ],
   "archived": false,
   "tags": [
     "release",
@@ -61,7 +51,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Core project connection UX is complete: .bowman data layout documented, current project visible in header, local project discovery implemented with explicit picker flow. Watchdog reconnection polish remains partially complete but doesn't block basic project connection.",
+    "comment": "Core project connection UX is complete: .bowman data layout documented, current project visible in header, local project discovery implemented with explicit picker flow. Watchdog reconnection polish remains partially complete but doesn't block basic project connection.\n\nOutcome: Completed three core UX improvements: documented .bowman layout in README, added visible project path in app header, and implemented explicit local project discovery with click-to-open suggestions. One supporting idea (watchdog reconnection) remains partially complete but is polish rather than core functionality. Effectiveness: Breaking the UX goal into specific, testable sub-ideas allowed focused implementation. Each piece improved orientation independently: docs for understanding, header for runtime awareness, discovery for reducing manual path entry. Lesson: When a parent idea has mostly-complete supporting work, mark the parent done once core functionality is delivered. Don't let polish items block completion signals. Pattern: This follows the documentation idea pattern: verify supporting work is substantially complete, then mark parent done to keep the idea graph accurate.",
     "date": 1774556009011
   },
   "intrinsicValue": 0,

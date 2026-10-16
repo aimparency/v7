@@ -2,8 +2,6 @@
   "id": "90cf0309-023f-486c-b7a0-322ee2910d46",
   "text": "Review inbox: one queue of ideas awaiting the human, ordered by calculated priority",
   "description": "166 ideas sit in review and 83 are human-dependent, against 8 open: the human is the throughput bottleneck of the cooperation engine. One view lists every idea waiting on the human (review + human-dependent), ordered by calculated priority (Felix 2026-10-15), shows the status comment and evidence inline, and offers accept (review → implemented), send back (→ open with a comment), and opening the idea. Success: the human clears decisions faster; the review queue shrinks.",
-  "reflection": "Implemented in 57bba1a (pushed). Header button '⧗ N' opens ReviewInboxModal: all review + human-dependent ideas by calculated priority, filter chips with counts, status comment per row, full comment + recorded reflection (evidence) on the selected row. Keys j/k, o open (editor stacks on top), a accept (review → implemented, keeps the evidence comment), s send back to open with a reason. Verified: ranking unit tests 2/2, component tests 2/2 (order, accept only for review, send back, open), pnpm check 25/25, and in the running app via headless browser on the real graph: 250 waiting (167 review / 83 human-dependent), top item 'remove intrinsic values from most ideas' (1052×), selected review shows its evidence. No accept/send-back was performed on the real graph.",
-  "reflections": [],
   "archived": false,
   "color": "#2d4266",
   "tags": [
@@ -27,7 +25,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Built and verified in the running app; awaiting Felix's acceptance (try it: ⧗ button in the header).",
+    "comment": "Built and verified in the running app; awaiting Felix's acceptance (try it: ⧗ button in the header).\n\nImplemented in 57bba1a (pushed). Header button '⧗ N' opens ReviewInboxModal: all review + human-dependent ideas by calculated priority, filter chips with counts, status comment per row, full comment + recorded reflection (evidence) on the selected row. Keys j/k, o open (editor stacks on top), a accept (review → implemented, keeps the evidence comment), s send back to open with a reason. Verified: ranking unit tests 2/2, component tests 2/2 (order, accept only for review, send back, open), pnpm check 25/25, and in the running app via headless browser on the real graph: 250 waiting (167 review / 83 human-dependent), top item 'remove intrinsic values from most ideas' (1052×), selected review shows its evidence. No accept/send-back was performed on the real graph.",
     "date": 1792065777284
   },
   "intrinsicValue": 0,

@@ -2,16 +2,6 @@
   "id": "e2c26776-1260-4624-ba97-c3ee29fa623f",
   "text": "Make Aimparency publishable as a local-first open source project",
   "description": "Release Aimparency as a local service that runs on the user's computer, exposes a browser UI, and connects to local projects with a .bowman directory. Success means a new user can clone the repo, install dependencies, understand the project from the docs, run it locally, and use it against nearby repositories without any hosted dependency.",
-  "reflections": [
-    {
-      "date": 1774556205688,
-      "context": "Make Aimparency publishable as a local-first open source project by completing all repository hygiene, documentation, runtime simplification, and UX improvements needed for a clean first-run experience.",
-      "outcome": "Completed 4 of 5 major supporting ideas: repository hygiene (metadata, tests, docs), repository understandability (READMEs, .bowman docs, git workflow), runtime complexity reduction (removed Python embedder, made MCP/voice optional), and local project connection UX (header visibility, project discovery). Only remaining work is end-to-end clean-clone verification on a real machine.",
-      "effectiveness": "Breaking the publishability goal into orthogonal concerns (hygiene, docs, runtime, UX, startup) allowed independent parallel progress. Each supporting idea delivered concrete value and moved closer to release-readiness.",
-      "lesson": "Open source release preparation benefits from separating 'repository surface' work (docs, metadata, structure) from 'runtime behavior' work (startup, ports, dependencies). Most surface work can be completed and verified in sandbox environments, while runtime verification requires real-machine testing.",
-      "pattern": "This follows standard release-prep methodology: fix all automatable issues first (tests, docs, structure, build), then gate final release on manual verification (clean-clone testing, first-run UX)."
-    }
-  ],
   "archived": false,
   "tags": [
     "release",
@@ -68,7 +58,7 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Repository hygiene, documentation, runtime simplification, and project connection are complete. Final clean-clone startup verification must be performed by a human on a genuinely fresh machine/environment.",
+    "comment": "Repository hygiene, documentation, runtime simplification, and project connection are complete. Final clean-clone startup verification must be performed by a human on a genuinely fresh machine/environment.\n\nStatus reconciliation on 2026-07-30 propagated the sole remaining human verification child after four implementation children completed.\n\nOutcome: Completed 4 of 5 major supporting ideas: repository hygiene (metadata, tests, docs), repository understandability (READMEs, .bowman docs, git workflow), runtime complexity reduction (removed Python embedder, made MCP/voice optional), and local project connection UX (header visibility, project discovery). Only remaining work is end-to-end clean-clone verification on a real machine. Effectiveness: Breaking the publishability goal into orthogonal concerns (hygiene, docs, runtime, UX, startup) allowed independent parallel progress. Each supporting idea delivered concrete value and moved closer to release-readiness. Lesson: Open source release preparation benefits from separating 'repository surface' work (docs, metadata, structure) from 'runtime behavior' work (startup, ports, dependencies). Most surface work can be completed and verified in sandbox environments, while runtime verification requires real-machine testing. Pattern: This follows standard release-prep methodology: fix all automatable issues first (tests, docs, structure, build), then gate final release on manual verification (clean-clone testing, first-run UX).",
     "date": 1785399346760
   },
   "intrinsicValue": 0,
@@ -76,6 +66,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Status reconciliation on 2026-07-30 propagated the sole remaining human verification child after four implementation children completed."
+  "valueVariance": 0
 }

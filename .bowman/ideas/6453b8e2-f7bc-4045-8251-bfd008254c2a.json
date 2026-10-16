@@ -2,23 +2,6 @@
   "id": "6453b8e2-f7bc-4045-8251-bfd008254c2a",
   "text": "Confirm Felix's individual Prototype Fund eligibility and funding setup",
   "description": "Verify the formal checklist against the current Jahrgang 03 rules: adult individual developer, residence and taxes in Germany, self-employed/freelance during the project or proportionally released from employment, no company as grant recipient, and no conflicting public financing for the same work. Record the intended tax/self-employment setup and clarify any uncertainty with Prototype Fund before investing heavily in the application.",
-  "reflections": [
-    {
-      "date": 1792064934959,
-      "context": "Eligibility research 2026-10-15 for Prototype Fund Jahrgang 03 (prototypefund.de itself blocks automated access with 403, so rules come from the official application platform plus DSEE, StartHub Hessen and Brandenburg ESF listings).",
-      "outcome": "Window 1 Oct – 30 Nov 2026, 15:00 CET. Three tracks: Innovation (data security and software infrastructure), Resilienz (free alternatives to dominant centralized software), Up and Coming (same fields, only for applicants ≤25 or students/informatics trainees). Funding period starts 1 June 2027, six months, optional four-month Second Stage. Solo up to €47,500 (own share required: €47.5k of a €50k budget), teams of up to four (GbR seated in Germany) up to €95,000 for six months. Applicants: adults, living in Germany, self-employed/freelance paying German taxes, or employed with pro-rata release for the project period (part-time employment allowed). Output must be open source; Aimparency is ISC and public on GitHub. 'Software-Infrastruktur' is explicitly developer-facing foundational tools and libraries such as standardized protocol implementations, which the existing protocol-plus-CLI draft matches. Unverified: whether further development of an existing project qualifies, and whether holding shares in a UG/GmbH during the funding period conflicts.",
-      "effectiveness": "Answers every formal rule except Felix's personal facts. Those are now exactly four: residence in Germany, tax status, employment/self-employment from June 2027, and overlapping public funding.",
-      "lesson": "Recheck grant facts against live sources before acting on dated notes; the KI4KMU note claimed a 2026 deadline for a programme closed since 2023."
-    },
-    {
-      "date": 1792074473495,
-      "context": "Protocol v0 (e207bec5: written format description, generated JSON Schemas, validate command) and read-only viewing of other repos were built on 2026-10-15, partly overlapping what the draft promised as funded Month-2 work.",
-      "outcome": "Rewrote application-draft.md answer 4 (current status, 98/100 words): names the October draft as existing baseline and states what the funded project still builds (portable core, compatibility guarantees, conformance suite, provenance semantics, installable CLI, external implementation). Commit 95393d7.",
-      "effectiveness": "Keeps the application honest (a reviewer checking the public repo will find the v0 spec) and turns the overlap into evidence of feasibility instead of a credibility risk.",
-      "lesson": "Building ahead of a funding application shrinks the fundable scope; Felix should review whether the work plan (Month 2 schema/validator) needs re-scoping toward conformance, provenance semantics and external adoption.",
-      "pattern": "Keep application text in sync with the repo whenever baseline-changing work lands."
-    }
-  ],
   "archived": false,
   "tags": [
     "prototype-fund",
@@ -35,7 +18,7 @@
   ],
   "status": {
     "state": "cancelled",
-    "comment": "Answered by Felix, 2026-10-16: not eligible.",
+    "comment": "Answered by Felix, 2026-10-16: not eligible.\n\nOutcome: Window 1 Oct – 30 Nov 2026, 15:00 CET. Three tracks: Innovation (data security and software infrastructure), Resilienz (free alternatives to dominant centralized software), Up and Coming (same fields, only for applicants ≤25 or students/informatics trainees). Funding period starts 1 June 2027, six months, optional four-month Second Stage. Solo up to €47,500 (own share required: €47.5k of a €50k budget), teams of up to four (GbR seated in Germany) up to €95,000 for six months. Applicants: adults, living in Germany, self-employed/freelance paying German taxes, or employed with pro-rata release for the project period (part-time employment allowed). Output must be open source; Aimparency is ISC and public on GitHub. 'Software-Infrastruktur' is explicitly developer-facing foundational tools and libraries such as standardized protocol implementations, which the existing protocol-plus-CLI draft matches. Unverified: whether further development of an existing project qualifies, and whether holding shares in a UG/GmbH during the funding period conflicts. Effectiveness: Answers every formal rule except Felix's personal facts. Those are now exactly four: residence in Germany, tax status, employment/self-employment from June 2027, and overlapping public funding. Lesson: Recheck grant facts against live sources before acting on dated notes; the KI4KMU note claimed a 2026 deadline for a programme closed since 2023.\n\nOutcome: Rewrote application-draft.md answer 4 (current status, 98/100 words): names the October draft as existing baseline and states what the funded project still builds (portable core, compatibility guarantees, conformance suite, provenance semantics, installable CLI, external implementation). Commit 95393d7. Effectiveness: Keeps the application honest (a reviewer checking the public repo will find the v0 spec) and turns the overlap into evidence of feasibility instead of a credibility risk. Lesson: Building ahead of a funding application shrinks the fundable scope; Felix should review whether the work plan (Month 2 schema/validator) needs re-scoping toward conformance, provenance semantics and external adoption. Pattern: Keep application text in sync with the repo whenever baseline-changing work lands.",
     "date": 1792122506282
   },
   "intrinsicValue": 0,

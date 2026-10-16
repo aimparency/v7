@@ -2,7 +2,6 @@
   "id": "bab6689f-ff16-45d5-841c-21b80c3a15ec",
   "text": "Define agent graph tools once in the backend and expose them to MCP and the loop-worker",
   "description": "Three drifted copies of the work-ranking logic existed (MCP, loop-worker, backend default loop target). Already done 2026-10-15: shared resolveWorkPhase/selectWorkCandidates (96f73a7), missionPathsToRoot (6b26d9c), loop-worker graph access through the backend (8724d0b). Remaining: tool names, descriptions, input schemas and handlers still exist twice (MCP tools/*.ts and loop-worker tool() definitions, with different wording and fewer tools in the worker). Define each tool once (schema + handler over the backend) and generate both the MCP and the AI-SDK tool surfaces from that definition.",
-  "reflections": [],
   "archived": false,
   "color": "#2d6646",
   "tags": [
@@ -18,7 +17,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Loop worker now offers the MCP tool definitions themselves; awaiting acceptance.",
+    "comment": "Loop worker now offers the MCP tool definitions themselves; awaiting acceptance.\n\nSingle source: packages/mcp/src/tools/catalog.ts (TOOLS + toolsByName, no MCP SDK at runtime), exported as mcp/tool-catalog and inlined into bundles (scripts/tsdown-base.mts). loop-worker/src/graph-catalog-tools.ts maps get_prioritized_ideas, get_idea_context, search_ideas_semantic, graph_hygiene, create_idea, update_idea, commit_idea_to_phase from it: projectPath filled in (project root) and removed from the model-facing schema, the instance's target phase as default phaseId, MCP text results/errors returned to the model. Worker's 7 hand-written tool() copies and agent-tools createIdea/updateIdea/commitIdeaToPhase/graphHygiene deleted. Note: the loop model now gets MCP's two-step create_idea (confirmationToken duplicate review), same as MCP agents.\n\nEvidence: graph-catalog-tools.test.ts (descriptions identical to MCP, projectPath hidden and injected, handler errors returned as text), loop-cycle e2e 3/3 through the catalog tools, bundled dist loads (node dist/index.js reaches arg parsing), backend/mcp/loop-worker builds, pnpm check 25/25. Found and fixed on the way: the bundled worker could not load since 8724d0b (@trpc/client undeclared in loop-worker).",
     "date": 1792071840746
   },
   "intrinsicValue": 0,
@@ -26,6 +25,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Single source: packages/mcp/src/tools/catalog.ts (TOOLS + toolsByName, no MCP SDK at runtime), exported as mcp/tool-catalog and inlined into bundles (scripts/tsdown-base.mts). loop-worker/src/graph-catalog-tools.ts maps get_prioritized_ideas, get_idea_context, search_ideas_semantic, graph_hygiene, create_idea, update_idea, commit_idea_to_phase from it: projectPath filled in (project root) and removed from the model-facing schema, the instance's target phase as default phaseId, MCP text results/errors returned to the model. Worker's 7 hand-written tool() copies and agent-tools createIdea/updateIdea/commitIdeaToPhase/graphHygiene deleted. Note: the loop model now gets MCP's two-step create_idea (confirmationToken duplicate review), same as MCP agents.\n\nEvidence: graph-catalog-tools.test.ts (descriptions identical to MCP, projectPath hidden and injected, handler errors returned as text), loop-cycle e2e 3/3 through the catalog tools, bundled dist loads (node dist/index.js reaches arg parsing), backend/mcp/loop-worker builds, pnpm check 25/25. Found and fixed on the way: the bundled worker could not load since 8724d0b (@trpc/client undeclared in loop-worker)."
+  "valueVariance": 0
 }

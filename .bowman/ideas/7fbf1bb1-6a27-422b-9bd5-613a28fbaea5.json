@@ -2,7 +2,6 @@
   "id": "7fbf1bb1-6a27-422b-9bd5-613a28fbaea5",
   "text": "when watchdog is in fullscreen, disabling watchdog still hides colum/graph view. fix that",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

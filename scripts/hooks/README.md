@@ -71,14 +71,15 @@ On a normal Codex `Stop`, the hook returns valid JSON with
 1. call `get_prioritized_ideas`;
 2. orient with `get_idea_context`;
 3. implement and verify the selected actionable idea;
-4. record evidence and status with `update_idea` or `addReflection`; and
+4. record status and evidence (status comment) with `update_idea`, and reflect
+   on each parent connection's hypothesis; and
 5. reprioritize instead of substituting Markdown planning for graph state.
 
 Human waiting is an extreme-case, two-stage protocol. When Codex first believes
 progress requires human judgment, authorization, credentials, or an
 institutionally human action, it states the blocker and ends with
 `[AIMPARENCY_REQUEST_HUMAN]`. The hook does **not** yield. It creates one more
-turn challenging Codex to step back, inspect graph hygiene and reflections,
+turn challenging Codex to step back, inspect graph hygiene and connection reflections,
 decompose abstract ideas, dream up hypotheses, and try safe reversible work.
 Only if that broader search still proves the human action indispensable may
 Codex restate the exact request and end with

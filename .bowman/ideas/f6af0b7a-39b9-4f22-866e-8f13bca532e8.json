@@ -2,7 +2,6 @@
   "id": "f6af0b7a-39b9-4f22-866e-8f13bca532e8",
   "text": "Build a hypothesis-driven strategic planning engine",
   "description": "Turn the idea graph into an engine that can generate, compare, execute, and revise complex hypotheses and action plans over long horizons. This should make Aimparency more than a task tracker: it should become a strategic cortex for autonomous systems.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "asi",

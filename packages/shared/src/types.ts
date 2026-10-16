@@ -14,7 +14,7 @@ export const ConnectionSchema = z.object({
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
   hypothesis: z.string().optional(), // Why the child is expected to contribute to the parent
-  evaluation: z.string().optional() // How that turned out, once the child is settled
+  reflection: z.string().optional() // How that turned out, once the child is settled
 });
 
 export type Connection = z.infer<typeof ConnectionSchema>;
@@ -32,29 +32,15 @@ export const RepoConnectionSchema = z.object({
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
   hypothesis: z.string().optional(),
-  evaluation: z.string().optional()
+  reflection: z.string().optional()
 });
 
 export type RepoConnection = z.infer<typeof RepoConnectionSchema>;
-
-// Reflection pattern: Periodic self-evaluation
-export const ReflectionSchema = z.object({
-  date: z.number(), // Unix timestamp
-  context: z.string(), // What were you trying to achieve?
-  outcome: z.string(), // What actually happened?
-  effectiveness: z.string(), // How well did your approach work?
-  lesson: z.string(), // What would you do differently next time?
-  pattern: z.string().optional() // Does this relate to past experiences?
-});
-
-export type Reflection = z.infer<typeof ReflectionSchema>;
 
 export const IdeaSchema = z.object({
   id: z.string().uuid(),
   text: z.string(),
   description: z.string().optional(),
-  reflection: z.string().optional(), // Notes on how this idea went (simple text)
-  reflections: z.array(ReflectionSchema).default([]), // Structured periodic self-evaluations
   archived: z.boolean().default(false),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional(), // Custom node color (hex); null/absent clears it. Overrides status/priority color when set
   tags: z.array(z.string()).default([]),
@@ -93,7 +79,7 @@ export const IdeaStateSchema = z.object({
   key: z.string().regex(/^[a-z0-9-]+$/),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
   ongoing: z.boolean().optional(), // Informational: whether a state counts as ongoing comes from INITIAL_STATES by key (isOngoingState)
-  promptsEvaluation: z.boolean().optional() // Entering this status asks to evaluate the idea's parent connections
+  promptsReflection: z.boolean().optional() // Entering this status asks to reflect on the hypotheses of the idea's parent connections
 });
 
 // Portable linked-repo entry — committed in meta.json so the link travels with

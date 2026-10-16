@@ -22,7 +22,7 @@ async function copyFixture(): Promise<string> {
 
 const readJson = async (file: string) => JSON.parse(await fs.readFile(file, 'utf8'));
 
-test('connection keys are renamed on idea and repo edges; a key already under its new name wins', () => {
+test('explanation becomes hypothesis on idea and repo edges; a key already under its new name wins', () => {
   const migrated = migrateConnectionKeys({
     id: 'x',
     reflection: 'idea-level reflection stays',
@@ -34,7 +34,7 @@ test('connection keys are renamed on idea and repo edges; a key already under it
   }) as any;
 
   assert.deepStrictEqual(migrated.supportingConnections, [
-    { ideaId: 'a', hypothesis: 'old', evaluation: 'went fine' },
+    { ideaId: 'a', hypothesis: 'old', reflection: 'went fine' },
     { ideaId: 'b', hypothesis: 'written by new code' }
   ]);
   assert.deepStrictEqual(migrated.supportingRepos, [{ repoId: 'r', hypothesis: 'repo reason' }]);
@@ -49,6 +49,8 @@ test('settling statuses prompt evaluation unless the project already configured 
 
   const configured = { statuses: [{ key: 'implemented', promptsEvaluation: false }, { key: 'cancelled' }] };
   assert.deepStrictEqual(addEvaluationPrompts(configured), configured);
+  const upgraded = { statuses: [{ key: 'implemented', promptsReflection: true }, { key: 'cancelled' }] };
+  assert.deepStrictEqual(addEvaluationPrompts(upgraded), upgraded);
 });
 
 test('the v3 fixture migrates, a second run changes nothing, and legacy keys brought back are pending again', async () => {
@@ -59,8 +61,8 @@ test('the v3 fixture migrates, a second run changes nothing, and legacy keys bro
   await migrateConnectionHypothesis(bowman);
   const root = await readJson(rootFile);
   assert.deepStrictEqual(
-    root.supportingConnections.map(({ hypothesis, evaluation }: any) => ({ hypothesis, evaluation })),
-    [{ hypothesis: 'main path', evaluation: undefined }, { hypothesis: 'side path', evaluation: 'turned out minor' }]
+    root.supportingConnections.map(({ hypothesis, reflection }: any) => ({ hypothesis, reflection })),
+    [{ hypothesis: 'main path', reflection: undefined }, { hypothesis: 'side path', reflection: 'turned out minor' }]
   );
   const meta = await readJson(path.join(bowman, 'meta.json'));
   assert.deepStrictEqual(

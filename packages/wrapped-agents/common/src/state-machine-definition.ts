@@ -117,7 +117,7 @@ export const revisit: Action = {
 
 export const wrapUp: Action = {
   name: 'wrap_up',
-  description: 'Prompt the worker to update idea status/comment and reflection only after the current repo state has been freshly checked, then do a short deletion/reduction pass before committing.',
+  description: 'Prompt the worker to update idea status/comment and parent-connection reflections only after the current repo state has been freshly checked, then do a short deletion/reduction pass before committing.',
   parameters: [
     { name: 'text', description: 'Optional extra wrap-up guidance', required: false }
   ],
@@ -232,7 +232,7 @@ export const working: State = {
 
 export const wrappingUp: State = {
   name: 'WRAPPING_UP',
-  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never select an option yourself. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, idea updates/reflection, a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
+  instructions: 'You are watching a coding agent wrapping up work. Treat fresh repo state as authoritative; do not rely on inherited claims that tests passed, commits happened, or a batch is ready. If the worker is visibly waiting for input or showing a choice menu, use choice to stop automation and request human authorization; never select an option yourself. If more implementation is needed, use revisit. Otherwise guide the worker through a fresh verification of current repo state, careful batch selection, idea updates (status comment, parent-connection reflections), a short deletion/reduction pass to remove dead code and simplify the diff, then commit, then return to exploring. Broad metadata-only staging or unclear mixed batches are reasons to revisit, not to commit.',
   color: '#ffe5a3',  // Pastel yellow - completion phase
   actions: [
     { action: choice, targetState: 'WRAPPING_UP' },

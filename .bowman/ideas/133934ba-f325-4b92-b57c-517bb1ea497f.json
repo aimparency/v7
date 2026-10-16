@@ -1,7 +1,6 @@
 {
   "id": "133934ba-f325-4b92-b57c-517bb1ea497f",
   "text": "Develop Aligned Autonomous Will",
-  "reflections": [],
   "archived": false,
   "tags": [
     "vision",
@@ -25,7 +24,7 @@
       "weight": 1
     },
     {
-      "ideaId": "cf86e8af-afe6-4df6-9f75-501b7a0ac673",
+      "ideaId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
       "relativePosition": [
         -2.4854876721694255,
         0.26898147053990545
@@ -47,7 +46,7 @@
         3.8666067517452336
       ],
       "weight": 1,
-      "evaluation": "Showed that an agent can tune strategy parameters in simulation; no real-world value, since the parent direction was cancelled."
+      "reflection": "Showed that an agent can tune strategy parameters in simulation; no real-world value, since the parent direction was cancelled."
     },
     {
       "ideaId": "69321b93-d540-45a9-9a25-8f2d5254d43c",

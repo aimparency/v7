@@ -2,7 +2,6 @@
   "id": "834bd5e2-cbec-4b91-aeea-05712e52d3f0",
   "text": "update_ideas: batch several idea updates in one MCP call",
   "description": "From MCP-agent feedback (2026-10-16): the end of a work chunk changes 3-5 ideas (status, reflection, links), one call each. update_ideas takes an array of update_idea entries, applies them in order through the same handler, stops at the first failure and reports what was applied.",
-  "reflections": [],
   "archived": false,
   "color": "#4a2d66",
   "tags": [

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/aimparency/v7/blob/main/protocol/schemas/phase.schema.json",
   "title": "Aimparency phase",
-  "description": ".bowman/phases/<id>.json: one phase and the ideas committed to it. Data model version 4.",
+  "description": ".bowman/phases/<id>.json: one phase and the ideas committed to it. Data model version 5.",
   "type": "object",
   "properties": {
     "id": {

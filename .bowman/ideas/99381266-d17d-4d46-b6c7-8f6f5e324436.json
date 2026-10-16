@@ -2,7 +2,6 @@
   "id": "99381266-d17d-4d46-b6c7-8f6f5e324436",
   "text": "Improve the supervisor flow: post global instructions only once. Then situation and available actions per message",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

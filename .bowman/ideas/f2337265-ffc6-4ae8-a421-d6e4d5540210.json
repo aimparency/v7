@@ -2,36 +2,6 @@
   "id": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
   "text": "list view",
   "description": "",
-  "reflections": [
-    {
-      "date": 1785605744347,
-      "context": "The autonomy challenge stepped back from the recent hook scope and selected graph hygiene. The dashboard identified list view as the sole mega-parent with 58 direct children.",
-      "outcome": "Reviewed all 58 children, the catch-all mission context, and 47 embedding suggestions. Applied only four high-confidence structural reparentings: two cross-boundary movement ideas to the phase-system refactor, list multi-selection to multiple-idea actions, and priority graph coloring to custom idea colors. Existing additional parentage was preserved.",
-      "effectiveness": "Direct child count fell from 58 to 54. check_consistency reports valid=true with zero errors/issues. Every new parent was already a descendant of list view, preserving root reachability while making the specific capability clusters more legible.",
-      "lesson": "Embedding suggestions are useful triage but margins were often weak; graph hygiene should prefer a small number of semantically exact moves over bulk automated rewiring. Continue incrementally with explicit structural explanations."
-    },
-    {
-      "date": 1785605794278,
-      "context": "Second incremental mega-parent hygiene pass, focusing on a pre-existing keyboard-shortcuts subparent rather than embedding similarity alone.",
-      "outcome": "Moved six exact keyboard interaction leaves—Vim traversal, cross-phase j/k focus, shortcut suppression in inputs, boundary scrolling, project shortcuts, and modal Escape propagation—from list view to keyboard shortcuts, with an explanation on every new edge.",
-      "effectiveness": "The list view catch-all fell from 54 to 48 direct children (58 to 48 across both passes). Graph consistency remains valid with zero errors or issues. All moved ideas remain reachable through keyboard shortcuts, which itself remains under list view.",
-      "lesson": "Existing capability parents provide a reliable decomposition vocabulary. Continue clustering only when the feature-to-capability relationship is explicit; do not optimize merely for falling below a dashboard threshold."
-    },
-    {
-      "date": 1785605833811,
-      "context": "Third incremental catch-all decomposition pass, using the existing ordered phase-system refactor as the structural parent.",
-      "outcome": "Moved five exact phase capabilities—empty-phase traversal, next-phase focus, cross-phase idea movement, reusable parent-phase selection, and fuzzy phase lookup—under the phase-system refactor with explicit edge rationales.",
-      "effectiveness": "The list view catch-all fell from 48 to 43 direct children (58 to 43 overall). check_consistency remains valid with zero errors/issues and reachability remains through the phase-system child.",
-      "lesson": "Historical implementation ideas become more useful evidence when nested under the architectural capability they realized. Small verified batches keep semantic judgment auditable."
-    },
-    {
-      "date": 1785606612996,
-      "context": "Fourth incremental catch-all decomposition pass, consolidating historical connection creation, consistency, editing, explanation, share, and multi-parent display work.",
-      "outcome": "Moved six connection-related ideas beneath the completed connection contribution-percentage and explanation capability. Preserved the list-edit idea's independent second parent and attached explicit structural explanations to every new edge.",
-      "effectiveness": "The list view catch-all fell from 43 to 37 direct children (58 to 37 overall). check_consistency remains valid with zero errors/issues. The collapse-candidate count also fell by one because the connection capability now owns its broader realized implementation history.",
-      "lesson": "A verified integrative feature idea is a better home for its prerequisite and follow-on implementation evidence than a generic screen-level parent, provided independent parent relationships are retained."
-    }
-  ],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -378,7 +348,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "",
+    "comment": "Outcome: Reviewed all 58 children, the catch-all mission context, and 47 embedding suggestions. Applied only four high-confidence structural reparentings: two cross-boundary movement ideas to the phase-system refactor, list multi-selection to multiple-idea actions, and priority graph coloring to custom idea colors. Existing additional parentage was preserved. Effectiveness: Direct child count fell from 58 to 54. check_consistency reports valid=true with zero errors/issues. Every new parent was already a descendant of list view, preserving root reachability while making the specific capability clusters more legible. Lesson: Embedding suggestions are useful triage but margins were often weak; graph hygiene should prefer a small number of semantically exact moves over bulk automated rewiring. Continue incrementally with explicit structural explanations.\n\nOutcome: Moved six exact keyboard interaction leaves—Vim traversal, cross-phase j/k focus, shortcut suppression in inputs, boundary scrolling, project shortcuts, and modal Escape propagation—from list view to keyboard shortcuts, with an explanation on every new edge. Effectiveness: The list view catch-all fell from 54 to 48 direct children (58 to 48 across both passes). Graph consistency remains valid with zero errors or issues. All moved ideas remain reachable through keyboard shortcuts, which itself remains under list view. Lesson: Existing capability parents provide a reliable decomposition vocabulary. Continue clustering only when the feature-to-capability relationship is explicit; do not optimize merely for falling below a dashboard threshold.\n\nOutcome: Moved five exact phase capabilities—empty-phase traversal, next-phase focus, cross-phase idea movement, reusable parent-phase selection, and fuzzy phase lookup—under the phase-system refactor with explicit edge rationales. Effectiveness: The list view catch-all fell from 48 to 43 direct children (58 to 43 overall). check_consistency remains valid with zero errors/issues and reachability remains through the phase-system child. Lesson: Historical implementation ideas become more useful evidence when nested under the architectural capability they realized. Small verified batches keep semantic judgment auditable.\n\nOutcome: Moved six connection-related ideas beneath the completed connection contribution-percentage and explanation capability. Preserved the list-edit idea's independent second parent and attached explicit structural explanations to every new edge. Effectiveness: The list view catch-all fell from 43 to 37 direct children (58 to 37 overall). check_consistency remains valid with zero errors/issues. The collapse-candidate count also fell by one because the connection capability now owns its broader realized implementation history. Lesson: A verified integrative feature idea is a better home for its prerequisite and follow-on implementation evidence than a generic screen-level parent, provided independent parent relationships are retained.",
     "date": 1779090090360
   },
   "intrinsicValue": 10,

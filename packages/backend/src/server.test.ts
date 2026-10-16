@@ -954,7 +954,7 @@ test('connectIdeas - connects with relative position', async () => {
   assert.deepEqual(updatedParent.supportingConnections[0].relativePosition, relativePosition);
 });
 
-test('idea.update - persists hypothesis and evaluation on supportingConnections', async () => {
+test('idea.update - persists hypothesis and reflection on supportingConnections', async () => {
   const parentResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: { text: 'Parent', status: { state: 'open', comment: '', date: Date.now() } }
@@ -976,13 +976,13 @@ test('idea.update - persists hypothesis and evaluation on supportingConnections'
     projectPath: testProjectPath,
     ideaId: parentResult.id,
     idea: {
-      supportingConnections: [{ ...conn, hypothesis: 'because it helps', evaluation: 'it did' }]
+      supportingConnections: [{ ...conn, hypothesis: 'because it helps', reflection: 'it did' }]
     }
   });
 
   const after = await caller.idea.get({ projectPath: testProjectPath, ideaId: parentResult.id });
   assert.strictEqual(after.supportingConnections[0]!.hypothesis, 'because it helps');
-  assert.strictEqual(after.supportingConnections[0]!.evaluation, 'it did');
+  assert.strictEqual(after.supportingConnections[0]!.reflection, 'it did');
 });
 
 test('idea status must be one of the project statuses (or archived)', async () => {
@@ -1024,11 +1024,11 @@ test('idea.update - persists custom color', async () => {
   assert.strictEqual(fetchedIdea.color, '#00ff00');
 });
 
-test('idea.update - persists edit-modal reflection and archive fields', async () => {
+test('idea.update - persists status comment and archive fields', async () => {
   const ideaResult = await caller.idea.createFloatingIdea({
     projectPath: testProjectPath,
     idea: {
-      text: 'Reflection test',
+      text: 'Archive test',
       status: { state: 'implemented', comment: '', date: Date.now() }
     }
   });
@@ -1037,13 +1037,14 @@ test('idea.update - persists edit-modal reflection and archive fields', async ()
     projectPath: testProjectPath,
     ideaId: ideaResult.id,
     idea: {
-      reflection: 'This worked better after reducing scope.',
+      status: { comment: 'This worked better after reducing scope.' },
       archived: true
     }
   });
 
   const fetchedIdea = await caller.idea.get({ projectPath: testProjectPath, ideaId: ideaResult.id });
-  assert.strictEqual(fetchedIdea.reflection, 'This worked better after reducing scope.');
+  assert.strictEqual(fetchedIdea.status.comment, 'This worked better after reducing scope.');
+  assert.strictEqual(fetchedIdea.status.state, 'implemented');
   assert.strictEqual(fetchedIdea.archived, true);
 });
 
@@ -1072,32 +1073,12 @@ test('idea.merge - preserves source knowledge and archives it consistently', asy
   await caller.idea.update({
     projectPath: testProjectPath,
     ideaId: target.id,
-    idea: { reflection: 'Target legacy reflection' }
+    idea: { status: { comment: 'Target evidence' } }
   });
   await caller.idea.update({
     projectPath: testProjectPath,
     ideaId: source.id,
-    idea: { reflection: 'Source legacy reflection' }
-  });
-  await caller.idea.addReflection({
-    projectPath: testProjectPath,
-    ideaId: target.id,
-    reflection: {
-      context: 'target context',
-      outcome: 'target outcome',
-      effectiveness: 'target effectiveness',
-      lesson: 'target lesson'
-    }
-  });
-  await caller.idea.addReflection({
-    projectPath: testProjectPath,
-    ideaId: source.id,
-    reflection: {
-      context: 'source context',
-      outcome: 'source outcome',
-      effectiveness: 'source effectiveness',
-      lesson: 'source lesson'
-    }
+    idea: { status: { comment: 'Source evidence' } }
   });
   const phase = await caller.phase.create({
     projectPath: testProjectPath,
@@ -1116,15 +1097,13 @@ test('idea.merge - preserves source knowledge and archives it consistently', asy
   });
 
   assert.strictEqual(result.success, true);
-  assert.strictEqual(result.reflectionsCopied, 1);
+  assert.strictEqual(result.commentMerged, true);
 
   const merged = await caller.idea.get({ projectPath: testProjectPath, ideaId: target.id });
   assert.deepEqual(merged.supportedIdeas, [parent.id]);
   assert.deepEqual(merged.committedIn, [phase.id]);
   assert.deepEqual(merged.tags, ['canonical', 'duplicate']);
-  assert.match(merged.reflection ?? '', /Target legacy reflection/);
-  assert.match(merged.reflection ?? '', /Source legacy reflection/);
-  assert.strictEqual(merged.reflections.length, 2);
+  assert.strictEqual(merged.status.comment, 'Target evidence\n\nSource evidence');
 
   const mergedParent = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
   assert.deepEqual(mergedParent.supportingConnections.map((connection) => connection.ideaId), [target.id]);

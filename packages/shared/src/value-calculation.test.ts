@@ -12,7 +12,6 @@ function createMockIdea(id: string, intrinsicValue: number, cost: number, durati
     duration: duration ?? 1, // Zero means an immediate return
     costVariance: 0,
     valueVariance: 0,
-    reflections: [],
     status: { state: 'open', comment: '', date: Date.now() },
     supportingConnections: [],
     supportedIdeas: [],

@@ -2,8 +2,6 @@
   "id": "0e5cce7e-7090-444f-92a6-706f02340b46",
   "text": "Make clean-clone local startup reliable",
   "description": "A new user should be able to clone the repo, run pnpm install, run pnpm dev or pnpm start, and get a working local service plus browser UI without manual scavenger hunting. Includes build-mode startup, background service wiring, and sensible port behavior.",
-  "reflection": "Clean-clone verification on this machine, 2026-10-15, at 43bc4ea (post npm→pnpm): git clone → pnpm install (3m, node-pty and onnxruntime native builds OK) → pnpm build green → pnpm build:optional green → pnpm validate:local-runtime PASS (default, occupied-port fallback, voice scenarios). The first pnpm check FAILED 24/25: 5 backend search/embedding tests timed out at 5s while the bge-small model downloaded into a cold cache (concurrent downloads also left partial model.onnx.tmp files). Fixed in 0ee4507 with a backend vitest globalSetup that warms the model once outside any timeout; cold-cache rerun in the clone: 105/105, one clean model.onnx. Main repo pnpm check 25/25. Not done by the agent: actually running pnpm start / pnpm dev from the clone and opening the UI (AGENTS.md forbids the agent starting servers).",
-  "reflections": [],
   "archived": false,
   "tags": [
     "release",
@@ -79,7 +77,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Clean clone install/build/validate/check verified; first-run test failure found and fixed (0ee4507). Remaining for Felix: run pnpm start in a fresh clone once and open the UI.",
+    "comment": "Clean clone install/build/validate/check verified; first-run test failure found and fixed (0ee4507). Remaining for Felix: run pnpm start in a fresh clone once and open the UI.\n\nClean-clone verification on this machine, 2026-10-15, at 43bc4ea (post npm→pnpm): git clone → pnpm install (3m, node-pty and onnxruntime native builds OK) → pnpm build green → pnpm build:optional green → pnpm validate:local-runtime PASS (default, occupied-port fallback, voice scenarios). The first pnpm check FAILED 24/25: 5 backend search/embedding tests timed out at 5s while the bge-small model downloaded into a cold cache (concurrent downloads also left partial model.onnx.tmp files). Fixed in 0ee4507 with a backend vitest globalSetup that warms the model once outside any timeout; cold-cache rerun in the clone: 105/105, one clean model.onnx. Main repo pnpm check 25/25. Not done by the agent: actually running pnpm start / pnpm dev from the clone and opening the UI (AGENTS.md forbids the agent starting servers).",
     "date": 1792059350625
   },
   "intrinsicValue": 0,

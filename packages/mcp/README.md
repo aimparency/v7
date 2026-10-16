@@ -1,6 +1,6 @@
 # Aimparency MCP Server
 
-Model Context Protocol (MCP) server for Aimparency. It lets external LLM tooling interact with ideas, phases, project metadata, and reflections through the local Aimparency backend.
+Model Context Protocol (MCP) server for Aimparency. It lets external LLM tooling interact with ideas, phases, project metadata, and hypotheses and their reflections through the local Aimparency backend.
 
 This package is an optional integration. The main open source product story is still:
 
@@ -120,9 +120,8 @@ Tools allow the LLM to modify state. All tools require `projectPath` parameter.
 
 **Idea Operations:**
 - `create-idea` - Create new idea with text, status, relationships
-- `update-idea` - Update idea text, status, or relationships
+- `update-idea` - Update idea text, status (its comment holds the evidence), or relationships; a parent link carries a hypothesis and, once the child is settled, a reflection on it
 - `delete-idea` - Delete idea (removes from all phases)
-- `addReflection` - Add structured reflection to completed idea (context, outcome, effectiveness, lesson, pattern)
 
 **Phase Operations:**
 - `create-phase` - Create new phase with name, dates, parent
@@ -145,17 +144,12 @@ create-idea({
   status: { state: "open", comment: "" }
 })
 
-// Add reflection after completing an idea
-addReflection({
+// Settle it: evidence in the status comment, a reflection on the parent's hypothesis
+update-idea({
   projectPath: "/home/user/my-project",
   ideaId: "some-uuid",
-  reflection: {
-    context: "Implemented JWT authentication with refresh tokens",
-    outcome: "Successfully deployed, all tests passing",
-    effectiveness: "Approach worked well, though refresh token rotation was tricky",
-    lesson: "Should have reviewed OAuth 2.0 best practices before starting",
-    pattern: "Similar to previous API authentication work in project X"
-  }
+  status: { state: "implemented", comment: "JWT with refresh tokens deployed; auth tests pass" },
+  addSupportedIdeas: [{ ideaId: "parent-uuid", reflection: "Held: login no longer blocks the beta" }]
 })
 ```
 

@@ -33,7 +33,7 @@ When idle or unsure what to do:
 
 **REFLECTING (lines 21, 49-76):**
 ```
-6. Reflect on completion: use addReflection
+6. Reflect on completion: evidence in the status comment, a reflection on each parent connection's hypothesis
 ...
 [Entire reflection pattern section]
 ```
@@ -260,7 +260,7 @@ Optional:
 - create_improvement_idea: Create idea to fix limitation
 
 Available actions:
-- add_reflection: Use addReflection MCP tool (provide ideaId, reflection object)
+- add_reflection: update_idea addSupportedIdeas [{ ideaId: <parent>, reflection }]
 - identify_limitation: Log limitation (provide description, severity)
 - create_improvement_idea: Create meta-idea (provide text, addresses)
 - continue: Reflection complete, ready for next work

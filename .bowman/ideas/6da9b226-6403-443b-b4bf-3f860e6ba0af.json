@@ -2,15 +2,6 @@
   "id": "6da9b226-6403-443b-b4bf-3f860e6ba0af",
   "text": "Loop hook: commit graph and code together; park human questions as unclear",
   "description": "From MCP-agent feedback (2026-10-16): graph updates landed in separate 'Aimparency graph updates' commits, and agents did not know how to park a blocking design question. The Stop hook message and install protocol now say: commit the code with the .bowman idea files it changed in one commit (git then links idea↔code, so no commit-SHA field is needed), leave others' changes unstaged; an idea needing a human decision goes to unclear (human-dependent for a human action) with the question in the status comment and leaves the priority list.",
-  "reflections": [
-    {
-      "date": 1792122745937,
-      "context": "The MCP-agent feedback also claimed .bowman/ideas files change while the agent does not touch the graph (writes on reads or timestamp updates).",
-      "outcome": "Not reproduced: get_idea_context and get_prioritized_ideas against this repo changed no file under .bowman (find -newer) and left git status identical.",
-      "effectiveness": "Rules out the read path for these tools; the agent's modified files were most likely edits by another client (UI, another agent) sharing the working tree.",
-      "lesson": "With shared working trees, unexplained .bowman changes usually come from a parallel writer; same-commit staging of only one's own files keeps that noise out of commits."
-    }
-  ],
   "archived": false,
   "color": "#2e2d66",
   "tags": [
@@ -24,7 +15,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "scripts/hooks/codex-continue-on-stop.sh + packages/mcp/src/tools/hooks.ts; hook contract test PASS, mcp 47/47. Felix to confirm the wording.",
+    "comment": "scripts/hooks/codex-continue-on-stop.sh + packages/mcp/src/tools/hooks.ts; hook contract test PASS, mcp 47/47. Felix to confirm the wording.\n\nOutcome: Not reproduced: get_idea_context and get_prioritized_ideas against this repo changed no file under .bowman (find -newer) and left git status identical. Effectiveness: Rules out the read path for these tools; the agent's modified files were most likely edits by another client (UI, another agent) sharing the working tree. Lesson: With shared working trees, unexplained .bowman changes usually come from a parallel writer; same-commit staging of only one's own files keeps that noise out of commits.",
     "date": 1792122084169
   },
   "intrinsicValue": 0,

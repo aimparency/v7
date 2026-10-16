@@ -2,7 +2,6 @@
   "id": "c254d8bd-d7ba-494e-8a97-8c46636fdb2f",
   "text": "LLM integration",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -39,7 +38,7 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Implemented LLM integration branches are done; the remaining branch requires human-provided provider access/configuration.",
+    "comment": "Implemented LLM integration branches are done; the remaining branch requires human-provided provider access/configuration.\n\nStatus reconciliation on 2026-07-30 found two direct LLM-integration children done and the remaining child human-dependent. Reclassified the umbrella from open to human-dependent so it no longer masquerades as an actionable code leaf.",
     "date": 1785399101492
   },
   "intrinsicValue": 0,
@@ -47,6 +46,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Status reconciliation on 2026-07-30 found two direct LLM-integration children done and the remaining child human-dependent. Reclassified the umbrella from open to human-dependent so it no longer masquerades as an actionable code leaf."
+  "valueVariance": 0
 }

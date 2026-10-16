@@ -260,15 +260,13 @@ export async function ideaHistorySearch(projectPath: string, query: string, limi
     const fields = {
       text: String(idea.text ?? ''),
       description: String(idea.description ?? ''),
-      reflection: [
-        String(idea.reflection ?? ''),
-        ...(Array.isArray(idea.reflections)
-          ? idea.reflections.flatMap((entry: any) => [
-              entry?.context, entry?.outcome, entry?.effectiveness, entry?.lesson, entry?.pattern
-            ].filter(Boolean).map(String))
-          : [])
-      ].join('\n'),
-      status: String(idea.status?.comment ?? '')
+      status: String(idea.status?.comment ?? ''),
+      // Hypotheses about its children and the reflections testing them.
+      connections: (Array.isArray(idea.supportingConnections) ? idea.supportingConnections : [])
+        .flatMap((connection: any) => [connection?.hypothesis, connection?.reflection])
+        .filter(Boolean)
+        .map(String)
+        .join('\n')
     };
     const matchedFields = Object.entries(fields)
       .filter(([, value]) => {

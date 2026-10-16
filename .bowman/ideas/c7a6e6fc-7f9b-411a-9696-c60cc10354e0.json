@@ -2,8 +2,6 @@
   "id": "c7a6e6fc-7f9b-411a-9696-c60cc10354e0",
   "text": "agent loop UI",
   "description": "",
-  "reflection": "Status reconciliation on 2026-07-30 preserved the user’s prior non-acceptance. Because the remaining scope is conceptual/product-design judgment rather than a specified engineering leaf, the idea is human-dependent instead of autonomously actionable.",
-  "reflections": [],
   "archived": false,
   "color": null,
   "tags": [],
@@ -51,7 +49,7 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "Basic loop UI, shortcuts, and menus exist, but the user explicitly found the product model underdeveloped. Further work requires human product judgment about the intended core workflows before implementation.",
+    "comment": "Basic loop UI, shortcuts, and menus exist, but the user explicitly found the product model underdeveloped. Further work requires human product judgment about the intended core workflows before implementation.\n\nStatus reconciliation on 2026-07-30 preserved the user’s prior non-acceptance. Because the remaining scope is conceptual/product-design judgment rather than a specified engineering leaf, the idea is human-dependent instead of autonomously actionable.",
     "date": 1785399224155
   },
   "intrinsicValue": 0,

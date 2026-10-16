@@ -2,7 +2,6 @@
   "id": "250fb1aa-f0a7-4ef8-870c-0abad9b98892",
   "text": "Open any public Git repo's idea graph read-only in the normal UI",
   "description": "Paste a Git URL (GitHub or any host) and browse that project's .bowman graph in the ordinary Aimparency UI, marked read-only: a visible 'read-only' hint, and every edit attempt answered with a warning instead of an editor (Felix 2026-10-15: no separate viewer). Purpose: a 30-second demo and an easy way to show and explore real graphs, which supports getting outside users. Honest limit: Aimparency is local-first, so the person viewing still runs Aimparency; a hosted public viewer would be a separate decision (SaaS was cancelled).",
-  "reflections": [],
   "archived": false,
   "color": "#695633",
   "tags": [

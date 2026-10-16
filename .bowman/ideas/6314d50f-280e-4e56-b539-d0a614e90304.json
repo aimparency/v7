@@ -2,8 +2,6 @@
   "id": "6314d50f-280e-4e56-b539-d0a614e90304",
   "text": "connection-editing in list view (same as side panel)",
   "description": "",
-  "reflection": "Nested idea rows now show a compact connection-edit affordance when their parent relation is explicit. It opens the existing ConnectionDetailsModal with the exact parent/child IDs, reusing the same contribution-share, explanation, and persistence logic as graph workflows. Verification: Idea component tests 7/7, complete frontend suite 198/198, production build/type-check, and git diff --check passed.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -14,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and internally verified; needs visual acceptance in list view because no frontend runtime is currently running.",
+    "comment": "Implemented and internally verified; needs visual acceptance in list view because no frontend runtime is currently running.\n\nNested idea rows now show a compact connection-edit affordance when their parent relation is explicit. It opens the existing ConnectionDetailsModal with the exact parent/child IDs, reusing the same contribution-share, explanation, and persistence logic as graph workflows. Verification: Idea component tests 7/7, complete frontend suite 198/198, production build/type-check, and git diff --check passed.",
     "date": 1784893413714
   },
   "intrinsicValue": 0,

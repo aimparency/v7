@@ -2,8 +2,6 @@
   "id": "bd1cefe0-6895-4247-b6fd-319972c8bd6e",
   "text": "Partial/lazy graph rendering (dotted stubs, load on click)",
   "description": "General capability (also valuable for large single repos): support graphs too big to fully load. Unloaded ideas render as dotted-outline stubs with no loaded info. Clicking a stub loads the idea and reveals its relatives as new dotted stubs. The store holds a mix of loaded ideas and stubs; value calc treats stubs as boundary leaves. This is the substrate cross-repo rendering builds on (externals are just stubs from another repo).",
-  "reflection": "Halted on 2026-07-30 according to the idea’s existing benchmark-first decision. Both current implementation children are done; speculative architecture should not be selected without evidence.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "graph",
@@ -35,7 +33,7 @@
   "committedIn": [],
   "status": {
     "state": "halted",
-    "comment": "The useful phase-filter stub slice is implemented. True storage/network lazy loading is intentionally deferred until measured graph scale demonstrates a bottleneck.",
+    "comment": "The useful phase-filter stub slice is implemented. True storage/network lazy loading is intentionally deferred until measured graph scale demonstrates a bottleneck.\n\nHalted on 2026-07-30 according to the idea’s existing benchmark-first decision. Both current implementation children are done; speculative architecture should not be selected without evidence.",
     "date": 1785399346590
   },
   "intrinsicValue": 0,

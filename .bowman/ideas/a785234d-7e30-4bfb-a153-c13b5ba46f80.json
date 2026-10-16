@@ -2,7 +2,6 @@
   "id": "a785234d-7e30-4bfb-a153-c13b5ba46f80",
   "text": "Serialize phase commitment writes so concurrent creates don't drop commitments",
   "description": "Pressing Enter several times while the backend was busy fired 4 concurrent createIdeaInPhase calls. commitIdeaToPhase read the phase file, pushed its id and wrote it back without a lock, so only the last write survived. The other 3 ideas still had committedIn set but weren't in the phase's commitments, so search navigation silently did nothing for them. Fix: per-file in-process lock (withFileLock in storage/json.ts) around the phase and idea read-modify-writes in commitIdeaToPhase/removeIdeaFromPhase.",
-  "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [],

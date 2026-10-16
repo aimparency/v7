@@ -2,7 +2,6 @@
   "id": "300f5452-f7e9-452d-9f3e-078c988e8af8",
   "text": "Decide which .bowman/runtime files should stay gitignored versus become durable project state",
   "description": "Watchdog runtime state is now written under .bowman/runtime and the default .bowman gitignore now ignores runtime/. Decide whether all runtime files should remain local operational state, or whether some future autonomy/policy/audit files should become durable and potentially commit-worthy.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "autonomy",

@@ -2,15 +2,6 @@
   "id": "8f002aaf-7628-4b04-a814-8c52db56b6f7",
   "text": "Get Aimparency used by outside developers and collect their feedback",
   "description": "The repo is public (ISC) but has 0 stars, 0 user interviews and no outside users; Build Week showed a legible user benefit matters. Lower the entry cost (zero-setup init in any repo, importing existing GitHub issues), reach a first cohort of about five external repositories, and capture their feedback in the graph. Also supplies the user evidence the Prototype Fund application lacks (user-research kit exists, tracker empty).",
-  "reflections": [
-    {
-      "date": 1792083995528,
-      "context": "Autonomous pass 2026-10-15 after git-URL viewing, issue import and CI landed.",
-      "outcome": "Added a zero-setup entry: `pnpm dev <repo path or git url>` prints an open link (ddc44bbc, review). With that, lowering the entry cost is covered as far as code can go without real users: open by path, open read-only by Git URL, ?repo= links, issue import, protocol spec.",
-      "effectiveness": "Each piece is verified locally, but none has been tried by an outside developer, so its real effect on adoption is unknown.",
-      "lesson": "The bottleneck has moved from product to contact. The next step is to invite about five maintainers in the way the relationship principle describes (why this person, what it offers them, their choice). That needs Felix's voice and permission, so further entry-cost features should wait for first user feedback rather than be guessed."
-    }
-  ],
   "archived": false,
   "color": "#66562d",
   "tags": [
@@ -62,7 +53,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Felix 2026-10-16: he will try it at Commons Hub.",
+    "comment": "Felix 2026-10-16: he will try it at Commons Hub.\n\nOutcome: Added a zero-setup entry: `pnpm dev <repo path or git url>` prints an open link (ddc44bbc, review). With that, lowering the entry cost is covered as far as code can go without real users: open by path, open read-only by Git URL, ?repo= links, issue import, protocol spec. Effectiveness: Each piece is verified locally, but none has been tried by an outside developer, so its real effect on adoption is unknown. Lesson: The bottleneck has moved from product to contact. The next step is to invite about five maintainers in the way the relationship principle describes (why this person, what it offers them, their choice). That needs Felix's voice and permission, so further entry-cost features should wait for first user feedback rather than be guessed.",
     "date": 1792122466020
   },
   "intrinsicValue": 0,

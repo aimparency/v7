@@ -2,7 +2,6 @@
   "id": "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
   "text": "Persist autonomy state in .bowman instead of the browser session",
   "description": "Move long-running autonomy state toward durable local storage in .bowman: identity, constitution/policy, runtime objectives, heartbeat/scheduler state, and recovery metadata. The frontend should observe and control that state, not own it.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "autonomy",
@@ -99,7 +98,7 @@
   ],
   "status": {
     "state": "human-dependent",
-    "comment": "All implementation children are done. Felix must decide which runtime identity/policy/state files remain machine-local and gitignored versus durable committed project state.",
+    "comment": "All implementation children are done. Felix must decide which runtime identity/policy/state files remain machine-local and gitignored versus durable committed project state.\n\nStatus reconciliation on 2026-07-30 found nine implementation children done and the sole remaining child human-dependent. Runtime persistence, backend ownership, UI ownership, supervisor hydration, and policy behavior are implemented; only the commit-versus-local policy decision remains.",
     "date": 1785399273062
   },
   "intrinsicValue": 0,
@@ -107,6 +106,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Status reconciliation on 2026-07-30 found nine implementation children done and the sole remaining child human-dependent. Runtime persistence, backend ownership, UI ownership, supervisor hydration, and policy behavior are implemented; only the commit-versus-local policy decision remains."
+  "valueVariance": 0
 }

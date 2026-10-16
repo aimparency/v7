@@ -2,7 +2,6 @@
   "id": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
   "text": "when a phase is empty and we are stepping into that phase with j or k from idea selection (cross phase idea selection), we get stuck in that phase because we are not focussing any idea. can we solve that elegantly? like adding: when a pase has no ideas, and we're in idea mode (i), j and k go to first/last idea of next/previous phase if it exists",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

@@ -102,7 +102,7 @@ describe('ConnectionDetailsModal', () => {
       expect.any(String),
       'parent-1',
       'child-1',
-      { weight: expect.any(Number), hypothesis: undefined, evaluation: undefined }
+      { weight: expect.any(Number), hypothesis: undefined, reflection: undefined }
     )
     expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
 
@@ -143,14 +143,14 @@ describe('ConnectionDetailsModal', () => {
     div.remove()
   })
 
-  it('hides the evaluation field until the connection is being evaluated', () => {
+  it('hides the reflection field until the connection is being reflected on', () => {
     const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] } })
     expect(wrapper.findAll('textarea')).toHaveLength(1)
     wrapper.unmount()
   })
 
-  it('in evaluation mode focuses the evaluation and saves it with the hypothesis', async () => {
-    modalStore.connectionDetailsEvaluate = true
+  it('in reflection mode focuses the reflection and saves it with the hypothesis', async () => {
+    modalStore.connectionDetailsReflect = true
     dataStore.ideas['parent-1'].supportingConnections[0].hypothesis = 'should speed things up'
     const div = document.createElement('div')
     document.body.appendChild(div)
@@ -158,18 +158,18 @@ describe('ConnectionDetailsModal', () => {
     await nextTick()
     await nextTick()
 
-    const [hypothesis, evaluation] = wrapper.findAll('textarea')
+    const [hypothesis, reflection] = wrapper.findAll('textarea')
     expect((hypothesis!.element as HTMLTextAreaElement).value).toBe('should speed things up')
-    expect(document.activeElement).toBe(evaluation!.element)
+    expect(document.activeElement).toBe(reflection!.element)
 
-    await evaluation!.setValue('  it did, mostly  ')
+    await reflection!.setValue('  it did, mostly  ')
     await wrapper.findAll('button').find((button) => button.text() === 'Save')!.trigger('click')
 
     expect(dataStore.updateConnectionDetails).toHaveBeenCalledWith(
       expect.any(String),
       'parent-1',
       'child-1',
-      { weight: expect.any(Number), hypothesis: 'should speed things up', evaluation: 'it did, mostly' }
+      { weight: expect.any(Number), hypothesis: 'should speed things up', reflection: 'it did, mostly' }
     )
     wrapper.unmount()
     div.remove()

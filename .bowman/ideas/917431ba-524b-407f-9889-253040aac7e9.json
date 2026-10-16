@@ -2,8 +2,6 @@
   "id": "917431ba-524b-407f-9889-253040aac7e9",
   "text": "Import a repository's open GitHub issues as ideas",
   "description": "Lower the entry cost: a maintainer who opens Aimparency on an existing repo should see their open issues as ideas at once instead of an empty graph. Public GitHub REST API (no token for public repos; uses GITHUB_TOKEN if set), pull requests skipped, one parent idea 'Open GitHub issues of owner/repo' with each issue as a child; the issue URL is kept in the description so re-running only adds new issues. Exposed as a backend procedure and an MCP tool (so agents and the loop can do it); UI entry later.",
-  "reflection": "UI entry added: Project settings → 'GitHub Issues' field (owner/repo or github.com URL) → reports 'Imported N issues, M already there'; errors as toast. Verified in the running app on the scratch project (sindresorhus/slugify: 'Imported 0 issues, 1 already there.'). README documents the import.",
-  "reflections": [],
   "archived": false,
   "color": "#706633",
   "tags": [
@@ -17,7 +15,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Backend procedure, MCP tool import_github_issues and a project-settings field; verified live. Awaiting acceptance.",
+    "comment": "Backend procedure, MCP tool import_github_issues and a project-settings field; verified live. Awaiting acceptance.\n\nUI entry added: Project settings → 'GitHub Issues' field (owner/repo or github.com URL) → reports 'Imported N issues, M already there'; errors as toast. Verified in the running app on the scratch project (sindresorhus/slugify: 'Imported 0 issues, 1 already there.'). README documents the import.",
     "date": 1792073406241
   },
   "intrinsicValue": 0,

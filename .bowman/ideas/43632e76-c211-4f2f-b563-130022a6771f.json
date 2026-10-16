@@ -2,7 +2,6 @@
   "id": "43632e76-c211-4f2f-b563-130022a6771f",
   "text": "Mobile support",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -22,7 +21,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Current concrete mobile rendering issue is implemented; awaiting real-device visual acceptance.",
+    "comment": "Current concrete mobile rendering issue is implemented; awaiting real-device visual acceptance.\n\nThe only concrete mobile-support child was the high-DPR WebGL blur/TAA jitter issue. DPR-aware framebuffer, camera, culling, arrow, spinner, and TAA handling are now implemented and internally verified. Broader unspecified mobile work should be represented by concrete future ideas rather than keeping this vague container open.",
     "date": 1784887308383
   },
   "intrinsicValue": 0,
@@ -30,6 +29,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "The only concrete mobile-support child was the high-DPR WebGL blur/TAA jitter issue. DPR-aware framebuffer, camera, culling, arrow, spinner, and TAA handling are now implemented and internally verified. Broader unspecified mobile work should be represented by concrete future ideas rather than keeping this vague container open."
+  "valueVariance": 0
 }

@@ -2,8 +2,6 @@
   "id": "fe8b6496-588c-4439-8a39-056dab245c4f",
   "text": "Graph maintenance tooling",
   "description": "Tooling to keep the idea graph healthy as it accumulates cruft over long autonomous-development runs: duplicates, resolved-but-uncollapsed chains, status drift from the actual code, and vague catch-all parents. The reorganization of subtrees (e.g. the 'UI' catch-all, see 18263fc2) should become a byproduct of this tooling rather than a manual slog. Evidence motivating this: 2a9e3aba and f592b156 are byte-identical duplicates; a05ea545/891e2ee0/855e26a1 are three ideas for one shipped feature; 8ae9e8da/fe0e0aaf/b3f8518f/4e50493a were all already implemented but still marked open.",
-  "reflection": "Status reconciliation on 2026-07-30 found the tooling essentially complete and all direct children done or review. Recurring use of the tools is operation, not unfinished implementation.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -113,7 +111,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Duplicate detection, merge, hygiene reporting, reparent suggestions, threshold calibration, status reconciliation, and durable cancellation memory are implemented. Awaiting acceptance; taxonomy choices remain a separate human-governed concern.",
+    "comment": "Duplicate detection, merge, hygiene reporting, reparent suggestions, threshold calibration, status reconciliation, and durable cancellation memory are implemented. Awaiting acceptance; taxonomy choices remain a separate human-governed concern.\n\nStatus reconciliation on 2026-07-30 found the tooling essentially complete and all direct children done or review. Recurring use of the tools is operation, not unfinished implementation.",
     "date": 1785399347038
   },
   "intrinsicValue": 0,

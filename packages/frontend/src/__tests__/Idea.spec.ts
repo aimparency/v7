@@ -33,7 +33,6 @@ describe('Idea.vue', () => {
     text: 'Test Idea',
     description: 'Test Description',
     tags: [],
-    reflections: [],
     status: {
       state: 'open',
       comment: '',

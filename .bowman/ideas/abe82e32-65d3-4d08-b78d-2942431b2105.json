@@ -1,7 +1,6 @@
 {
   "id": "abe82e32-65d3-4d08-b78d-2942431b2105",
   "text": "Refactor AimSearchModal to use emitted events for better decoupling",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

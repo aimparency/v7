@@ -2,7 +2,6 @@
   "id": "2db9fb3e-4a0b-4bbe-b454-f1d5cdecb83a",
   "text": "Verify clean-clone dev/start flows end-to-end",
   "description": "From a fresh clone, verify `npm install`, `npm run dev`, and `npm run start` on a normal machine. Capture the exact remaining blockers, missing prerequisites, and any build-vs-dev mismatches that still prevent the documented local-first flow from working cleanly.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "release",

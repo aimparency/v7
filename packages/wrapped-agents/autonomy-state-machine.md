@@ -220,7 +220,7 @@ Reflect on what happened:
 4. What would you improve?
 5. Any patterns to remember?
 
-Use addReflection MCP tool with structured format.
+Put the evidence in the status comment; reflect on each parent connection's hypothesis via update_idea addSupportedIdeas [{ ideaId, reflection }].
 
 Available actions:
 - add_reflection: Record reflection (required)

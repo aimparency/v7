@@ -268,7 +268,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
     loop.systemPrompt,
     '',
     'Loop invariant: orient to the highest-value mission, advance one actionable descendant, verify and record evidence, then return and reprioritize indefinitely.',
-    'Improve the strategy from reflections and real outcomes. Connect useful new ideas; do not duplicate existing work.',
+    'Improve the strategy from connection reflections (which hypotheses held) and real outcomes. Connect useful new ideas; do not duplicate existing work.',
     'Activity and simulated credits are not success. Prefer authoritative external outcomes and actual costs.',
     'Decompose broad ideas. Ask humans only for judgment, authorization, credentials, or institutional action.',
     '',
@@ -483,7 +483,7 @@ async function runCycle(projectPath: string, instanceId: string, loop: LoopDefin
         }
       }),
       code_intelligence: tool({
-        description: 'Inspect code and its idea history through one compact interface: index builds local code embeddings; semantic searches by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents/tests; idea-history retrieves prior intent, reflections, status notes, and realized commits.',
+        description: 'Inspect code and its idea history through one compact interface: index builds local code embeddings; semantic searches by meaning; heatmap combines lexical matches and churn; symbol finds definitions/references; impact finds dependents/tests; idea-history retrieves prior intent, status comments, connection hypotheses and reflections, and realized commits.',
         inputSchema: jsonSchema<{
           mode: 'index' | 'semantic' | 'heatmap' | 'symbol' | 'impact' | 'idea-history';
           query?: string;

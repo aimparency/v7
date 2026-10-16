@@ -2,7 +2,6 @@
   "id": "726d6438-4c29-4b0b-b48f-19a226fada9f",
   "text": "Step 4: integrate %-flow into list-view sub-idea creation",
   "description": "AimCreationModal.vue (raw \"Weight:\" field at :303) + list-store.ts createIdea (:590,:622 createSubIdea): replace raw weight with the %-based flow, opening ConnectionDetailsModal post-create ONLY when a parent is implicit (sub-idea list context), not floating/top-level. Completes the unbuilt %/loopWeight half of done-idea 7a1e6736.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

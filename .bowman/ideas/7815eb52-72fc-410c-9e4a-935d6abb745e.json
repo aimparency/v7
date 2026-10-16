@@ -2,25 +2,6 @@
   "id": "7815eb52-72fc-410c-9e4a-935d6abb745e",
   "text": "weigh graph node connection force by connection size (how much value is transported by it)",
   "description": "",
-  "reflection": "Implemented the requested weighting for graph node connection forces.\n\nChange:\n- Extended GraphLink interface with flowValue: number.\n- Pass flowValue from dataStore.graphData (already computed as parentValue * share) into internal links.\n- In flow force loop (useGraphSimulation.ts): replaced shareWeight = 0.5 + 0.5*share with flow-based flowWeight = flow > 0 ? max(0.02, min(1.5, flow * 5)) : 0.01\n- Used flowWeight in both parent/child shift scalings.\n\nEvidence:\n- Code change matches the idea description and the reopen note (tiny connections no longer dominate; absolute size now controls influence).\n- Verified: npm run type-check (only pre-existing baseUrl deprecation); npm run test:unit (153/154 pass, 1 unrelated App.spec header path fail).\n- Previous share floor gave ~0.5 strength to near-0 share links; now ~0 for tiny flowValue (e.g. 0.01 flow -> 0.05), full strength for larger flows (~0.25 flow -> ~1.25).\n- Incoming/outgoing covered since all hierarchy links (child<->parent) carry their flowValue and are processed symmetrically.\n\nThis closes the July phase open idea for graph force weighting by connection size. (Related visuals in WebGL/GraphLink still use share for thickness which is appropriate for relative %.)",
-  "reflections": [
-    {
-      "date": 1780073963699,
-      "context": "The flow force loop in useGraphSimulation.ts was not using link.share at all — a previous flowMultiplier had been removed due to jitter concerns, and the share-based weighting was removed along with it.",
-      "outcome": "Introduced shareWeight = 0.5 + 0.5 * link.share as a static per-link multiplier applied to both parent and child force lines. Range [0.5, 1.0] keeps force proportional to connection weight without ever amplifying beyond the previous baseline.",
-      "effectiveness": "Clean fix — one line per force direction, no slider dependency, no risk of runaway amplification.",
-      "lesson": "When removing a jitter-causing multiplier, preserve the data-driven part separately. A clamped additive form like (base + factor * data) is safer than a pure multiplicative one because it has a non-zero floor.",
-      "pattern": "Similar to how semantic force stiffness is bounded: multiply by a factor but always keep a minimum so isolated nodes still feel the force."
-    },
-    {
-      "date": 1784737992219,
-      "context": "User clarified that flow force must account for both transported connection value and each idea's visual surface.",
-      "outcome": "Flow strength remains proportional to flowValue, while displacement is now divided by squared radius (surface/mass): the smaller idea moves more and the larger idea is more inertial.",
-      "effectiveness": "Extracted surfaceMovementShares into a pure helper. Three focused Vitest cases pass for equal, unequal, and zero-size nodes.",
-      "lesson": "Connection magnitude and endpoint inertia are separate factors: flowValue controls total pull; idea surface controls how that correction is distributed.",
-      "pattern": "Separate edge strength from node mass in graph physics."
-    }
-  ],
   "archived": false,
   "color": null,
   "tags": [],
@@ -44,7 +25,7 @@
   ],
   "status": {
     "state": "implemented",
-    "comment": "Fixed in simulation: flow force now weighted by absolute flowValue (transported value) instead of normalized share floor.",
+    "comment": "Fixed in simulation: flow force now weighted by absolute flowValue (transported value) instead of normalized share floor.\n\nImplemented the requested weighting for graph node connection forces.\n\nChange:\n- Extended GraphLink interface with flowValue: number.\n- Pass flowValue from dataStore.graphData (already computed as parentValue * share) into internal links.\n- In flow force loop (useGraphSimulation.ts): replaced shareWeight = 0.5 + 0.5*share with flow-based flowWeight = flow > 0 ? max(0.02, min(1.5, flow * 5)) : 0.01\n- Used flowWeight in both parent/child shift scalings.\n\nEvidence:\n- Code change matches the idea description and the reopen note (tiny connections no longer dominate; absolute size now controls influence).\n- Verified: npm run type-check (only pre-existing baseUrl deprecation); npm run test:unit (153/154 pass, 1 unrelated App.spec header path fail).\n- Previous share floor gave ~0.5 strength to near-0 share links; now ~0 for tiny flowValue (e.g. 0.01 flow -> 0.05), full strength for larger flows (~0.25 flow -> ~1.25).\n- Incoming/outgoing covered since all hierarchy links (child<->parent) carry their flowValue and are processed symmetrically.\n\nThis closes the July phase open idea for graph force weighting by connection size. (Related visuals in WebGL/GraphLink still use share for thickness which is appropriate for relative %.)\n\nOutcome: Introduced shareWeight = 0.5 + 0.5 * link.share as a static per-link multiplier applied to both parent and child force lines. Range [0.5, 1.0] keeps force proportional to connection weight without ever amplifying beyond the previous baseline. Effectiveness: Clean fix — one line per force direction, no slider dependency, no risk of runaway amplification. Lesson: When removing a jitter-causing multiplier, preserve the data-driven part separately. A clamped additive form like (base + factor * data) is safer than a pure multiplicative one because it has a non-zero floor. Pattern: Similar to how semantic force stiffness is bounded: multiply by a factor but always keep a minimum so isolated nodes still feel the force.\n\nOutcome: Flow strength remains proportional to flowValue, while displacement is now divided by squared radius (surface/mass): the smaller idea moves more and the larger idea is more inertial. Effectiveness: Extracted surfaceMovementShares into a pure helper. Three focused Vitest cases pass for equal, unequal, and zero-size nodes. Lesson: Connection magnitude and endpoint inertia are separate factors: flowValue controls total pull; idea surface controls how that correction is distributed. Pattern: Separate edge strength from node mass in graph physics.",
     "date": 1784018109472
   },
   "intrinsicValue": 5,

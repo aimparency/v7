@@ -95,12 +95,12 @@ A dream does two things, as sleep does: it consolidates what happened into memor
 Procedure:
 
 1. FALL ASLEEP — Recall what happened since the last dream
-   - The last dream is the newest reflection, on any idea, whose context starts with "Dream:". Its date is the start of this dream's window. If there is none, the window is the last 14 days of \`git log -- .bowman\` in the project's repository.
-   - Collect within the window: ideas created or changed, ideas that reached review or implemented, ideas that failed or were cancelled, reflections written, and connection hypotheses that received an evaluation (held or failed).
+   - The dream memory is the one idea tagged "dream-memory". Its status comment holds the last dream's memory, and its status.reviewedAt is the start of this dream's window. If there is none, the window is the last 14 days of \`git log -- .bowman\` in the project's repository.
+   - Collect within the window: ideas created or changed, ideas that reached review or implemented, ideas that failed or were cancelled, with their status comments, and connection hypotheses that received a reflection (held or failed).
 
 2. CONSOLIDATE — Keep lessons, not events
    - Compress the window into at most 5 lessons. Several similar outcomes become one pattern; one surprising outcome may stand alone.
-   - Name branches nobody touched for long (alive, or waiting?), likely duplicates (find_duplicate_ideas), and hypotheses still waiting for evaluation that could be tested now.
+   - Name branches nobody touched for long (alive, or waiting?), likely duplicates (find_duplicate_ideas), and hypotheses still waiting for a reflection that could be tested now.
 
 3. DREAM — Start from love
    - Start from the ideas carrying intrinsic value: what the graph loves for its own sake. Ask what their existence needs that the graph does not yet see.${projectPath ? "" : " Inspect the graph with the available Aimparency read-only tools."}
@@ -121,15 +121,15 @@ Procedure:
    - Explicitly report discarded dreams and why they dissolved on waking.
 
 6. REMEMBER — Keep the memory, gate the changes
-   - Always record the memory: addReflection on the root idea with the highest intrinsic value, context "Dream: ${focus}", outcome = what you remember (the lessons), effectiveness = which of last dream's residues were tested and how they held, lesson = the strongest lesson. It marks where the next dream starts. If the project is read-only, report the reflection instead of writing it.
+   - Always record the memory in the dream-memory idea's status comment, replacing the previous one (git keeps it): "Dream: ${focus}", the lessons, and which of last dream's residues were tested and how they held. Set status.reviewedAt to now; it marks where the next dream starts. Without that idea, create it ("Dream memory", tag "dream-memory", status implemented) under the root idea with the highest intrinsic value. If the project is read-only, report the memory instead of writing it.
    - Prefer explanatory contribution connections between existing ideas when the synergy is already meaningful.
    - Create a new idea only for a genuinely novel hypothesis or experiment. Prefix speculative titles with "Dream:" and tag them "dream" and "hypothesis". Do not mark dream artifacts implemented.
    - Connection hypotheses must say why the contribution may exist and identify uncertainty. Do not alter contribution weights merely because a relationship is imaginative.
    - ${writeBack
       ? "Write only the 1-3 selected residues using Aimparency tools, then report every mutation. Preserve human gates and use review when implementation is complete but awaiting acceptance."
-      : "Apart from the memory reflection, do not mutate the graph. Return a precise proposed mutation set (ideas, connections, hypotheses, and experiments) for human acceptance."}
+      : "Apart from the dream memory, do not mutate the graph. Return a precise proposed mutation set (ideas, connections, hypotheses, and experiments) for human acceptance."}
 
-Report, opening with exactly: "I just woke up from dreaming, here is what I remember:" Then, compactly: the lessons, what the dream was about, the retained residues, the discarded dreams, and the proposed or performed graph mutations, including the memory reflection.`,
+Report, opening with exactly: "I just woke up from dreaming, here is what I remember:" Then, compactly: the lessons, what the dream was about, the retained residues, the discarded dreams, and the proposed or performed graph mutations, including the dream memory.`,
           },
         },
       ],

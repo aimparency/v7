@@ -5,9 +5,11 @@
 //
 //   supportingConnections[] / supportingRepos[]:
 //     explanation → hypothesis
-//     reflection  → evaluation
+//     reflection  → evaluation (dropped here: data model 5 renamed it back, so
+//                    a connection reflection is current, not legacy)
 //   meta.json statuses: implemented/cancelled/failed get promptsEvaluation,
-//     unless the project already configured it on some status.
+//     unless the project already configured it (or its v5 promptsReflection)
+//     on some status.
 //
 // Idempotent per file: a key already present under its new name was written
 // by new code and wins.
@@ -18,8 +20,7 @@ import { listJsonFiles, readOrNull, rewriteJson } from './json-files.js';
 const IDEA_DIRS = ['ideas', 'archived-ideas'];
 const CONNECTION_LISTS = ['supportingConnections', 'supportingRepos'];
 const RENAMED_KEYS: Array<[legacy: string, current: string]> = [
-  ['explanation', 'hypothesis'],
-  ['reflection', 'evaluation']
+  ['explanation', 'hypothesis']
 ];
 export const EVALUATION_PROMPTING_STATES = ['implemented', 'cancelled', 'failed'];
 
@@ -46,7 +47,7 @@ export function migrateConnectionKeys(record: unknown): unknown {
 
 export function addEvaluationPrompts(meta: unknown): unknown {
   const statuses = (meta as { statuses?: unknown })?.statuses;
-  if (!Array.isArray(statuses) || statuses.some((status) => status?.promptsEvaluation !== undefined)) return meta;
+  if (!Array.isArray(statuses) || statuses.some((status) => status?.promptsEvaluation !== undefined || status?.promptsReflection !== undefined)) return meta;
   return {
     ...(meta as object),
     statuses: statuses.map((status) =>

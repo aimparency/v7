@@ -2,8 +2,6 @@
   "id": "812f2008-2ce4-4b66-bf87-53be001b712a",
   "text": "Performance optimization",
   "description": "",
-  "reflection": "Reconciled this stale open container. Its two children are already done with implementation evidence: 500ms viewport-based label culling and sweep-and-prune/thresholded graph layout updates. No open child remains; future measured performance problems should become concrete new ideas.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -30,7 +28,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "Closed 2026-10-15 at Felix's request (close all-children-done parents unless further scope is reasonable). Both children are done. Ideas considered and rejected: a load-time or frame budget (no measured problem: the dev server loads this repo's 790-idea graph in about 1.3 s; autolayout takes about 220 ms) and lazy loading (already held as halted bd1cefe0 until scale proves it necessary). New performance work should start from a measured slowdown.",
+    "comment": "Closed 2026-10-15 at Felix's request (close all-children-done parents unless further scope is reasonable). Both children are done. Ideas considered and rejected: a load-time or frame budget (no measured problem: the dev server loads this repo's 790-idea graph in about 1.3 s; autolayout takes about 220 ms) and lazy loading (already held as halted bd1cefe0 until scale proves it necessary). New performance work should start from a measured slowdown.\n\nReconciled this stale open container. Its two children are already done with implementation evidence: 500ms viewport-based label culling and sweep-and-prune/thresholded graph layout updates. No open child remains; future measured performance problems should become concrete new ideas.",
     "date": 1792085391003
   },
   "intrinsicValue": 0,

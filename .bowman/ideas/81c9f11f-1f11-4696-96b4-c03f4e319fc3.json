@@ -2,15 +2,6 @@
   "id": "81c9f11f-1f11-4696-96b4-c03f4e319fc3",
   "text": "Project loading page: search like idea search, j/k list, graph thumbnails",
   "description": "Typing filters recent and nearby projects; a unique folder-name/path match is highlighted and Enter opens it. Tab (no folder completion showing) moves into the list; j/k navigate, e edits the path, Escape returns to the input. Number shortcuts removed (supersedes 033c340d). Graph view stores a WebGL screenshot per project in IndexedDB (3 s after opening, then every minute); shown beside each entry. Commit c6972eb.",
-  "reflections": [
-    {
-      "date": 1792122745878,
-      "context": "With search, six leftover backend .test-tmp projects stood out in the nearby list.",
-      "outcome": "Project discovery now skips .test-tmp directories (DISCOVERY_IGNORED_DIRS); the discovery test plants a leftover test project and asserts it is not found.",
-      "effectiveness": "Backend discovery test passes; pnpm check 25/25.",
-      "lesson": "Test fixtures that outlive their run leak into user-facing lists; ignore their directory at the scanner."
-    }
-  ],
   "archived": false,
   "color": "#2d664c",
   "tags": [],
@@ -21,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Specs + pnpm check 25/25. Live: filter, perfect-match highlight, Tab/j/Escape verified in the running UI. Thumbnail capture not verifiable headless (no requestAnimationFrame); Felix to see thumbnails appear after opening a project's graph.",
+    "comment": "Specs + pnpm check 25/25. Live: filter, perfect-match highlight, Tab/j/Escape verified in the running UI. Thumbnail capture not verifiable headless (no requestAnimationFrame); Felix to see thumbnails appear after opening a project's graph.\n\nOutcome: Project discovery now skips .test-tmp directories (DISCOVERY_IGNORED_DIRS); the discovery test plants a leftover test project and asserts it is not found. Effectiveness: Backend discovery test passes; pnpm check 25/25. Lesson: Test fixtures that outlive their run leak into user-facing lists; ignore their directory at the scanner.",
     "date": 1792120326416
   },
   "intrinsicValue": 0,

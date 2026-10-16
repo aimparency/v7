@@ -2,7 +2,6 @@
   "id": "ee7781d4-83fc-4d56-be3f-c901b586ddaf",
   "text": "Perform clean-clone testing on real machine",
   "description": "**HUMAN TESTING REQUIRED**\n\nValidate that a new user can successfully run Aimparency locally.\n\n**Test Procedure:**\n1. Use a fresh machine or clean user account\n2. Clone repository: `git clone [repo-url]`\n3. Install: `npm install`\n4. Test dev mode: `npm run dev`\n   - Verify browser UI opens\n   - Verify backend/broker services start\n   - Verify port fallback works if defaults are busy\n   - Verify .bowman project discovery works\n5. Test production mode: `npm run start`\n   - Verify build completes\n   - Verify services start correctly\n   - Verify UI connects to backend\n6. Test with nearby .bowman project:\n   - Create or use existing project with .bowman directory\n   - Verify project appears in UI\n   - Verify can switch to that project\n   - Verify basic operations work\n\n**Document any failures** with exact error messages, environment details (OS, Node version), and steps to reproduce.\n\n**After testing:** Ideas 0e5cce7e, 3ea51517 can be marked complete if all tests pass.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "testing",
@@ -18,7 +17,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Narrowed: install/build/port-fallback/check verified by agent 2026-10-15. Only remaining: Felix runs pnpm start in a fresh clone, opens UI, switches to a nearby .bowman project (agent may not start servers).",
+    "comment": "Narrowed: install/build/port-fallback/check verified by agent 2026-10-15. Only remaining: Felix runs pnpm start in a fresh clone, opens UI, switches to a nearby .bowman project (agent may not start servers).\n\nAgent-run on the real machine (Manjaro, Node 22.20, pnpm 11.3), 2026-10-15, fresh git clone at 43bc4ea: pnpm install OK (3m, native node-pty/onnxruntime built), pnpm build + build:optional green, validate:local-runtime PASS incl. occupied-default-port fallback. First pnpm check failed (embedding model cold-cache download timing out 5 backend tests) → fixed in 0ee4507, cold rerun 105/105. NOT done: steps 4–6 that require starting servers (pnpm dev/start, UI connect, nearby-project discovery) — AGENTS.md forbids the agent starting servers. Procedure commands are now pnpm, not npm.",
     "date": 1774590115450
   },
   "intrinsicValue": 0,
@@ -26,6 +25,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Agent-run on the real machine (Manjaro, Node 22.20, pnpm 11.3), 2026-10-15, fresh git clone at 43bc4ea: pnpm install OK (3m, native node-pty/onnxruntime built), pnpm build + build:optional green, validate:local-runtime PASS incl. occupied-default-port fallback. First pnpm check failed (embedding model cold-cache download timing out 5 backend tests) → fixed in 0ee4507, cold rerun 105/105. NOT done: steps 4–6 that require starting servers (pnpm dev/start, UI connect, nearby-project discovery) — AGENTS.md forbids the agent starting servers. Procedure commands are now pnpm, not npm."
+  "valueVariance": 0
 }

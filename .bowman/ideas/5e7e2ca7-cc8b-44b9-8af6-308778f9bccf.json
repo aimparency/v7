@@ -2,7 +2,6 @@
   "id": "5e7e2ca7-cc8b-44b9-8af6-308778f9bccf",
   "text": "when adding an idea we autoselect a perfect match. if there are two perfect matches, default to creating a new one (seems to be recurring title like \"refactor\")",
   "description": "",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

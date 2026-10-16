@@ -2,7 +2,6 @@
   "id": "c4fd0987-d131-4da0-acb4-3833c771dde9",
   "text": "Evaluate hypotheses through execution and reflection loops",
   "description": "Connect strategic hypotheses to real execution outcomes: tests, code changes, market actions, human feedback, and runtime observations. Successful and failed hypotheses should update future planning through structured reflections.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "asi",

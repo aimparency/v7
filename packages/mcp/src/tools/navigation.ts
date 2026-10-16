@@ -9,7 +9,7 @@ import { ideaContext } from "./ideas.js";
 export const navigationTools: ToolDefinition[] = [
   {
     name: "get_prioritized_ideas",
-    description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). Includes topIdeaContext (what get_idea_context returns) for the top-ranked idea. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
+    description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). Includes topIdeaContext (what get_idea_context returns) for the top-ranked idea. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene and connection reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
     inputSchema: {
       type: "object",
       properties: {
@@ -144,7 +144,7 @@ export const navigationTools: ToolDefinition[] = [
                 required: true,
                 objective: "Create or uncover the next valuable actionable leaf in Aimparency graph state before implementing.",
                 moves: [
-                  "Inspect graph_hygiene and recent reflections for structural or learned opportunities.",
+                  "Inspect graph_hygiene and recent connection reflections (which hypotheses held, which failed) for structural or learned opportunities.",
                   "Step back from the most recent scope and decompose a high-value abstract non-done mission into a bounded leaf.",
                   "Dream up a falsifiable hypothesis with a safe reversible experiment, explicit verification, and stop condition.",
                   "Search before create_idea; connect genuinely new work to the mission and commit it to the active phase.",

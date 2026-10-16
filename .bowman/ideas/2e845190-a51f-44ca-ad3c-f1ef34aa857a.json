@@ -2,8 +2,6 @@
   "id": "2e845190-a51f-44ca-ad3c-f1ef34aa857a",
   "text": "keyboard shortcuts",
   "description": "",
-  "reflection": "Reconciled this broad container after checking its only supporting idea (57ae35f3): the requested shortcut exists, avoids editable-field interference, appears in keyboard hints, and is already in review. No open implementation leaf remains beneath this container.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -77,7 +75,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Its sole concrete child, the A shortcut for toggling the loop area, is implemented and internally verified; awaiting user acceptance.",
+    "comment": "Its sole concrete child, the A shortcut for toggling the loop area, is implemented and internally verified; awaiting user acceptance.\n\nReconciled this broad container after checking its only supporting idea (57ae35f3): the requested shortcut exists, avoids editable-field interference, appears in keyboard hints, and is already in review. No open implementation leaf remains beneath this container.",
     "date": 1784895178057
   },
   "intrinsicValue": 0,

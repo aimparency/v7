@@ -131,7 +131,7 @@ export const graphHealthTools: ToolDefinition[] = [
   },
   {
     name: "reconcile_status",
-    description: "Read-only: OPEN ideas cited by >= 1 code commit (8-char id prefix in the message; commits touching only .bowman/ don't count), ranked by commit count — likely implemented but never marked. Check each against the code, then update_idea to implemented with a reflection. A parent may be only partially done; a commit citing an idea as future work is a false positive. Needs a git repo.",
+    description: "Read-only: OPEN ideas cited by >= 1 code commit (8-char id prefix in the message; commits touching only .bowman/ don't count), ranked by commit count — likely implemented but never marked. Check each against the code, then update_idea to implemented with the evidence in the status comment. A parent may be only partially done; a commit citing an idea as future work is a false positive. Needs a git repo.",
     inputSchema: {
       type: "object",
       properties: {
@@ -162,7 +162,7 @@ export const graphHealthTools: ToolDefinition[] = [
               ? "No git commits found (not a git repo, or no history) — commit-reference reconciliation is unavailable."
               : candidates.length === 0
                 ? "No open ideas are referenced by commits. Either the graph is in sync or commits don't cite idea ids."
-                : "Each candidate is an OPEN idea cited by a commit — verify against the code, then update_idea to implemented with a reflection if confirmed.",
+                : "Each candidate is an OPEN idea cited by a commit — verify against the code, then update_idea to implemented with the evidence in the status comment if confirmed.",
             candidates: candidates.slice(0, limit),
           }, null, 2),
         }],

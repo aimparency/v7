@@ -57,8 +57,8 @@ export const useUIModalStore = defineStore('ui-modal', {
     showConnectionDetailsModal: false,
     connectionDetailsParentId: null as string | null,
     connectionDetailsChildId: null as string | null,
-    // Opened to evaluate the connection's hypothesis (the child was settled).
-    connectionDetailsEvaluate: false,
+    // Opened to reflect on the connection's hypothesis (the child was settled).
+    connectionDetailsReflect: false,
 
     showIdeaSearch: false,
     ideaSearchMode: 'navigate' as 'navigate' | 'pick',
@@ -191,20 +191,20 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.showSpinOffApplyModal = false
     },
 
-    openConnectionDetailsModal(parentId: string, childId: string, callback?: () => void, { evaluate = false } = {}) {
+    openConnectionDetailsModal(parentId: string, childId: string, callback?: () => void, { reflect = false } = {}) {
       this.connectionDetailsParentId = parentId
       this.connectionDetailsChildId = childId
-      this.connectionDetailsEvaluate = evaluate
+      this.connectionDetailsReflect = reflect
       this.showConnectionDetailsModal = true
       this.connectionDetailsCallback = callback || null
     },
 
-    // Asks for an evaluation of each connection in turn; closing one (saved or
+    // Asks for an reflection of each connection in turn; closing one (saved or
     // skipped with Escape) opens the next.
-    promptConnectionEvaluations(connections: Array<{ parentId: string; childId: string }>) {
+    promptConnectionReflections(connections: Array<{ parentId: string; childId: string }>) {
       const [next, ...rest] = connections
       if (!next) return
-      this.openConnectionDetailsModal(next.parentId, next.childId, () => this.promptConnectionEvaluations(rest), { evaluate: true })
+      this.openConnectionDetailsModal(next.parentId, next.childId, () => this.promptConnectionReflections(rest), { reflect: true })
     },
 
     // Opens the removal dialog; resolves with the choice, or null when cancelled.
@@ -225,7 +225,7 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.showConnectionDetailsModal = false
       this.connectionDetailsParentId = null
       this.connectionDetailsChildId = null
-      this.connectionDetailsEvaluate = false
+      this.connectionDetailsReflect = false
       if (this.connectionDetailsCallback) {
         const cb = this.connectionDetailsCallback
         this.connectionDetailsCallback = null

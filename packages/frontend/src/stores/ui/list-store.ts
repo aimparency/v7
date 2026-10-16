@@ -378,7 +378,6 @@ export const useUIStore = defineStore('ui', {
         text: idea.text,
         description: idea.description,
         tags: idea.tags || [],
-        reflections: [],
         status: { state: idea.statusState ?? 'open', comment: idea.statusComment ?? '', date: Date.now() },
         supportingConnections: idea.supportingConnections ?? [],
         supportedIdeas: idea.supportedIdeas ?? [],
@@ -884,7 +883,7 @@ export const useUIStore = defineStore('ui', {
     },
 
     // Merge all currently multi-selected (except the target) into the target idea.
-    // Uses the existing backend merge (target keeps identity + connections + reflections; sources archived).
+    // Uses the existing backend merge (target keeps identity + connections + status comments; sources archived).
     async mergeSelectedInto(targetId: string) {
       const projectStore = useProjectStore()
       const projectPath = projectStore.projectPath

@@ -39,7 +39,6 @@ const makeIdea = (
   duration: 1,
   costVariance: 0,
   valueVariance: 0,
-  reflections: []
 })
 
 function mountPhase() {

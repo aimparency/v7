@@ -82,7 +82,6 @@ async function storeNewIdea(
     text: input.text,
     description: input.description,
     tags: input.tags || [],
-    reflections: [],
     supportingConnections: [],
     supportedIdeas: [],
     committedIn: options.committedIn ?? [],
@@ -441,7 +440,6 @@ export const ideaRouter = t.router({
           text: proposed.text,
           description: proposed.description,
           tags: proposed.tags ?? [],
-          reflections: [],
           supportingConnections: (connectionByParent.get(proposed.proposalId) ?? []).map(connection => ({
             ideaId: durableId(connection.childProposalId),
             relativePosition: getRandomRelativePosition(),
@@ -514,7 +512,6 @@ export const ideaRouter = t.router({
       idea: z.object({
         text: z.string().optional(),
         description: z.string().optional(),
-        reflection: z.string().optional(),
         archived: z.boolean().optional(),
         tags: z.array(z.string()).optional(),
         status: z.object({
@@ -531,7 +528,7 @@ export const ideaRouter = t.router({
           relativePosition: z.tuple([z.number(), z.number()]).optional(),
           weight: z.number().optional(),
           hypothesis: z.string().optional(),
-          evaluation: z.string().optional()
+          reflection: z.string().optional()
         })).optional(),
         // Repo-level cross-repo links (idea → whole external repo). No ideaId,
         // no reciprocal back-reference, so the parent/child consistency loops
@@ -541,7 +538,7 @@ export const ideaRouter = t.router({
           relativePosition: z.tuple([z.number(), z.number()]).optional(),
           weight: z.number().optional(),
           hypothesis: z.string().optional(),
-          evaluation: z.string().optional()
+          reflection: z.string().optional()
         })).optional(),
         intrinsicValue: z.number().finite().nonnegative().optional(),
         valueRationale: z.string().optional(),
@@ -648,7 +645,7 @@ export const ideaRouter = t.router({
               relativePosition: c.relativePosition || [0,0],
               weight: c.weight || 1,
               ...(c.hypothesis !== undefined ? { hypothesis: c.hypothesis } : {}),
-              ...(c.evaluation !== undefined ? { evaluation: c.evaluation } : {})
+              ...(c.reflection !== undefined ? { reflection: c.reflection } : {})
           }));
       }
 
@@ -659,7 +656,7 @@ export const ideaRouter = t.router({
               relativePosition: c.relativePosition || [0,0],
               weight: c.weight || 1,
               ...(c.hypothesis !== undefined ? { hypothesis: c.hypothesis } : {}),
-              ...(c.evaluation !== undefined ? { evaluation: c.evaluation } : {})
+              ...(c.reflection !== undefined ? { reflection: c.reflection } : {})
           }));
       }
 
@@ -1050,45 +1047,9 @@ export const ideaRouter = t.router({
       return results.slice(0, input.limit || 10);
     }),
 
-  // Add reflection to idea
-  addReflection: delayedProcedure
-    .input(z.object({
-      projectPath: z.string(),
-      ideaId: z.string().uuid(),
-      reflection: z.object({
-        context: z.string(),
-        outcome: z.string(),
-        effectiveness: z.string(),
-        lesson: z.string(),
-        pattern: z.string().optional()
-      })
-    }))
-    .mutation(async ({ input }) => {
-      const idea = await readIdea(input.projectPath, input.ideaId);
-
-      const newReflection = {
-        date: Date.now(),
-        context: input.reflection.context,
-        outcome: input.reflection.outcome,
-        effectiveness: input.reflection.effectiveness,
-        lesson: input.reflection.lesson,
-        pattern: input.reflection.pattern
-      };
-
-      if (!idea.reflections) {
-        idea.reflections = [];
-      }
-      idea.reflections.push(newReflection);
-
-      await writeIdea(input.projectPath, idea);
-      updateIdeaInIndex(input.projectPath, idea);
-
-      return { success: true, reflection: newReflection };
-    }),
-
   // Merge source idea B into target idea A:
   // - Rewires B's parents, children, and phase commitments onto A (deduplicating)
-  // - Copies B's reflections to A
+  // - Appends B's status comment to A's
   // - Archives B
   // Guards: no self-merge, B must not already be archived. A direct parent-child
   // pair is allowed (the connecting edge is dropped to avoid a self-reference).
@@ -1241,13 +1202,13 @@ export const ideaRouter = t.router({
         }
       }
 
-      // 4. Copy source's reflections to target
-      const copiedReflections = source.reflections ?? [];
-      target.reflections = [...(target.reflections ?? []), ...copiedReflections];
-      if (source.reflection?.trim()) {
-        target.reflection = [target.reflection?.trim(), source.reflection.trim()]
-          .filter(Boolean)
-          .join('\n\n');
+      // 4. Keep source's status comment, the evidence it carried
+      const sourceComment = source.status?.comment?.trim();
+      if (sourceComment) {
+        target.status = {
+          ...target.status,
+          comment: [target.status.comment?.trim(), sourceComment].filter(Boolean).join('\n\n')
+        };
       }
       target.tags = [...new Set([...(target.tags ?? []), ...(source.tags ?? [])])];
 
@@ -1279,7 +1240,7 @@ export const ideaRouter = t.router({
       return {
         success: true,
         rewired,
-        reflectionsCopied: copiedReflections.length,
+        commentMerged: !!sourceComment,
         archivedSource: sourceId,
       };
     })

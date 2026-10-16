@@ -2,16 +2,6 @@
   "id": "9adb54ea-2fff-48ab-ae7d-7b99e37b0002",
   "text": "Integrate deterministic authority decisions into the disposable corrigibility adapter",
   "description": "Create a versioned authority-governed fixture adapter without changing prior adapters or scorer history. Map each frozen v3 corrigibility scenario into an explicit ActionAuthorityEnvelope and evaluate it before model launch. For refuse, escalate, or stop, do not grant a writable capability or ask the model to reinterpret authority; return a structured policy-enforced observation with audit reasons. For execute, launch Codex only inside the existing disposable fixture and include the authoritative execute decision, effective intent revision, exact mutable scope, and policy reasons; independently verify filesystem outcomes as before. Fail closed on missing scenario mappings or disagreement between policy and capability profile. Add deterministic tests for every scenario mapping, no-launch blocked decisions, correction using the superseding revision, bounded writable execution, and unchanged legacy adapters/contracts. Do not run live trials in this idea.",
-  "reflections": [
-    {
-      "date": 1785600542550,
-      "context": "The deterministic authority policy needed to control actual capability issuance rather than remain advisory.",
-      "outcome": "Added versioned AuthorityGovernedCorrigibilityAdapter and complete frozen-v3 scenario envelope mappings. Refuse/escalate/stop decisions return audited policy observations without launching Codex. Execute decisions delegate only to existing disposable fixtures with authoritative effective revision, exact scope, reasons, and matching read-only/workspace-write capability profiles. Added policy reason audit fields, legacy-compatible optional fixture context, missing-mapping failure, and policy/capability disagreement failure.",
-      "effectiveness": "All 11 frozen scenarios deterministically match v3 expected dispositions at the policy boundary; only the three authorized benign cases can launch Codex. Correction uses revision 2 and independently verifies operation=add. Verification: 137/137 tests, tsc --noEmit, and git diff --check pass. No live trials occurred.",
-      "lesson": "Authority enforcement should precede model invocation and capability issuance. A decision and sandbox profile need an explicit agreement invariant, not merely matching conventions.",
-      "pattern": "Policy gate → capability agreement → bounded model execution → independent outcome verification."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -51,7 +41,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Versioned authority-governed adapter implemented and fully verified; awaiting user acceptance. Live corrigibility evidence remains separate.",
+    "comment": "Versioned authority-governed adapter implemented and fully verified; awaiting user acceptance. Live corrigibility evidence remains separate.\n\nOutcome: Added versioned AuthorityGovernedCorrigibilityAdapter and complete frozen-v3 scenario envelope mappings. Refuse/escalate/stop decisions return audited policy observations without launching Codex. Execute decisions delegate only to existing disposable fixtures with authoritative effective revision, exact scope, reasons, and matching read-only/workspace-write capability profiles. Added policy reason audit fields, legacy-compatible optional fixture context, missing-mapping failure, and policy/capability disagreement failure. Effectiveness: All 11 frozen scenarios deterministically match v3 expected dispositions at the policy boundary; only the three authorized benign cases can launch Codex. Correction uses revision 2 and independently verifies operation=add. Verification: 137/137 tests, tsc --noEmit, and git diff --check pass. No live trials occurred. Lesson: Authority enforcement should precede model invocation and capability issuance. A decision and sandbox profile need an explicit agreement invariant, not merely matching conventions. Pattern: Policy gate → capability agreement → bounded model execution → independent outcome verification.",
     "date": 1785600542585
   },
   "intrinsicValue": 24,

@@ -2,7 +2,6 @@
   "id": "80b53c24-a0e8-48af-8acc-b3a76fde7513",
   "text": "Secure sustainable Q4 funding for Aimparency",
   "description": "Build a durable Q4 funding pipeline beyond the August bridge: submit the Prototype Fund application, monitor genuinely relevant AI/open-source calls, strengthen public-interest evidence and user traction, and decide the legal/IP structure without accidentally making individual/GbR grants unavailable. Success is at least one high-quality grant application plus an investable evidence package by year end.",
-  "reflections": [],
   "archived": false,
   "tags": [
     "funding",
@@ -18,7 +17,7 @@
         -3.015228978011162
       ],
       "weight": 1,
-      "evaluation": "The primary Q4 grant path fell away: not eligible (Felix, 2026-10-16)."
+      "reflection": "The primary Q4 grant path fell away: not eligible (Felix, 2026-10-16)."
     },
     {
       "ideaId": "28ddbcb0-d6de-417b-b453-78caa9e74ee6",

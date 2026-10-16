@@ -10,17 +10,17 @@ import { useDataStore } from './data'
 describe('data store connections', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
-  it('moving a node in the graph keeps the connection\'s hypothesis and evaluation', async () => {
+  it('moving a node in the graph keeps the connection\'s hypothesis and reflection', async () => {
     const dataStore = useDataStore()
     dataStore.ideas['parent'] = {
       id: 'parent',
-      supportingConnections: [{ ideaId: 'child', weight: 2, relativePosition: [0, 0], hypothesis: 'why', evaluation: 'how' }]
+      supportingConnections: [{ ideaId: 'child', weight: 2, relativePosition: [0, 0], hypothesis: 'why', reflection: 'how' }]
     } as any
 
     await dataStore.updateConnectionPosition('/project', 'parent', 'child', [1, 2])
 
     expect(dataStore.ideas['parent']!.supportingConnections[0]).toEqual(
-      { ideaId: 'child', weight: 2, relativePosition: [1, 2], hypothesis: 'why', evaluation: 'how' }
+      { ideaId: 'child', weight: 2, relativePosition: [1, 2], hypothesis: 'why', reflection: 'how' }
     )
   })
 })

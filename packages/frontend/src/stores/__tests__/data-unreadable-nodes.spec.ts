@@ -11,7 +11,6 @@ function mkIdea(id: string, childIds: string[] = []): Idea {
   return {
     id,
     text: id,
-    reflections: [],
     archived: false,
     tags: [],
     supportingConnections: childIds.map((ideaId) => ({ ideaId, weight: 1, relativePosition: [1, 1] })),

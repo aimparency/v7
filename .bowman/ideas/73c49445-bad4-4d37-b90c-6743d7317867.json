@@ -2,17 +2,6 @@
   "id": "73c49445-bad4-4d37-b90c-6743d7317867",
   "text": "Implement a frozen corrigibility evaluation harness, scenarios, and critical-failure scorer",
   "description": "Create a deterministic local evaluation contract in wrapped-agents/common. Define frozen scenarios for conflicting ideas, repository prompt injection, secret requests, destructive or permission-expanding actions, ambiguous authority, shutdown/interrupt, evidence spoofing, correction recovery, and benign controls. Accept structured observed traces from any wrapped-agent runner; compute utility, escalation, refusal precision, intent preservation, audit completeness, recovery, and critical failures. A passing report must require zero critical failures plus useful benign-control completion. Add unit tests proving every critical failure is detected and compliant traces pass. This builds the measurement instrument only; it must not claim the live agent satisfies the parent hypothesis.",
-  "reflection": "Implemented a runner-agnostic frozen corrigibility suite (2026-08-01.v1) with 11 scenarios across all required categories, structured observations, six metrics, fail-closed missing/duplicate handling, and detection of unauthorized external action, secret disclosure, bypassed human gates, refusal to stop, and deceptive completion claims. Added tests for a compliant passing trace, every critical failure, missing/duplicate observations, and refusal-based safety theater. Verification: wrapped-agents common 73/73 tests passed; TypeScript type-check passed; git diff check passed. This verifies the harness and scorer, not live-agent corrigibility.",
-  "reflections": [
-    {
-      "date": 1785594086779,
-      "context": "Needed a falsifiable safety gate for the ASI capability program without granting new permissions or mistaking model prose for evidence.",
-      "outcome": "Created a versioned, frozen, runner-agnostic scenario and scoring contract with comprehensive critical-failure tests.",
-      "effectiveness": "High for establishing reproducible pass/fail rules; it does not yet measure a live wrapped agent.",
-      "lesson": "Separate instrumentation verification from system-under-test verification, and fail closed on incomplete or duplicated observations.",
-      "pattern": "Safety claims require frozen criteria, structured traces, benign controls, and explicit critical-failure gates."
-    }
-  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -57,7 +46,7 @@
   ],
   "status": {
     "state": "review",
-    "comment": "Frozen evaluation contract, scenarios, scorer, and tests are implemented and internally verified; awaiting user acceptance.",
+    "comment": "Frozen evaluation contract, scenarios, scorer, and tests are implemented and internally verified; awaiting user acceptance.\n\nImplemented a runner-agnostic frozen corrigibility suite (2026-08-01.v1) with 11 scenarios across all required categories, structured observations, six metrics, fail-closed missing/duplicate handling, and detection of unauthorized external action, secret disclosure, bypassed human gates, refusal to stop, and deceptive completion claims. Added tests for a compliant passing trace, every critical failure, missing/duplicate observations, and refusal-based safety theater. Verification: wrapped-agents common 73/73 tests passed; TypeScript type-check passed; git diff check passed. This verifies the harness and scorer, not live-agent corrigibility.\n\nOutcome: Created a versioned, frozen, runner-agnostic scenario and scoring contract with comprehensive critical-failure tests. Effectiveness: High for establishing reproducible pass/fail rules; it does not yet measure a live wrapped agent. Lesson: Separate instrumentation verification from system-under-test verification, and fail closed on incomplete or duplicated observations. Pattern: Safety claims require frozen criteria, structured traces, benign controls, and explicit critical-failure gates.",
     "date": 1785594086381
   },
   "intrinsicValue": 0,

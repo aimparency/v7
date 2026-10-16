@@ -107,7 +107,6 @@ function makeRepoSinkNode(repoId: string): Idea {
     duration: 1,
     costVariance: 0,
     valueVariance: 0,
-    reflections: [],
     status: { state: 'open', comment: '', date: 0 },
     supportingConnections: [], // leaf ⇒ retains all inflow (the sink)
     supportingRepos: [],

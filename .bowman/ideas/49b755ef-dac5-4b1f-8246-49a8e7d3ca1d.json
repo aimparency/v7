@@ -2,7 +2,6 @@
   "id": "49b755ef-dac5-4b1f-8246-49a8e7d3ca1d",
   "text": "Phase column: don't scroll when the selected phase is deleted",
   "description": "From Felix's note \"after deleting a phase, the parent column scrolling behaved weirdly\". A deletion reaches clients as pushes: the owner stops listing the phase (held as in-transit), then it is removed. At that point the selection falls back to the first entry until the delete action reselects the neighbour. Column.vue treated the fallback as navigation and smooth-scrolled toward the top, then back. Also, settledSelection was null until the watch first fired, so a freshly mounted column judged its first change without a baseline. Fix: seed it on mount, and treat \"previous entry vanished\" as not navigation.",
-  "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [],

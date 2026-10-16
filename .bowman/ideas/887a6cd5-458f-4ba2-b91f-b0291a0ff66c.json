@@ -2,8 +2,6 @@
   "id": "887a6cd5-458f-4ba2-b91f-b0291a0ff66c",
   "text": "Select multiple ideas",
   "description": "",
-  "reflection": "Graph behavior now matches list behavior: ordinary idea and background clicks clear multi-selection; Ctrl/Cmd toggles membership; long-pressing an idea already in a multi-selection opens the bulk editor. Existing behavior for long-pressing an unselected idea remains unchanged pending user direction. Focused selection tests pass 31/31 and production frontend build passes.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [
@@ -32,7 +30,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "List and graph selection semantics plus staged bulk editing are aligned and verified; awaiting user acceptance.",
+    "comment": "List and graph selection semantics plus staged bulk editing are aligned and verified; awaiting user acceptance.\n\nGraph behavior now matches list behavior: ordinary idea and background clicks clear multi-selection; Ctrl/Cmd toggles membership; long-pressing an idea already in a multi-selection opens the bulk editor. Existing behavior for long-pressing an unselected idea remains unchanged pending user direction. Focused selection tests pass 31/31 and production frontend build passes.",
     "date": 1784550231261
   },
   "intrinsicValue": 0,

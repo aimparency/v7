@@ -1,25 +1,25 @@
 {
   "id": "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46",
-  "text": "Merge the overlapping idea notes: status comment, reflection, and connection hypothesis/evaluation",
-  "reflections": [],
+  "text": "Two notes only: status comment on the idea, hypothesis + reflection on the connection",
+  "description": "Felix 2026-10-16: a reflection only makes sense as the test of a hypothesis, and the hypothesis lives on the parent→child connection. Decided: an idea keeps one free-text note, status.comment (why it is in this state). Each connection keeps hypothesis (why the child should help the parent) and reflection (free text: how that turned out). Data model 5 migration: fold idea.reflection and idea.reflections[] (context/outcome/effectiveness/lesson/pattern) into status.comment; rename connection evaluation back to reflection (and meta.json promptsEvaluation → promptsReflection); drop ReflectionSchema, the addReflection tool/endpoint, and the reflection textarea in the edit modal.",
   "archived": false,
   "color": "#2d3f66",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+    "b03ad58e-4518-455f-8a35-36f58eb8ee7d"
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Proposal for Felix: keep the edge hypothesis/evaluation (it is per edge; an idea with two parents has two different reasons, which no idea-level field can hold). Fold the free-text reflection into the status comment (evidence belongs to the state it justifies; git keeps earlier comments). Also drop reflections[]? Lessons are what /dream consolidates, so they could live only in dream reflections on the root. Needs a migration either way. Agree, or keep reflections[]?",
-    "date": 1792137140997
+    "state": "review",
+    "comment": "Data model 5 migration (v5-two-notes) folds idea.reflection and reflections[] into status.comment, renames connection evaluation → reflection and promptsEvaluation → promptsReflection; addReflection tool/endpoint and the edit-modal reflection textarea removed (status comment is now a multi-line textarea); /dream keeps its memory in one dream-memory idea's status comment. pnpm check 25/25; verify:migration on this repo: graph unchanged, no conflicts, second run no-op; live .bowman migrated 4 → 5. Awaiting Felix's acceptance.",
+    "date": 1792171580999
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "Felix 2026-10-16: status, reflection and the connection hypothesis overlap; maybe only status and connection reflection are needed. Today an idea has four text notes: status.comment, reflection (free text), reflections[] (structured lessons), and per parent edge hypothesis + evaluation."
+  "valueVariance": 0
 }

@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://github.com/aimparency/v7/blob/main/protocol/schemas/meta.schema.json",
   "title": "Aimparency project meta",
-  "description": ".bowman/meta.json: project settings and the data model version. Data model version 4.",
+  "description": ".bowman/meta.json: project settings and the data model version. Data model version 5.",
   "type": "object",
   "properties": {
     "name": {
@@ -68,7 +68,7 @@
           "ongoing": {
             "type": "boolean"
           },
-          "promptsEvaluation": {
+          "promptsReflection": {
             "type": "boolean"
           }
         },
@@ -82,7 +82,7 @@
     "dataModelVersion": {
       "type": "integer",
       "exclusiveMinimum": 0,
-      "const": 4
+      "const": 5
     },
     "phaseCursors": {
       "type": "object",

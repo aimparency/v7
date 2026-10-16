@@ -2,7 +2,6 @@
   "id": "c178fbef-d0b4-4884-b4f3-c095ad9ea853",
   "text": "Header hint when the project needs a commit (not committed for days, or many uncommitted changes)",
   "description": "Felix 2026-10-16: show git status in the UI and prompt the human to commit, e.g. 'not committed for 3 days' or 'more than 10 uncommitted changes'. Clicking the hint opens the commit dialog (aacfc1ff). Counts .bowman and code changes; read-only projects show nothing.",
-  "reflections": [],
   "archived": false,
   "color": "#2d6659",
   "tags": [],

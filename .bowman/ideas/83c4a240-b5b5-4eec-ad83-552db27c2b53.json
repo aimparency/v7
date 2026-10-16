@@ -2,7 +2,6 @@
   "id": "83c4a240-b5b5-4eec-ad83-552db27c2b53",
   "text": "BuilderShip hackathon (Composio/Nebius/Tavily) — ship + showcase an autonomous Aimparency agent",
   "description": "Agent-building hackathon hosted by Composio, Nebius, Tavily, OpenClaw. Remote build phase through ~June 12, finalists June 13, in-person yacht finale on SF Bay June 14. \"Application\" = post a shipped project publicly and tag the organizers; selection favors something already shipped. Sponsor perks: Composio integrations, Nebius GPU credits, Tavily search, Token Factory keys, $50K credits + DGX Spark prize pool.\n\nREALITY CHECK (be honest, don't pretend the boat is reachable): we're remote from Germany; the finale strongly prefers SF-Bay locals, and the build window is short (created 2026-06-06). The lasting value here is NOT the boat — it's (a) forcing a genuinely shippable, demoable autonomous-agent artifact, and (b) low-cost public visibility for Aimparency by tagging a credible builder crowd. Those payoffs survive whether or not we attend. Sibling of the PL Genesis hackathon cluster (2b76f62f) under \"enable autonomy\".",
-  "reflections": [],
   "archived": false,
   "tags": [
     "hackathon",

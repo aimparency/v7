@@ -2,8 +2,6 @@
   "id": "60b12810-91aa-441f-bc3b-08c87a1f077f",
   "text": "ctrl + space for menu (just like the watchdog menu)",
   "description": "",
-  "reflection": "Ctrl+Space now opens a functional loop actions overlay with direct keys, J/K navigation, Enter, and Escape. The overlay exposes create/duplicate/start/stop/restart/fullscreen/hide actions. Verified by three passing LoopActionsOverlay unit tests and a successful production Vite build.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
@@ -13,7 +11,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Implemented and internally verified; awaiting user demonstration and acceptance before marking done.",
+    "comment": "Implemented and internally verified; awaiting user demonstration and acceptance before marking done.\n\nCtrl+Space now opens a functional loop actions overlay with direct keys, J/K navigation, Enter, and Escape. The overlay exposes create/duplicate/start/stop/restart/fullscreen/hide actions. Verified by three passing LoopActionsOverlay unit tests and a successful production Vite build.",
     "date": 1784471514964
   },
   "intrinsicValue": 0,

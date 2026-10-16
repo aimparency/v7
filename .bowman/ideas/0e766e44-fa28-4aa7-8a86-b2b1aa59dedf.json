@@ -2,7 +2,6 @@
   "id": "0e766e44-fa28-4aa7-8a86-b2b1aa59dedf",
   "text": "Archive checkbox in edit idea - available when status is a \"halted\" status.",
   "description": "see data model. some AimStatus have halted: true like done or cancelled. non-halted ideas cannot be archived directly.",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],

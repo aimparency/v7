@@ -2,7 +2,6 @@
   "id": "69321b93-d540-45a9-9a25-8f2d5254d43c",
   "text": "Implement compressed session memory for cross-session learning",
   "description": "Watchdog/agent should remember past sessions through recursive compression:\n- Store session summaries in .bowman/memory/ or as ideas/connections\n- Each session compresses: previous compression + new session transcript\n- Memory stays bounded (compress the compression)\n- Enables learning from past work, pattern recognition, strategy improvement\n- Core ASI capability for autonomous improvement",
-  "reflections": [],
   "archived": false,
   "tags": [
     "asi",

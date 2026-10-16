@@ -20,7 +20,7 @@ export function formatIdeas(ideas: Partial<Idea>[]) {
 }
 
 // A repo edge as stored, or as described below (with name and health).
-type RepoEdge = Pick<RepoConnection, "repoId" | "weight" | "hypothesis" | "evaluation"> & Record<string, unknown>;
+type RepoEdge = Pick<RepoConnection, "repoId" | "weight" | "hypothesis" | "reflection"> & Record<string, unknown>;
 
 // Repo-level cross-repo links are black-box edges: {repoId} and no ideaId, so a
 // raw supportingRepos array tells an agent nothing but a UUID. Resolve each one
@@ -45,7 +45,7 @@ export async function describeRepoEdges(trpcClient: BackendClient, projectPath: 
         ...(entry?.name ? { name: entry.name } : {}),
         weight: edge.weight ?? 1,
         ...(edge.hypothesis !== undefined ? { hypothesis: edge.hypothesis } : {}),
-        ...(edge.evaluation !== undefined ? { evaluation: edge.evaluation } : {}),
+        ...(edge.reflection !== undefined ? { reflection: edge.reflection } : {}),
         health: !entry ? "unknown-repo" : entry.resolved ? "resolved" : "not-checked-out",
       };
     });

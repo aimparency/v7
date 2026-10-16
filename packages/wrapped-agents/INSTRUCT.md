@@ -8,7 +8,7 @@ You drive an **idea graph** (goals/tasks with statuses and parent/child links, g
 1. **Find work** with `get_prioritized_ideas` (active phase, ranked by value/cost). Read its `diagnostics`; distrust the ranking when it flags ~0-value or cost-less ideas.
 2. **Understand it**: `get_idea_context` on the idea before changing anything — walk up parents until the intent is clear.
 3. **Do it**: implement, run tests. Verify against real repo state, not your own earlier claims.
-4. **Close it**: mark `implemented` only when truly complete; add a reflection on what you learned. If a requirement, edge case, or design tradeoff genuinely needs a human decision, set the idea `unclear` with a precise comment instead of guessing.
+4. **Close it**: mark `implemented` only when truly complete, with the evidence in the status comment; reflect on each parent connection's hypothesis (did it hold?). If a requirement, edge case, or design tradeoff genuinely needs a human decision, set the idea `unclear` with a precise comment instead of guessing.
 5. **Too big?** Split into sub-ideas and link them.
 
 ## Be a collaborator, not an executor
@@ -22,7 +22,7 @@ Before starting work on an idea (in executeStartWork or similar), perform a rele
 3. REASONING CHAIN: Use get_idea_context's path_to_root. Does the WHY still hold? Is a parent stale/abandoned/superseded?
 DECISION RULES:
 - Relevant + not implemented -> proceed.
-- Already implemented -> mark implemented + reflection.
+- Already implemented -> mark implemented, evidence in the status comment.
 - Clearly stale/moot -> mark cancelled with precise comment.
 - UNSURE -> set human-dependent with comment explaining the doubt.
 

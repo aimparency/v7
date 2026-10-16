@@ -10,7 +10,7 @@
     {
       "key": "implemented",
       "color": "#52bf40",
-      "promptsEvaluation": true
+      "promptsReflection": true
     },
     {
       "key": "halted",
@@ -19,7 +19,7 @@
     {
       "key": "cancelled",
       "color": "#ffa348",
-      "promptsEvaluation": true
+      "promptsReflection": true
     },
     {
       "key": "partially",
@@ -33,7 +33,7 @@
     {
       "key": "failed",
       "color": "#f66151",
-      "promptsEvaluation": true
+      "promptsReflection": true
     },
     {
       "key": "unclear",
@@ -57,7 +57,7 @@
     "f51f8930-c937-4c66-9db8-d4d313e6d286",
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
-  "dataModelVersion": 4,
+  "dataModelVersion": 5,
   "linkedRepos": [],
   "repoId": "8afbd724-7470-402c-96bd-a5be038a1d03"
 }

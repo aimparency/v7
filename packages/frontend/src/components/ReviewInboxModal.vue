@@ -153,7 +153,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
           <span class="copy">
             <span class="text">{{ entry.idea.text || '(untitled)' }}</span>
             <span v-if="entry.idea.status.comment" class="comment">{{ entry.idea.status.comment }}</span>
-            <span v-if="index === selectedIndex && entry.idea.reflection" class="evidence">{{ entry.idea.reflection }}</span>
           </span>
         </li>
       </ol>
@@ -220,9 +219,8 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
     & .priority { font-family: monospace; color: #aaa; }
     & .copy { display: flex; flex-direction: column; gap: 0.2rem; min-width: 0; }
-    & .comment, & .evidence { font-size: var(--font-size-small); color: #aaa; }
+    & .comment { font-size: var(--font-size-small); color: #aaa; white-space: pre-wrap; }
     & li:not(.selected) .comment { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    & .evidence { white-space: pre-wrap; }
   }
 
   & .send-back {

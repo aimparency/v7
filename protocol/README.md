@@ -1,4 +1,4 @@
-# The .bowman format (protocol v0, data model version 4)
+# The .bowman format (protocol v0, data model version 5)
 
 A `.bowman` directory stores an idea graph as plain JSON files inside a Git
 repository. Git is the history: files hold the current state only, and every
@@ -6,7 +6,7 @@ change is a normal commit. Any tool can read and write a project with nothing
 but a JSON parser; Aimparency's backend, MCP server and agents are clients of
 this format, not its owners.
 
-This document is normative for data model version 4. The JSON Schemas in
+This document is normative for data model version 5. The JSON Schemas in
 [`schemas/`](schemas/) are generated from the code that reads the format and
 define the shape of each file; the rules below add what a schema cannot
 express. Check a project with:
@@ -47,7 +47,7 @@ An idea is a unit of intent at any scale, from a mission to a one-line fix.
 
 - `text` is the title; `description` the details.
 - `status.state` names one of the project's statuses (see below) or
-  `archived`. `status.comment` explains the current state, `status.date` is the
+  `archived`. `status.comment` explains the current state and holds its evidence, `status.date` is the
   time of the last real transition (milliseconds since the epoch), and
   `status.reviewedAt` confirms that the state still holds without changing
   `date`.
@@ -56,8 +56,6 @@ An idea is a unit of intent at any scale, from a mission to a one-line fix.
   estimated days until its value is realized. `valueRationale` explains the
   value estimate. `calculated*` properties are derived caches; readers must not
   trust them and writers may omit them.
-- `reflection` is a free-text note on how the work went; `reflections` holds
-  structured evaluations.
 - `tags`, `color` (`#rrggbb`) and `archived` are presentation and filtering
   hints.
 - Ideas carry no dates for scheduling: urgency is expressed through order,
@@ -69,15 +67,15 @@ A link means "the child supports the parent": achieving the child contributes
 to the parent. The graph is directed and may contain cycles.
 
 - The parent lists the child in `supportingConnections` as
-  `{ ideaId, weight, relativePosition, hypothesis?, evaluation? }`. The array
+  `{ ideaId, weight, relativePosition, hypothesis?, reflection? }`. The array
   order is the child order.
 - The child lists the parent's id in `supportedIdeas`.
 - Every link is recorded on both ends. A link recorded on one end only is
   invalid.
 - `weight` (default 1) sets the child's share of the parent's value:
   `share = weight / (sum of sibling weights + the parent's loopWeight)`.
-- `hypothesis` says why the child should help; `evaluation` records how that
-  turned out once the child is settled.
+- `hypothesis` says why the child should help; `reflection` tests it: how
+  that turned out once the child is settled.
 - `relativePosition` is layout only: the child's position relative to the
   parent in a 2D graph view, in units of the two ideas' radii summed. Writers
   round it to two decimals.
@@ -103,7 +101,7 @@ Phases group commitments ("what we do now / next"), not dates.
 - `name`, `color`, and `dataModelVersion`, which must be `4` for this version
   of the protocol.
 - `statuses` defines the project's states: `key` (`[a-z0-9-]+`), `color`, and
-  `promptsEvaluation` (entering the state asks to evaluate the idea's links).
+  `promptsReflection` (entering the state asks to reflect on the hypotheses of the idea's links).
   `ongoing` is informational. Without `statuses`, Aimparency's defaults apply:
   open, in-progress, partially, review, implemented, halted, cancelled, failed,
   unclear, human-dependent.
@@ -119,6 +117,6 @@ Phases group commitments ("what we do now / next"), not dates.
 `meta.json` `dataModelVersion` names the format version. Aimparency upgrades
 older projects in place through idempotent migrations when it opens them, and
 refuses to write projects with a newer version than it knows. A reader that
-only understands version 4 should reject other versions rather than guess.
+only understands version 5 should reject other versions rather than guess.
 Frozen examples of earlier versions live in
 `packages/shared/fixtures/data-model-<N>/`.

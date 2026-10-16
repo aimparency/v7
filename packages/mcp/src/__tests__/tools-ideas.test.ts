@@ -196,7 +196,7 @@ test('status date changes only on state transition; reviewedAt is independent', 
   assert.equal(transitioned.status.reviewedAt, reviewedAt, 'transition preserves the last explicit review');
 });
 
-test('MCP Tools - update_idea nudges to verify when marking done without a reflection', async () => {
+test('MCP Tools - update_idea nudges to verify when marking done without evidence', async () => {
   const server = new MockServer();
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
@@ -204,28 +204,21 @@ test('MCP Tools - update_idea nudges to verify when marking done without a refle
   await createIdea(server, { projectPath: ctx.projectPath, text: 'Verify me' });
   const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0].id;
 
-  // Done without a reflection -> nudge.
-  const noReflection = await server.callTool('update_idea', {
+  // Done without evidence -> nudge.
+  const noEvidence = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
     status: { state: 'implemented' },
   });
-  assert.match(noReflection.content[0].text, /verified-done/, 'nudges when done without reflection');
+  assert.match(noEvidence.content[0].text, /verified-done/, 'nudges when done without evidence');
 
-  // Add a reflection, then mark done again -> no nudge.
-  await server.callTool('addReflection', {
+  // Done with evidence in the status comment -> no nudge.
+  const withEvidence = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId,
-    reflection: {
-      context: 'c', outcome: 'o', effectiveness: 'e', lesson: 'l',
-    },
+    status: { state: 'implemented', comment: 'focused test passes' },
   });
-  const withReflection = await server.callTool('update_idea', {
-    projectPath: ctx.projectPath,
-    ideaId,
-    status: { state: 'implemented' },
-  });
-  assert.doesNotMatch(withReflection.content[0].text, /verified-done/, 'no nudge once a reflection exists');
+  assert.doesNotMatch(withEvidence.content[0].text, /verified-done/, 'no nudge once the comment holds evidence');
 
   // Non-done updates never nudge.
   const openUpdate = await server.callTool('update_idea', {
@@ -263,27 +256,6 @@ test('MCP Tools - done nudge surfaces the type-specific evidence hint', async ()
     status: { state: 'implemented' },
   });
   assert.match(res.content[0].text, /screenshot|interaction/, 'UI idea nudge asks for a screenshot/interaction proof');
-});
-
-test('MCP Tools - update_idea stores free-text reflection with status', async () => {
-  const server = new MockServer();
-  const callerProxy = createCallerProxy(caller);
-  registerTools(server as any, callerProxy as any);
-
-  await createIdea(server, { projectPath: ctx.projectPath, text: 'Reflectable idea' });
-  const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0].id;
-
-  const result = await server.callTool('update_idea', {
-    projectPath: ctx.projectPath,
-    ideaId,
-    status: { state: 'implemented' },
-    reflection: 'Verified with the focused MCP idea test.',
-  });
-
-  const idea = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
-  assert.equal(idea.status.state, 'implemented');
-  assert.equal(idea.reflection, 'Verified with the focused MCP idea test.');
-  assert.doesNotMatch(result.content[0].text, /verified-done/, 'free-text reflection satisfies done evidence nudge');
 });
 
 test('MCP Tools - create_idea accepts edge metadata for parent and child links', async () => {
@@ -541,7 +513,7 @@ test('MCP Tools - list_phase_ideas_recursive', async () => {
   assert.equal(tree[0].children.length, 1);
 });
 
-test('MCP Tools - settling an idea asks to evaluate its parent connections; evaluating keeps the weight', async () => {
+test('MCP Tools - settling an idea asks to reflect on its parent connections; reflecting keeps the weight', async () => {
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
@@ -557,20 +529,19 @@ test('MCP Tools - settling an idea asks to evaluate its parent connections; eval
   const settled = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId: childId,
-    status: { state: 'implemented', comment: '' },
-    reflection: 'verified',
+    status: { state: 'implemented', comment: 'verified' },
   });
-  assert.match(settled.content[0].text, /evaluate how it actually contributed/);
+  assert.match(settled.content[0].text, /reflect on each parent's hypothesis/);
   assert.match(settled.content[0].text, /hypothesis: "should unblock the parent"/);
 
   await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId: childId,
-    addSupportedIdeas: [{ ideaId: parentId, evaluation: 'it did, partly' }],
+    addSupportedIdeas: [{ ideaId: parentId, reflection: 'it did, partly' }],
   });
   assert.deepEqual(
-    { weight: (await edge()).weight, hypothesis: (await edge()).hypothesis, evaluation: (await edge()).evaluation },
-    { weight: 3, hypothesis: 'should unblock the parent', evaluation: 'it did, partly' },
+    { weight: (await edge()).weight, hypothesis: (await edge()).hypothesis, reflection: (await edge()).reflection },
+    { weight: 3, hypothesis: 'should unblock the parent', reflection: 'it did, partly' },
   );
 
   const again = await server.callTool('update_idea', {
@@ -578,14 +549,14 @@ test('MCP Tools - settling an idea asks to evaluate its parent connections; eval
     ideaId: childId,
     status: { state: 'implemented', comment: 'still' },
   });
-  assert.doesNotMatch(again.content[0].text, /evaluate how it actually contributed/, 'evaluated connections are not asked again');
+  assert.doesNotMatch(again.content[0].text, /reflect on each parent's hypothesis/, 'reflected connections are not asked again');
 
   const reopened = await server.callTool('update_idea', {
     projectPath: ctx.projectPath,
     ideaId: childId,
     status: { state: 'open', comment: '' },
   });
-  assert.doesNotMatch(reopened.content[0].text, /evaluate/, 'open does not prompt evaluation');
+  assert.doesNotMatch(reopened.content[0].text, /hypothesis/, 'open does not prompt a reflection');
 });
 
 test('MCP Tools - updating a child edge\'s hypothesis keeps its weight', async () => {

@@ -145,11 +145,11 @@ describe('ProjectSettingsModal linked repos', () => {
     )
   })
 
-  it('saves each status\'s prompts-evaluation flag as an explicit boolean', async () => {
+  it('saves each status\'s prompts-reflection flag as an explicit boolean', async () => {
     listMock.mockResolvedValue([])
     discoverMock.mockResolvedValue({ projects: [], rootsScanned: [] })
     const statuses = [
-      { key: 'implemented', color: '#00ff00', ongoing: false, promptsEvaluation: true },
+      { key: 'implemented', color: '#00ff00', ongoing: false, promptsReflection: true },
       { key: 'open', color: '#ffffff', ongoing: true }
     ]
     const { wrapper, dataStore } = mountModal(statuses)
@@ -164,8 +164,8 @@ describe('ProjectSettingsModal linked repos', () => {
 
     expect(dataStore.updateProjectMeta).toHaveBeenCalledWith(SELF_BOWMAN, expect.objectContaining({
       statuses: [
-        expect.objectContaining({ key: 'implemented', promptsEvaluation: false }),
-        expect.objectContaining({ key: 'open', promptsEvaluation: true })
+        expect.objectContaining({ key: 'implemented', promptsReflection: false }),
+        expect.objectContaining({ key: 'open', promptsReflection: true })
       ]
     }))
   })

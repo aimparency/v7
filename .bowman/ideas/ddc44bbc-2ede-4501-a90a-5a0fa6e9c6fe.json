@@ -2,7 +2,6 @@
   "id": "ddc44bbc-2ede-4501-a90a-5a0fa6e9c6fe",
   "text": "Open your own repo in one step: pnpm dev <path or git url>",
   "description": "Zero-setup entry for outside developers: `pnpm dev ~/code/my-repo` (or start) prints a link http://localhost:4000/?project=<abs path> that opens that repo directly and creates its .bowman on first open; a Git URL prints a ?repo= read-only link. Path resolves against the caller's directory (pnpm INIT_CWD). Also: launcher --dry-run no longer writes runtime-config.json (it repointed a running stack's frontend) and validate:local-runtime no longer deletes the live config — it parses the printed dry-run config.",
-  "reflections": [],
   "archived": false,
   "color": "#674c2d",
   "tags": [],

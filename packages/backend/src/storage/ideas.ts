@@ -232,7 +232,7 @@ export async function connectIdeasInternal(projectPath: string, parentIdeaId: st
       if (changed) await writeIdea(projectPath, parent);
     }
   } else {
-    // Preserve an existing hypothesis (unless a new one is supplied) and evaluation across reorder
+    // Preserve an existing hypothesis (unless a new one is supplied) and reflection across reorder
     const prevConn = currentChildIndex !== -1 ? parent.supportingConnections[currentChildIndex] : undefined;
     // Remove from current position if present
     if (currentChildIndex !== -1) {
@@ -248,7 +248,7 @@ export async function connectIdeasInternal(projectPath: string, parentIdeaId: st
       relativePosition: relativePosition || getRandomRelativePosition(),
       weight,
       ...(resolvedHypothesis !== undefined ? { hypothesis: resolvedHypothesis } : {}),
-      ...(prevConn?.evaluation !== undefined ? { evaluation: prevConn.evaluation } : {})
+      ...(prevConn?.reflection !== undefined ? { reflection: prevConn.reflection } : {})
     };
 
     parent.supportingConnections.splice(targetParentIndex, 0, newConnection);

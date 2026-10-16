@@ -2,7 +2,6 @@
   "id": "4cf3aad9-b371-4264-b26a-61261c73ed43",
   "text": "when creating sub idea by drag and drop, take into account the expected idea size when calculating the initial distance.",
   "description": "otherwise idea is placed, size calculated, distance scaled. => idea not where we dragged => bad UI",
-  "reflections": [],
   "archived": false,
   "tags": [],
   "supportingConnections": [],
