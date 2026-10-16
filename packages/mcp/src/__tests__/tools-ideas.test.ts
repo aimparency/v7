@@ -142,14 +142,22 @@ test('MCP Tools - create_idea requires review and surfaces cancelled context', a
     confirmationToken: 'wrong-token',
   });
   assert.equal(mismatch.isError, true);
-  assert.match(mismatch.content[0].text, /does not match this idea proposal/);
+  assert.match(mismatch.content[0].text, /does not match this idea text/);
   assert.equal((await caller.idea.list({ projectPath: ctx.projectPath })).length, 1);
+
+  const editedText = await server.callTool('create_idea', {
+    ...proposal,
+    text: 'Build explicit first-class workflow plans and templates',
+    confirmationToken: payload.confirmationToken,
+  });
+  assert.equal(editedText.isError, true, 'a different text needs a fresh review');
 
   const created = await server.callTool('create_idea', {
     ...proposal,
+    description: 'Added after reviewing the related ideas',
     confirmationToken: payload.confirmationToken,
   });
-  assert.match(created.content[0].text, /Created idea with ID:/);
+  assert.match(created.content[0].text, /Created idea with ID:/, 'other fields may change after the review');
   assert.equal((await caller.idea.list({ projectPath: ctx.projectPath })).length, 2);
 });
 

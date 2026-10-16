@@ -49,23 +49,12 @@ async function evaluationNudgeFor(trpcClient: BackendClient, projectPath: string
   return `\n\n'${state}' settles this idea: evaluate how it actually contributed to each parent, via update_idea addSupportedIdeas: [{ ideaId: <parent>, evaluation: "..." }]:\n${lines.join("\n")}`;
 }
 
-function canonicalize(value: unknown): unknown {
-  if (Array.isArray(value)) return value.map(canonicalize);
-  if (value && typeof value === "object") {
-    return Object.fromEntries(
-      Object.entries(value as Record<string, unknown>)
-        .filter(([, item]) => item !== undefined)
-        .sort(([left], [right]) => left.localeCompare(right))
-        .map(([key, item]) => [key, canonicalize(item)]),
-    );
-  }
-  return value;
-}
-
+// The review is about what the idea is, so the token binds only its text:
+// description, status, parents or estimates may still change before creating.
 export function ideaCreationConfirmationToken(args: Record<string, unknown>): string {
-  const { confirmationToken: _confirmationToken, ...proposal } = args;
+  const text = String(args.text ?? "").trim().replace(/\s+/g, " ").toLowerCase();
   return createHash("sha256")
-    .update(JSON.stringify(canonicalize(proposal)))
+    .update(JSON.stringify([args.projectPath, text]))
     .digest("hex")
     .slice(0, 24);
 }
@@ -237,7 +226,7 @@ export const ideaTools: ToolDefinition[] = [
   },
   {
     name: "create_idea",
-    description: "Two-step creation: first call returns related active/cancelled ideas and a confirmationToken without writing. Review that context, then repeat the identical call with confirmationToken to create. Similarity informs judgment; it does not forbid a genuinely distinct idea. Connect the idea to the mission it serves.",
+    description: "Two-step creation: first call returns related active/cancelled ideas and a confirmationToken without writing. Review that context, then repeat the call with confirmationToken to create; the token binds the idea text, so other fields may change in between. Similarity informs judgment; it does not forbid a genuinely distinct idea. Connect the idea to the mission it serves.",
     inputSchema: {
       type: "object",
       properties: {
@@ -260,7 +249,7 @@ export const ideaTools: ToolDefinition[] = [
         cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
         phaseId: { type: "string" },
-        confirmationToken: { type: "string", description: "Token returned by the review-only first call. Any proposal edit requires a fresh review." },
+        confirmationToken: { type: "string", description: "Token returned by the review-only first call. Changing the text requires a fresh review; other fields may change." },
       },
       required: ["projectPath", "text"],
     },
@@ -288,7 +277,7 @@ export const ideaTools: ToolDefinition[] = [
               instruction:
                 "Review the related ideas, especially cancelled ones and their reasons. " +
                 "Reuse, update, connect, or merge when appropriate. If this proposal is still distinct and useful, " +
-                "repeat the identical create_idea call with confirmationToken.",
+                "repeat the create_idea call with confirmationToken (same text; other fields may change).",
               relatedIdeas: related.map((idea) => ({
                 id: idea.id,
                 text: idea.text,
@@ -302,8 +291,8 @@ export const ideaTools: ToolDefinition[] = [
       }
       if (args.confirmationToken !== expectedToken) {
         throw new Error(
-          "confirmationToken does not match this idea proposal. " +
-          "Call create_idea again without confirmationToken to review context for the edited proposal.",
+          "confirmationToken does not match this idea text. " +
+          "Call create_idea again without confirmationToken to review context for the edited text.",
         );
       }
 

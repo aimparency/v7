@@ -2,7 +2,17 @@
   "id": "8e8d8f7a-375d-46b8-8f03-192527b59106",
   "text": "Require contextual review before MCP idea creation",
   "description": "Make MCP idea creation an enforced two-call review. First create_idea call performs text+semantic search across active and cancelled ideas, returns compact relevant context plus a deterministic confirmation token, and writes nothing. A second identical call with that token creates the idea. Similarity is informative rather than an automatic veto: the agent may confirm a genuinely distinct idea. The token binds the exact proposal so edits require fresh context. Keep this separate and much leaner than the human-facing transient subtree approval system.",
-  "reflections": [],
+  "reflection": "Implemented an enforced MCP-only two-call creation gate. First create_idea call performs existing combined text+semantic search, returns up to eight related active/cancelled ideas with status rationale and a deterministic token, and writes nothing. Second identical call with the token creates; changing any proposal field invalidates it. Similarity remains contextual rather than an automatic veto. This is intentionally separate from the richer human-facing subtree proposal system. Verification: focused MCP ideas+phases tests 16/16 pass, including no-write preview, cancelled rationale visibility, mismatch rejection, and confirmed creation; MCP TypeScript build passes.",
+  "reflections": [
+    {
+      "date": 1792122164691,
+      "context": "MCP-agent feedback (2026-10-16): the two-call create_idea doubles round trips, and any edit between the calls invalidated the token.",
+      "outcome": "Kept two calls. The token now binds only project + normalized text, so description, status, parents or estimates can change after the review; a changed text still needs a fresh review (test added, mcp 47/47).",
+      "effectiveness": "Measured whether a score threshold could skip the review when nothing is close: the text part of idea.search is rank-based (top hit always 1.0), and semantic cosine put a paraphrased duplicate at 0.81, the proposal's own parent at 0.79 and an unrelated sibling at 0.78. No threshold separates duplicates from family.",
+      "lesson": "Similarity scores can inform a reviewer but cannot decide on their own; reduce friction around the gate (what the token binds) rather than skipping it on a score.",
+      "pattern": "bge cosine is a weak duplicate separator (see find_duplicate_ideas calibration)."
+    }
+  ],
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -27,6 +37,5 @@
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "reflection": "Implemented an enforced MCP-only two-call creation gate. First create_idea call performs existing combined text+semantic search, returns up to eight related active/cancelled ideas with status rationale and a deterministic token, and writes nothing. Second identical call with the token creates; changing any proposal field invalidates it. Similarity remains contextual rather than an automatic veto. This is intentionally separate from the richer human-facing subtree proposal system. Verification: focused MCP ideas+phases tests 16/16 pass, including no-write preview, cancelled rationale visibility, mismatch rejection, and confirmed creation; MCP TypeScript build passes."
+  "valueVariance": 0
 }
