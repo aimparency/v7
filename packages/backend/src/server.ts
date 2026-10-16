@@ -18,6 +18,7 @@ import { graphHealthRouter } from './routers/graph-health.js';
 import { historyRouter } from './routers/history.js';
 import { spinOffRouter } from './routers/spin-off.js';
 import { linkedRepoRouter } from './routers/linked-repo.js';
+import { gitRouter } from './routers/git.js';
 import { forgetProjectChecks } from './storage/project.js';
 
 const appRouter = t.router({
@@ -34,6 +35,7 @@ const appRouter = t.router({
   spinOff: spinOffRouter,
   linkedRepo: linkedRepoRouter,
   history: historyRouter,
+  git: gitRouter,
 });
 
 export { appRouter };

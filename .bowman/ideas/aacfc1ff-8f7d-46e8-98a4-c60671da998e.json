@@ -1,6 +1,7 @@
 {
   "id": "aacfc1ff-8f7d-46e8-98a4-c60671da998e",
   "text": "Commit from the UI: review the changed files and enter a commit message",
+  "description": "Felix 2026-10-16: a commit dialog lists the uncommitted files (idea files shown by their idea text), lets the human pick which to include (all by default), takes a message and commits. Stage only the chosen paths, never blanket-stage: agents share the working tree.",
   "reflections": [],
   "archived": false,
   "color": "#39662d",
@@ -11,15 +12,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792137094628
+    "state": "review",
+    "comment": "CommitModal from the header button: changed files with checkboxes (all on, code first, idea/phase files named by their text), message field, 'Commit N files'. Backend git.commit stages only the chosen paths and commits with --only, so others' staged changes stay staged (backend test on a temp repo, 3/3). Component spec 1/1, pnpm check 25/25; opened live, no commit made in the real repo.",
+    "date": 1792137641801
   },
   "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "Felix 2026-10-16: a commit dialog lists the uncommitted files (idea files shown by their idea text), lets the human pick which to include (all by default), takes a message and commits. Stage only the chosen paths, never blanket-stage: agents share the working tree."
+  "valueVariance": 0
 }

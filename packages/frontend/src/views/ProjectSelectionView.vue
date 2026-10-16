@@ -3,6 +3,7 @@ import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
 import { trpc } from '../trpc'
 import { loadProjectThumbnails } from '../utils/db'
+import { formatRelativeTime } from '../utils/relative-time'
 import { gitRepositoryLocation } from 'shared'
 
 type DiscoveredProject = {
@@ -188,19 +189,6 @@ watch(() => [...props.projectHistory, ...props.discoveredProjects].map(project =
 }, { immediate: true })
 onUnmounted(revokeThumbnails)
 
-const formatRelativeTime = (timestamp: number): string => {
-  const now = Date.now()
-  const diff = now - timestamp
-  const minutes = Math.floor(diff / (60 * 1000))
-  const hours = Math.floor(diff / (60 * 60 * 1000))
-  const days = Math.floor(diff / (24 * 60 * 60 * 1000))
-
-  if (minutes < 1) return 'just now'
-  if (minutes < 60) return `${minutes}m ago`
-  if (hours < 24) return `${hours}h ago`
-  if (days < 30) return `${days}d ago`
-  return new Date(timestamp).toLocaleDateString()
-}
 </script>
 
 <template>

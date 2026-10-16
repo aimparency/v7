@@ -28,6 +28,9 @@ import LoopPanel from './components/LoopPanel.vue'
 import LoopActionsOverlay from './components/LoopActionsOverlay.vue'
 import ConsistencyModal from './components/ConsistencyModal.vue'
 import ReviewInboxModal from './components/ReviewInboxModal.vue'
+import CommitModal from './components/CommitModal.vue'
+import { needsCommit, type WorkingTreeChange } from './utils/git-status'
+import { formatRelativeTime } from './utils/relative-time'
 import ToastStack from './components/ToastStack.vue'
 import { useToastStore } from './stores/toast'
 import { gitRepositoryLocation } from 'shared'
@@ -113,6 +116,27 @@ const toggleContinueHook = async () => {
   continueHook.value = await trpc.system.setContinueHook.mutate({ projectPath: projectStore.projectPath, enabled: !continueHook.value.enabled })
 }
 watch(() => projectStore.projectPath, refreshContinueHook, { immediate: true })
+// Uncommitted work of the project's repository; the header prompts a commit when it piles up.
+const workingTree = ref<{ changes: WorkingTreeChange[]; lastCommitAt: number | null } | null>(null)
+const showCommitDialog = ref(false)
+const refreshWorkingTree = async () => {
+  const projectPath = projectStore.projectPath
+  try {
+    const status = projectPath ? await trpc.git.status.query({ projectPath }) : null
+    workingTree.value = status?.isRepository ? status : null
+  } catch {
+    workingTree.value = null
+  }
+}
+const commitPrompt = computed(() => workingTree.value !== null && needsCommit(workingTree.value.changes, workingTree.value.lastCommitAt))
+const workingTreeTitle = computed(() => {
+  if (!workingTree.value) return ''
+  const { changes, lastCommitAt } = workingTree.value
+  return `${changes.length} uncommitted ${changes.length === 1 ? 'change' : 'changes'}, last commit ${lastCommitAt ? formatRelativeTime(lastCommitAt) : 'never'}. Click to commit.`
+})
+watch(() => projectStore.projectPath, refreshWorkingTree, { immediate: true })
+const workingTreeTimer = setInterval(refreshWorkingTree, 30_000)
+onUnmounted(() => clearInterval(workingTreeTimer))
 const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const discoveredProjectRoots = ref<string[]>([])
@@ -622,6 +646,18 @@ onUnmounted(() => {
           </div>
 
           <button
+            v-if="workingTree && dataStore.access.writable"
+            class="icon-btn commit-btn"
+            :class="{ prompt: commitPrompt }"
+            :title="workingTreeTitle"
+            :disabled="workingTree.changes.length === 0"
+            @click="showCommitDialog = true"
+            @mouseenter="refreshWorkingTree"
+          >
+            ± {{ workingTree.changes.length }}{{ commitPrompt ? ' · commit' : '' }}
+          </button>
+
+          <button
             v-if="projectStore.projectPath"
             class="icon-btn inbox-btn"
             title="Ideas awaiting your review or decision, by priority"
@@ -739,6 +775,13 @@ onUnmounted(() => {
 
     <!-- Before the idea editor, so an idea opened from the inbox stacks on top -->
     <ReviewInboxModal v-if="showReviewInbox" @close="showReviewInbox = false" />
+    <CommitModal
+      v-if="showCommitDialog && workingTree"
+      :changes="workingTree.changes"
+      :last-commit-at="workingTree.lastCommitAt"
+      @close="showCommitDialog = false"
+      @committed="showCommitDialog = false; refreshWorkingTree()"
+    />
 
     <!-- Idea Edit Modal -->
     <IdeaEditModal
@@ -881,7 +924,8 @@ onUnmounted(() => {
   line-height: 1;
   padding: 0;
 
-  &.inbox-btn { padding: 0 0.5rem; }
+  &.inbox-btn, &.commit-btn { padding: 0 0.5rem; }
+  &.commit-btn.prompt { color: var(--status-unclear); border-color: var(--status-unclear); }
 }
 
 .icon-btn:hover {
