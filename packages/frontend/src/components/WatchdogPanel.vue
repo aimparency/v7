@@ -617,6 +617,7 @@ defineExpose({
 }
 
 .agent-select {
+  width: auto; /* the global select rule stretches it over the whole header */
   height: var(--control-h);
   padding: 0 0.4rem;
   background: rgba(0, 0, 0, 0.3);
