@@ -14,9 +14,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "open",
-    "comment": "Decided by Felix 2026-10-16: (1) The git account that commits is responsible for all changes made by people it gave access to; no per-user change log for now. (2) Reading needs no password: the ideas are public, to invite contribution. (3) Three roles: admin (manages accounts, writes), write, read; visitors without login read. The first admin account is created on the server (one command); after that, admins manage accounts in the UI. Ready to plan.",
-    "date": 1792178814667
+    "state": "review",
+    "comment": "Implemented in 7d73c932. pnpm start asks once for the repository, hosting, port, listen address and first admin; hosted mode serves the UI, /trpc and /mcp/sse on one port. Roles read (anyone), write, admin; one backend access middleware for UI and MCP; local-only tools are off when hosted. Tests: backend auth and hosted-server tests, validate-local-runtime, pnpm check 25/25. Waiting for Felix's trial on the Commons Hub server.",
+    "date": 1792182016358
   },
   "intrinsicValue": 0,
   "cost": 1,
