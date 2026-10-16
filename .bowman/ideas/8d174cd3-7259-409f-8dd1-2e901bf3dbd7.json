@@ -3,7 +3,15 @@
   "text": "Secure non-dilutive funding for Aimparency without delaying real revenue",
   "description": "Pursue funding routes that are officially open, structurally eligible, and proportionate to Aimparency's maturity. Current order as of 22 July 2026: (1) Prototype Fund individual open-infrastructure application for October, (2) paid Wilde Möhre/Herzog Records diagnostics in parallel as the fastest economic feedback, (3) monitor NLnet's general call reopening after summer, (4) run one EXIST eligibility check with a university network if founder qualifications fit, (5) pursue either Pro FIT Berlin or BayTOU only after deciding the company seat, and (6) monitor ZIM rather than submitting while its 7 July application stop remains. Source-verified analysis: meta/funding-landscape-2026-07-22.md. Grants complement real customers; they do not prove economic stability.",
   "reflection": "Status reconciliation on 2026-07-30 found all five direct funding children human-dependent. The umbrella now reflects that gate.",
-  "reflections": [],
+  "reflections": [
+    {
+      "date": 1792137187110,
+      "context": "Felix 2026-10-16: keep this idea; research whether there is funding for an idealistic, almost artistic, probably futile AI tool.",
+      "outcome": "Web search 2026-10-16. Best fit: the NLnet call (Open Internet Stack, successor of NGI Zero) closes 3 Nov 2026 12:00 CET. It funds open-source work by individuals in Europe with no institution needed; check which of its funds fits. Kulturstiftung des Bundes 'Kunst & KI': artistic engagement with AI; amounts and dates not found. Not fitting: Humanity AI (closes 21 Oct; US nonprofit must lead), AWS Agentic AI (closes 4 Nov; aimed at researchers under Amazon Research Award rules), Musikfonds STIP-6 (music only).",
+      "effectiveness": "One realistic, near-term option (NLnet), without institutional overhead; the rest fail on eligibility.",
+      "lesson": "For a solo open-source developer in Germany, NLnet is the natural fit: small grants, light process, open source as the whole requirement. Art funding needs an artistic framing, and Felix's credo might provide it."
+    }
+  ],
   "archived": false,
   "color": null,
   "tags": [
