@@ -329,11 +329,11 @@ const formatRelativeTime = (timestamp: number): string => {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
-  gap: 2rem;
+  gap: 1.5rem;
   padding: 2rem;
-  max-width: 50rem;
+  max-width: 90rem;
   width: 100%;
+  min-height: 0;
   margin: 0 auto;
 }
 
@@ -411,7 +411,8 @@ const formatRelativeTime = (timestamp: number): string => {
 
 .project-lists {
   width: 100%;
-  max-height: 20rem;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
@@ -510,9 +511,11 @@ const formatRelativeTime = (timestamp: number): string => {
 }
 
 .history-item {
+  /* Same as the selected row of the list view: blue outline, brighter bg. */
   &.selected {
-    border-color: #007acc;
-    background: #333;
+    outline: 0.15rem solid #007acc;
+    outline-offset: -0.15rem;
+    background-image: linear-gradient(rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.1));
   }
 
   &.removing {
@@ -521,8 +524,8 @@ const formatRelativeTime = (timestamp: number): string => {
   }
 
   & .thumbnail {
-    flex: 0 0 4rem;
-    height: 2.5rem;
+    flex: 0 0 8rem;
+    height: 5rem;
     margin-left: 0.5rem;
     object-fit: cover;
     border-radius: 0.1875rem;
@@ -550,6 +553,11 @@ const formatRelativeTime = (timestamp: number): string => {
   color: inherit;
   cursor: pointer;
   text-align: left;
+
+  /* The row's selection outline already shows focus. */
+  &:focus-visible {
+    outline: none;
+  }
 }
 
 .history-item-content {
