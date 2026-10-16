@@ -1,7 +1,8 @@
 <script setup lang="ts">
-import { computed, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
 import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
 import { trpc } from '../trpc'
+import { loadProjectThumbnails } from '../utils/db'
 import { gitRepositoryLocation } from 'shared'
 
 type DiscoveredProject = {
@@ -90,6 +91,89 @@ const loadPathIntoInput = (path: string) => {
   emit('update:modelValue', path)
 }
 
+// The input filters both lists by path; one entry named exactly like the input is
+// the perfect match: highlighted, and Enter opens it.
+const query = computed(() => props.modelValue.trim().replace(/\/+$/, '').toLowerCase())
+const matchesQuery = (path: string) => !query.value || path.toLowerCase().includes(query.value)
+const recentResults = computed(() => props.projectHistory.filter(project => matchesQuery(project.path)))
+const discoveredResults = computed(() => {
+  const recent = new Set(props.projectHistory.map(project => project.path))
+  return props.discoveredProjects.filter(project => !recent.has(project.path) && matchesQuery(project.path))
+})
+const results = computed(() => [
+  ...recentResults.value.map(project => ({ path: project.path, recent: true })),
+  ...discoveredResults.value.map(project => ({ path: project.path, recent: false }))
+])
+const perfectMatchIndex = computed(() => {
+  if (!query.value) return -1
+  const matches = results.value.flatMap(({ path }, index) =>
+    path.toLowerCase() === query.value || path.toLowerCase().split('/').pop() === query.value ? [index] : [])
+  return matches.length === 1 ? matches[0]! : -1
+})
+
+const listRef = ref<HTMLElement>()
+const inputRef = ref<HTMLInputElement>()
+const selectedIndex = ref(-1)
+watch(perfectMatchIndex, (index) => { selectedIndex.value = index }, { immediate: true })
+
+const openResult = (index: number) => {
+  const result = results.value[index]
+  if (!result) return
+  if (result.recent) emit('open-project-from-history', result.path)
+  else emit('open-discovered-project', result.path)
+}
+
+const focusResult = (index: number) => {
+  selectedIndex.value = Math.max(0, Math.min(index, results.value.length - 1))
+  nextTick(() => {
+    listRef.value?.querySelectorAll<HTMLElement>('.history-open-button')[selectedIndex.value]?.focus()
+  })
+}
+
+const focusInput = () => {
+  selectedIndex.value = perfectMatchIndex.value
+  inputRef.value?.focus()
+}
+
+const onInputTab = (event: KeyboardEvent) => {
+  if (event.shiftKey) return
+  if (completionValue.value) return acceptCompletion(event)
+  if (results.value.length === 0) return
+  event.preventDefault()
+  focusResult(Math.max(selectedIndex.value, 0))
+}
+
+const onInputEnter = () => {
+  if (perfectMatchIndex.value >= 0) openResult(perfectMatchIndex.value)
+  else emit('select-project')
+}
+
+const onListKeydown = (event: KeyboardEvent) => {
+  if (event.ctrlKey || event.metaKey || event.altKey) return
+  const key = event.key
+  if (key === 'j' || key === 'ArrowDown') focusResult(selectedIndex.value + 1)
+  else if (key === 'k' || key === 'ArrowUp') focusResult(selectedIndex.value - 1)
+  else if (key === 'e') {
+    const result = results.value[selectedIndex.value]
+    if (result) loadPathIntoInput(result.path)
+    focusInput()
+  } else if (key === 'Escape' || (key === 'Tab' && event.shiftKey)) {
+    event.stopPropagation()
+    focusInput()
+  } else return
+  event.preventDefault()
+}
+
+// Screenshots of each project's graph, taken by the graph view (utils/db).
+const thumbnails = ref(new Map<string, string>())
+const revokeThumbnails = () => thumbnails.value.forEach(url => URL.revokeObjectURL(url))
+watch(() => [...props.projectHistory, ...props.discoveredProjects].map(project => project.path), async (paths) => {
+  const blobs = await loadProjectThumbnails(paths).catch(() => new Map<string, Blob>())
+  revokeThumbnails()
+  thumbnails.value = new Map([...blobs].map(([path, blob]) => [path, URL.createObjectURL(blob)]))
+}, { immediate: true })
+onUnmounted(revokeThumbnails)
+
 const formatRelativeTime = (timestamp: number): string => {
   const now = Date.now()
   const diff = now - timestamp
@@ -116,29 +200,31 @@ const formatRelativeTime = (timestamp: number): string => {
           <span class="typed-path">{{ props.modelValue }}</span><span>{{ completionSuffix }}</span>
         </div>
         <input
+          ref="inputRef"
           :value="props.modelValue"
           type="text"
           placeholder="Project folder path, or a Git URL to view read-only"
           class="project-input"
           @input="onInput"
-          @keydown.tab="acceptCompletion"
-          @keydown.enter="emit('select-project')"
+          @keydown.tab="onInputTab"
+          @keydown.enter="onInputEnter"
         />
       </div>
       <button @click="emit('select-project')" class="select-project" :disabled="props.isOpeningGitUrl">{{ selectButtonLabel }}</button>
     </div>
 
-    <div class="project-lists">
-      <div v-if="props.projectHistory.length > 0" class="project-history">
+    <div ref="listRef" class="project-lists" @keydown="onListKeydown">
+      <div v-if="recentResults.length > 0" class="project-history">
         <h3>Recent Projects</h3>
         <div class="history-list">
           <div
-            v-for="(project, index) in props.projectHistory"
+            v-for="(project, index) in recentResults"
             :key="project.path"
             class="history-item"
-            :class="{ failed: project.failedToLoad }"
+            :class="{ failed: project.failedToLoad, selected: index === selectedIndex }"
           >
-            <span v-if="index < 9" class="history-shortcut">{{ index + 1 }}</span>
+            <img v-if="thumbnails.get(project.path)" class="thumbnail" :src="thumbnails.get(project.path)" alt="" />
+            <span v-else class="thumbnail"></span>
             <button
               type="button"
               class="edit-button"
@@ -150,6 +236,7 @@ const formatRelativeTime = (timestamp: number): string => {
               type="button"
               class="history-open-button"
               @click="emit('open-project-from-history', project.path)"
+              @focus="selectedIndex = index"
             >
               <div class="history-item-content">
                 <div class="history-path">{{ project.path }}</div>
@@ -181,12 +268,15 @@ const formatRelativeTime = (timestamp: number): string => {
           Scanned {{ props.scannedRoots.join(', ') }}
         </p>
 
-        <div v-if="props.discoveredProjects.length > 0" class="history-list">
+        <div v-if="discoveredResults.length > 0" class="history-list">
           <div
-            v-for="project in props.discoveredProjects"
+            v-for="(project, index) in discoveredResults"
             :key="project.path"
             class="history-item discovered-item"
+            :class="{ selected: recentResults.length + index === selectedIndex }"
           >
+            <img v-if="thumbnails.get(project.path)" class="thumbnail" :src="thumbnails.get(project.path)" alt="" />
+            <span v-else class="thumbnail"></span>
             <button
               type="button"
               class="edit-button"
@@ -198,6 +288,7 @@ const formatRelativeTime = (timestamp: number): string => {
               type="button"
               class="history-open-button"
               @click="emit('open-discovered-project', project.path)"
+              @focus="selectedIndex = recentResults.length + index"
             >
               <div class="history-item-content">
                 <div class="history-primary">
@@ -209,7 +300,7 @@ const formatRelativeTime = (timestamp: number): string => {
             </button>
           </div>
         </div>
-        <p v-else class="empty-state">No nearby projects found yet.</p>
+        <p v-else class="empty-state">{{ query ? 'No other matching projects.' : 'No nearby projects found yet.' }}</p>
       </div>
     </div>
   </div>
@@ -401,6 +492,22 @@ const formatRelativeTime = (timestamp: number): string => {
   background: #333;
 }
 
+.history-item {
+  &.selected {
+    border-color: #007acc;
+    background: #333;
+  }
+
+  & .thumbnail {
+    flex: 0 0 4rem;
+    height: 2.5rem;
+    margin-left: 0.5rem;
+    object-fit: cover;
+    border-radius: 0.1875rem;
+    background: #1a1a1a;
+  }
+}
+
 .history-item.failed {
   border-color: #ff666644;
 }
@@ -409,17 +516,6 @@ const formatRelativeTime = (timestamp: number): string => {
   color: #ff6666;
 }
 
-.history-shortcut {
-  flex: 0 0 2rem;
-  align-self: stretch;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-right: 1px solid #444;
-  color: #aaa;
-  font-size: 0.8rem;
-  font-weight: 700;
-}
 
 .history-open-button {
   flex: 1;

@@ -16,6 +16,7 @@ import * as vec2 from '../utils/vec2'
 import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
+import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutChange } from '../utils/autolayout'
 import type { LayoutRequest } from '../utils/autolayout.worker'
@@ -154,6 +155,15 @@ function handleCanvasClick(e: MouseEvent) {
 // Lifecycle
 let labelCullInterval: ReturnType<typeof setInterval> | undefined
 
+// A screenshot of the graph for the project selection page: soon after opening, then every minute.
+let thumbnailTimeout: ReturnType<typeof setTimeout> | undefined
+let thumbnailInterval: ReturnType<typeof setInterval> | undefined
+async function saveThumbnail() {
+    const path = projectStore.projectPath
+    const blob = await webglRenderer.captureThumbnail()
+    if (blob && path === projectStore.projectPath) await saveProjectThumbnail(path, blob).catch(() => {})
+}
+
 // Dev-only e2e hook: nodes are WebGL-drawn, so tests look up a node's client
 // position by idea text to drive clicks and drags.
 function getNodeClientPosition(ideaText: string) {
@@ -171,6 +181,8 @@ onMounted(() => {
     window.addEventListener('keydown', onKeydown)
     updateVisibleLabels()
     labelCullInterval = setInterval(updateVisibleLabels, 500)
+    thumbnailTimeout = setTimeout(saveThumbnail, 3000)
+    thumbnailInterval = setInterval(saveThumbnail, 60_000)
     if (import.meta.env.DEV) {
         (window as any).__aimparencyGraph = { getNodeClientPosition }
     }
@@ -182,6 +194,8 @@ onUnmounted(() => {
     interaction.cleanupListeners()
     window.removeEventListener('keydown', onKeydown)
     if (labelCullInterval !== undefined) clearInterval(labelCullInterval)
+    clearTimeout(thumbnailTimeout)
+    clearInterval(thumbnailInterval)
 })
 
 // Force WebGL update when simulation triggers

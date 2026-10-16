@@ -282,7 +282,7 @@ describe('App', () => {
     expect(modalStore.showPhaseSearchPrompt).toBe(true)
   })
 
-  it('opens project selection with p and opens recent projects with number shortcuts', async () => {
+  it('opens project selection with p; digits no longer open recent projects', async () => {
     const wrapper = mount(App, {
       global: {
         plugins: [createTestingPinia({
@@ -326,7 +326,7 @@ describe('App', () => {
     window.dispatchEvent(new KeyboardEvent('keydown', { key: '2', bubbles: true, cancelable: true }))
     await nextTick()
 
-    expect(projectStore.projectPath).toBe('/workspaces/two')
+    expect(projectStore.projectPath).toBe('')
   })
 
   it('returns to the open project when Escape cancels project selection', async () => {

@@ -1,7 +1,8 @@
 const DB_NAME = 'aimparency-graph';
-const DB_VERSION = 3;
+const DB_VERSION = 4;
 const STORE_NAME = 'idea-positions';
 const IDEA_STORE_NAME = 'idea-data';
+const THUMBNAIL_STORE_NAME = 'project-thumbnails';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
 
@@ -22,6 +23,10 @@ function getDB(): Promise<IDBDatabase> {
       }
       if (!db.objectStoreNames.contains(IDEA_STORE_NAME)) {
         db.createObjectStore(IDEA_STORE_NAME, { keyPath: 'id' });
+      }
+      // Version 4: a screenshot of each project's graph for the project selection page.
+      if (!db.objectStoreNames.contains(THUMBNAIL_STORE_NAME)) {
+        db.createObjectStore(THUMBNAIL_STORE_NAME, { keyPath: 'path' });
       }
     };
 
@@ -159,6 +164,30 @@ export async function loadAllPositions(): Promise<Map<string, { x: number; y: nu
       resolve(map);
     };
 
+    request.onerror = () => reject(request.error);
+  });
+}
+
+export async function saveProjectThumbnail(path: string, blob: Blob) {
+  const db = await getDB();
+  return new Promise<void>((resolve, reject) => {
+    const transaction = db.transaction(THUMBNAIL_STORE_NAME, 'readwrite');
+    transaction.objectStore(THUMBNAIL_STORE_NAME).put({ path, blob, updatedAt: Date.now() });
+    transaction.oncomplete = () => resolve();
+    transaction.onerror = () => reject(transaction.error);
+  });
+}
+
+export async function loadProjectThumbnails(paths: string[]): Promise<Map<string, Blob>> {
+  const db = await getDB();
+  return new Promise((resolve, reject) => {
+    const transaction = db.transaction(THUMBNAIL_STORE_NAME, 'readonly');
+    const request = transaction.objectStore(THUMBNAIL_STORE_NAME).getAll();
+    request.onsuccess = () => {
+      const wanted = new Set(paths);
+      const records = request.result as { path: string, blob: Blob }[];
+      resolve(new Map(records.filter(record => wanted.has(record.path)).map(record => [record.path, record.blob])));
+    };
     request.onerror = () => reject(request.error);
   });
 }

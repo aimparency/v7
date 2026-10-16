@@ -230,6 +230,7 @@ const closeProject = () => {
 const openProjectSelection = () => {
   projectSelectionReturnPath.value = projectStore.projectPath
   projectStore.setProjectPath('')
+  projectPathInput.value = '' // the input filters the lists, so start with all of them
   nextTick(() => {
     document.querySelector<HTMLInputElement>('.project-input')?.focus()
   })
@@ -299,19 +300,6 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     if (event.key === 'Escape' && projectSelectionReturnPath.value) {
       event.preventDefault()
       cancelProjectSelection()
-      return
-    }
-
-    if (isInput || event.ctrlKey || event.metaKey || event.altKey) return
-
-    const historyIndex = Number.parseInt(event.key, 10) - 1
-    const historyEntry = Number.isInteger(historyIndex)
-      ? projectStore.projectHistory[historyIndex]
-      : undefined
-
-    if (historyEntry) {
-      event.preventDefault()
-      void openProjectFromHistory(historyEntry.path)
     }
     return
   }

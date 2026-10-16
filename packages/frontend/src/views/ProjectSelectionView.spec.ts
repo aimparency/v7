@@ -6,12 +6,18 @@ const { inspectPath } = vi.hoisted(() => ({ inspectPath: vi.fn() }))
 vi.mock('../trpc', () => ({
   trpc: { project: { inspectPath: { query: inspectPath } } },
 }))
+vi.mock('../utils/db', () => ({ loadProjectThumbnails: async () => new Map() }))
 
-const mountView = (modelValue: string) => mount(ProjectSelectionView, {
+const history = ['/work/aimparency/v7', '/work/entour', '/work/aimparency/v6']
+  .map((path, index) => ({ path, lastOpened: index, failedToLoad: false }))
+const discovered = [{ path: '/work/notes', bowmanPath: '/work/notes/.bowman', sourceRoot: '/work' }]
+
+const mountView = (modelValue: string, lists = false) => mount(ProjectSelectionView, {
+  attachTo: document.body,
   props: {
     modelValue,
-    projectHistory: [],
-    discoveredProjects: [],
+    projectHistory: lists ? history : [],
+    discoveredProjects: lists ? discovered : [],
     scannedRoots: [],
     isRefreshingDiscoveredProjects: false,
     isOpeningGitUrl: false,
@@ -57,5 +63,53 @@ describe('ProjectSelectionView project kind', () => {
     await wrapper.find('input').trigger('keydown', { key: 'Tab' })
     const updates = wrapper.emitted('update:modelValue') ?? []
     expect(updates[updates.length - 1]).toEqual(['/work/projects-'])
+  })
+})
+
+describe('ProjectSelectionView search', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    inspectPath.mockReset()
+    inspectPath.mockResolvedValue({ bowmanExists: true, matches: [] })
+  })
+
+  const paths = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('.history-path').map(path => path.text())
+
+  it('filters both lists by the input and shows no number shortcuts', () => {
+    expect(paths(mountView('', true))).toEqual([...history.map(entry => entry.path), '/work/notes'])
+    expect(paths(mountView('aimparency', true))).toEqual(['/work/aimparency/v7', '/work/aimparency/v6'])
+    expect(mountView('', true).find('.history-shortcut').exists()).toBe(false)
+  })
+
+  it('highlights a perfect folder-name match and opens it with Enter', async () => {
+    const wrapper = mountView('entour', true)
+    expect(wrapper.find('.history-item.selected .history-path').text()).toBe('/work/entour')
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('open-project-from-history')).toEqual([['/work/entour']])
+    expect(wrapper.emitted('select-project')).toBeUndefined()
+  })
+
+  it('opens what was typed when nothing matches perfectly', async () => {
+    const wrapper = mountView('aimparency', true)
+    expect(wrapper.find('.history-item.selected').exists()).toBe(false)
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('select-project')).toHaveLength(1)
+  })
+
+  it('moves into the list with Tab and navigates with j and k', async () => {
+    const wrapper = mountView('', true)
+    await vi.advanceTimersByTimeAsync(200)
+    await wrapper.find('input').trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+    const selected = () => wrapper.find('.history-item.selected .history-path').text()
+    expect(selected()).toBe('/work/aimparency/v7')
+    const list = wrapper.find('.project-lists')
+    await list.trigger('keydown', { key: 'j' })
+    await list.trigger('keydown', { key: 'j' })
+    await list.trigger('keydown', { key: 'j' })
+    expect(selected()).toBe('/work/notes')
+    await list.trigger('keydown', { key: 'k' })
+    expect(selected()).toBe('/work/aimparency/v6')
+    wrapper.unmount()
   })
 })

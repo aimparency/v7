@@ -18,6 +18,17 @@ import { useUIStore } from '../stores/ui'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import type { GraphNode, GraphLink } from './useGraphSimulation'
 
+const THUMBNAIL_WIDTH = 320
+
+function snapshotCanvas(source: HTMLCanvasElement): Promise<Blob | null> {
+  if (!source.width || !source.height) return Promise.resolve(null)
+  const thumbnail = document.createElement('canvas')
+  thumbnail.width = THUMBNAIL_WIDTH
+  thumbnail.height = Math.round(THUMBNAIL_WIDTH * source.height / source.width)
+  thumbnail.getContext('2d')?.drawImage(source, 0, 0, thumbnail.width, thumbnail.height)
+  return new Promise(resolve => thumbnail.toBlob(resolve, 'image/webp', 0.8))
+}
+
 export function useWebGLGraphRenderer(
   canvasRef: Ref<HTMLCanvasElement | undefined>,
   nodes: Ref<GraphNode[]>,
@@ -300,6 +311,14 @@ export function useWebGLGraphRenderer(
     return renderedLinks
   }
 
+  let pendingThumbnail: ((blob: Promise<Blob | null>) => void) | null = null
+
+  // A screenshot of the next frame, THUMBNAIL_WIDTH wide (null if nothing is drawn).
+  function captureThumbnail(): Promise<Blob | null> {
+    if (!renderer) return Promise.resolve(null)
+    return new Promise<Blob | null>(resolve => { pendingThumbnail = resolve })
+  }
+
   // Build view matrix for arrow renderer (shared format)
   function buildViewMatrix(panX: number, panY: number, zoom: number): Float32Array {
     return new Float32Array([
@@ -399,6 +418,14 @@ export function useWebGLGraphRenderer(
     if (taaPass) {
       taaPass.setCameraMoving(isMoving)
       taaPass.end()
+    }
+
+    // Thumbnails read the frame now: without preserveDrawingBuffer it is gone
+    // once the browser presents it. Taken before the selection spinner.
+    if (pendingThumbnail) {
+      const resolveThumbnail = pendingThumbnail
+      pendingThumbnail = null
+      resolveThumbnail(snapshotCanvas(renderer.getCanvas()))
     }
 
     // Post-TAA overlay: draw the selection spinner crisply onto the resolved
@@ -518,6 +545,7 @@ export function useWebGLGraphRenderer(
     isInitialized,
     error,
     forceUpdate,
+    captureThumbnail,
     getRenderer: () => renderer,
     getQuadtree: () => renderer?.getQuadtree() ?? null
   }
