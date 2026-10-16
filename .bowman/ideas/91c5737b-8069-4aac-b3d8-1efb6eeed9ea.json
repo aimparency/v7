@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1791450729746
+    "state": "human-dependent",
+    "comment": "Runs per project on Felix's request only (it recolors existing branches); waiting for him to name a project.",
+    "date": 1792122467176
   },
   "intrinsicValue": 0,
   "cost": 1,

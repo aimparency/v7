@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1791450719999
+    "state": "unclear",
+    "comment": "Question for Felix: decide how self weight is applied in the value model first (today: loopWeight is the share an idea keeps of the value reaching it, value-calculation.ts buildFlowGraph); the rename + migration follows that decision.",
+    "date": 1792122466943
   },
   "intrinsicValue": 0,
   "cost": 1,
