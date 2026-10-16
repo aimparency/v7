@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { nextTick, onMounted, onUnmounted, ref, computed, watch } from 'vue'
 import { useUIStore, type IdeaPath } from '../stores/ui'
+import { mergePathsByEnd, type MergedPath } from '../utils/path-merge'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
@@ -29,6 +30,18 @@ const loading = ref(false)
 
 const pathSelectionMode = ref(false)
 const availablePaths = ref<(IdeaPath & { label: string })[]>([])
+
+// "Phase > A > B" per path; merged paths show only their common end after "…".
+// `dropLast` leaves out the path's final idea when it is the idea being navigated to.
+const labelPaths = (paths: MergedPath[], dropLast: boolean) => Promise.all(paths.map(async ({ path, shownIdeas, merged }) => {
+  let phase = path.phaseId ? dataStore.phases[path.phaseId] : undefined
+  if (path.phaseId && !phase) {
+    phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: path.phaseId }).catch(() => undefined)
+  }
+  const steps = (dropLast ? shownIdeas.slice(0, -1) : shownIdeas).map(step => step.text)
+  const label = [path.phaseId ? phase?.name ?? 'Unknown Phase' : 'Floating', ...(merged ? ['…'] : []), ...steps].join(' > ')
+  return { ...path, label }
+}))
 const selectedIdeaText = ref('')
 
 const externalResults = computed<SearchIdeaResult[] | undefined>(() => {
@@ -104,82 +117,8 @@ const selectIdea = async (idea: Idea, keepOpen = false) => {
     } else {
       selectedIdeaText.value = idea.text.length > 50 ? `${idea.text.substring(0, 50)}...` : idea.text
 
-      // Merge paths sharing common suffixes
-      const mergedPaths: (IdeaPath & { isMerged?: boolean })[] = []
-      const processed = new Set<number>()
-
-      for (let i = 0; i < paths.length; i++) {
-        if (processed.has(i)) continue
-        const pathA = paths[i]!
-        let matches: number[] = []
-        let commonSuffixLen = 0
-
-        for (let j = i + 1; j < paths.length; j++) {
-          if (processed.has(j)) continue
-          const pathB = paths[j]!
-          if (pathA.phaseId !== pathB.phaseId) continue
-
-          let suffixLen = 0
-          const lenA = pathA.ideas.length
-          const lenB = pathB.ideas.length
-          while (suffixLen < lenA && suffixLen < lenB) {
-            if (pathA.ideas[lenA - 1 - suffixLen]?.id === pathB.ideas[lenB - 1 - suffixLen]?.id) {
-              suffixLen++
-            } else {
-              break
-            }
-          }
-
-          if (suffixLen > 1) {
-            if (matches.length === 0) {
-              commonSuffixLen = suffixLen
-              matches.push(j)
-            } else if (suffixLen === commonSuffixLen) {
-              matches.push(j)
-            }
-          }
-        }
-
-        if (matches.length > 0) {
-          mergedPaths.push({
-            ...pathA,
-            ideas: pathA.ideas.slice(-commonSuffixLen),
-            isMerged: true
-          })
-          processed.add(i)
-          matches.forEach(idx => processed.add(idx))
-        } else {
-          mergedPaths.push(pathA)
-          processed.add(i)
-        }
-      }
-
-      availablePaths.value = await Promise.all(mergedPaths.map(async path => {
-        let label = ''
-        if (path.phaseId) {
-          let phase = dataStore.phases[path.phaseId]
-          if (!phase) {
-            try {
-              phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: path.phaseId })
-            } catch {}
-          }
-          label = phase ? phase.name : 'Unknown Phase'
-        } else {
-          label = 'Floating'
-        }
-
-        const trailIdeas = path.isMerged ? path.ideas : path.ideas.slice(0, -1)
-        const trail = trailIdeas.map(step => step.text).join(' > ')
-        
-        if (path.isMerged) {
-          label += ` > ... > ${trail}`
-        } else if (trail) {
-          label += ` > ${trail}`
-        }
-
-        return { ...path, label }
-      }))
-
+      // The paths end at the idea itself: merge those through the same parent.
+      availablePaths.value = await labelPaths(mergePathsByEnd(paths, 2), true)
       pathSelectionMode.value = true
     }
   } catch (error) {
@@ -287,27 +226,7 @@ onMounted(async () => {
       }
 
       selectedIdeaText.value = `Parent ideas of: ${idea.text.length > 40 ? `${idea.text.substring(0, 40)}...` : idea.text}`
-      availablePaths.value = await Promise.all(allPaths.map(async path => {
-        let label = ''
-        if (path.phaseId) {
-          let phase = dataStore.phases[path.phaseId]
-          if (!phase) {
-            try {
-              phase = await trpc.phase.get.query({ projectPath: projectStore.projectPath, phaseId: path.phaseId })
-            } catch {}
-          }
-          label = phase ? phase.name : 'Unknown Phase'
-        } else {
-          label = 'Floating'
-        }
-
-        const trail = path.ideas.map(step => step.text).join(' > ')
-        if (trail) {
-          label += ` > ${trail}`
-        }
-
-        return { ...path, label }
-      }))
+      availablePaths.value = await labelPaths(mergePathsByEnd(allPaths, 1), false)
 
       if (availablePaths.value.length > 0) {
         pathSelectionMode.value = true
