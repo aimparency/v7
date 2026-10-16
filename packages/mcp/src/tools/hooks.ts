@@ -64,8 +64,10 @@ When the coding assistant attempts to stop normally, the hook blocks the stop ev
 1. Call \`get_prioritized_ideas\`
 2. Orient with \`get_idea_context\`
 3. Implement and verify the selected actionable idea
-4. Record evidence and status with \`update_idea\` or \`addReflection\`
+4. Record evidence and status with \`update_idea\` or \`addReflection\`, and commit the code with the \`.bowman\` idea files it changed in one commit
 5. Reprioritize and continue
+
+An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for a human action) with the exact question in its status comment; it leaves the priority list and the loop moves on.
 
 ### Two-Stage Human-Wait Protocol
 If the assistant determines human intervention (credentials, explicit authorization, human judgment) is indispensable:

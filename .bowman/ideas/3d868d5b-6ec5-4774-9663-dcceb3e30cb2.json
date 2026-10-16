@@ -223,6 +223,14 @@
       ],
       "weight": 1,
       "hypothesis": "Long-term continuity: lessons compound across sessions instead of being lost, so the graph's judgment improves over time."
+    },
+    {
+      "ideaId": "6da9b226-6403-443b-b4bf-3f860e6ba0af",
+      "relativePosition": [
+        -0.44,
+        -2.46
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [

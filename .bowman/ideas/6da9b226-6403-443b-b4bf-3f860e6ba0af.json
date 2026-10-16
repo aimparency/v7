@@ -1,0 +1,28 @@
+{
+  "id": "6da9b226-6403-443b-b4bf-3f860e6ba0af",
+  "text": "Loop hook: commit graph and code together; park human questions as unclear",
+  "description": "From MCP-agent feedback (2026-10-16): graph updates landed in separate 'Aimparency graph updates' commits, and agents did not know how to park a blocking design question. The Stop hook message and install protocol now say: commit the code with the .bowman idea files it changed in one commit (git then links idea↔code, so no commit-SHA field is needed), leave others' changes unstaged; an idea needing a human decision goes to unclear (human-dependent for a human action) with the question in the status comment and leaves the priority list.",
+  "reflections": [],
+  "archived": false,
+  "color": "#2e2d66",
+  "tags": [
+    "hook",
+    "loop"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "scripts/hooks/codex-continue-on-stop.sh + packages/mcp/src/tools/hooks.ts; hook contract test PASS, mcp 47/47. Felix to confirm the wording.",
+    "date": 1792122084169
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
