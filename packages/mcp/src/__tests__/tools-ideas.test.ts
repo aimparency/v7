@@ -609,3 +609,35 @@ test('MCP Tools - updating a child edge\'s hypothesis keeps its weight', async (
   assert.equal(connection.weight, 7);
   assert.equal(connection.hypothesis, 'now with a reason');
 });
+
+test('update_ideas applies several updates in order and stops at the first failure', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+  const id = async (text: string) => /Created idea with ID: ([0-9a-f-]+)/.exec((await createIdea(server, { projectPath: ctx.projectPath, text })).content[0].text)![1]!;
+  const first = await id('Batch first');
+  const second = await id('Batch second');
+
+  const result = await server.callTool('update_ideas', {
+    projectPath: ctx.projectPath,
+    updates: [
+      { ideaId: first, status: { state: 'unclear', comment: 'Which color?' } },
+      { ideaId: second, tags: ['batched'] },
+    ],
+  });
+  assert.equal(result.isError, undefined);
+  assert.equal((await caller.idea.get({ projectPath: ctx.projectPath, ideaId: first })).status.state, 'unclear');
+  assert.deepEqual((await caller.idea.get({ projectPath: ctx.projectPath, ideaId: second })).tags, ['batched']);
+
+  const failed = await server.callTool('update_ideas', {
+    projectPath: ctx.projectPath,
+    updates: [
+      { ideaId: first, tags: ['kept'] },
+      { ideaId: '00000000-0000-4000-8000-000000000000', tags: ['missing'] },
+      { ideaId: second, tags: ['never'] },
+    ],
+  });
+  assert.equal(failed.isError, true);
+  assert.match(failed.content[0].text, /Failed on 00000000/);
+  assert.deepEqual((await caller.idea.get({ projectPath: ctx.projectPath, ideaId: first })).tags, ['kept']);
+  assert.deepEqual((await caller.idea.get({ projectPath: ctx.projectPath, ideaId: second })).tags, ['batched']);
+});

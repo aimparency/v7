@@ -1,0 +1,27 @@
+{
+  "id": "834bd5e2-cbec-4b91-aeea-05712e52d3f0",
+  "text": "update_ideas: batch several idea updates in one MCP call",
+  "description": "From MCP-agent feedback (2026-10-16): the end of a work chunk changes 3-5 ideas (status, reflection, links), one call each. update_ideas takes an array of update_idea entries, applies them in order through the same handler, stops at the first failure and reports what was applied.",
+  "reflections": [],
+  "archived": false,
+  "color": "#4a2d66",
+  "tags": [
+    "mcp"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Test covers in-order apply and stop-at-failure; mcp 48/48, pnpm check 25/25. Visible to agents after /mcp reconnect.",
+    "date": 1792122745599
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

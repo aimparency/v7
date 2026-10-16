@@ -604,3 +604,35 @@ export const ideaTools: ToolDefinition[] = [
     },
   },
 ];
+
+// Several update_idea calls in one: the end of a work chunk usually settles a
+// few ideas at once (status, reflection, links).
+const updateIdea = ideaTools.find((tool) => tool.name === "update_idea")!;
+const { projectPath: _projectPath, ...updateFields } = (updateIdea.inputSchema.properties ?? {}) as Record<string, object>;
+ideaTools.push({
+  name: "update_ideas",
+  description: "Batch of update_idea calls (same fields per entry), applied in order. Stops at the first failure and reports which updates were applied.",
+  inputSchema: {
+    type: "object",
+    properties: {
+      projectPath: PROJECT_PATH_TOOL_PROPERTY,
+      updates: { type: "array", items: { type: "object", properties: updateFields, required: ["ideaId"] } },
+    },
+    required: ["projectPath", "updates"],
+  },
+  handler: async (args, trpcClient) => {
+    const applied: string[] = [];
+    for (const update of (args.updates as Record<string, unknown>[]) ?? []) {
+      try {
+        const result = await updateIdea.handler({ ...update, projectPath: args.projectPath }, trpcClient);
+        const text = result.content.map((part) => (part.type === "text" ? part.text : "")).join("");
+        if (result.isError) throw new Error(text);
+        applied.push(text);
+      } catch (error) {
+        const failure = `Failed on ${update.ideaId}: ${error instanceof Error ? error.message : String(error)}`;
+        return { isError: true, content: [{ type: "text", text: [...applied, failure].join("\n\n") }] };
+      }
+    }
+    return { content: [{ type: "text", text: applied.join("\n\n") }] };
+  },
+});
