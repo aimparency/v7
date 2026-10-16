@@ -1,0 +1,24 @@
+{
+  "id": "eb0e448a-c009-459f-82e8-8f6f9678e2b5",
+  "text": "Header button toggles the agents' Stop continuation hook (same switch as the enable-hook / disable-hook prompts)",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d3266",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Header shows 'Hook on/off' when the hook is installed; click toggles the per-clone git flag via system.setContinueHook. continue-hook moved to shared (used by MCP and backend). Verified live: off -> on round trip, shared tests 3/3, pnpm check 25/25. Left ON for Felix to switch off.",
+    "date": 1792136848649
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

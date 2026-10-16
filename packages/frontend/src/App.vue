@@ -99,6 +99,20 @@ const showConsistencyModal = ref(false)
 const showReviewInbox = ref(false)
 const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities).length)
 const showIdeaProposalEntry = ref(false)
+// The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
+const continueHook = ref({ installed: false, enabled: false })
+const refreshContinueHook = async () => {
+  const projectPath = projectStore.projectPath
+  try {
+    continueHook.value = projectPath ? await trpc.system.getContinueHook.query({ projectPath }) : { installed: false, enabled: false }
+  } catch {
+    continueHook.value = { installed: false, enabled: false }
+  }
+}
+const toggleContinueHook = async () => {
+  continueHook.value = await trpc.system.setContinueHook.mutate({ projectPath: projectStore.projectPath, enabled: !continueHook.value.enabled })
+}
+watch(() => projectStore.projectPath, refreshContinueHook, { immediate: true })
 const isResizingWatchdog = ref(false)
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const discoveredProjectRoots = ref<string[]>([])
@@ -524,6 +538,18 @@ onUnmounted(() => {
         </div>
 
         <div class="watchdog-controls">
+          <button
+            v-if="continueHook.installed"
+            @click="toggleContinueHook"
+            @mouseenter="refreshContinueHook"
+            class="icon-btn"
+            style="width: auto; padding: 0 0.5rem;"
+            :style="{ background: continueHook.enabled ? '#444' : 'transparent' }"
+            :title="continueHook.enabled ? 'Agents continue through the idea graph when they stop. Click to let them stop.' : 'Agents stop normally. Click to make them continue through the idea graph.'"
+          >
+            Hook {{ continueHook.enabled ? 'on' : 'off' }}
+          </button>
+
           <button
             @click="projectStore.showWatchdog = !projectStore.showWatchdog"
             class="icon-btn"

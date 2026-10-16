@@ -18,6 +18,15 @@
       ],
       "weight": 1,
       "hypothesis": "Makes the existing indefinite continuation behavior portable, explicit, and testable."
+    },
+    {
+      "ideaId": "eb0e448a-c009-459f-82e8-8f6f9678e2b5",
+      "relativePosition": [
+        2.34,
+        0.89
+      ],
+      "weight": 1,
+      "hypothesis": "The deliberate opt-out is one click away in the UI instead of an MCP prompt in an agent session"
     }
   ],
   "supportedIdeas": [

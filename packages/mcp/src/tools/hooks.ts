@@ -1,5 +1,5 @@
 import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
-import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "../continue-hook.js";
+import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "shared/continue-hook";
 import type { ToolDefinition } from "./types.js";
 
 export const hookTools: ToolDefinition[] = [

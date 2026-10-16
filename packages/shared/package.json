@@ -10,7 +10,8 @@
     ".": "./src/index.ts",
     "./bowman-migration": "./src/bowman-migration.ts",
     "./node-entry": "./src/node-entry.ts",
-    "./loop-state": "./src/loop-state.ts"
+    "./loop-state": "./src/loop-state.ts",
+    "./continue-hook": "./src/continue-hook.ts"
   },
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\"",

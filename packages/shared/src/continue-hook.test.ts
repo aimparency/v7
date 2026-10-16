@@ -4,7 +4,7 @@ import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { disableContinueHook, disabledFlagPath, enableContinueHook } from "./continue-hook.js";
+import { continueHookStatus, disableContinueHook, disabledFlagPath, enableContinueHook } from "./continue-hook.js";
 
 function makeProject(): string {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "continue-hook-")));
@@ -21,11 +21,14 @@ function runHook(root: string): any {
 test("enable installs, disable lets the hook yield, enable re-arms it", () => {
   const root = makeProject();
   try {
+    assert.deepEqual(continueHookStatus(root), { installed: false, enabled: false });
     enableContinueHook(path.join(root, ".bowman"), "claude");
     assert.equal(runHook(root).decision, "block");
+    assert.deepEqual(continueHookStatus(root), { installed: true, enabled: true });
 
     disableContinueHook(path.join(root, ".bowman"));
     assert.ok(fs.existsSync(disabledFlagPath(root)));
+    assert.deepEqual(continueHookStatus(path.join(root, ".bowman")), { installed: true, enabled: false });
     assert.equal(runHook(root).continue, true);
 
     enableContinueHook(path.join(root, ".bowman"));

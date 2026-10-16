@@ -5,11 +5,11 @@
 import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import { fileURLToPath } from "url";
+import { packageRoot } from "./node-entry.js";
 
 export const CONTINUE_HOOK_AGENTS = ["claude", "codex", "agy"] as const;
 
-const HOOKS_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../scripts/hooks");
+const HOOKS_DIR = path.resolve(packageRoot(import.meta.url), "../../scripts/hooks");
 const HOOK_RELATIVE_PATH = path.join("scripts", "hooks", "codex-continue-on-stop.sh");
 const DISABLED_FLAG_NAME = "aimparency-continue-disabled";
 const RECOGNIZED_HOOK_LINE = "Continue the current Codex conversation through the Aimparency MCP loop.";
@@ -25,6 +25,13 @@ export function disabledFlagPath(repoRoot: string): string {
     ["-C", repoRoot, "rev-parse", "--path-format=absolute", "--git-path", DISABLED_FLAG_NAME],
     { encoding: "utf8" },
   ).trim();
+}
+
+/** Whether the hook is installed in the project's repository and currently on. */
+export function continueHookStatus(projectPath: string): { installed: boolean; enabled: boolean } {
+  const repoRoot = resolveRepoRoot(projectPath);
+  const installed = fs.existsSync(path.join(repoRoot, HOOK_RELATIVE_PATH));
+  return { installed, enabled: installed && !fs.existsSync(disabledFlagPath(repoRoot)) };
 }
 
 export function enableContinueHook(projectPath: string, agent?: string, hooksDir = HOOKS_DIR): string {
