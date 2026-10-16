@@ -36,7 +36,8 @@
     "check": "node scripts/check.mjs",
     "knip": "knip --no-progress",
     "protocol:schemas": "tsx packages/shared/scripts/protocol-schemas.ts",
-    "validate:bowman": "tsx packages/shared/scripts/validate-bowman.ts"
+    "validate:bowman": "tsx packages/shared/scripts/validate-bowman.ts",
+    "dev:mobile": "scripts/dev-mobile.sh"
   },
   "keywords": [
     "aimparency",
