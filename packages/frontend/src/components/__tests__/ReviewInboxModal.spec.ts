@@ -61,7 +61,7 @@ describe('ReviewInboxModal', () => {
   it('sends work back to open with a reason and opens ideas in the editor', async () => {
     const wrapper = mount(ReviewInboxModal, { attachTo: document.body })
 
-    press('o')
+    press('e')
     expect(modalStore.openIdeaEditModal).toHaveBeenCalledWith('blocked')
 
     press('j')
