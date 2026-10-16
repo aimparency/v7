@@ -130,7 +130,8 @@ describe('ProjectSelectionView search', () => {
     await input.trigger('keydown', { key: 'Tab' })
     await wrapper.vm.$nextTick()
     await list.trigger('keydown', { key: 'e' })
-    expect(wrapper.emitted('update:modelValue')?.at(-1)).toEqual(['/work/aimparency/v7'])
+    const updates = wrapper.emitted('update:modelValue') ?? []
+    expect(updates[updates.length - 1]).toEqual(['/work/aimparency/v7'])
     expect(document.activeElement).toBe(input.element)
     wrapper.unmount()
   })
