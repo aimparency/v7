@@ -564,6 +564,8 @@ onUnmounted(() => {
 
         <label v-if="continueHook.installed" class="hook-control" @mouseenter="refreshContinueHook">
           Hook
+          <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
+          <span class="state">{{ continueHook.enabled ? 'on' : 'off' }}</span>
           <button
             type="button"
             class="info-btn"
@@ -576,8 +578,6 @@ onUnmounted(() => {
             On: when the agent finishes, it is sent back to work on the next idea of the graph.
             Off: the agent stops normally. Applies from its next stop, only in this clone.
           </span>
-          <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
-          <span class="state">{{ continueHook.enabled ? 'on' : 'off' }}</span>
         </label>
 
         <div class="watchdog-controls">
