@@ -177,9 +177,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Question for Felix (2026-10-16): which product should earn first, entour.fyi or Aimparency itself? Felix ruled out grants ('no more begging': resources through excellent, fair competition). The answer decides the first revenue leaf under this mission.",
-    "date": 1792122466325
+    "state": "open",
+    "comment": "Felix 2026-10-16: neither entour.fyi nor Aimparency earns yet; both cost money and energy, and he builds them anyway. No earning order to pick for now.",
+    "date": 1792137141226
   },
   "intrinsicValue": 0,
   "cost": 1,

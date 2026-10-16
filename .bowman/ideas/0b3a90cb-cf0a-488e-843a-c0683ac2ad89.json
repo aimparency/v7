@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "unclear",
-    "comment": "Question for Felix: decide how self weight is applied in the value model first (today: loopWeight is the share an idea keeps of the value reaching it, value-calculation.ts buildFlowGraph); the rename + migration follows that decision.",
+    "comment": "Felix 2026-10-16: back to full flow to the children, pouring intrinsic value in each step, normalizing each iteration; units per project (meta.costUnit already exists, default ''). Claude's objection: the exact solve already is the limit of 'pour intrinsic, flow to children' iterations, normalized once. Normalizing every iteration adds a hidden per-hop discount, the issue of 6e1b0b0e. 'Full flow' maps to self weight 0 everywhere: drop loopWeight by migration (today 496 ideas have 1, 228 have 0, 80 unset), so only leaves realize value. Question: drop self weight and keep the one-shot solve?",
     "date": 1792122466943
   },
   "intrinsicValue": 0,

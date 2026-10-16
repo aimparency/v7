@@ -1,0 +1,25 @@
+{
+  "id": "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46",
+  "text": "Merge the overlapping idea notes: status comment, reflection, and connection hypothesis/evaluation",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d3f66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Proposal for Felix: keep the edge hypothesis/evaluation (it is per edge; an idea with two parents has two different reasons, which no idea-level field can hold). Fold the free-text reflection into the status comment (evidence belongs to the state it justifies; git keeps earlier comments). Also drop reflections[]? Lessons are what /dream consolidates, so they could live only in dream reflections on the root. Needs a migration either way. Agree, or keep reflections[]?",
+    "date": 1792137140997
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0,
+  "description": "Felix 2026-10-16: status, reflection and the connection hypothesis overlap; maybe only status and connection reflection are needed. Today an idea has four text notes: status.comment, reflection (free text), reflections[] (structured lessons), and per parent edge hypothesis + evaluation."
+}
