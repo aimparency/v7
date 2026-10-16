@@ -1,22 +1,21 @@
 {
   "id": "504ca79c-8ebd-464c-a1ca-9d9b95b48e5e",
   "text": "remove intrinsic values from most ideas.",
-  "description": "Normal way is inheritance by connection. only achieve ASI (root) shall have",
-  "reflections": [],
+  "description": "Normal way is inheritance by connection. only achieve ASI (root) shall have. \nremove intrinsic value from this one too. ",
   "archived": false,
   "color": "#666666",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Ready to execute; blocked on authorization for a graph-wide rewrite (the auto-mode permission classifier denied the bulk update as a shared-resource modification). Plan: raise ASI→Cooperation Engine edge weight to ≈19.9 (≈50% of root flow, preserving the cooperation thesis that its intrinsic 100 currently encodes), then set intrinsicValue=0 on the 103 non-root ideas via backend idea.update. Needs Felix to approve the run and confirm the ≈50% share.",
-    "date": 1790196227583
+    "state": "review",
+    "comment": "Authorized by Felix 2026-10-16. Zeroed intrinsicValue on 115 ideas (including this one and the Cooperation Engine 3d868d5b) through the backend; only the root 895ec1c1 keeps intrinsic value. Costs stay positive by definition.",
+    "date": 1792172541956
   },
-  "intrinsicValue": 1000,
+  "intrinsicValue": 0,
   "cost": 1,
   "loopWeight": 1,
   "duration": 1,

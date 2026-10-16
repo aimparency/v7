@@ -1,3 +1,26 @@
+1. oh man! neither earns I fear xD Both just take money and energy! Weirdly, I still wanna build them
+2. well keep it, maybe even research whether there is funding for such an idealistic, almost artistic, probably
+futile AI tool
+3. cancelled. ideas while doing that: status and reflection and the connection hypothesis reflection they kind of
+overlap. Maybe we just need status and connection reflection? Let's think about this. The "Awaiting you" needs a
+way to select different ordering, i think? next to order by priority also support oder chronological as
+(committed in an earlier phase / subphase. first appearance counts). also maybe instead of "all" just make status
+boxed toggle (and both enabled by default). Also show "unclear" status as an option?
+4. let's go back to the simple "full flow towards the children" and normalizing after each iteration + pouring in
+intrinsic value each step. So after iteration 1: everything has value 0 except ideas that have instrinsic value,
+they have their intrinsic value. Not sure how long we should stay in normalized space or absolute space. units
+are up to user (configurable in the project meta settings => show maybe as appendinx to cost values. default may
+be "" (empty string))
+5. Ok. I'll try to implement it here at commons hub! That reminds me: we need to show some git status and some
+hint like "not committed since x days" or "more than 10 uncommitted changes" that prompt the user to commit. And
+then offer that committing through the UI. enter commit message there. Create ideas in aimparency for that.
+6. Awesome. I want to go through them. Love this workflow!
+
+---
+
+2 Old things (maybe don't apply anymore): 
+
+1. 
 wenn man sich die supported aim paths anzeigen lässt für ein Ziel: 
 wir sollen Einträge zusammenlegen, die vom gleichen parent aus gehen. 
 also zum Beispiel: 
@@ -7,12 +30,30 @@ D->B->C wird zu
 Einer Zeile
 .../B/C
 
-- 
-
-let's switch to the 
-
-- 
-
+2.
 watchdog header is super tall when screen isn't very wide.
 
+- 
 
+and one recent feeback of an MCP using agent (take with a grain of salt): 
+
+Surprises
+- create_idea takes two calls. You send it once, get a confirmationToken back, then send the exact same call again with the token. As a guard against duplicates that's fair, but it doubles the round trips. It also breaks easily: change anything between the two calls and the token no longer matches. A dryRun flag, or warning about duplicates only when they're likely, would be cheaper.
+- Status is too coarse. There's open / partially / implemented, but no "in progress" or "claimed by an agent" state. I ended up writing "IN PROGRESS" into the text for movement validation. With more than one agent, or after a context reset, that's fragile.
+- Graph changes and code changes land in separate commits. The hook says to commit .bowman/ changes, so you get standalone commits like 089be35 Aimparency graph updates. Right now .bowman/ideas/*.json are modified while I'm not touching the graph. Either the server writes on reads or it updates timestamps, and either way it makes noise in git.
+
+
+
+Missing tools
+- No link from an idea to a commit or diff. When I mark something implemented, I'd like to attach the commit SHA in a structured field instead of writing it into a reflection. reconcile_code_presence exists, but I haven't tried it, so maybe it already covers part of this. | Felix comment: well that's another reason why we should manage agents commiting code and idea changes in the same commits. 
+
+- No batch update. At the end of a work chunk I usually change 3–5 ideas: set a status, add a reflection, reprioritize. That's one call each.
+
+- No cheap "what's next" call. Each loop I call get_prioritized_ideas and then get_idea_context. One call returning the top N ideas with their context and open sub-questions would cut that in half.
+
+- Nowhere to put a blocking design question. The slow-motion bubble is stuck on design questions. I can't mark it "blocked, waiting for a human answer", so it keeps coming back in the priority list and I skip it by hand every time.
+
+-
+
+One final simple request: 
+The buttons during the autolayout confirm should have normal/global style. 

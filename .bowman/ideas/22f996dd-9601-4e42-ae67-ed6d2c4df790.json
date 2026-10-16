@@ -2,7 +2,6 @@
   "id": "22f996dd-9601-4e42-ae67-ed6d2c4df790",
   "text": "Place arrow bases of multi-parent ideas side by side across the diameter",
   "description": "Arrow base width = idea diameter × √(attribution share), but every arrow is centred on the idea, so with several parents the bases overlap instead of splitting the diameter visibly (Sankey-like). Would need each arc offset sideways by its slot; touches the elegant single-arc-centre geometry (arrow-geometry.ts, arrow shaders), so only worth it if the overlap reads badly in practice. Related: a large child feeding a small parent can get a head wider than the parent.",
-  "reflections": [],
   "archived": false,
   "color": "#666666",
   "tags": [],
@@ -12,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Question for Felix: do overlapping arrow bases of multi-parent ideas read badly in practice? Only then is changing the single-arc geometry worth it.",
-    "date": 1792122466607
+    "state": "cancelled",
+    "comment": "arrows are transparent so their overlapping is quite fine visually. It would require a lot more of compute to support rendering some other way of rendering and still not prevent overlaps entirely - so, cancelled!",
+    "date": 1792135484277
   },
   "intrinsicValue": 0,
   "cost": 1,
