@@ -21,6 +21,7 @@ import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../w
 import type { LayoutChange } from '../utils/autolayout'
 import type { LayoutRequest } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
+import { GitBranch, X } from 'lucide-vue-next'
 
 const dataStore = useDataStore()
 const uiStore = useUIStore()
@@ -668,26 +669,26 @@ function toggleSpinOffPreview() {
           class="control-btn"
           @click="toggleSpinOffPreview"
           title="Spin-off preview: click ideas to toggle them as roots (green = kept, orange = both, red = spun off)"
-      >⎇ Spin-off</button>
+      ><GitBranch /> Spin-off</button>
 
-      <!-- In spin-off mode the button splits into apply + cancel (× exits the preview). -->
+      <!-- In spin-off mode the button splits into apply + cancel (X exits the preview). -->
       <div v-else class="spinoff-split">
         <button
             class="spinoff-split-apply"
             :disabled="graphUIStore.spinOffPreviewRootIds.length === 0"
             @click="modalStore.openSpinOffApplyModal()"
             title="Apply the spin-off: write the selected branch into a new graph"
-        >⎇ Apply</button>
+        ><GitBranch /> Apply</button>
         <button
             class="spinoff-split-cancel"
             @click="graphUIStore.clearSpinOffPreview()"
             title="Exit spin-off preview"
-        >×</button>
+        ><X /></button>
       </div>
 
       <div v-if="graphUIStore.phaseFilter" class="phase-badge">
         <span>{{ graphUIStore.phaseFilter.phaseName }}</span>
-        <button class="phase-badge-clear" @click="graphUIStore.clearPhaseFilter()" title="Clear phase filter">×</button>
+        <button class="phase-badge-clear" @click="graphUIStore.clearPhaseFilter()" title="Clear phase filter"><X /></button>
       </div>
     </div>
   </div>

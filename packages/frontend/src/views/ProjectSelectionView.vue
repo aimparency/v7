@@ -5,6 +5,7 @@ import { trpc } from '../trpc'
 import { loadProjectThumbnails } from '../utils/db'
 import { formatRelativeTime } from '../utils/relative-time'
 import { gitRepositoryLocation } from 'shared'
+import { Pencil, X } from 'lucide-vue-next'
 
 type DiscoveredProject = {
   path: string
@@ -234,7 +235,7 @@ onUnmounted(revokeThumbnails)
               title="Edit path before opening"
               aria-label="Edit path before opening"
               @click.stop="loadPathIntoInput(project.path)"
-            >✎</button>
+            ><Pencil /></button>
             <button
               type="button"
               class="history-open-button"
@@ -251,7 +252,7 @@ onUnmounted(revokeThumbnails)
               tabindex="-1"
               @click.stop="emit('remove-from-history', project.path)"
               title="Remove from history (d d)"
-            >×</button>
+            ><X /></button>
           </div>
         </div>
       </div>
@@ -288,7 +289,7 @@ onUnmounted(revokeThumbnails)
               title="Edit path before opening"
               aria-label="Edit path before opening"
               @click.stop="loadPathIntoInput(project.path)"
-            >✎</button>
+            ><Pencil /></button>
             <button
               type="button"
               class="history-open-button"

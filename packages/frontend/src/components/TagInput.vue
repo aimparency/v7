@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { X } from 'lucide-vue-next'
 
 const props = defineProps<{
   modelValue: string[]
@@ -91,7 +92,7 @@ const t = (key: string) => key === 'common.add' ? 'Add' : key
     <div class="label"> {{ label ?? 'Tags:' }} </div>
     <div v-for="tag in modelValue" :key="tag" class="tag">
       {{ tag }}
-      <button class="x" @click="removeTag(tag)">✖</button>
+      <button class="x" @click="removeTag(tag)"><X /></button>
     </div>
     <div class="no-wrap">
       <input 

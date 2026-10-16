@@ -39,6 +39,7 @@ import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
+import { Check, GitCommitHorizontal, Hourglass, Info, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -534,16 +535,16 @@ onUnmounted(() => {
         </span>
         
         <div class="column-controls" v-if="projectStore.currentView === 'columns'">
-          <button @click="uiStore.setWindowSize(uiStore.windowSize - 1)" class="icon-btn" title="Decrease columns">-</button>
+          <button @click="uiStore.setWindowSize(uiStore.windowSize - 1)" class="icon-btn" title="Decrease columns"><Minus /></button>
           <span>{{ uiStore.windowSize }} columns</span>
-          <button @click="uiStore.setWindowSize(uiStore.windowSize + 1)" class="icon-btn" title="Increase columns">+</button>
+          <button @click="uiStore.setWindowSize(uiStore.windowSize + 1)" class="icon-btn" title="Increase columns"><Plus /></button>
         </div>
 
         <button
           class="icon-btn search-btn"
           @click="modalStore.openIdeaSearch()"
           title="Search ideas (/)"
-        >🔍</button>
+        ><Search /></button>
 
         <button
           class="view-btn"
@@ -580,7 +581,7 @@ onUnmounted(() => {
             aria-label="What is the hook?"
             @click.prevent="showHookInfo = !showHookInfo"
             @blur="showHookInfo = false"
-          >ⓘ</button>
+          ><Info /></button>
           <span v-if="showHookInfo" class="hook-info" role="tooltip" @click.prevent>
             The Stop hook of your coding agent (Claude Code, Codex) in this repository.
             On: when the agent finishes, it is sent back to work on the next idea of the graph.
@@ -617,7 +618,7 @@ onUnmounted(() => {
             :style="{ background: watchdogStore.showActionsOverlay ? '#444' : 'transparent' }"
             title="Watchdog actions menu (Ctrl+Space)"
           >
-            ☰
+            <Menu />
           </button>
 
           <button
@@ -627,7 +628,7 @@ onUnmounted(() => {
             :style="{ background: projectStore.watchdogMaximized ? '#444' : 'transparent' }"
             :title="projectStore.watchdogMaximized ? 'Exit fullscreen' : 'Maximize watchdog panel'"
           >
-            {{ projectStore.watchdogMaximized ? '🗗' : '⛶' }}
+            <Minimize2 v-if="projectStore.watchdogMaximized" /><Maximize2 v-else />
           </button>
 
           <button
@@ -637,7 +638,7 @@ onUnmounted(() => {
             :style="{ background: projectStore.showLoopActionsOverlay ? '#444' : 'transparent' }"
             title="Loop actions menu (Ctrl+Space)"
           >
-            ☰
+            <Menu />
           </button>
 
           <button
@@ -647,7 +648,7 @@ onUnmounted(() => {
             :style="{ background: projectStore.loopMaximized ? '#444' : 'transparent' }"
             :title="projectStore.loopMaximized ? 'Exit fullscreen' : 'Maximize loop panel'"
           >
-            {{ projectStore.loopMaximized ? '🗗' : '⛶' }}
+            <Minimize2 v-if="projectStore.loopMaximized" /><Maximize2 v-else />
           </button>
         </div>
 
@@ -669,7 +670,7 @@ onUnmounted(() => {
             @click="showCommitDialog = true"
             @mouseenter="refreshWorkingTree"
           >
-            ± {{ workingTree.changes.length }}{{ commitPrompt ? ' · commit' : '' }}
+            <GitCommitHorizontal /> {{ workingTree.changes.length }}{{ commitPrompt ? ' · commit' : '' }}
           </button>
 
           <button
@@ -678,11 +679,11 @@ onUnmounted(() => {
             title="Ideas awaiting your review or decision, by priority"
             @click="showReviewInbox = true"
           >
-            ⧗ {{ awaitingHumanCount }}
+            <Hourglass /> {{ awaitingHumanCount }}
           </button>
 
           <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
-            ⚙️
+            <Settings />
           </button>
 
           <button 
@@ -692,7 +693,7 @@ onUnmounted(() => {
             @click="showConsistencyModal = true"
             :title="dataStore.consistencyErrors.length > 0 ? 'Data Inconsistencies Found' : 'Data is Consistent'"
           >
-            {{ dataStore.consistencyErrors.length > 0 ? '×' : '✓' }}
+            <X v-if="dataStore.consistencyErrors.length > 0" /><Check v-else />
           </button>
 
           <button 
@@ -702,7 +703,7 @@ onUnmounted(() => {
             @click="dataStore.checkConsistency(projectStore.projectPath)"
             style="font-size: 0.7rem; margin-left: 2px"
           >
-            🔄
+            <RefreshCw />
           </button>
         </div>
 

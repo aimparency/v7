@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { useToastStore } from '../stores/toast'
+import { X } from 'lucide-vue-next'
 
 const toastStore = useToastStore()
 </script>
@@ -15,7 +16,7 @@ const toastStore = useToastStore()
     >
       <span class="message">{{ toast.message }}</span>
       <span v-if="toast.count > 1" class="count">×{{ toast.count }}</span>
-      <button tabindex="-1" title="Dismiss" @click="toastStore.dismiss(toast.id)">×</button>
+      <button tabindex="-1" title="Dismiss" @click="toastStore.dismiss(toast.id)"><X /></button>
     </div>
   </div>
 </template>

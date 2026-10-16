@@ -3,6 +3,7 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useWatchdogStore } from '../stores/watchdog'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
+import { Eraser, Eye, Link, Maximize2, Plug, RefreshCw, Search, Square, X, Zap } from 'lucide-vue-next'
 
 const store = useWatchdogStore()
 const modalStore = useUIModalStore()
@@ -16,28 +17,28 @@ const actions = [
     key: 's',
     label: () => 'Start/Connect Session',
     action: () => store.connect(),
-    icon: '🔌'
+    icon: Plug
   },
   {
     id: 'stop',
     key: 'p',
     label: () => 'Stop Session',
     action: () => store.stop(),
-    icon: '⏹️'
+    icon: Square
   },
   {
     id: 'disconnect',
     key: 'd',
     label: () => 'Disconnect',
     action: () => store.disconnect(),
-    icon: '🔗'
+    icon: Link
   },
   {
     id: 'toggle',
     key: 'm',
     label: () => 'Toggle Supervisor',
     action: () => store.toggle(),
-    icon: '⚡'
+    icon: Zap
   },
   {
     id: 'search',
@@ -55,42 +56,42 @@ const actions = [
         placeholder: 'Search ideas to insert...'
       })
     },
-    icon: '🔍'
+    icon: Search
   },
   {
     id: 'fullscreen',
     key: 'f',
     label: () => projectStore.watchdogMaximized ? 'Exit Fullscreen' : 'Maximize Panel',
     action: () => { projectStore.watchdogMaximized = !projectStore.watchdogMaximized },
-    icon: '⛶'
+    icon: Maximize2
   },
   {
     id: 'hide',
     key: 'w',
     label: () => 'Hide Supervisor Panel',
     action: () => { projectStore.showWatchdog = false },
-    icon: '👁️'
+    icon: Eye
   },
   {
     id: 'clear',
     key: 'c',
     label: () => 'Clear Main Agent Context',
     action: () => store.sendWorkerInput('/clear\r\n'),
-    icon: '🧹'
+    icon: Eraser
   },
   {
     id: 'relaunch',
     key: 'r',
     label: () => 'Relaunch Supervisor Process',
     action: () => store.relaunch(),
-    icon: '🔄'
+    icon: RefreshCw
   },
   {
     id: 'cancel',
     key: 'Escape',
     label: () => 'Cancel',
     action: () => { store.showActionsOverlay = false },
-    icon: '❌'
+    icon: X
   }
 ]
 
@@ -172,7 +173,7 @@ onUnmounted(() => {
           @click="executeAction(action)"
           @mouseenter="selectedIndex = index"
         >
-          <span class="icon">{{ action.icon }}</span>
+          <component :is="action.icon" class="icon" />
           <div class="action-content">
             <span class="label">{{ action.label() }}</span>
             <span v-if="action.key && action.key !== 'Escape'" class="key-hint">{{ action.key.toUpperCase() }}</span>

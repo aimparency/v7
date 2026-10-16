@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/project-store'
 import { trpc } from '../trpc'
 import type { SearchIdeaResult } from 'shared'
 import type { IdeaSearchAdditionalOption } from '../stores/ui/idea-search-types'
+import { ChevronDown } from 'lucide-vue-next'
 
 export type IdeaSearchSelection =
   | { type: 'idea'; data: SearchIdeaResult; keepOpen?: boolean }
@@ -399,7 +400,7 @@ onUnmounted(() => {
           class="filter-btn"
           :class="{ active: selectedStatuses.length > 0 || isStatusDropdownOpen }"
         >
-          Status {{ selectedStatuses.length > 0 ? `(${selectedStatuses.length})` : '' }} ▼
+          Status {{ selectedStatuses.length > 0 ? `(${selectedStatuses.length})` : '' }} <ChevronDown />
         </button>
         <div v-if="isStatusDropdownOpen" class="dropdown-overlay" @click="isStatusDropdownOpen = false"></div>
         <div v-if="isStatusDropdownOpen" class="dropdown-menu">

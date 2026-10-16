@@ -9,6 +9,7 @@ import { formatWithK, parseK } from '../utils/number-format'
 import NumericTextInput from './NumericTextInput.vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { deleteIdeasAsking } from '../stores/ui/idea-removal'
+import { ArrowDown } from 'lucide-vue-next'
 
 const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
@@ -322,7 +323,7 @@ const isOpaque = computed(() => !hasInteracted.value)
                     <span class="label">From (Child)</span>
                     <span class="text">{{ selectedLink.parent.text }}</span>
                 </button>
-                <div class="arrow">↓</div>
+                <ArrowDown class="arrow" />
                 <button class="idea-card target" @click="focusIdea(selectedLink.child.id)">
                     <span class="label">To (Parent)</span>
                     <span class="text">{{ selectedLink.child.text }}</span>

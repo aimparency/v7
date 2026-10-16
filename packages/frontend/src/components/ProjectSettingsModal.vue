@@ -7,6 +7,7 @@ import { trpc } from '../trpc'
 import { useToastStore } from '../stores/toast'
 import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost } from 'shared'
 import type { AgentType } from '../stores/watchdog'
+import { Check, X } from 'lucide-vue-next'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -390,7 +391,7 @@ const save = async () => {
                 <input v-model="status.promptsEvaluation" type="checkbox" />
                 evaluate
               </label>
-              <button @click="removeStatus(index)" class="delete-btn" title="Remove Status">×</button>
+              <button @click="removeStatus(index)" class="delete-btn" title="Remove Status"><X /></button>
             </div>
           </div>
           <button @click="addStatus" class="add-btn">+ Add Status</button>
@@ -411,7 +412,7 @@ const save = async () => {
                 class="delete-btn"
                 :class="{ confirm: confirmUnlinkRepoId === repo.repoId }"
                 :title="confirmUnlinkRepoId === repo.repoId ? 'Confirm unlink' : 'Unlink repo'"
-              >{{ confirmUnlinkRepoId === repo.repoId ? '✓' : '×' }}</button>
+              ><Check v-if="confirmUnlinkRepoId === repo.repoId" /><X v-else /></button>
             </div>
           </div>
           <p v-else class="hint-text">No linked repos yet.</p>

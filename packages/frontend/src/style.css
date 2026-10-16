@@ -4,6 +4,16 @@
   box-sizing: border-box;
 }
 
+/* Lucide icons: sized by the surrounding text and drawn in its color, so one
+   rule styles every icon in the app. */
+svg.lucide {
+  width: 1.15em;
+  height: 1.15em;
+  stroke-width: 2;
+  vertical-align: -0.2em;
+  flex-shrink: 0;
+}
+
 html {
   /* Single density knob for the whole UI. A percentage keeps `rem` relative to
      the device/browser default font size (so the user's preference still

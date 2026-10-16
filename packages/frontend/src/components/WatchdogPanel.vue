@@ -5,6 +5,7 @@ import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import WatchdogTerminal from './WatchdogTerminal.vue'
 import WatchdogActionsOverlay from './WatchdogActionsOverlay.vue'
+import { Maximize2, Settings, X } from 'lucide-vue-next'
 
 const store = useWatchdogStore()
 const projectStore = useProjectStore()
@@ -280,7 +281,7 @@ defineExpose({
       class="terminal-fullscreen-exit"
       title="Exit terminal fullscreen"
       @click="projectStore.terminalFullscreen = false"
-    >✕</button>
+    ><X /></button>
 
     <div class="panel-header" v-show="!projectStore.terminalFullscreen" :style="{ background: headerBgColor }">
       <!-- Left: Agent Selector + Status + Session Controls -->
@@ -395,7 +396,7 @@ defineExpose({
             class="action-btn settings-gear"
             title="Session settings"
             @click="showSettings = !showSettings"
-          >⚙</button>
+          ><Settings /></button>
           <div v-if="showSettings" class="settings-menu">
             <label class="settings-row">
               <span class="settings-label">Session lease (minutes)</span>
@@ -440,7 +441,7 @@ defineExpose({
         class="term-tab term-fullscreen-enter"
         title="Fullscreen terminal"
         @click="projectStore.terminalFullscreen = true"
-      >⛶</button>
+      ><Maximize2 /></button>
     </div>
 
     <div class="terminals" v-show="store.isConnected">

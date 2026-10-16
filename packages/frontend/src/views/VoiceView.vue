@@ -5,6 +5,7 @@ import type { IdeaProposal } from 'shared'
 import IdeaProposalReview from '../components/IdeaProposalReview.vue'
 import { createManualIdeaProposal } from '../utils/idea-proposal'
 import { trpc } from '../trpc'
+import { Mic } from 'lucide-vue-next'
 
 const projectStore = useProjectStore()
 const emit = defineEmits<{
@@ -122,7 +123,7 @@ onUnmounted(() => {
     <div class="voice-container">
       <div class="status-indicator" :class="{ listening: isListening }">
         <div class="mic-icon" @click="toggleListening">
-          🎤
+          <Mic />
         </div>
         <p v-if="isListening" class="pulse-text">Listening...</p>
         <p v-else>Tap to Speak</p>

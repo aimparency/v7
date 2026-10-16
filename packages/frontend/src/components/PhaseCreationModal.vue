@@ -9,6 +9,7 @@ import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
 import PhaseSearchModal from './PhaseSearchModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
+import { X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -224,7 +225,7 @@ const handleSearchClose = () => {
       >
         <div class="selected-parent">{{ selectedParentName }}</div>
         <div class="parent-actions">
-          <button @click.stop="clearParent" class="btn-icon btn-danger" title="Clear parent">✕</button>
+          <button @click.stop="clearParent" class="btn-icon btn-danger" title="Clear parent"><X /></button>
         </div>
       </div>
     </div>

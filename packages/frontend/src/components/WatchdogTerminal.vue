@@ -4,6 +4,7 @@ import { Terminal } from '@xterm/xterm';
 import { FitAddon } from '@xterm/addon-fit';
 import type { Socket } from 'socket.io-client';
 import '@xterm/xterm/css/xterm.css';
+import { ArrowDown, ArrowLeft, ArrowRight, ArrowUp, Check, Keyboard, X } from 'lucide-vue-next'
 
 type TerminalKind = 'worker' | 'watchdog';
 
@@ -319,19 +320,19 @@ defineExpose({
     :aria-disabled="disabled"
     @click="disabled ? undefined : focus()"
   >
-    <!-- Desktop: both copy buttons; mobile uses the ⌨ menu instead. -->
+    <!-- Desktop: both copy buttons; mobile uses the keyboard menu instead. -->
     <div class="copy-buttons copy-buttons-desktop" @mousedown.prevent>
       <button
         v-if="socket && terminalKind"
         class="copy-btn"
         :title="parserCopyFeedback === 'ok' ? 'Copied!' : parserCopyFeedback === 'fail' ? 'Copy failed' : 'Copy server getViewportLines(500) — what the watchdog parser sees'"
         @click.stop="copyParserView"
-      >{{ parserCopyFeedback === 'ok' ? '✓' : parserCopyFeedback === 'fail' ? '✗' : 'copy parser view' }}</button>
+      ><Check v-if="parserCopyFeedback === 'ok'" /><X v-else-if="parserCopyFeedback === 'fail'" /><template v-else>copy parser view</template></button>
       <button
         class="copy-btn"
         :title="copyFeedback === 'ok' ? 'Copied!' : copyFeedback === 'fail' ? 'Copy failed' : 'Copy entire browser terminal scrollback'"
         @click.stop="copyContent"
-      >{{ copyFeedback === 'ok' ? '✓' : copyFeedback === 'fail' ? '✗' : 'copy term content' }}</button>
+      ><Check v-if="copyFeedback === 'ok'" /><X v-else-if="copyFeedback === 'fail'" /><template v-else>copy term content</template></button>
     </div>
     <!-- Touch-only keystroke helper: keys Android keyboards can't send. -->
     <!-- mousedown.prevent keeps focus in xterm's hidden input so the keyboard stays open. -->
@@ -342,7 +343,7 @@ defineExpose({
         :aria-expanded="keysOpen"
         title="Insert keystroke"
         @click="keysOpen = !keysOpen"
-      >⌨</button>
+      ><Keyboard /></button>
       <template v-if="keysOpen">
         <button class="key-btn" @click="sendKey('\u001b')">Esc</button>
         <button
@@ -353,21 +354,21 @@ defineExpose({
         <button class="key-btn" @click="sendKey(PAGE_UP)">PgUp</button>
         <button class="key-btn" @click="sendKey(PAGE_DOWN)">PgDn</button>
         <div class="arrow-pad">
-          <button class="key-btn arrow up" @click="sendKey(ARROW_UP)">↑</button>
-          <button class="key-btn arrow left" @click="sendKey(ARROW_LEFT)">←</button>
-          <button class="key-btn arrow down" @click="sendKey(ARROW_DOWN)">↓</button>
-          <button class="key-btn arrow right" @click="sendKey(ARROW_RIGHT)">→</button>
+          <button class="key-btn arrow up" @click="sendKey(ARROW_UP)"><ArrowUp /></button>
+          <button class="key-btn arrow left" @click="sendKey(ARROW_LEFT)"><ArrowLeft /></button>
+          <button class="key-btn arrow down" @click="sendKey(ARROW_DOWN)"><ArrowDown /></button>
+          <button class="key-btn arrow right" @click="sendKey(ARROW_RIGHT)"><ArrowRight /></button>
         </div>
         <button class="key-btn" @click="pasteFromClipboard">Paste</button>
         <button class="key-btn" @click.stop="copyContent">
-          {{ copyFeedback === 'ok' ? '✓ term copied' : copyFeedback === 'fail' ? '✗ copy failed' : 'Copy term' }}
+          <template v-if="copyFeedback === 'ok'"><Check /> term copied</template><template v-else-if="copyFeedback === 'fail'"><X /> copy failed</template><template v-else>Copy term</template>
         </button>
         <button
           v-if="socket && terminalKind"
           class="key-btn"
           @click.stop="copyParserView"
         >
-          {{ parserCopyFeedback === 'ok' ? '✓ parser copied' : parserCopyFeedback === 'fail' ? '✗ copy failed' : 'Copy parser' }}
+          <template v-if="parserCopyFeedback === 'ok'"><Check /> parser copied</template><template v-else-if="parserCopyFeedback === 'fail'"><X /> copy failed</template><template v-else>Copy parser</template>
         </button>
       </template>
     </div>

@@ -39,6 +39,7 @@
     "@xterm/addon-fit": "^0.10.0",
     "@xterm/xterm": "^5.5.0",
     "backend": "workspace:*",
+    "lucide-vue-next": "^1.0.0",
     "pinia": "^3.0.4",
     "shared": "workspace:*",
     "socket.io-client": "^4.8.1",

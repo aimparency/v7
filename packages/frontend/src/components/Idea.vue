@@ -9,6 +9,7 @@ import type { IdeaUIState } from '../stores/ui/idea-ui-state'
 import IdeasList from './IdeasList.vue'
 import ContextMenu, { type ContextMenuItem } from './ContextMenu.vue'
 import { useLongPress } from '../composables/useLongPress'
+import { ArrowUpLeft, CircleDot } from 'lucide-vue-next'
 
 defineOptions({ inheritAttrs: false })
 
@@ -265,11 +266,11 @@ onMounted(() => {
           title="Edit contribution to parent"
           aria-label="Edit contribution to parent"
           @click.stop="editParentConnection"
-        >↖</button>
+        ><ArrowUpLeft /></button>
         <div class="idea-main">
           <div class="idea-text" :class="{ 'untitled': !idea.text }">
             {{ idea.text || '(untitled)' }}
-            <span v-if="isMultiSelected" class="multi-badge" title="Multi-selected">●</span>
+            <span v-if="isMultiSelected" class="multi-badge" title="Multi-selected"><CircleDot /></span>
           </div>
           <div class="idea-status" :style="{ color: statusColor }">
             {{ idea.status.state }}

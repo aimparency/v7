@@ -9,6 +9,7 @@ import IdeaHistoryModal from './IdeaHistoryModal.vue'
 import TagInput from './TagInput.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
+import { X } from 'lucide-vue-next'
 
 const props = defineProps<{
   show: boolean
@@ -662,7 +663,7 @@ const discardChanges = () => {
           @click="clearCustomColor"
           title="Clear custom color (revert to status color)"
         >
-          ×
+          <X />
         </button>
       </div>
     </template>

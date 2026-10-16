@@ -11,6 +11,7 @@ import IdeaSearchPicker from './IdeaSearchPicker.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { IdeaSearchAdditionalOption } from '../stores/ui/idea-search-types'
 import { insertsAsFirstChild } from '../stores/ui/idea-ui-state'
+import { X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
@@ -337,7 +338,7 @@ onMounted(async () => {
           @click="clearCustomColor"
           title="Clear custom color (revert to status color)"
         >
-          ×
+          <X />
         </button>
       </div>
     </template>
@@ -428,7 +429,7 @@ onMounted(async () => {
                     <span class="weight-label">Weight:</span>
                     <NumericTextInput v-model="parent.weight" class="weight-field" @keydown="handleInputKeydown" />
                 </div>
-                <button @click="removeParent(index)" class="btn-remove" title="Remove Connection">×</button>
+                <button @click="removeParent(index)" class="btn-remove" title="Remove Connection"><X /></button>
             </div>
         </div>
 
@@ -443,7 +444,7 @@ onMounted(async () => {
                     <span class="weight-label">Weight:</span>
                     <NumericTextInput v-model="child.weight" class="weight-field" @keydown="handleInputKeydown" />
                 </div>
-                <button @click="removeChild(index)" class="btn-remove" title="Remove Connection">×</button>
+                <button @click="removeChild(index)" class="btn-remove" title="Remove Connection"><X /></button>
             </div>
         </div>
 

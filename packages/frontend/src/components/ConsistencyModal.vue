@@ -3,6 +3,7 @@ import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useToastStore } from '../stores/toast'
+import { CircleCheck, TriangleAlert, Wrench } from 'lucide-vue-next'
 
 const emit = defineEmits(['close'])
 
@@ -54,7 +55,7 @@ const close = () => {
       <div class="scroll-area">
         <!-- Fixes Report -->
         <div v-if="fixesApplied.length > 0" class="section success">
-            <h3>✅ Fixed {{ fixesApplied.length }} Issues</h3>
+            <h3><CircleCheck /> Fixed {{ fixesApplied.length }} Issues</h3>
             <ul>
                 <li v-for="(fix, i) in fixesApplied" :key="i">{{ fix }}</li>
             </ul>
@@ -62,14 +63,14 @@ const close = () => {
 
         <!-- Errors -->
         <div v-if="consistencyIssues.length > 0" class="section">
-            <h3 v-if="fixesApplied.length > 0" class="warning-header">⚠️ Remaining Issues (Manual Fix Required)</h3>
+            <h3 v-if="fixesApplied.length > 0" class="warning-header"><TriangleAlert /> Remaining Issues (Manual Fix Required)</h3>
             <div class="error-list">
                 <div v-for="(issue, i) in consistencyIssues" :key="`${issue.code}-${i}`" class="error-item">
-                    <span class="icon">⚠️</span>
+                    <TriangleAlert class="icon" />
                     <div class="text-col">
                         <span class="text">{{ issue.message }}</span>
                         <span class="action-hint" v-if="issue.suggestedAction !== 'Manual Fix Required'">
-                            🛠️ Will: {{ issue.suggestedAction }}
+                            <Wrench /> Will: {{ issue.suggestedAction }}
                         </span>
                     </div>
                 </div>
