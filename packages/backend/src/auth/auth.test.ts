@@ -40,6 +40,8 @@ test('passwords and tokens round-trip, and a revoked token is gone', async () =>
   assert.equal(await accounts.resolveToken(projectPath, token), null);
   const stored = await fs.readFile(accounts.accountsFile(projectPath), 'utf8');
   assert.ok(!stored.includes('correct horse'));
+  // Never committed, even before the project was first opened.
+  assert.equal(await fs.readFile(path.join(projectPath, 'runtime', '.gitignore'), 'utf8'), '*\n');
 });
 
 test('the last admin can be neither removed nor demoted', async () => {

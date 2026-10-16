@@ -43,6 +43,9 @@ async function load(projectPath: string): Promise<Accounts> {
 async function save(projectPath: string, accounts: Accounts) {
   const file = accountsFile(projectPath);
   await fs.mkdir(path.dirname(file), { recursive: true });
+  // .bowman/.gitignore covers runtime/ only once the project was opened, and
+  // the setup creates the first account before that: keep git out from here.
+  await fs.writeFile(path.join(path.dirname(file), '.gitignore'), '*\n', { flag: 'wx' }).catch(() => undefined);
   await fs.writeFile(file, JSON.stringify(accounts, null, 2) + '\n', { mode: 0o600 });
   cache.delete(file);
 }
