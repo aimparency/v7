@@ -4,7 +4,7 @@ import FormModalShell from './FormModalShell.vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { AWAITING_HUMAN_STATES, rankIdeasAwaitingHuman } from '../utils/review-inbox'
+import { AWAITING_HUMAN_STATES, DEFAULT_AWAITING_HUMAN_STATES, firstAppearanceOrder, rankIdeasAwaitingHuman, sortChronologically } from '../utils/review-inbox'
 import { formatIdeaPriority } from '../utils/phase-priority'
 import { isReadOnlyError } from '../utils/read-only'
 import { useToastStore } from '../stores/toast'
@@ -16,27 +16,34 @@ const dataStore = useDataStore()
 const projectStore = useProjectStore()
 const modalStore = useUIModalStore()
 
-type Filter = 'all' | (typeof AWAITING_HUMAN_STATES)[number]
-const filter = ref<Filter>('all')
+const shownStates = ref<string[]>([...DEFAULT_AWAITING_HUMAN_STATES])
+// Chronological: in the order the ideas first appear in the phases.
+const ORDERS = ['priority', 'chronological'] as const
+const order = ref<(typeof ORDERS)[number]>('priority')
 const selectedIndex = ref(0)
 const sendBackReason = ref<string | null>(null)
 const error = ref('')
 const listRef = ref<HTMLElement | null>(null)
 const reasonInput = ref<HTMLInputElement | null>(null)
 
-const allEntries = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities))
-const entries = computed(() => filter.value === 'all'
-  ? allEntries.value
-  : allEntries.value.filter(entry => entry.idea.status.state === filter.value))
-const countOf = (state: Filter) => state === 'all'
-  ? allEntries.value.length
-  : allEntries.value.filter(entry => entry.idea.status.state === state).length
+const allEntries = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities, AWAITING_HUMAN_STATES))
+const entries = computed(() => {
+  const shown = allEntries.value.filter(entry => shownStates.value.includes(entry.idea.status.state))
+  if (order.value === 'priority') return shown
+  return sortChronologically(shown, firstAppearanceOrder(dataStore.phases, dataStore.meta?.rootPhaseIds ?? [], dataStore.ideas))
+})
+const countOf = (state: string) => allEntries.value.filter(entry => entry.idea.status.state === state).length
+const toggleState = (state: string) => {
+  shownStates.value = shownStates.value.includes(state)
+    ? shownStates.value.filter(shown => shown !== state)
+    : [...shownStates.value, state]
+}
 const selected = computed(() => entries.value[selectedIndex.value] ?? null)
 const statusColor = (state: string) => dataStore.getStatuses.find((status: IdeaState) => status.key === state)?.color ?? '#888'
 
 // Deciding removes the idea from the list; stay at the same position.
 watch(entries, list => { selectedIndex.value = Math.min(selectedIndex.value, Math.max(list.length - 1, 0)) })
-watch(filter, () => { selectedIndex.value = 0 })
+watch([shownStates, order], () => { selectedIndex.value = 0 })
 watch(selectedIndex, async () => {
   await nextTick()
   listRef.value?.querySelector('.selected')?.scrollIntoView({ block: 'nearest' })
@@ -118,11 +125,19 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
     <div id="review-inbox">
       <div class="filters">
         <button
-          v-for="state in (['all', ...AWAITING_HUMAN_STATES] as Filter[])"
+          v-for="state in AWAITING_HUMAN_STATES"
           :key="state"
-          :class="{ active: filter === state }"
-          @click="filter = state"
+          :class="{ active: shownStates.includes(state) }"
+          @click="toggleState(state)"
         >{{ state }} {{ countOf(state) }}</button>
+        <span class="order">
+          <button
+            v-for="option in ORDERS"
+            :key="option"
+            :class="{ active: order === option }"
+            @click="order = option"
+          >{{ option }}</button>
+        </span>
       </div>
 
       <p v-if="entries.length === 0" class="empty">Nothing is waiting on you.</p>
@@ -179,8 +194,10 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
       padding: 0.2rem 0.6rem;
       cursor: pointer;
 
-      &.active { border-color: #888; }
+      &.active { border-color: #007acc; background: #333; }
     }
+
+    & .order { display: flex; gap: 0.4rem; margin-left: auto; }
   }
 
   & ol {

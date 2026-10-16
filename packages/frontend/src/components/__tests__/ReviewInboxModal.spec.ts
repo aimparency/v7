@@ -25,8 +25,13 @@ describe('ReviewInboxModal', () => {
           ideas: {
             done: idea('done', 'review', 'tests pass'),
             blocked: idea('blocked', 'human-dependent', 'needs a login'),
-            open: idea('open', 'open')
-          }
+            open: idea('open', 'open'),
+            question: idea('question', 'unclear')
+          },
+          phases: {
+            plan: { id: 'plan', name: 'plan', parent: null, commitments: ['done', 'blocked'], childPhaseIds: [] }
+          },
+          meta: { rootPhaseIds: ['plan'] }
         }
       }
     })
@@ -67,6 +72,23 @@ describe('ReviewInboxModal', () => {
     expect(dataStore.updateIdea).toHaveBeenCalledWith('/p', 'done', {
       status: { state: 'open', comment: 'missing screenshot', date: 1 }
     })
+    wrapper.unmount()
+  })
+
+  it('toggles states (unclear is off by default) and orders by first appearance in the phases', async () => {
+    const wrapper = mount(ReviewInboxModal, { attachTo: document.body })
+    const texts = () => wrapper.findAll('li .text').map(item => item.text())
+    const button = (label: string) => wrapper.findAll('.filters button').find(item => item.text().startsWith(label))!
+
+    await button('unclear').trigger('click')
+    expect(texts()).toEqual(['blocked', 'done', 'question'])
+
+    await button('human-dependent').trigger('click')
+    expect(texts()).toEqual(['done', 'question'])
+
+    await button('human-dependent').trigger('click')
+    await button('chronological').trigger('click')
+    expect(texts()).toEqual(['done', 'blocked', 'question'])
     wrapper.unmount()
   })
 })
