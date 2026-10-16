@@ -41,9 +41,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Multi-selection and merge are implemented and awaiting review. Any additional bulk actions require the user to specify which operations and semantics are desired.\n\nStatus reconciliation on 2026-07-30 found both concrete children in review and the residual scope explicitly unspecified.",
-    "date": 1785399346373
+    "state": "review",
+    "comment": "Covered as far as anything was specified: multi-select (887a6cd5), merge (f71142d3), and the edit modal edits a selection in bulk (status, comment, tags, color, archive, values; mixed fields shown as such). No further bulk action was ever named; close, or name the missing one.",
+    "date": 1792171831702
   },
   "intrinsicValue": 0,
   "cost": 1,

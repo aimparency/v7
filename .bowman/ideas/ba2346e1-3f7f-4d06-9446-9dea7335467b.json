@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Waiting for human product/engineering decision",
-    "date": 1774590240513
+    "state": "review",
+    "comment": "Decided in code since this was asked: Option A shipped. packages/backend/src/embeddings.ts uses BAAI/bge-small-en-v1.5 through @huggingface/transformers (ONNX in Node, no Python), loaded on first use (~250 MB, ~1 s); the hash embedder is gone. Confirm to close.",
+    "date": 1792171830678
   },
   "intrinsicValue": 0,
   "cost": 1,

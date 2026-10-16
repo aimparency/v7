@@ -25,9 +25,9 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "See detailed decision options in supporting idea",
-    "date": 1774590240969
+    "state": "review",
+    "comment": "Model-backed Node embeddings are in place: bge-small-en-v1.5 via @huggingface/transformers in backend, agent-tools and loop-worker (see ba2346e1). Confirm to close.",
+    "date": 1792171831350
   },
   "intrinsicValue": 0,
   "cost": 1,
