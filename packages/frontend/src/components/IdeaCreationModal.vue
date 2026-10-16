@@ -588,38 +588,6 @@ onMounted(async () => {
   flex: 1;
 }
 
-.btn-primary,
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.1875rem;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: #007acc;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #005a99;
-}
-
-.btn-primary:disabled {
-  background: #444;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: #444;
-  color: #e0e0e0;
-}
-
-.btn-secondary:hover {
-  background: #555;
-}
-
 .search-results {
   max-height: 12.5rem;
   overflow-y: auto;

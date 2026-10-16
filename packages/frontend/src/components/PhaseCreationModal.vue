@@ -359,36 +359,4 @@ const handleSearchClose = () => {
   color: #ff4444;
   background: rgba(255, 68, 68, 0.1);
 }
-
-.btn-primary,
-.btn-secondary {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 3px;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background: #007acc;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #005a99;
-}
-
-.btn-primary:disabled {
-  background: #444;
-  color: #666;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: #444;
-  color: #e0e0e0;
-}
-
-.btn-secondary:hover {
-  background: #555;
-}
 </style>

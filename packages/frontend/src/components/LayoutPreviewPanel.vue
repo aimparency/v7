@@ -26,8 +26,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
       <input v-model.number="count" type="range" min="1" :max="changes.length" step="1" />
     </label>
     <div class="actions">
-      <button @click="emit('cancel')">Cancel</button>
-      <button class="apply" @click="emit('apply')">Apply</button>
+      <button class="btn-secondary" @click="emit('cancel')">Cancel</button>
+      <button class="btn-primary" @click="emit('apply')">Apply</button>
     </div>
   </div>
 </template>
@@ -59,13 +59,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     display: flex;
     justify-content: flex-end;
     gap: 0.5rem;
-  }
-
-  & button {
-    padding: 0.25rem 0.75rem;
-    cursor: pointer;
-
-    &.apply { border-color: var(--status-implemented); }
   }
 }
 </style>
