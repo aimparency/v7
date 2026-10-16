@@ -1,0 +1,25 @@
+{
+  "id": "81c9f11f-1f11-4696-96b4-c03f4e319fc3",
+  "text": "Project loading page: search like idea search, j/k list, graph thumbnails",
+  "description": "Typing filters recent and nearby projects; a unique folder-name/path match is highlighted and Enter opens it. Tab (no folder completion showing) moves into the list; j/k navigate, e edits the path, Escape returns to the input. Number shortcuts removed (supersedes 033c340d). Graph view stores a WebGL screenshot per project in IndexedDB (3 s after opening, then every minute); shown beside each entry. Commit c6972eb.",
+  "reflections": [],
+  "archived": false,
+  "color": "#2d664c",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7f122bed-ff75-43fc-ba0b-1b74c8141270"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Specs + pnpm check 25/25. Live: filter, perfect-match highlight, Tab/j/Escape verified in the running UI. Thumbnail capture not verifiable headless (no requestAnimationFrame); Felix to see thumbnails appear after opening a project's graph.",
+    "date": 1792120326416
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
