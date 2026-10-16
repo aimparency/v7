@@ -14,7 +14,7 @@ import * as accounts from './accounts';
 
 let root = '';
 let base = '';
-let stop: () => Promise<void>;
+let stop: (() => Promise<void>) | undefined;
 
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-hosted-'));
@@ -31,7 +31,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  await stop();
+  await stop?.();
   for (const key of ['AIMPARENCY_HOSTED', 'AIMPARENCY_PROJECT', 'PORT', 'PORT_MCP']) delete process.env[key];
   clearIndices(path.join(root, '.bowman'));
   await fs.remove(root);

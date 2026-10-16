@@ -1,4 +1,5 @@
 import http from 'node:http';
+import { existsSync } from 'node:fs';
 import { createHTTPHandler, createHTTPServer } from '@trpc/server/adapters/standalone';
 import sirv from 'sirv';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
@@ -76,7 +77,13 @@ function startHostedServer(project: string) {
   const mcpPort = parseInt(process.env.PORT_MCP || '3005');
   const trpcHandler = createHTTPHandler({ router: appRouter, createContext, basePath: '/trpc/' });
   const frontendDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
-  const serveFrontend = sirv(frontendDist, { single: true, dev: false });
+  // sirv indexes the build when created, so without one the API still runs.
+  const serveFrontend: http.RequestListener = existsSync(frontendDist)
+    ? sirv(frontendDist, { single: true, dev: false })
+    : (_req, res) => {
+      res.writeHead(503, { 'content-type': 'text/plain' });
+      res.end('The UI is not built: run `pnpm start` (it builds) or `pnpm build`.');
+    };
   const runtimeConfig = JSON.stringify({ sameOrigin: true, hosted: true, project, voiceEnabled: false });
 
   const server = http.createServer((req, res) => {
