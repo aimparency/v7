@@ -433,6 +433,9 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   assert.equal(payload.diagnostics.openLeafIdeas, 0);
   assert.equal(payload.diagnostics.uncommittedLeafIdeas, 1);
   assert.deepEqual(payload.ideas.map((idea: any) => idea.id), [childId]);
+  // The top idea comes oriented, saving the loop a get_idea_context call.
+  assert.equal(payload.topIdeaContext.idea.id, childId);
+  assert.deepEqual(payload.topIdeaContext.parents.map((parent: any) => parent.id), [parentId]);
 });
 
 test('get_prioritized_ideas returns a graph-native exploration contract when no actionable leaf exists', async () => {

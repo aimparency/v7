@@ -1,0 +1,28 @@
+{
+  "id": "47805633-84e2-406f-bd09-6dca45b204f0",
+  "text": "get_prioritized_ideas returns the top idea's context (one call per loop step)",
+  "description": "From MCP-agent feedback (2026-10-16): every loop step called get_prioritized_ideas then get_idea_context. get_prioritized_ideas now includes topIdeaContext (exactly what get_idea_context returns, built by the shared ideaContext helper with the already-loaded graph). The Stop hook text says so.",
+  "reflections": [],
+  "archived": false,
+  "color": "#31662d",
+  "tags": [
+    "mcp",
+    "loop"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Test asserts topIdeaContext idea and parents; mcp 47/47, hook contract PASS, pnpm check 25/25. Needs /mcp reconnect to be visible to agents.",
+    "date": 1792122442252
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "loopWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

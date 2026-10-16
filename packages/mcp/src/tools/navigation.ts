@@ -4,11 +4,12 @@ import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea } from "./format.js";
 import { getRepoCommitMessages } from "./git.js";
+import { ideaContext } from "./ideas.js";
 
 export const navigationTools: ToolDefinition[] = [
   {
     name: "get_prioritized_ideas",
-    description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
+    description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). Includes topIdeaContext (what get_idea_context returns) for the top-ranked idea. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene/reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
     inputSchema: {
       type: "object",
       properties: {
@@ -95,6 +96,11 @@ export const navigationTools: ToolDefinition[] = [
         .sort((a, b) => b._priority - a._priority)
         .slice(0, (args.limit as number) || 10);
 
+      // The loop's next step is orienting on the top idea: save it the get_idea_context call.
+      const topIdeaContext = prioritized[0]
+        ? await ideaContext(trpcClient, args.projectPath as string, prioritized[0].id, allIdeas).catch(() => undefined)
+        : undefined
+
       // Build phase path for context
       const phasePath: string[] = [];
       for (let cur: Phase | undefined = targetPhase; cur; cur = cur.parent ? phaseById.get(cur.parent) : undefined) {
@@ -157,6 +163,7 @@ export const navigationTools: ToolDefinition[] = [
                 rawCost: a.cost,
                 status: a.status?.state,
               })),
+              topIdeaContext,
             }, null, 2),
           },
         ],

@@ -59,6 +59,54 @@ export function ideaCreationConfirmationToken(args: Record<string, unknown>): st
     .slice(0, 24);
 }
 
+// What get_idea_context returns; get_prioritized_ideas includes it for its top idea.
+// `allIdeas` saves loading the graph again when the caller already has it.
+export async function ideaContext(trpcClient: BackendClient, projectPath: string, ideaId: string, allIdeas?: Awaited<ReturnType<BackendClient["idea"]["list"]["query"]>>) {
+  // The whole graph powers the value model (to choose which parent to follow
+  // at branches) and resolves parent/child text from a map instead of N round-trips.
+  allIdeas ??= await trpcClient.idea.list.query({ projectPath });
+  const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
+  const { flowValues } = calculateIdeaValues(allIdeas);
+
+  const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ projectPath, ideaId });
+
+  const similarIdeas = await trpcClient.idea.searchSemantic.query({
+    projectPath,
+    query: `${idea.text} ${idea.description || ''}`.trim(),
+    limit: 6 // Request 6, filter self
+  });
+  const semanticContext = similarIdeas
+    .filter((a) => a.id !== ideaId)
+    .slice(0, 5)
+    .map((a) => ({ id: a.id, text: a.text, description: a.description }));
+
+  // Immediate parents (an idea may have several) and children
+  const parentContext = (idea.supportedIdeas || [])
+    .flatMap((id) => ideaMap.get(id) ?? [])
+    .map((p) => ({ id: p.id, text: p.text, description: p.description }));
+  const childContext = (idea.supportingConnections || [])
+    .flatMap((c) => ideaMap.get(c.ideaId) ?? [])
+    .map((c) => ({ id: c.id, text: c.text, description: c.description }));
+
+  // Black-box repo supporters: whole external repos carrying part of this
+  // idea. They are not in ideaMap (nothing inside them is loaded, by design),
+  // so they would be invisible without this.
+  const repoCarrier = { supportingRepos: [...(idea.supportingRepos || [])] };
+  await describeRepoEdges(trpcClient, projectPath, [repoCarrier]);
+
+  const { pathToRoot, pathsToRoot, truncated } = missionPathsToRoot(ideaMap, idea, flowValues);
+  return {
+    idea: { id: idea.id, text: idea.text, description: idea.description },
+    path_to_root: pathToRoot,
+    paths_to_root: pathsToRoot,
+    paths_to_root_truncated: truncated,
+    semantic_context: semanticContext,
+    parents: parentContext,
+    children: childContext,
+    supporting_repos: repoCarrier.supportingRepos
+  };
+}
+
 export const ideaTools: ToolDefinition[] = [
   {
     name: "get_idea",
@@ -98,68 +146,12 @@ export const ideaTools: ToolDefinition[] = [
       },
       required: ["projectPath", "ideaId"],
     },
-    handler: async (args, trpcClient) => {
-      const ideaId = args.ideaId as string;
-      const projectPath = args.projectPath as string;
-
-      // Load the whole graph once: it powers the value model (to choose
-      // which parent to follow at branches) and lets us resolve parent/child
-      // text from a map instead of N round-trips.
-      const allIdeas = await trpcClient.idea.list.query({ projectPath });
-      const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
-      const { flowValues } = calculateIdeaValues(allIdeas);
-
-      const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ projectPath, ideaId });
-
-      // Semantic Search
-      const queryText = `${idea.text} ${idea.description || ''}`.trim();
-      const similarIdeas = await trpcClient.idea.searchSemantic.query({
-        projectPath,
-        query: queryText,
-        limit: 6 // Request 6, filter self
-      });
-      const semanticContext = similarIdeas
-        .filter((a) => a.id !== ideaId)
-        .slice(0, 5)
-        .map((a) => ({ id: a.id, text: a.text, description: a.description }));
-
-      // Immediate parents (an idea may have several)
-      const parentContext = (idea.supportedIdeas || [])
-        .flatMap((id) => ideaMap.get(id) ?? [])
-        .map((p) => ({ id: p.id, text: p.text, description: p.description }));
-
-      // Children
-      const childContext = (idea.supportingConnections || [])
-        .flatMap((c) => ideaMap.get(c.ideaId) ?? [])
-        .map((c) => ({ id: c.id, text: c.text, description: c.description }));
-
-      // Black-box repo supporters: whole external repos carrying part of
-      // this idea. They are not in ideaMap (nothing inside them is loaded, by
-      // design), so they would be invisible without this.
-      const repoCarrier = { supportingRepos: [...(idea.supportingRepos || [])] };
-      await describeRepoEdges(trpcClient, projectPath, [repoCarrier]);
-      const repoContext = repoCarrier.supportingRepos;
-
-      const { pathToRoot, pathsToRoot, truncated } = missionPathsToRoot(ideaMap, idea, flowValues);
-
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify({
-                idea: { id: idea.id, text: idea.text, description: idea.description },
-                path_to_root: pathToRoot,
-                paths_to_root: pathsToRoot,
-                paths_to_root_truncated: truncated,
-                semantic_context: semanticContext,
-                parents: parentContext,
-                children: childContext,
-                supporting_repos: repoContext
-            }, null, 2),
-          },
-        ],
-      };
-    },
+    handler: async (args, trpcClient) => ({
+      content: [{
+        type: "text",
+        text: JSON.stringify(await ideaContext(trpcClient, args.projectPath as string, args.ideaId as string), null, 2),
+      }],
+    }),
   },
   {
     name: "search_ideas",
