@@ -99,6 +99,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     k: () => { selectedIndex.value = Math.max(selectedIndex.value - 1, 0) },
     ArrowUp: () => { selectedIndex.value = Math.max(selectedIndex.value - 1, 0) },
     o: open,
+    e: open,
     Enter: open,
     a: accept,
     s: startSendBack,
@@ -167,7 +168,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
       <div class="keys">
         <span><kbd>j</kbd>/<kbd>k</kbd> move</span>
-        <span><kbd>o</kbd> open</span>
+        <span><kbd>e</kbd>/<kbd>o</kbd> open</span>
         <span :class="{ unavailable: selected?.idea.status.state !== 'review' }"><kbd>a</kbd> accept</span>
         <span><kbd>s</kbd> send back</span>
         <span><kbd>Esc</kbd> close</span>
