@@ -1,7 +1,7 @@
 {
   "id": "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
-  "text": "Read-only MCP for everyone: read the graph, at most move an idea to review",
-  "description": "A restricted MCP mode anyone can be given: all read tools (search, context, prioritized ideas, phases), and as its only write, moving an idea to review with a status comment (claiming \"I think this is done, here is the evidence\"). No creating, deleting, linking, or value changes. Likely a server flag (e.g. AIMPARENCY_MCP_MODE=read-only) that registers only the allowed tools, plus a backend guard so the restriction does not depend on the client.",
+  "text": "One hosted instance for the whole house: accounts decide read or write, for UI and MCP alike",
+  "description": "Felix 2026-10-16. One Aimparency instance on a server Felix controls serves Commons Hub: residents, volunteers and guests. Access is to the instance (the backend), not per MCP: the backend enforces it for every client, and MCP clients authenticate through the UI (MCP OAuth: the client opens the instance's login page, gets a token).\n- Accounts are configurable per project and kept out of git (e.g. .bowman/secrets.json, already gitignored), password hashes only.\n- Write account: may change the graph. Changes stay as files on the server; someone with write access to the repository reviews and commits them by hand. Everyone with repo write access is responsible for keeping out changes that should not go in.\n- Read-only: no change to anything checked in. Optionally behind a password too (guests).\n- Propose for review is an extra, later: stored locally on the server (gitignored), never in the idea.\nParked first attempt: git stash 'parked: review-only access level + idea.proposeReview' (file marker instead of accounts; proposeReview wrote into the idea, which this design rejects). Its access-level guard can be reused, with the level coming from the session.",
   "archived": false,
   "color": "#662f2d",
   "tags": [],
@@ -14,9 +14,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792172339901
+    "state": "unclear",
+    "comment": "Design settled in outline; open: (1) with one person committing by hand, git blames that person for everyone's edits; should the server keep a local log of who changed what (gitignored), so the committer can attribute or co-author? (2) one shared read password or none for guests? (3) how accounts are created: a CLI on the server, or a settings page for an admin account?",
+    "date": 1792178069631
   },
   "intrinsicValue": 0,
   "cost": 1,
