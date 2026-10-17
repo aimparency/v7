@@ -100,9 +100,8 @@ export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, sepa
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
   (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => left[key] === right[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
-// The connections around an idea share this angle, each by its strength; less
-// than a full circle, so a fan of branches can stay a fan.
-const SPREAD_ANGLE = 1.5 * Math.PI
+// The connections around an idea share this angle, each by its strength.
+const SPREAD_ANGLE = 2 * Math.PI
 // Cosine distance: a neighbour 0.1 closer weighs e times more. On a real graph
 // unconnected ideas then land nearer their closest neighbours (16 vs 21
 // radius sums) than with equal weights.
