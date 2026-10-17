@@ -7,6 +7,7 @@ import { normalizeProjectPath } from './project-path.js';
 // One SQLite cache per project in .bowman/cache/: derived data only (idea
 // values, embeddings, semantic neighbours), regenerable and gitignored.
 const dbCache = new Map<string, Database.Database>();
+const CACHE_SCHEMA_VERSION = 1;
 
 export function cacheDatabasePath(rawProjectPath: string): string {
   return path.join(normalizeProjectPath(rawProjectPath), CACHE_DIR_NAME, CACHE_DATABASE_FILE_NAME);
@@ -25,6 +26,11 @@ export function getDb(rawProjectPath: string): Database.Database {
   const db = new Database(dbPath);
   // Readers in other processes (agent tools) never block the backend's writes.
   db.pragma('journal_mode = WAL');
+  // Derived tables are rebuilt, not migrated: an older schema drops them.
+  if ((db.pragma('user_version', { simple: true }) as number) < CACHE_SCHEMA_VERSION) {
+    db.exec('DROP TABLE IF EXISTS semantic_neighbours');
+    db.pragma(`user_version = ${CACHE_SCHEMA_VERSION}`);
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS idea_values (
@@ -40,11 +46,10 @@ export function getDb(rawProjectPath: string): Database.Database {
       id TEXT PRIMARY KEY,
       vector BLOB NOT NULL
     );
-    -- Per idea its nearest and furthest ideas, as JSON [[id, distance], ...] (sorted).
+    -- Per idea its nearest ideas, as JSON [[id, distance], ...] (sorted).
     CREATE TABLE IF NOT EXISTS semantic_neighbours (
       source TEXT PRIMARY KEY,
-      nearest TEXT NOT NULL,
-      furthest TEXT NOT NULL
+      neighbours TEXT NOT NULL
     );
     CREATE TABLE IF NOT EXISTS cache_meta (
       key TEXT PRIMARY KEY,

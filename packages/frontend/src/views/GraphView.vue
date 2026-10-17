@@ -21,6 +21,7 @@ import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../w
 import type { LayoutChange } from '../utils/autolayout'
 import type { LayoutRequest } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
+import { trpc } from '../trpc'
 import { GitBranch, X } from 'lucide-vue-next'
 
 const dataStore = useDataStore()
@@ -38,7 +39,7 @@ const showPhaseFilter = ref(false)
 
 // Composables
 const simulation = useGraphSimulation()
-const { nodes, links, trigger, randomizeLayout, semanticForceMultiplier, setSemanticForce } = simulation
+const { nodes, links, trigger, randomizeLayout } = simulation
 
 // WebGL renderer
 const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
@@ -344,10 +345,6 @@ const selectedLinkVisuals = computed(() => {
   }
 })
 
-// Semantic Force UI Logic
-const isSemanticForceActive = computed(() => simulation.targetSemanticForce.value > 0.5)
-const startSemanticForce = () => setSemanticForce(true)
-const stopSemanticForce = () => setSemanticForce(false)
 const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
   percentile: 0.9,
   zoomOut: 1.2,
@@ -376,6 +373,7 @@ async function startLayoutPreview() {
   if (layoutPreview.value || layoutRunning.value) return
   layoutRunning.value = true
   try {
+    const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ projectPath: projectStore.projectPath })
     const changes = await solveLayoutInWorker({
       nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
       links: links.value.map(link => ({
@@ -385,10 +383,7 @@ async function startLayoutPreview() {
         editable: isIdeaNode(link.source) && isIdeaNode(link.target),
         strength: link.forceWeight
       })),
-      // The furthest pairs only matter to the simulation's spreading; here everything attracts.
-      semanticPairs: simulation.semanticLinks.value
-        .filter(pair => pair.type === 'nearest')
-        .map(pair => ({ source: pair.source, target: pair.target, distance: pair.distance }))
+      semanticPairs
     })
     if (changes.length === 0) {
       useToastStore().info('The layout is already tidy; no connection would change.')
@@ -598,22 +593,6 @@ function toggleSpinOffPreview() {
         title="Shorter connections, room between ideas, similar branches nearby; previews first, saves on Apply"
       >
         {{ layoutRunning ? 'Layout…' : 'Layout' }}
-      </button>
-      <button 
-        class="control-btn" 
-        :class="{ active: isSemanticForceActive }"
-        @mousedown="startSemanticForce"
-        @mouseup="stopSemanticForce"
-        @mouseleave="stopSemanticForce"
-        @touchstart.prevent="startSemanticForce"
-        @touchend.prevent="stopSemanticForce"
-        title="Hold to Apply Semantic Force"
-      >
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-           <circle cx="12" cy="12" r="10"></circle>
-           <line x1="2" y1="12" x2="22" y2="12"></line>
-           <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path>
-        </svg>
       </button>
 
       <button

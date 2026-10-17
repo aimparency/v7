@@ -1,11 +1,10 @@
-import { computed, ref, shallowRef, watch } from 'vue'
+import { ref, shallowRef, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
-import { trpc } from '../trpc'
 import { normalizedFlowForceWeights, surfaceMovementShares } from '../utils/graph-forces'
 import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
 
@@ -13,8 +12,6 @@ import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
-const BASE_SEMANTIC_STIFFNESS = 0.75
-const SIMULATION_NEAREST_NEIGHBOURS = 3
 const MIN_NODE_RADIUS = 40
 
 type Box = [number, number, number, number]
@@ -99,23 +96,11 @@ export function useGraphSimulation() {
   const nodes = shallowRef<GraphNode[]>([])
   const links = shallowRef<GraphLink[]>([])
   const nodeMap = new Map<string, GraphNode>()
-  const semanticLinks = shallowRef<any[]>([])
-  // The simulation springs only the 3 nearest (plus the furthest) per idea; the
-  // autolayout reads all nearest neighbours from `semanticLinks`.
-  const springSemanticLinks = computed(() => {
-    const nearestBySource = new Map<string, number>()
-    return semanticLinks.value.filter(link => {
-      if (link.type !== 'nearest') return true
-      const seen = nearestBySource.get(link.source) ?? 0
-      nearestBySource.set(link.source, seen + 1)
-      return seen < SIMULATION_NEAREST_NEIGHBOURS
-    })
-  })
   
   // Layout State
   const loadedPositions = new Map<string, { x: number, y: number }>()
   const freezings = new Map<string, number>()
-  const semanticMaxGap = ref(2000)
+  const graphExtent = ref(2000) // side of a square holding every idea with room to spare
   const cameraTarget = vec2.create()
   let lastSelectedIdeaId: string | null = null
   let wasTracking = false
@@ -128,14 +113,6 @@ export function useGraphSimulation() {
 
   const onTick = (cb: () => void) => {
     tickCallbacks.push(cb)
-  }
-
-  // Semantic Force Control (New Feature)
-  const semanticForceMultiplier = ref(0) // Starts at 0 (off/weak)
-  const targetSemanticForce = ref(0)
-  
-  const setSemanticForce = (active: boolean) => {
-    targetSemanticForce.value = active ? 1.0 : 0.0
   }
 
   // --- Data Sync ---
@@ -271,7 +248,7 @@ export function useGraphSimulation() {
         let totalArea = 0
         for (const n of newNodes) totalArea += Math.PI * (n.r * n.r)
         const expandedArea = totalArea * SPACING_FACTOR
-        semanticMaxGap.value = Math.sqrt(expandedArea)
+        graphExtent.value = Math.sqrt(expandedArea)
     }
   }
 
@@ -284,7 +261,6 @@ export function useGraphSimulation() {
     lastCount: 0
   }
   const hShift = vec2.create()
-  const abVector = vec2.create()
 
   const calcShiftAndApply = (
     marginFactor: number, 
@@ -311,20 +287,6 @@ export function useGraphSimulation() {
   // --- Main Simulation Loop ---
       const layout = () => {
       let hasVisualChange = false
-  
-      // 1. Smooth Semantic Force
-      const diff = targetSemanticForce.value - semanticForceMultiplier.value
-      if (Math.abs(diff) > 0.0001) {
-          // Ease In (diff > 0) is slow (0.01), Ease Out (diff < 0) is fast (0.1)
-          const factor = diff > 0 ? 0.01 : 0.1
-          semanticForceMultiplier.value += diff * factor
-      } else {
-          semanticForceMultiplier.value = targetSemanticForce.value
-      }
-      
-      // Dynamic Gap Scaling: Shrink space by half (side * 0.707) when active
-      const gapMultiplier = 1.0 + ((Math.SQRT1_2 - 1.0) * semanticForceMultiplier.value)
-      const effectiveMaxGap = (semanticMaxGap.value || 2000) * gapMultiplier
   
       // Run registered callbacks (e.g. interaction updates)
       tickCallbacks.forEach(cb => cb())
@@ -470,7 +432,6 @@ export function useGraphSimulation() {
         // Track force contributions: how much each force type contributes to the selected node's movement
         const forceContributions = {
           flow: vec2.create() as vec2.T,
-          semantic: vec2.create() as vec2.T,
           collision: vec2.create() as vec2.T,
           global: vec2.create() as vec2.T
         }
@@ -479,7 +440,6 @@ export function useGraphSimulation() {
         const delta = vec2.create()
         const targetPos = vec2.create()
         const targetShift = vec2.create()
-        // const flowMultiplier = 1.0 + (9.0 * semanticForceMultiplier.value) // Removed for jitter testing
 
         for (const link of currentLinks) {
             const from = link.source
@@ -511,52 +471,6 @@ export function useGraphSimulation() {
         if (shouldLog && debugNode) {
             forceContributions.flow[0] = debugNode.shift[0]
             forceContributions.flow[1] = debugNode.shift[1]
-        }
-
-        // Semantic Forces
-        if (springSemanticLinks.value.length > 0 && semanticForceMultiplier.value > 0.001) {
-            const maxGap = effectiveMaxGap
-            const effectiveStiffness = BASE_SEMANTIC_STIFFNESS * semanticForceMultiplier.value
-
-            for (const link of springSemanticLinks.value) {
-                const nodeA = nodeMap.get(link.source)
-                const nodeB = nodeMap.get(link.target)
-                if (!nodeA || !nodeB) continue
-
-                vec2.sub(abVector, nodeB.pos, nodeA.pos)
-                let currentDist = vec2.len(abVector)
-
-                if (currentDist < 0.1) {
-                    abVector[0] = Math.random() - 0.5
-                    abVector[1] = Math.random() - 0.5
-                    currentDist = vec2.len(abVector)
-                }
-
-                vec2.scale(abVector, abVector, 1 / currentDist)
-
-                const minDist = nodeA.r + nodeB.r
-                const targetGap = (link.distance / 2.0) * maxGap * 1.2 // Enlarge by 1.2
-                const targetDist = minDist + targetGap
-                const displacement = currentDist - targetDist
-                
-                const forceMagnitude = displacement * effectiveStiffness
-
-                const movement = surfaceMovementShares(nodeA.r, nodeB.r)
-
-                // Preserve the old equal-size relative correction (each end
-                // moved by forceMagnitude), while distributing unequal-size
-                // movement by surface mass. The underlying pair interaction
-                // is equal-and-opposite and cannot create net momentum.
-                vec2.scale(hShift, abVector, forceMagnitude * 2 * movement.from)
-                vec2.add(nodeA.shift, nodeA.shift, hShift)
-                vec2.scale(hShift, abVector, forceMagnitude * 2 * movement.into)
-                vec2.sub(nodeB.shift, nodeB.shift, hShift)
-            }
-        }
-
-        // Calculate semantic force contribution (total shift minus flow = semantic)
-        if (shouldLog && debugNode) {
-            vec2.sub(forceContributions.semantic, debugNode.shift, forceContributions.flow)
         }
 
         for (let i = 0; i < count; i++) {
@@ -596,20 +510,13 @@ export function useGraphSimulation() {
         let shiftBeforeGlobal: vec2.T | null = null
         if (shouldLog && debugNode) {
             shiftBeforeGlobal = vec2.clone(debugNode.shift)
-            // Collision contribution = total shift minus (flow + semantic)
-            const flowAndSemantic = vec2.create()
-            vec2.add(flowAndSemantic, forceContributions.flow, forceContributions.semantic)
-            vec2.sub(forceContributions.collision, debugNode.shift, flowAndSemantic)
+            // Collision contribution = total shift minus flow
+            vec2.sub(forceContributions.collision, debugNode.shift, forceContributions.flow)
         }
 
         // Global Force & Apply
         const now = Date.now()
         const FREEZE_DURATION = 10000
-        const GRAVITY_CONSTANT = 0.6 
-        
-        // Scale gravity by semantic multiplier (Disable gravity when not in auto-arrange)
-        const effectiveGravity = GRAVITY_CONSTANT * semanticForceMultiplier.value
-        const CENTERING_FORCE = effectiveGravity / (effectiveMaxGap || 2000)
         
         // Calculate rendering scale factor 's'
         const currentScale = mapStore.scale || 1
@@ -625,18 +532,13 @@ export function useGraphSimulation() {
 
             vec2.scale(n.shift, n.shift, GLOBAL_FORCE)
 
-            if (effectiveGravity > 0.001) {
-                vec2.scale(hShift, n.pos, -CENTERING_FORCE)
-                vec2.add(n.shift, n.shift, hShift)
-            }
-
             largestShiftComponent = Math.max(
                 largestShiftComponent,
                 Math.abs(n.shift[0]),
                 Math.abs(n.shift[1])
             )
         }
-        const maxMove = effectiveMaxGap * 0.1
+        const maxMove = (graphExtent.value || 2000) * 0.1
         const sharedMovementScale = largestShiftComponent > maxMove
             ? maxMove / largestShiftComponent
             : 1
@@ -657,7 +559,6 @@ export function useGraphSimulation() {
                 console.group(`[GraphForce] ${n.text} (every 60 frames)`)
                 console.table({
                     Flow: { x: forceContributions.flow[0].toFixed(2), y: forceContributions.flow[1].toFixed(2) },
-                    Semantic: { x: forceContributions.semantic[0].toFixed(2), y: forceContributions.semantic[1].toFixed(2) },
                     Collision: { x: forceContributions.collision[0].toFixed(2), y: forceContributions.collision[1].toFixed(2) },
                     Global: { x: forceContributions.global[0].toFixed(2), y: forceContributions.global[1].toFixed(2) },
                     TotalShift: { x: n.shift[0].toFixed(2), y: n.shift[1].toFixed(2) },
@@ -718,8 +619,7 @@ export function useGraphSimulation() {
   }
 
   const randomizeLayout = () => {
-    // Use the tighter semantic spacing (half area / 0.707 side) for randomization
-    const range = (semanticMaxGap.value || 2000) * Math.SQRT1_2
+    const range = (graphExtent.value || 2000) * Math.SQRT1_2 // half the area: compact, the simulation spreads it
     nodes.value.forEach(n => {
       n.pos[0] = (Math.random() - 0.5) * range
       n.pos[1] = (Math.random() - 0.5) * range
@@ -735,12 +635,6 @@ export function useGraphSimulation() {
     // Load Data
     if (projectStore.projectPath) {
       dataStore.loadAllIdeas(projectStore.projectPath)
-      
-      trpc.graph.getSemanticForces.query({ projectPath: projectStore.projectPath })
-        .then(graph => {
-          semanticLinks.value = graph.links
-        })
-        .catch(err => console.error("[Graph] Failed to load semantic forces:", err))
     }
     
     // Load positions
@@ -794,12 +688,8 @@ export function useGraphSimulation() {
   return {
     nodes,
     links,
-    semanticLinks,
     nodeMap,
     trigger,
-    semanticForceMultiplier,
-    targetSemanticForce,
-    setSemanticForce,
     randomizeLayout,
     init,
     cleanup,

@@ -3,8 +3,8 @@ import { decodeVector, getCacheMeta, getDb, setCacheMeta, vectorsVersion } from 
 import { EMBEDDING_DIMENSION, onVectorsChanged, type VectorChange } from './embeddings.js';
 import { normalizeProjectPath } from './project-path.js';
 
-// Semantic neighbours: for every idea its nearest and furthest ideas by
-// embedding (cosine distance, 0 = same meaning, 2 = opposite).
+// Semantic neighbours: for every idea its nearest ideas by embedding (cosine
+// distance, 0 = same meaning). The autolayout draws them toward each other.
 //
 // Exact, so every pair has to be compared once: a full build is n²/2 dot
 // products of unit vectors (n·log K bookkeeping, no sorting of whole rows).
@@ -13,41 +13,30 @@ import { normalizeProjectPath } from './project-path.js';
 // database together with the vectors version they reflect; a different
 // version (another process, a restart after missed updates) rebuilds.
 
-interface SemanticLink {
+export interface SemanticNeighbour {
   source: string;
   target: string;
   distance: number;
-  type: 'nearest' | 'furthest';
 }
 
-interface SemanticGraph {
-  links: SemanticLink[];
-  averageDistance: number;
-  lastUpdated: number;
-}
-
-// Nearest neighbours feed the autolayout's semantic attraction; more of them
-// give it a steadier picture. Cost stays linear in the number of ideas.
+// More neighbours give the autolayout a steadier picture; cost stays linear.
 export const NEAREST_NEIGHBOURS = 12;
-export const FURTHEST_NEIGHBOURS = 3;
-const LIST_CONFIG = `${NEAREST_NEIGHBOURS}/${FURTHEST_NEIGHBOURS}`;
 
 type Neighbour = { id: string, distance: number };
 
 interface SemanticIndex {
   version: number; // vectors version the lists reflect
   vectors: Map<string, Float64Array>; // unit length
-  nearest: Map<string, Neighbour[]>; // ascending distance
-  furthest: Map<string, Neighbour[]>; // descending distance
-  graph: SemanticGraph | null; // response built from the lists, until they change
+  lists: Map<string, Neighbour[]>; // ascending distance, at most NEAREST_NEIGHBOURS
+  links: SemanticNeighbour[] | null; // response built from the lists, until they change
 }
 
 const indexes = new Map<string, SemanticIndex>();
 
-export async function getSemanticGraph(rawProjectPath: string): Promise<SemanticGraph> {
+export async function getSemanticNeighbours(rawProjectPath: string): Promise<{ links: SemanticNeighbour[] }> {
   const index = loadIndex(normalizeProjectPath(rawProjectPath));
-  index.graph ??= toGraph(index);
-  return index.graph;
+  index.links ??= [...index.lists].flatMap(([source, list]) => list.map(({ id, distance }) => ({ source, target: id, distance })));
+  return { links: index.links };
 }
 
 // Vector writes of this process arrive here and update the lists in place.
@@ -64,26 +53,23 @@ function loadIndex(projectPath: string): SemanticIndex {
     const unit = toUnit(decodeVector(vector));
     if (unit) vectors.set(id, unit);
   }
-  const index: SemanticIndex = { version, vectors, nearest: new Map(), furthest: new Map(), graph: null };
+  const index: SemanticIndex = { version, vectors, lists: new Map(), links: null };
   if (!readLists(db, index)) {
-    for (const id of vectors.keys()) {
-      index.nearest.set(id, []);
-      index.furthest.set(id, []);
-    }
-    // Most pairs are rejected by both lists: compare against each idea's
-    // current worst entries first and only touch the lists for the rest.
+    // Most pairs are rejected: compare against each idea's current worst
+    // entry first and only touch its list for the rest.
     const ids = [...vectors.keys()];
     const rows = ids.map(id => vectors.get(id)!);
-    const nearestLimit = new Float64Array(ids.length).fill(Infinity);
-    const furthestLimit = new Float64Array(ids.length).fill(-Infinity);
+    const lists = ids.map(id => {
+      const list: Neighbour[] = [];
+      index.lists.set(id, list);
+      return list;
+    });
+    const limit = new Float64Array(ids.length).fill(Infinity);
     const consider = (source: number, target: number, distance: number) => {
-      if (distance >= nearestLimit[source]! && distance <= furthestLimit[source]!) return;
-      const id = ids[source]!;
-      offer(index, id, ids[target]!, distance);
-      const nearest = index.nearest.get(id)!;
-      const furthest = index.furthest.get(id)!;
-      if (nearest.length === NEAREST_NEIGHBOURS) nearestLimit[source] = nearest[NEAREST_NEIGHBOURS - 1]!.distance;
-      if (furthest.length === FURTHEST_NEIGHBOURS) furthestLimit[source] = furthest[FURTHEST_NEIGHBOURS - 1]!.distance;
+      if (distance >= limit[source]!) return;
+      const list = lists[source]!;
+      insertBounded(list, { id: ids[target]!, distance });
+      if (list.length === NEAREST_NEIGHBOURS) limit[source] = list[NEAREST_NEIGHBOURS - 1]!.distance;
     };
     for (let i = 0; i < rows.length; i++) {
       const row = rows[i]!;
@@ -115,26 +101,23 @@ function applyChange({ projectPath, changed, removed, version }: VectorChange) {
   }
   for (const id of gone) {
     index.vectors.delete(id);
-    index.nearest.delete(id);
-    index.furthest.delete(id);
+    index.lists.delete(id);
   }
 
   // Lists that held a changed or removed idea may now miss their true K-th
   // entry: recompute those rows whole, like the changed ideas' own rows.
   const touched = new Set([...changed.keys(), ...gone]);
   const refill = new Set<string>();
-  for (const lists of [index.nearest, index.furthest]) {
-    for (const [source, list] of lists) {
-      if (list.some(neighbour => touched.has(neighbour.id))) refill.add(source);
-    }
+  for (const [source, list] of index.lists) {
+    if (list.some(neighbour => touched.has(neighbour.id))) refill.add(source);
   }
   for (const id of changed.keys()) if (index.vectors.has(id)) refill.add(id);
   for (const source of refill) {
-    index.nearest.set(source, []);
-    index.furthest.set(source, []);
+    const list: Neighbour[] = [];
+    index.lists.set(source, list);
     const vector = index.vectors.get(source)!;
     for (const [other, otherVector] of index.vectors) {
-      if (other !== source) offer(index, source, other, cosineDistance(vector, otherVector));
+      if (other !== source) insertBounded(list, { id: other, distance: cosineDistance(vector, otherVector) });
     }
   }
   // Every other list only needs an offer: a changed idea may now belong there.
@@ -144,28 +127,22 @@ function applyChange({ projectPath, changed, removed, version }: VectorChange) {
     if (!vector) continue;
     for (const [other, otherVector] of index.vectors) {
       if (other === id || refill.has(other)) continue;
-      if (offer(index, other, id, cosineDistance(vector, otherVector))) rewrite.add(other);
+      if (insertBounded(index.lists.get(other)!, { id, distance: cosineDistance(vector, otherVector) })) rewrite.add(other);
     }
   }
 
   index.version = version;
-  index.graph = null;
+  index.links = null;
   writeLists(getDb(projectPath), index, rewrite, false);
 }
 
-// Inserts into a source's bounded, sorted lists; true if either list took it.
-function offer(index: SemanticIndex, source: string, target: string, distance: number): boolean {
-  const near = insertBounded(index.nearest.get(source)!, NEAREST_NEIGHBOURS, { id: target, distance }, (a, b) => a < b);
-  const far = insertBounded(index.furthest.get(source)!, FURTHEST_NEIGHBOURS, { id: target, distance }, (a, b) => a > b);
-  return near || far;
-}
-
-function insertBounded(list: Neighbour[], capacity: number, neighbour: Neighbour, better: (a: number, b: number) => boolean): boolean {
-  if (list.length === capacity && !better(neighbour.distance, list[capacity - 1]!.distance)) return false;
+// Keeps the list sorted and at most NEAREST_NEIGHBOURS long; true if it took the entry.
+function insertBounded(list: Neighbour[], neighbour: Neighbour): boolean {
+  if (list.length === NEAREST_NEIGHBOURS && neighbour.distance >= list[NEAREST_NEIGHBOURS - 1]!.distance) return false;
   let at = list.length;
-  while (at > 0 && better(neighbour.distance, list[at - 1]!.distance)) at--;
+  while (at > 0 && neighbour.distance < list[at - 1]!.distance) at--;
   list.splice(at, 0, neighbour);
-  if (list.length > capacity) list.pop();
+  if (list.length > NEAREST_NEIGHBOURS) list.pop();
   return true;
 }
 
@@ -198,42 +175,27 @@ function toUnit(vector: Float32Array): Float64Array | null {
 }
 
 function readLists(db: Database.Database, index: SemanticIndex): boolean {
-  if (getCacheMeta(db, 'neighbours_version') !== String(index.version) || getCacheMeta(db, 'neighbours_config') !== LIST_CONFIG) return false;
-  const rows = db.prepare('SELECT source, nearest, furthest FROM semantic_neighbours').all() as { source: string, nearest: string, furthest: string }[];
+  if (getCacheMeta(db, 'neighbours_version') !== String(index.version) || getCacheMeta(db, 'neighbours_count') !== String(NEAREST_NEIGHBOURS)) return false;
+  const rows = db.prepare('SELECT source, neighbours FROM semantic_neighbours').all() as { source: string, neighbours: string }[];
   if (rows.length !== index.vectors.size) return false;
-  const parse = (json: string): Neighbour[] => (JSON.parse(json) as [string, number][]).map(([id, distance]) => ({ id, distance }));
-  for (const { source, nearest, furthest } of rows) {
+  for (const { source, neighbours } of rows) {
     if (!index.vectors.has(source)) return false;
-    index.nearest.set(source, parse(nearest));
-    index.furthest.set(source, parse(furthest));
+    index.lists.set(source, (JSON.parse(neighbours) as [string, number][]).map(([id, distance]) => ({ id, distance })));
   }
   return true;
 }
 
 function writeLists(db: Database.Database, index: SemanticIndex, sources: Iterable<string>, replaceAll: boolean) {
   const remove = db.prepare('DELETE FROM semantic_neighbours WHERE source = ?');
-  const upsert = db.prepare('INSERT OR REPLACE INTO semantic_neighbours (source, nearest, furthest) VALUES (?, ?, ?)');
-  const serialize = (list: Neighbour[]) => JSON.stringify(list.map(({ id, distance }) => [id, distance]));
+  const upsert = db.prepare('INSERT OR REPLACE INTO semantic_neighbours (source, neighbours) VALUES (?, ?)');
   db.transaction(() => {
     if (replaceAll) db.prepare('DELETE FROM semantic_neighbours').run();
     for (const source of sources) {
-      const nearest = index.nearest.get(source);
-      if (nearest) upsert.run(source, serialize(nearest), serialize(index.furthest.get(source)!));
+      const list = index.lists.get(source);
+      if (list) upsert.run(source, JSON.stringify(list.map(({ id, distance }) => [id, distance])));
       else remove.run(source);
     }
     setCacheMeta(db, 'neighbours_version', String(index.version));
-    setCacheMeta(db, 'neighbours_config', LIST_CONFIG);
+    setCacheMeta(db, 'neighbours_count', String(NEAREST_NEIGHBOURS));
   })();
-}
-
-function toGraph(index: SemanticIndex): SemanticGraph {
-  const links: SemanticLink[] = [];
-  for (const [source, list] of index.nearest) {
-    for (const { id, distance } of list) links.push({ source, target: id, distance, type: 'nearest' });
-  }
-  for (const [source, list] of index.furthest) {
-    for (const { id, distance } of list) links.push({ source, target: id, distance, type: 'furthest' });
-  }
-  const averageDistance = links.length > 0 ? links.reduce((sum, link) => sum + link.distance, 0) / links.length : 0;
-  return { links, averageDistance, lastUpdated: Date.now() };
 }

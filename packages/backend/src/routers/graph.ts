@@ -1,13 +1,13 @@
 import { z } from 'zod';
 import { t, delayedProcedure } from '../trpc.js';
-import { getSemanticGraph } from '../forces.js';
+import { getSemanticNeighbours } from '../semantic-neighbours.js';
 
 export const graphRouter = t.router({
-  getSemanticForces: delayedProcedure
+  getSemanticNeighbours: delayedProcedure
     .input(z.object({
       projectPath: z.string()
     }))
     .query(async ({ input }) => {
-      return await getSemanticGraph(input.projectPath);
+      return await getSemanticNeighbours(input.projectPath);
     })
 });
