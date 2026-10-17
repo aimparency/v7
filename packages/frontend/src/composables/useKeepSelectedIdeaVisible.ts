@@ -5,9 +5,9 @@ import { useUIStore } from '../stores/ui'
 //
 // Ideas used to request their own scroll when their `isThisIdeaSelected`/`isActive`
 // props flipped. Selection moves that don't flip those props on the newly
-// selected idea (returning to a parent with k/h, reordering with J/K, stale
-// sub-selection indices) then never scrolled. Watching the whole selection path
-// from the column covers every move with one mechanism.
+// selected idea (returning to a parent with k/h, reordering with J/K) then
+// never scrolled. Watching the whole selection path from the column covers
+// every move with one mechanism.
 export function useKeepSelectedIdeaVisible(
   containerRef: Ref<HTMLElement | null>,
   isColumnActive: () => boolean,
@@ -19,10 +19,16 @@ export function useKeepSelectedIdeaVisible(
     if (!uiStore.navigatingIdeas || !isColumnActive()) return ''
     const path = uiStore.getSelectionPath()
     if (path.ideas.length === 0) return ''
+    // Each idea's position in its list too: J/K reorders keep the ids but must scroll.
+    const topLevelIds = uiStore.getIdeaListScope()?.ideas.map((idea: { id: string }) => idea.id) ?? []
     return [
       path.phase?.id ?? 'floating',
-      path.phase?.selectedIdeaIndex ?? uiStore.floatingIdeaIndex,
-      ...path.ideas.map((idea: { id: string }, depth: number) => `${idea.id}@${path.ideaStates[depth]?.selectedIncomingIndex ?? ''}`)
+      ...path.ideas.map((idea: { id: string }, depth: number) => {
+        const siblingIds = depth === 0
+          ? topLevelIds
+          : (path.ideas[depth - 1]!.supportingConnections ?? []).map((connection: { ideaId: string }) => connection.ideaId)
+        return `${idea.id}@${siblingIds.indexOf(idea.id)}`
+      })
     ].join('/')
   }
 

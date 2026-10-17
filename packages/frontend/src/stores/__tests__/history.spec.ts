@@ -82,7 +82,8 @@ describe('history store', () => {
   it('keeps a moved idea selected when the move is undone and redone', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
-    dataStore.phases = { p: { id: 'p', name: 'P', parent: null, childPhaseIds: [], commitments: ['x', 'y'], selectedIdeaIndex: 0 } } as any
+    dataStore.phases = { p: { id: 'p', name: 'P', parent: null, childPhaseIds: [], commitments: ['x', 'y'] } } as any
+    uiStore.selectTopIdea('p', 'x')
     dataStore.ideas = {
       x: { id: 'x', text: 'X', supportingConnections: [], supportedIdeas: [], committedIn: ['p'] },
       y: { id: 'y', text: 'Y', supportingConnections: [], supportedIdeas: [], committedIn: ['p'] }
@@ -95,17 +96,16 @@ describe('history store', () => {
     // Shift+J: x moves below y and stays selected.
     userAction([{ type: 'phase', id: 'p', entity: { commitments: ['y', 'x'] }, previous: { commitments: ['x', 'y'] } }], ['idea.commitToPhase'])
     setOrder(['y', 'x'])
-    dataStore.phases.p!.selectedIdeaIndex = 1
 
     restore.mockImplementation(async ({ changes }) => { setOrder(changes[0].target.commitments); return { ok: true, conflicts: [] } })
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'u' }))
     await useHistoryStore().undo()
     expect(uiStore.getCurrentIdea()?.id).toBe('x')
-    expect(dataStore.phases.p!.selectedIdeaIndex).toBe(0)
+    expect(dataStore.phases.p!.commitments).toEqual(['x', 'y'])
 
     window.dispatchEvent(new KeyboardEvent('keydown', { key: 'r' }))
     await useHistoryStore().redo()
     expect(uiStore.getCurrentIdea()?.id).toBe('x')
-    expect(dataStore.phases.p!.selectedIdeaIndex).toBe(1)
+    expect(dataStore.phases.p!.commitments).toEqual(['y', 'x'])
   })
 })

@@ -16,14 +16,14 @@ interface Props {
   isActive: boolean
   isSelected: boolean
   indentationLevel?: number
-  selectedIdeaIndex?: number  // Index of selected idea in this list
+  selectedIdeaId?: string  // The selected idea of this list
   parentIdeaId?: string
   ideaUiStates: IdeaUIStateTree
 }
 
 const props = withDefaults(defineProps<Props>(), {
   indentationLevel: 0,
-  selectedIdeaIndex: undefined,
+  selectedIdeaId: undefined,
   parentIdeaId: undefined
 })
 
@@ -88,7 +88,7 @@ const handleIdeaClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: 
       class="ideas-list"
       handle=".idea-content" 
     >
-      <template #item="{ element: idea, index }">
+      <template #item="{ element: idea }">
         <IdeaComponent
           :key="idea.id"
           :idea="idea"
@@ -97,12 +97,12 @@ const handleIdeaClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: 
           :indentation-level="indentationLevel"
           :is-active="isActive"
           :is-selected="isSelected"
-          :is-this-idea-selected="selectedIdeaIndex === index"
+          :is-this-idea-selected="selectedIdeaId === idea.id"
           :parent-idea-id="parentIdeaId"
           :idea-ui-state="uiStore.ensureIdeaUIState(ideaUiStates, idea.id)"
           :class="{
-            'active': isActive && selectedIdeaIndex === index,
-            'selected': isSelected && selectedIdeaIndex === index,
+            'active': isActive && selectedIdeaId === idea.id,
+            'selected': isSelected && selectedIdeaId === idea.id,
             'pending-delete': uiStore.ensureIdeaUIState(ideaUiStates, idea.id).pendingDelete,
             'moving': modalStore.movingIdeaId === idea.id
           }"

@@ -85,9 +85,9 @@ describe('UI teleport cut/paste', () => {
       to: 1,
       parent: null,
       childPhaseIds: [],
-      commitments: ['idea-1', 'idea-2'],
-      selectedIdeaIndex: 1
+      commitments: ['idea-1', 'idea-2']
     } as any
+    uiStore.selectTopIdea('phase-1', 'idea-2')
 
     dataStore.ideas['idea-1'] = baseIdea('idea-1', 'A1') as any
     dataStore.ideas['idea-2'] = baseIdea('idea-2', 'A2') as any
@@ -102,9 +102,7 @@ describe('UI teleport cut/paste', () => {
     expect(modalStore.teleportCutIdeaId).toBe('idea-2')
     expect(modalStore.movingIdeaId).toBe('idea-2')
 
-    const selectedPhase = dataStore.phases['phase-1']
-    if (!selectedPhase) throw new Error('phase-1 should exist in test setup')
-    selectedPhase.selectedIdeaIndex = 0
+    uiStore.selectTopIdea('phase-1', 'idea-1')
     await uiStore.handleIdeaNavigationKeys(keyEvent('p'), dataStore)
 
     expect(mockTrpc.idea.move.mutate).toHaveBeenCalledWith({
@@ -152,9 +150,9 @@ describe('UI teleport cut/paste', () => {
       to: 1,
       parent: null,
       childPhaseIds: [],
-      commitments: ['parent-b'],
-      selectedIdeaIndex: 0
+      commitments: ['parent-b']
     } as any
+    uiStore.selectTopIdea('phase-1', 'parent-b')
 
     const modalStore = useUIModalStore()
     modalStore.teleportCutIdeaId = 'child'
@@ -163,7 +161,7 @@ describe('UI teleport cut/paste', () => {
 
     const parentBState = uiStore.ensureIdeaUIState(uiStore.getPhaseIdeaUIStates('phase-1'), 'parent-b')
     parentBState.expanded = true
-    parentBState.selectedIncomingIndex = 0
+    parentBState.selectedChildId = 'target'
 
     mockTrpc.idea.move.mutate.mockResolvedValue({
       ideas: [
@@ -191,7 +189,7 @@ describe('UI teleport cut/paste', () => {
       index: 1
     })
     expect(dataStore.ideas['parent-b']!.supportingConnections.map((c: any) => c.ideaId)).toEqual(['target', 'child'])
-    expect(parentBState.selectedIncomingIndex).toBe(1)
+    expect(parentBState.selectedChildId).toBe('child')
     expect(modalStore.teleportCutIdeaId).toBeNull()
   })
 
@@ -212,9 +210,9 @@ describe('UI teleport cut/paste', () => {
       to: 1,
       parent: null,
       childPhaseIds: [],
-      commitments: ['idea-1', 'idea-2'],
-      selectedIdeaIndex: 0
+      commitments: ['idea-1', 'idea-2']
     } as any
+    uiStore.selectTopIdea('phase-1', 'idea-1')
     dataStore.ideas['idea-1'] = baseIdea('idea-1', 'A1') as any
     dataStore.ideas['idea-2'] = baseIdea('idea-2', 'A2') as any
 
@@ -249,8 +247,7 @@ describe('UI teleport cut/paste', () => {
       from: 0,
       to: 1,
       parent: null,
-      commitments: [],
-      selectedIdeaIndex: undefined
+      commitments: []
     } as any
 
     await uiStore.handleIdeaNavigationKeys(keyEvent('o'), dataStore)
@@ -287,8 +284,7 @@ describe('UI teleport cut/paste', () => {
       to: 1,
       parent: null,
       childPhaseIds: [],
-      commitments: [],
-      selectedIdeaIndex: undefined
+      commitments: []
     } as any
 
     await uiStore.handleColumnNavigationKeys(keyEvent('i'), dataStore)

@@ -252,8 +252,9 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
             uiStore.applyPhaseSelection(uiStore.activeColumn, selectableEntries.indexOf(selectedEntry))
             const selectedPhase = selectedEntry.phase
             const ideas = localDataStore.getIdeasForPhase(selectedPhase.id)
-            if (ideas.length > 0 && selectedPhase.selectedIdeaIndex === undefined) {
-              selectedPhase.selectedIdeaIndex = 0
+            const remembered = uiStore.getSelectedTopIdeaId(selectedPhase.id)
+            if (ideas.length > 0 && !ideas.some((idea) => idea.id === remembered)) {
+              uiStore.selectTopIdea(selectedPhase.id, ideas[0]!.id)
             }
             uiStore.navigatingIdeas = true
           }
@@ -261,9 +262,6 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       } else {
         const floatingIdeas = localDataStore.floatingIdeas
         if (floatingIdeas.length > 0) {
-          if (uiStore.floatingIdeaIndex < 0 || uiStore.floatingIdeaIndex >= floatingIdeas.length) {
-            uiStore.floatingIdeaIndex = 0
-          }
           uiStore.navigatingIdeas = true
         }
       }
@@ -371,26 +369,21 @@ async function removeSelectedIdea(uiStore: any, dataStore: any, projectPath: str
     : path.phase
       ? { context: { phaseId: path.phase.id }, label: path.phase.name }
       : null
+  const siblingIds = (): string[] => parent
+    ? (dataStore.ideas[parent.id]?.supportingConnections ?? []).map((connection: { ideaId: string }) => connection.ideaId)
+    : (path.phase ? dataStore.getIdeasForPhase(path.phase.id) : dataStore.floatingIdeas).map((sibling: { id: string }) => sibling.id)
+  const position = siblingIds().indexOf(idea.id)
   if (!await removeIdeaFromList(dataStore, projectPath, idea, from)) return
 
   // Counted without the removed idea: the change events may not have arrived yet.
+  const remaining = siblingIds().filter((id) => id !== idea.id)
+  const successor = remaining[Math.min(Math.max(position, 0), remaining.length - 1)]
   if (parent && parentState) {
-    const remaining = (dataStore.ideas[parent.id]?.supportingConnections ?? [])
-      .filter((connection: { ideaId: string }) => connection.ideaId !== idea.id).length
-    parentState.selectedIncomingIndex = remaining > 0
-      ? Math.min(parentState.selectedIncomingIndex ?? 0, remaining - 1)
-      : undefined
-    return
-  }
-  const siblings = (path.phase ? dataStore.getIdeasForPhase(path.phase.id) : dataStore.floatingIdeas)
-    .filter((sibling: { id: string }) => sibling.id !== idea.id)
-  if (siblings.length === 0) {
+    parentState.selectedChildId = successor
+  } else if (!successor) {
     uiStore.navigatingIdeas = false
-  } else if (path.phase) {
-    const phase = dataStore.phases[path.phase.id]
-    if (phase?.selectedIdeaIndex !== undefined) phase.selectedIdeaIndex = Math.min(phase.selectedIdeaIndex, siblings.length - 1)
   } else {
-    uiStore.floatingIdeaIndex = Math.min(uiStore.floatingIdeaIndex, siblings.length - 1)
+    uiStore.selectTopIdea(path.phase?.id, successor)
   }
 }
 
@@ -539,7 +532,7 @@ export async function handleIdeaNavigationKeysAction(uiStore: any, event: Keyboa
         } else if (path.ideas.length > 1) {
           const parentIdeaState = path.ideaStates[path.ideaStates.length - 2]
           if (parentIdeaState) {
-            parentIdeaState.selectedIncomingIndex = undefined
+            parentIdeaState.selectedChildId = undefined
           }
         }
       }
@@ -557,8 +550,10 @@ export async function handleIdeaNavigationKeysAction(uiStore: any, event: Keyboa
             dataStore.loadIdeas(projectStore.projectPath, connections.map((connection: any) => connection.ideaId))
           }
         } else if (selectedIdea.supportingConnections && selectedIdea.supportingConnections.length > 0) {
-          if (selectedIdeaState.selectedIncomingIndex === undefined) {
-            selectedIdeaState.selectedIncomingIndex = 0
+          // Steps into the remembered child, or the first one.
+          const childIds = selectedIdea.supportingConnections.map((connection: { ideaId: string }) => connection.ideaId)
+          if (!childIds.includes(selectedIdeaState.selectedChildId)) {
+            selectedIdeaState.selectedChildId = childIds[0]
           }
         }
       }

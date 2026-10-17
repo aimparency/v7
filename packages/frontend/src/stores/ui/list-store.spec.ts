@@ -202,7 +202,7 @@ describe('list store phase selection', () => {
     uiStore.activeColumn = 0
     uiStore.selectedEntryKeyByColumn[0] = 'phase:phase-1'
     uiStore.navigatingIdeas = true
-    dataStore.phases['phase-1']!.selectedIdeaIndex = 0
+    uiStore.selectTopIdea('phase-1', 'parent')
     uiStore.ensureIdeaUIState(uiStore.getPhaseIdeaUIStates('phase-1'), 'parent').expanded = true
 
     const selected = () => uiStore.getCurrentIdea()?.id
@@ -396,8 +396,8 @@ describe('list store phase selection', () => {
         windowSize: 2,
         activeColumn: 1,
         navigatingIdeas: true,
-        // Stale index (ideas were reordered since): identity must win.
-        selectedIdeaIndexByPhaseId: { 'child-b': 0 },
+        // A stale remembered idea of the phase: the focused selection wins.
+        selectedIdeaIdByPhaseId: { 'child-b': 'idea-1' },
         selection: {
           activeColumn: 1,
           maxColumn: 2,
@@ -489,7 +489,7 @@ describe('list store phase selection', () => {
     dataStore.ideas['child'] = { id: 'child', text: 'Child', supportingConnections: [] } as any
     dataStore.floatingIdeasIds = ['root']
     uiStore.activeColumn = -1
-    uiStore.floatingIdeaIndex = 0
+    uiStore.selectTopIdea(undefined, 'root')
     uiStore.navigatingIdeas = true
     const press = (key: string) => uiStore.handleGlobalKeydown({ key, preventDefault: vi.fn() } as any, dataStore)
 

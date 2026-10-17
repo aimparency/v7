@@ -50,7 +50,7 @@ describe('view helpers', () => {
       windowStart: 4,
       windowSize: 6,
       maxColumn: 8,
-      floatingIdeaIndex: 5,
+      floatingIdeaId: 'f' as string | null,
       navigatingIdeas: true,
       graphSelectedIdeaId: 'x',
       selectedLink: { parentId: 'p', childId: 'c' }

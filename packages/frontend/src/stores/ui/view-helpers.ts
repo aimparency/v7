@@ -18,7 +18,7 @@ type ResettableViewState = {
   windowStart: number
   windowSize: number
   maxColumn: number
-  floatingIdeaIndex: number
+  floatingIdeaId: string | null
   navigatingIdeas: boolean
   graphSelectedIdeaId: string | null
   selectedLink: { parentId: string; childId: string } | null
@@ -65,7 +65,7 @@ export function resetViewState(state: ResettableViewState): void {
   state.windowStart = 0
   state.windowSize = 2
   state.maxColumn = 0
-  state.floatingIdeaIndex = -1
+  state.floatingIdeaId = null
   state.navigatingIdeas = false
   state.graphSelectedIdeaId = null
   state.selectedLink = null

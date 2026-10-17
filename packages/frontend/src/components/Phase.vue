@@ -224,7 +224,7 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
         :column-index="0"
         :is-active="isActive && uiStore.navigatingIdeas"
         :is-selected="isSelected"
-        :selected-idea-index="phase.selectedIdeaIndex"
+        :selected-idea-id="uiStore.getSelectedTopIdeaId(phase.id)"
         :idea-ui-states="uiStore.getPhaseIdeaUIStates(phase.id)"
         @scroll-request="$emit('scroll-request', $event)"
         @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"

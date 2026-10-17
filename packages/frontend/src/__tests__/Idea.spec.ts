@@ -21,7 +21,7 @@ vi.mock('../components/IdeasList.vue', () => ({
       'ideaUiStates',
       'isActive',
       'isSelected',
-      'selectedIdeaIndex',
+      'selectedIdeaId',
       'isThisIdeaSelected'  // for multi/selection compatibility
     ]
   }
@@ -42,7 +42,6 @@ describe('Idea.vue', () => {
     supportedIdeas: [],
     committedIn: [],
     expanded: false,
-    selectedIncomingIndex: undefined,
     intrinsicValue: 0,
     cost: 1,
     selfWeight: 0,

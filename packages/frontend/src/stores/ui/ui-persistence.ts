@@ -3,7 +3,7 @@ import { useDataStore } from '../data'
 import { useProjectStore } from '../project-store'
 import { useGraphUIStore, type PersistedGraphViewState } from './graph-store'
 import { captureSelectionAnchor, applySelectionAnchor, type SelectionAnchor } from './selection-anchor'
-import { ensureIdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
+import type { IdeaUIStateTree } from './idea-ui-state'
 import { perfLog } from '../../utils/perf-log'
 import type { useUIStore } from './list-store'
 
@@ -22,16 +22,15 @@ export type PersistedListViewState = {
   selectedEntryKeyByColumn?: Record<number, string>
   // Legacy snapshots stored the selection as index + phase id.
   selectedPhaseIdByColumn?: Record<number, string>
-  floatingIdeaIndex: number
   lastSelectedSubPhaseIndexByPhase: Record<string, number>
   navigatingIdeas: boolean
-  selectedIdeaIndexByPhaseId: Record<string, number>
-  selectedIncomingIndexByIdeaId?: Record<string, number>
-  expandedIdeaIds?: string[]
+  // The idea each phase (and the floating list) remembers; saved states from
+  // before kept indices instead and restore without them.
+  selectedIdeaIdByPhaseId?: Record<string, string>
+  floatingIdeaId?: string | null
   floatingIdeaUIStates?: IdeaUIStateTree
   phaseIdeaUIStatesByPhaseId?: Record<string, IdeaUIStateTree>
-  // Authoritative selection by identity; the index fields above only seed
-  // remembered per-phase positions (and older saved states).
+  // The focused selection, applied last.
   selection?: SelectionAnchor
 }
 
@@ -46,24 +45,16 @@ export function persistedUIStateKey(projectPath: string) {
 }
 
 export function listViewStateSnapshot(ui: UIStore): PersistedListViewState {
-  const dataStore = useDataStore()
-  const selectedIdeaIndexByPhaseId: Record<string, number> = {}
-
-  for (const phase of Object.values(dataStore.phases)) {
-    if (phase?.selectedIdeaIndex !== undefined) {
-      selectedIdeaIndexByPhaseId[phase.id] = phase.selectedIdeaIndex
-    }
-  }
-
   return {
     activeColumn: ui.activeColumn,
     windowStart: ui.windowStart,
     windowSize: ui.windowSize,
     selectedEntryKeyByColumn: { ...ui.selectedEntryKeyByColumn },
-    floatingIdeaIndex: ui.floatingIdeaIndex,
     lastSelectedSubPhaseIndexByPhase: { ...ui.lastSelectedSubPhaseIndexByPhase },
     navigatingIdeas: ui.navigatingIdeas,
-    selectedIdeaIndexByPhaseId,
+    // Only phases that still exist: deleted phases leave nothing behind.
+    selectedIdeaIdByPhaseId: Object.fromEntries(Object.entries(ui.selectedIdeaIdByPhaseId).filter(([phaseId]) => useDataStore().phases[phaseId])),
+    floatingIdeaId: ui.floatingIdeaId,
     floatingIdeaUIStates: ui.floatingIdeaUIStates,
     phaseIdeaUIStatesByPhaseId: ui.phaseIdeaUIStatesByPhaseId,
     selection: captureSelectionAnchor(ui)
@@ -156,7 +147,7 @@ export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
       ui.windowSize = listViewState.windowSize
       ui.windowStart = listViewState.windowStart
       ui.activeColumn = listViewState.activeColumn
-      ui.floatingIdeaIndex = listViewState.floatingIdeaIndex
+      ui.floatingIdeaId = listViewState.floatingIdeaId ?? null
       ui.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
       ui.navigatingIdeas = listViewState.navigatingIdeas
       ui.scrollTopByColumn = {}
@@ -182,45 +173,12 @@ export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
         ui.activeColumn = ui.maxColumn
       }
 
-      for (const [phaseId, selectedIdeaIndex] of Object.entries(listViewState.selectedIdeaIndexByPhaseId)) {
-        const phase = dataStore.phases[phaseId]
-        if (phase) {
-          phase.selectedIdeaIndex = selectedIdeaIndex
-        }
-      }
-
+      ui.selectedIdeaIdByPhaseId = { ...listViewState.selectedIdeaIdByPhaseId }
       if (listViewState.floatingIdeaUIStates) {
         ui.floatingIdeaUIStates = listViewState.floatingIdeaUIStates
       }
       if (listViewState.phaseIdeaUIStatesByPhaseId) {
         ui.phaseIdeaUIStatesByPhaseId = listViewState.phaseIdeaUIStatesByPhaseId
-      }
-
-      if (listViewState.expandedIdeaIds || listViewState.selectedIncomingIndexByIdeaId) {
-        const expandedIdeaIds = new Set(listViewState.expandedIdeaIds ?? [])
-        for (const idea of Object.values(dataStore.ideas)) {
-          if (!idea) continue
-          if (!expandedIdeaIds.has(idea.id) && listViewState.selectedIncomingIndexByIdeaId?.[idea.id] === undefined) continue
-          const state = ensureIdeaUIState(ui.floatingIdeaUIStates, idea.id)
-          state.expanded = expandedIdeaIds.has(idea.id)
-          const selectedIncomingIndex = listViewState.selectedIncomingIndexByIdeaId?.[idea.id]
-          if (selectedIncomingIndex !== undefined) {
-            state.selectedIncomingIndex = selectedIncomingIndex
-          }
-        }
-      }
-
-      if (ui.navigatingIdeas && ui.activeColumn >= 0) {
-        const activePhaseId = ui.selectedPhaseIdByColumn[ui.activeColumn]
-        if (activePhaseId) {
-          const phase = dataStore.phases[activePhaseId]
-          if (phase && listViewState.selectedIdeaIndexByPhaseId[activePhaseId] !== undefined) {
-            phase.selectedIdeaIndex = Math.min(
-              listViewState.selectedIdeaIndexByPhaseId[activePhaseId]!,
-              Math.max(0, phase.commitments.length - 1)
-            )
-          }
-        }
       }
 
       if (listViewState.selection) {

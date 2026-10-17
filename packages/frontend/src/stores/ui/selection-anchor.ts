@@ -2,10 +2,9 @@ import { useDataStore } from '../data'
 import { ensureIdeaUIState } from './idea-ui-state'
 import { getSelectionPathFromState } from './navigation-helpers'
 
-// The list-view selection by identity rather than by index: which entry each
-// column has selected, which column is focused, and the chain of idea ids down
-// to the selected idea. Indices drift whenever entries are reordered, created or
-// deleted (undo, other clients, reload); ids don't.
+// A snapshot of the list-view selection for undo/redo and reload: which entry
+// each column has selected, which column is focused, and the chain of idea ids
+// down to the selected idea.
 export type SelectionAnchor = {
   activeColumn: number
   maxColumn: number
@@ -22,10 +21,10 @@ export function captureSelectionAnchor(uiStore: any): SelectionAnchor {
   const path = getSelectionPathFromState(
     true,
     uiStore.activeColumn,
-    uiStore.floatingIdeaIndex,
-    (columnIndex) => uiStore.getSelectedPhaseId(columnIndex),
+    (columnIndex: number) => uiStore.getSelectedPhaseId(columnIndex),
+    (phaseId: string | undefined) => uiStore.getSelectedTopIdeaId(phaseId),
     () => uiStore.getFloatingIdeaUIStates(),
-    (phaseId) => uiStore.getPhaseIdeaUIStates(phaseId)
+    (phaseId: string) => uiStore.getPhaseIdeaUIStates(phaseId)
   )
   return {
     activeColumn: uiStore.activeColumn,
@@ -40,41 +39,61 @@ export function captureSelectionAnchor(uiStore: any): SelectionAnchor {
 // floating ideas), expanding the ancestors. Stops at the deepest idea that still
 // exists at that position. Returns false when the top-level idea is gone.
 function applyIdeaPath(uiStore: any, ideaPath: string[]): boolean {
-  const dataStore = useDataStore()
-  const column = uiStore.activeColumn
-  const phaseId = column >= 0 ? uiStore.selectedPhaseIdByColumn[column] : undefined
-  if (column >= 0 && !phaseId) return false
+  const scope = uiStore.getIdeaListScope()
+  if (!scope?.ideas.some((idea: { id: string }) => idea.id === ideaPath[0])) return false
 
-  const topLevelIdeas = phaseId ? dataStore.getIdeasForPhase(phaseId) : dataStore.floatingIdeas
-  const topIndex = topLevelIdeas.findIndex((idea) => idea?.id === ideaPath[0])
-  let idea = topLevelIdeas[topIndex]
-  if (!idea) return false
-  uiStore.setCurrentIdeaIndex(topIndex, dataStore)
-
-  let state = ensureIdeaUIState(phaseId ? uiStore.getPhaseIdeaUIStates(phaseId) : uiStore.floatingIdeaUIStates, idea.id)
+  const existing = ideaPath.slice(0, 1)
+  let state = ensureIdeaUIState(scope.tree, ideaPath[0]!)
   for (const childId of ideaPath.slice(1)) {
-    const childIndex = (idea.supportingConnections ?? []).findIndex((connection) => connection.ideaId === childId)
-    const child = dataStore.ideas[childId]
-    if (childIndex < 0 || !child) break
+    if (!childIdsOf(existing[existing.length - 1]!).includes(childId)) break
     state.expanded = true
-    state.selectedIncomingIndex = childIndex
-    idea = child
-    state = ensureIdeaUIState(state.children, child.id)
+    existing.push(childId)
+    state = ensureIdeaUIState(state.children, childId)
   }
-  state.selectedIncomingIndex = undefined
+  uiStore.selectIdeaPath(scope, existing)
   return true
 }
 
-// Runs `applyChange` (another client's pushed change) without letting the
-// index-based idea selection slide onto a different idea.
+function childIdsOf(ideaId: string): string[] {
+  const dataStore = useDataStore()
+  return (dataStore.ideas[ideaId]?.supportingConnections ?? [])
+    .map((connection) => connection.ideaId)
+    .filter((childId) => dataStore.ideas[childId])
+}
+
+// The ids of the list each idea of `ideaPath` is shown in: the top-level list,
+// then the children of the idea above it.
+function listsAlong(topLevelIds: string[], ideaPath: string[]): string[][] {
+  return ideaPath.map((_, depth) => depth === 0 ? topLevelIds : childIdsOf(ideaPath[depth - 1]!))
+}
+
+// Runs `applyChange` (a pushed change). The selection is by id, so reorders and
+// inserts don't move it; when the change takes an idea of the selection path out
+// of its list, the idea now at its position is selected instead (its successor,
+// or the new last entry), as after dd.
 export function keepIdeaSelection(uiStore: any, applyChange: () => void) {
-  if (!uiStore.navigatingIdeas || uiStore.isRestoringUIState) {
-    applyChange()
-    return
-  }
-  const ideaPath = captureSelectionAnchor(uiStore).ideaPath
+  const scope = uiStore.navigatingIdeas && !uiStore.isRestoringUIState ? uiStore.getIdeaListScope() : undefined
+  const before: string[] = scope ? uiStore.getSelectionPath().ideas.map((idea: { id: string }) => idea.id) : []
+  const topLevelIds = (ideas: { id: string }[]) => ideas.map((idea) => idea.id)
+  const positions = listsAlong(scope ? topLevelIds(scope.ideas) : [], before).map((ids, depth) => ids.indexOf(before[depth]!))
   applyChange()
-  if (ideaPath.length > 0) applyIdeaPath(uiStore, ideaPath)
+  if (before.length === 0) return
+
+  const after = uiStore.getIdeaListScope(scope.phaseId)
+  if (!after) return
+  const lists = listsAlong(topLevelIds(after.ideas), before)
+  const idPath: string[] = []
+  for (const [depth, id] of before.entries()) {
+    const ids = lists[depth]!
+    if (ids.includes(id)) {
+      idPath.push(id)
+      continue
+    }
+    const replacement = ids[Math.min(positions[depth]!, ids.length - 1)]
+    if (replacement) idPath.push(replacement)
+    break
+  }
+  if (idPath.length > 0 && idPath.join('/') !== before.join('/')) uiStore.selectIdeaPath(after, idPath)
 }
 
 export async function applySelectionAnchor(uiStore: any, anchor: SelectionAnchor) {
@@ -97,9 +116,8 @@ export async function applySelectionAnchor(uiStore: any, anchor: SelectionAnchor
     // The selected idea is gone: stay in idea mode only if there is an idea to select.
     const phaseId = uiStore.activeColumn >= 0 ? uiStore.selectedPhaseIdByColumn[uiStore.activeColumn] : undefined
     const ideas = phaseId ? dataStore.getIdeasForPhase(phaseId) : dataStore.floatingIdeas
-    const phase = phaseId ? dataStore.phases[phaseId] : undefined
-    if (phase && phase.selectedIdeaIndex !== undefined) {
-      phase.selectedIdeaIndex = Math.max(0, Math.min(phase.selectedIdeaIndex, ideas.length - 1))
+    if (phaseId && ideas.length > 0 && !ideas.some((idea) => idea.id === uiStore.selectedIdeaIdByPhaseId[phaseId])) {
+      uiStore.selectTopIdea(phaseId, ideas[0]!.id)
     }
     uiStore.navigatingIdeas = ideas.length > 0
   } else {

@@ -93,13 +93,13 @@ export async function placeIdea(
 
       implicitParentId = currentIdea.id
       if (currentIdeaState) {
-        currentIdeaState.selectedIncomingIndex = 0
+        currentIdeaState.selectedChildId = newIdeaId
       }
     } else if (path.ideas.length > 1) {
       const parentIdea = path.ideas[path.ideas.length - 2]
       const parentIdeaState = path.ideaStates[path.ideaStates.length - 2]
       if (parentIdea) {
-        let insertionIndex = parentIdeaState?.selectedIncomingIndex ?? 0
+        let insertionIndex = Math.max(0, (parentIdea.supportingConnections ?? []).findIndex((connection) => connection.ideaId === currentIdea.id))
         if (modalStore.ideaModalInsertPosition === 'after') {
           insertionIndex++
         }
@@ -126,15 +126,12 @@ export async function placeIdea(
 
         implicitParentId = parentIdea.id
         if (parentIdeaState) {
-          parentIdeaState.selectedIncomingIndex = insertionIndex
+          parentIdeaState.selectedChildId = newIdeaId
         }
       }
     } else if (path.phase) {
-      let insertionIndex = 0
-      const phase = dataStore.phases[path.phase.id]
-      if (phase && phase.selectedIdeaIndex !== undefined) {
-        insertionIndex = phase.selectedIdeaIndex + (modalStore.ideaModalInsertPosition === 'after' ? 1 : 0)
-      }
+      const selectedIndex = path.phase.commitments.indexOf(currentIdea.id)
+      const insertionIndex = selectedIndex === -1 ? 0 : selectedIndex + (modalStore.ideaModalInsertPosition === 'after' ? 1 : 0)
 
       if (isExistingIdea) {
         await trpc.idea.commitToPhase.mutate({
@@ -156,10 +153,7 @@ export async function placeIdea(
         createdAsPhaseCommitmentWithoutImplicitSupportedIdea = true
       }
 
-      const freshPhase = dataStore.phases[path.phase.id]
-      if (freshPhase) {
-        freshPhase.selectedIdeaIndex = insertionIndex
-      }
+      ui.selectTopIdea(path.phase.id, newIdeaId)
     } else if (isExistingIdea) {
       if (modalStore.ideaCreationCallback) {
         newIdeaId = existingIdeaId!
@@ -207,20 +201,9 @@ export async function placeIdea(
       modalStore.ideaCreationParentId = null
     }
 
-    if (path.phase) {
-      const ideas = dataStore.getIdeasForPhase(path.phase.id)
-      const newIdeaIndex = ideas.findIndex((idea) => idea.id === newIdeaId)
-      if (newIdeaIndex !== -1) {
-        const phase = dataStore.phases[path.phase.id]
-        if (phase) {
-          phase.selectedIdeaIndex = newIdeaIndex
-        }
-      }
-    } else {
-      const newIdeaIndex = dataStore.floatingIdeas.findIndex((idea) => idea.id === newIdeaId)
-      if (newIdeaIndex !== -1) {
-        ui.floatingIdeaIndex = newIdeaIndex
-      }
+    const topLevelIdeas = path.phase ? dataStore.getIdeasForPhase(path.phase.id) : dataStore.floatingIdeas
+    if (topLevelIdeas.some((idea) => idea.id === newIdeaId)) {
+      ui.selectTopIdea(path.phase?.id, newIdeaId)
     }
   }
 

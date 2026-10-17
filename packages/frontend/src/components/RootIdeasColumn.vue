@@ -48,7 +48,7 @@ const handleIdeaClicked = (columnIndex: number, phaseId: string | undefined, ide
         :column-index="-1"
         :is-active="isActive && uiStore.navigatingIdeas"
         :is-selected="isSelected"
-        :selected-idea-index="uiStore.floatingIdeaIndex"
+        :selected-idea-id="uiStore.getSelectedTopIdeaId(undefined)"
         :idea-ui-states="uiStore.floatingIdeaUIStates"
         @idea-clicked="(ideaId, mods) => handleIdeaClicked(-1, undefined, ideaId, mods)"
         @scroll-request="handleScrollRequest"

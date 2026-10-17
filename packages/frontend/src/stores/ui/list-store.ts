@@ -7,10 +7,8 @@ import {
 } from './view-helpers'
 import {
   getSelectionPathFromState,
-  setCurrentIdeaIndexInState,
   findPathToIdea as findPathToIdeaHelper,
   getVisibleIdeaRows,
-  type IdeaRow,
   type SelectionPath
 } from './navigation-helpers'
 import { ensureIdeaUIState, type IdeaUIState, type IdeaUIStateTree } from './idea-ui-state'
@@ -82,18 +80,19 @@ type PhaseMoveDirection = 'forward' | 'backward' | 'preserve'
 
 
 // Structural edits (J/K/H/L on ideas or phases, paste) run one after another.
-// Each computes its target from the current, index-based selection and applies
-// an optimistic change; a key pressed while the previous edit's server round
-// trip is in flight would otherwise start from optimistic state that the
-// arriving push then overwrites, leaving the index on a different idea — so
-// fast repeated J/K moved other ideas.
+// Each computes its target from the current list order and applies an
+// optimistic change; a key pressed while the previous edit's server round trip
+// is in flight would otherwise start from optimistic state that the arriving
+// push then overwrites, so fast repeated J/K computed positions from a stale
+// order.
 let structuralEditQueue: Promise<unknown> = Promise.resolve()
 
 // The list the idea cursor moves in; see getIdeaListScope.
 type IdeaListScope = {
   ideas: Idea[]
   tree: IdeaUIStateTree
-  setTopIndex: (index: number) => void
+  // undefined: the floating ideas
+  phaseId?: string
 }
 
 export const useUIStore = defineStore('ui', {
@@ -115,8 +114,11 @@ export const useUIStore = defineStore('ui', {
     // autonomous loop as the active phase. Independent of browsing focus above.
     currentPhaseIdByLevel: {} as Record<string, string>, // level -> phaseId
 
-    // Root ideas selection (for column -1)
-    floatingIdeaIndex: 0,
+    // The selected top-level idea of each list, by id so it follows reorders
+    // and other clients' inserts: per phase, and among the floating ideas
+    // (column -1). The chain below it lives in the idea UI-state trees.
+    selectedIdeaIdByPhaseId: {} as Record<string, string>,
+    floatingIdeaId: null as string | null,
 
     // Viewport for column scrolling
     windowStart: 0,
@@ -444,22 +446,25 @@ export const useUIStore = defineStore('ui', {
       return getSelectionPathFromState(
         this.navigatingIdeas,
         this.activeColumn,
-        this.floatingIdeaIndex,
         (columnIndex) => this.getSelectedPhaseId(columnIndex),
+        (phaseId) => this.getSelectedTopIdeaId(phaseId),
         () => this.getFloatingIdeaUIStates(),
         (phaseId) => this.getPhaseIdeaUIStates(phaseId)
       )
     },
 
-    // Helper to set current idea index (replaces setSelectedIdea)
-    setCurrentIdeaIndex(ideaIndex: number, dataStore: any) {
-      setCurrentIdeaIndexInState(
-        this.activeColumn,
-        (columnIndex) => this.getSelectedPhaseId(columnIndex),
-        (index) => { this.floatingIdeaIndex = index },
-        ideaIndex,
-        dataStore
-      )
+    // The floating list always has a selection while it has ideas: the first one
+    // when none is chosen or the chosen one is gone.
+    getSelectedTopIdeaId(phaseId: string | undefined): string | undefined {
+      if (phaseId) return this.selectedIdeaIdByPhaseId[phaseId]
+      const floatingIdeas = useDataStore().floatingIdeas
+      return floatingIdeas.find((idea) => idea.id === this.floatingIdeaId)?.id ?? floatingIdeas[0]?.id
+    },
+
+    // Selects a top-level idea of a phase (or, without a phase, a floating idea).
+    selectTopIdea(phaseId: string | undefined, ideaId: string) {
+      if (phaseId) this.selectedIdeaIdByPhaseId[phaseId] = ideaId
+      else this.floatingIdeaId = ideaId
     },
 
     // A column below the root needs a selection among the children of the
@@ -718,7 +723,7 @@ export const useUIStore = defineStore('ui', {
           const scope = this.getIdeaListScope(newPhase.id)
           const rows = scope ? getVisibleIdeaRows(scope.ideas, scope.tree, dataStore) : []
           const row = selectLastIdea ? rows[rows.length - 1] : rows[0]
-          if (scope && row) this.selectIdeaRow(scope, row)
+          if (scope && row) this.selectIdeaPath(scope, row.idPath)
         }
 
         return true
@@ -766,15 +771,14 @@ export const useUIStore = defineStore('ui', {
       if (!scope) return
 
       // Expand the ancestors, then end the chain at the clicked idea — a stale
-      // selectedIncomingIndex on it would keep its old child as the action target.
+      // selectedChildId on it would keep its old child as the action target.
       let stateTree = scope.tree
-      for (const step of path.slice(0, -1)) {
-        const state = ensureIdeaUIState(stateTree, step.ideaId)
+      for (const ancestorId of path.slice(0, -1)) {
+        const state = ensureIdeaUIState(stateTree, ancestorId)
         state.expanded = true
         stateTree = state.children
       }
-      const indexPath = [path[0]!.topLevelIndex, ...path.slice(1).map((step) => step.indexInParent!)]
-      this.selectIdeaRow(scope, { ideaId, indexPath })
+      this.selectIdeaPath(scope, path)
 
       this.navigatingIdeas = true
     },
@@ -1005,16 +1009,8 @@ export const useUIStore = defineStore('ui', {
       }
 
       const contextIdeas = phaseId ? dataStore.getIdeasForPhase(phaseId) : dataStore.floatingIdeas
-      if (rootIdea) {
-        const rootIndex = contextIdeas.findIndex((a: any) => a && a.id === rootIdea.id)
-        if (rootIndex !== -1) {
-          if (phaseId) {
-            const phase = dataStore.phases[phaseId]
-            if (phase) phase.selectedIdeaIndex = rootIndex
-          } else {
-            this.floatingIdeaIndex = rootIndex
-          }
-        }
+      if (rootIdea && contextIdeas.some((idea) => idea?.id === rootIdea.id)) {
+        this.selectTopIdea(phaseId, rootIdea.id)
       }
 
       let stateTree = phaseId ? this.getPhaseIdeaUIStates(phaseId) : this.floatingIdeaUIStates
@@ -1028,9 +1024,8 @@ export const useUIStore = defineStore('ui', {
         const parentState = ensureIdeaUIState(stateTree, parent.id)
         parentState.expanded = true
 
-        const childIndex = parent.supportingConnections.findIndex((c: any) => c.ideaId === child.id)
-        if (childIndex !== -1) {
-          parentState.selectedIncomingIndex = childIndex
+        if (parent.supportingConnections.some((connection) => connection.ideaId === child.id)) {
+          parentState.selectedChildId = child.id
         }
         stateTree = parentState.children
       }
@@ -1058,40 +1053,29 @@ export const useUIStore = defineStore('ui', {
 
     // The list the idea cursor moves in: a phase's committed ideas (the active
     // column's selected phase unless `phaseId` is given) or, in column -1, the
-    // floating ideas — with its UI-state tree and top-level cursor setter.
+    // floating ideas — with its UI-state tree.
     getIdeaListScope(phaseId?: string): IdeaListScope | undefined {
       const dataStore = useDataStore()
       if (phaseId === undefined && this.activeColumn === -1) {
-        return {
-          ideas: dataStore.floatingIdeas,
-          tree: this.getFloatingIdeaUIStates(),
-          setTopIndex: (index: number) => { this.floatingIdeaIndex = index }
-        }
+        return { ideas: dataStore.floatingIdeas, tree: this.getFloatingIdeaUIStates() }
       }
       const phase = dataStore.phases[phaseId ?? this.getSelectedPhaseId(this.activeColumn) ?? '']
       if (!phase) return undefined
-      return {
-        ideas: dataStore.getIdeasForPhase(phase.id),
-        tree: this.getPhaseIdeaUIStates(phase.id),
-        setTopIndex: (index: number) => { phase.selectedIdeaIndex = index }
-      }
+      return { ideas: dataStore.getIdeasForPhase(phase.id), tree: this.getPhaseIdeaUIStates(phase.id), phaseId: phase.id }
     },
 
-    // Points the selection chain at `row`, ending the chain there.
-    selectIdeaRow(scope: IdeaListScope, row: IdeaRow) {
-      const dataStore = useDataStore()
-      const [topIndex, ...connectionIndices] = row.indexPath
-      scope.setTopIndex(topIndex!)
-      let idea: Idea | undefined = scope.ideas[topIndex!]
-      let state = idea ? ensureIdeaUIState(scope.tree, idea.id) : undefined
-      for (const connectionIndex of connectionIndices) {
-        if (!idea || !state) return
-        state.selectedIncomingIndex = connectionIndex
-        const connection = idea.supportingConnections?.[connectionIndex]
-        idea = connection ? dataStore.ideas[connection.ideaId] : undefined
-        state = idea ? ensureIdeaUIState(state.children, idea.id) : undefined
+    // Points the selection chain at the idea reached by `idPath` (top-level idea
+    // id, then child ids), ending the chain there.
+    selectIdeaPath(scope: IdeaListScope, idPath: string[]) {
+      const [topId, ...childIds] = idPath
+      if (!topId) return
+      this.selectTopIdea(scope.phaseId, topId)
+      let state = ensureIdeaUIState(scope.tree, topId)
+      for (const childId of childIds) {
+        state.selectedChildId = childId
+        state = ensureIdeaUIState(state.children, childId)
       }
-      if (state) state.selectedIncomingIndex = undefined
+      state.selectedChildId = undefined
     },
 
     // Moves the idea cursor one visible row (into expanded children and back
@@ -1101,17 +1085,14 @@ export const useUIStore = defineStore('ui', {
       const path = this.getSelectionPath()
       if (!scope || path.ideas.length === 0) return false
 
-      const topIndex = path.phase
-        ? path.phase.selectedIdeaIndex ?? 0
-        : Math.max(0, Math.min(this.floatingIdeaIndex, scope.ideas.length - 1))
-      const currentPath = [topIndex, ...path.ideaStates.slice(0, -1).map((state) => state.selectedIncomingIndex!)]
+      const currentPath = path.ideas.map((idea) => idea.id)
       const rows = getVisibleIdeaRows(scope.ideas, scope.tree, useDataStore())
       const currentRow = rows.findIndex((row) =>
-        row.indexPath.length === currentPath.length && row.indexPath.every((index, depth) => index === currentPath[depth])
+        row.idPath.length === currentPath.length && row.idPath.every((id, depth) => id === currentPath[depth])
       )
       const target = rows[currentRow + delta]
       if (currentRow < 0 || !target) return false
-      this.selectIdeaRow(scope, target)
+      this.selectIdeaPath(scope, target.idPath)
       return true
     },
 
@@ -1239,7 +1220,8 @@ export const useUIStore = defineStore('ui', {
       this.windowStart = 0
       this.windowSize = 2
       this.maxColumn = 0
-      this.floatingIdeaIndex = -1
+      this.floatingIdeaId = null
+      this.selectedIdeaIdByPhaseId = {}
       this.navigatingIdeas = false
       if (this.uiStatePersistTimeout) {
         clearTimeout(this.uiStatePersistTimeout)

@@ -348,7 +348,7 @@ onMounted(() => {
         :idea-ui-states="ideaUiState.children"
         :is-active="isActive && isThisIdeaSelected"
         :is-selected="isSelected && isThisIdeaSelected"
-        :selected-idea-index="ideaUiState.selectedIncomingIndex"
+        :selected-idea-id="ideaUiState.selectedChildId"
         @scroll-request="$emit('scroll-request', $event)"
         @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"
       />

@@ -54,7 +54,8 @@ describe('structural edits', () => {
       dataStore.ideas[id] = { id, text: id, supportingConnections: [], supportedIdeas: [], committedIn: ['phase'] } as any
     }
     const phase = (commitments: string[]) => ({ id: 'phase', name: 'phase', parent: null, childPhaseIds: [], commitments })
-    dataStore.phases['phase'] = { ...phase([...server.commitments]), selectedIdeaIndex: 0 } as any
+    dataStore.phases['phase'] = phase([...server.commitments]) as any
+    uiStore.selectTopIdea('phase', 'a')
     // What the subscription does with the pushed entity.
     server.push = (commitments) => dataStore.replacePhaseIfCurrent('phase', phase(commitments) as any, dataStore.beginPhaseSync('phase'))
     dataStore.meta = { rootPhaseIds: ['phase'] }

@@ -1,7 +1,8 @@
 export type IdeaUIState = {
   expanded: boolean
   pendingDelete: boolean
-  selectedIncomingIndex?: number
+  // The child idea selected below this one (by id, so it follows reorders).
+  selectedChildId?: string
   children: Record<string, IdeaUIState>
 }
 
@@ -11,7 +12,6 @@ export function createIdeaUIState(): IdeaUIState {
   return {
     expanded: false,
     pendingDelete: false,
-    selectedIncomingIndex: undefined,
     children: {}
   }
 }

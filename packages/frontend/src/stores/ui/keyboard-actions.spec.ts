@@ -312,7 +312,7 @@ describe('keyboard actions', () => {
         detachIdea: vi.fn().mockResolvedValue(undefined),
         deleteIdeas: vi.fn().mockResolvedValue([])
       }
-      const uiStore = { getSelectionPath: () => path, multiSelectMode: false, navigatingIdeas: true, floatingIdeaIndex: 0 }
+      const uiStore = { getSelectionPath: () => path, multiSelectMode: false, navigatingIdeas: true, selectTopIdea: vi.fn() }
       return { dataStore, uiStore }
     }
 
@@ -334,7 +334,7 @@ describe('keyboard actions', () => {
       parent.supportingConnections = ['first', 'removed', 'last'].map((ideaId) => ({ ideaId, weight: 1, relativePosition: [0, 0] as [number, number] }))
       const removed = makeIdea('removed', 'Removed')
       removed.supportedIdeas = ['parent', 'other-parent']
-      const parentState = { pendingDelete: false, selectedIncomingIndex: 2 }
+      const parentState = { pendingDelete: false, selectedChildId: 'removed' as string | undefined }
       const { dataStore, uiStore } = listStores({
         phase: undefined,
         ideas: [parent, removed],
@@ -349,11 +349,11 @@ describe('keyboard actions', () => {
 
       expect(modalStore.ideaRemoval).toBe(null)
       expect(dataStore.detachIdea).toHaveBeenCalledWith('/tmp/project', 'removed', { parentId: 'parent' })
-      expect(parentState.selectedIncomingIndex).toBe(1)
+      expect(parentState.selectedChildId).toBe('last')
     })
 
     it('asks before taking the last anchor; r keeps the idea floating', async () => {
-      const phase = { id: 'phase', name: 'April', selectedIdeaIndex: 0, commitments: ['idea'] }
+      const phase = { id: 'phase', name: 'April', commitments: ['idea'] }
       const idea = makeIdea('idea', 'Idea')
       idea.committedIn = ['phase']
       const { dataStore, uiStore } = listStores({ phase, ideas: [idea], ideaStates: [{ pendingDelete: true }] })
@@ -391,7 +391,7 @@ describe('keyboard actions', () => {
       const parent = makeIdea('parent', 'Parent')
       const idea = makeIdea('idea', 'Idea')
       idea.supportedIdeas = ['parent']
-      const parentState = { pendingDelete: false, selectedIncomingIndex: 0 }
+      const parentState = { pendingDelete: false, selectedChildId: 'idea' }
       const { dataStore, uiStore } = listStores({
         phase: undefined,
         ideas: [parent, idea],
@@ -403,7 +403,7 @@ describe('keyboard actions', () => {
 
       expect(dataStore.detachIdea).not.toHaveBeenCalled()
       expect(dataStore.deleteIdeas).not.toHaveBeenCalled()
-      expect(parentState.selectedIncomingIndex).toBe(0)
+      expect(parentState.selectedChildId).toBe('idea')
     })
 
     it('deletes a floating idea without sub-ideas directly', async () => {

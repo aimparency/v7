@@ -13,7 +13,6 @@ import { useToastStore } from './toast'
 import { setProjectAccess } from '../utils/read-only'
 import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
-import { clientId } from '../utils/mutation-activity'
 import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
@@ -48,7 +47,6 @@ const UNREADABLE_NODE_COLOR = '#f85149'
 
 // Extend Phase type with UI-only properties
 export type Phase = BasePhase & {
-  selectedIdeaIndex?: number
   lastSelectedSubPhaseIndex?: number
 }
 
@@ -84,7 +82,6 @@ export type IdeaContext = { parentId: string } | { phaseId: string }
 
 export type Idea = BaseIdea & {
   expanded?: boolean
-  selectedIncomingIndex?: number
 }
 
 // Type for creating new ideas (omits server-generated fields)
@@ -559,25 +556,12 @@ export const useDataStore = defineStore('data', {
     // Helper to replace phase while preserving UI-only properties
     replacePhase(phaseId: string, newPhase: BasePhase) {
       const oldPhase = this.phases[phaseId]
-      const oldSelectedIdeaIndex = oldPhase?.selectedIdeaIndex
       const oldSelectedSubPhaseIndex = oldPhase?.lastSelectedSubPhaseIndex
 
       // Replace with new data
       this.phases[phaseId] = {
         ...(newPhase as Phase),
         childPhaseIds: newPhase.childPhaseIds || []
-      }
-
-      // Restore validated UI state
-      if (oldSelectedIdeaIndex !== undefined && newPhase.commitments.length > 0) {
-        const maxIndex = newPhase.commitments.length - 1
-        if (oldSelectedIdeaIndex <= maxIndex) {
-          this.phases[phaseId].selectedIdeaIndex = oldSelectedIdeaIndex
-        } else {
-          // Index out of bounds - clamp to last valid index
-          console.warn(`Phase ${phaseId} selectedIdeaIndex ${oldSelectedIdeaIndex} out of bounds (max ${maxIndex}), clamping to ${maxIndex}`)
-          this.phases[phaseId].selectedIdeaIndex = maxIndex
-        }
       }
 
       if (oldSelectedSubPhaseIndex !== undefined) {
@@ -589,7 +573,6 @@ export const useDataStore = defineStore('data', {
     replaceIdea(ideaId: string, newIdea: BaseIdea) {
       const oldIdea = this.ideas[ideaId]
       const oldExpanded = oldIdea?.expanded ?? false
-      const oldSelectedIndex = oldIdea?.selectedIncomingIndex
 
       // NORMALIZE: Ensure supportingConnections exists if incoming is present (server backward compatibility)
       if (!newIdea.supportingConnections && newIdea.incoming) {
@@ -601,10 +584,7 @@ export const useDataStore = defineStore('data', {
       }
 
       // Replace with new data
-      this.ideas[ideaId] = Object.assign({
-        expanded: false,
-        selectedIncomingIndex: undefined
-      }, newIdea) as Idea
+      this.ideas[ideaId] = Object.assign({ expanded: false }, newIdea) as Idea
 
       // Restore validated UI state
       this.ideas[ideaId].expanded = oldExpanded
@@ -621,17 +601,6 @@ export const useDataStore = defineStore('data', {
       }
       if (newIdea.calculatedPriority !== undefined) {
         this.calculatedPriorities.set(ideaId, newIdea.calculatedPriority)
-      }
-
-      if (oldSelectedIndex !== undefined && newIdea.supportingConnections && newIdea.supportingConnections.length > 0) {
-        const maxIndex = newIdea.supportingConnections.length - 1
-        if (oldSelectedIndex <= maxIndex) {
-          this.ideas[ideaId].selectedIncomingIndex = oldSelectedIndex
-        } else {
-          // Index out of bounds - clamp to last valid index
-          console.warn(`Selection index ${oldSelectedIndex} out of bounds (max ${maxIndex}) for idea ${ideaId}, clamping to ${maxIndex}`)
-          this.ideas[ideaId].selectedIncomingIndex = maxIndex
-        }
       }
     },
 
@@ -1097,11 +1066,8 @@ export const useDataStore = defineStore('data', {
           // Before applying: the history needs the event, not the store state.
           useHistoryStore().recordChange(data);
 
-          // Another client's reorder/insert must not move this client's idea
-          // selection (it's index-based) onto a different idea.
-          const applyEntity = data.origin !== undefined && data.origin !== clientId
-            ? (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
-            : (apply: () => void) => apply()
+          // A change that takes the selected idea out of its list selects its neighbour.
+          const applyEntity = (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
 
           if (data.type === 'project') {
             this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
