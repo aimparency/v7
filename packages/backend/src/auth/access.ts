@@ -23,7 +23,7 @@ const READ_MUTATIONS = new Set([
   'project.buildSearchIndex', 'phase.setCursor', 'auth.login', 'auth.logout', 'auth.issueToken', 'auth.changeOwnPassword'
 ]);
 const WRITE_ROUTERS = new Set(['idea', 'phase']);
-const WRITE_MUTATIONS = new Set(['history.restore', 'graphHealth.fixConsistency']);
+const WRITE_MUTATIONS = new Set(['history.restore', 'graphHealth.fixConsistency', 'project.setLayoutSettings']);
 // Every other mutation needs an admin, so a new one is closed until listed.
 
 export function neededRole(path: string, type: string): Need {

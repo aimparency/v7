@@ -1,16 +1,40 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
-import type { LayoutChange } from '../utils/autolayout'
+import type { LayoutSettings } from 'shared'
+import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, type LayoutChange } from '../utils/autolayout'
 
-// Preview of an autolayout: the graph already shows the first `count` changes
-// (largest shifts first) and the placed unconnected ideas; nothing is saved
-// until Apply. Positions only: no connection changes, so no file changes.
-const props = defineProps<{ changes: LayoutChange[]; placed: number }>()
+// Live autolayout: the graph already shows the first `count` changes (most
+// relevant first) and the placed unconnected ideas, and re-solves whenever the
+// settings change. Nothing is saved until Apply. Positions only: no connection
+// changes, so no idea file changes.
+const props = defineProps<{ changes: LayoutChange[]; placed: number; saved: LayoutSettings; solving: boolean }>()
 const count = defineModel<number>('count', { required: true })
 const positionsOnly = defineModel<boolean>('positionsOnly', { required: true })
+const settings = defineModel<LayoutSettings>('settings', { required: true })
 const emit = defineEmits<{ apply: []; cancel: [] }>()
 
-const files = computed(() => new Set(props.changes.slice(0, count.value).map(change => change.parentId)).size)
+type Weight = Exclude<keyof LayoutSettings, 'spacing'>
+// Each weight slides logarithmically from a tenth to ten times its default.
+const WEIGHTS: { key: Weight; label: string; hint: string }[] = [
+  { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes' },
+  { key: 'length', label: 'Short connections', hint: 'Pull connections longer than the spacing shorter, strong connections more so' },
+  { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle' },
+  { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent' },
+  { key: 'semantic', label: 'Similar nearby', hint: 'Pull semantically similar ideas of the connected network together' },
+  { key: 'isolatedSemantic', label: 'Unconnected to similar', hint: 'Pull unconnected ideas and small networks toward similar ideas' }
+]
+const RANGE = 100 // max / min
+const toSlider = (key: Weight) => Math.log(settings.value[key] * 10 / DEFAULT_LAYOUT_SETTINGS[key]) / Math.log(RANGE)
+const setWeight = (key: Weight, slider: number) => {
+  const value = DEFAULT_LAYOUT_SETTINGS[key] / 10 * RANGE ** slider
+  settings.value = { ...settings.value, [key]: Number(value.toPrecision(2)) }
+}
+
+const noChanges = computed(() => props.changes.length === 0)
+const shown = computed(() => positionsOnly.value || noChanges.value ? 0 : count.value)
+const files = computed(() => new Set(props.changes.slice(0, shown.value).map(change => change.parentId)).size)
+const unsaved = computed(() => !sameLayoutSettings(settings.value, props.saved))
+const isDefault = computed(() => sameLayoutSettings(settings.value, DEFAULT_LAYOUT_SETTINGS))
 
 const onKeydown = (event: KeyboardEvent) => {
   if (event.key !== 'Escape') return
@@ -23,18 +47,48 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 
 <template>
   <div id="layout-preview">
-    <label v-if="changes.length > 0" :class="{ disabled: positionsOnly }">
-      <span>Connections changed: {{ positionsOnly ? 0 : count }} of {{ changes.length }} ({{ positionsOnly ? 0 : files }} idea files)</span>
-      <input v-model.number="count" type="range" min="1" :max="changes.length" step="1" :disabled="positionsOnly" />
+    <h3>Layout <span v-if="solving" class="hint">solving…</span></h3>
+    <div class="settings">
+      <label title="Connection length, in radius sums, that is never shortened; 3 is the minimum distance between any two ideas">
+        <span class="name">Spacing <span class="value">{{ settings.spacing.toFixed(1) }}</span></span>
+        <input
+          type="range" min="3" max="5" step="0.1"
+          :value="settings.spacing"
+          @input="settings = { ...settings, spacing: Number(($event.target as HTMLInputElement).value) }"
+        />
+      </label>
+      <label v-for="weight in WEIGHTS" :key="weight.key" :title="weight.hint">
+        <span class="name">{{ weight.label }} <span class="value">{{ settings[weight.key] }}</span></span>
+        <input
+          type="range" min="0" max="1" step="0.01"
+          :value="toSlider(weight.key)"
+          @input="setWeight(weight.key, Number(($event.target as HTMLInputElement).value))"
+        />
+      </label>
+    </div>
+    <div v-if="unsaved || !isDefault" class="row">
+      <span v-if="unsaved" class="hint">Differs from the saved settings; Apply saves them to meta.json.</span>
+      <button v-if="unsaved" class="btn-secondary" @click="settings = { ...saved }">Reset</button>
+      <button v-if="!isDefault" class="btn-secondary" @click="settings = { ...DEFAULT_LAYOUT_SETTINGS }">Defaults</button>
+    </div>
+
+    <label class="fader" :class="{ disabled: positionsOnly || noChanges }">
+      <span>Connections changed: {{ shown }} of {{ changes.length }} ({{ files }} idea files)</span>
+      <input v-model.number="count" type="range" min="0" :max="changes.length" step="1" :disabled="positionsOnly || noChanges" />
     </label>
     <span>Unconnected ideas placed: {{ placed }} (positions in this browser)</span>
     <label class="option">
-      <input v-model="positionsOnly" type="checkbox" :disabled="changes.length === 0" />
+      <input
+        type="checkbox"
+        :checked="positionsOnly || noChanges"
+        :disabled="noChanges"
+        @change="positionsOnly = ($event.target as HTMLInputElement).checked"
+      />
       <span>Only update absolute positions (local, no file changes)</span>
     </label>
-    <div class="actions">
+    <div class="row">
       <button class="btn-secondary" @click="emit('cancel')">Cancel</button>
-      <button class="btn-primary" @click="emit('apply')">Apply</button>
+      <button class="btn-primary" :disabled="solving" @click="emit('apply')">Apply</button>
     </div>
   </div>
 </template>
@@ -42,39 +96,70 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 <style scoped>
 #layout-preview {
   position: absolute;
-  bottom: 1rem;
-  left: 50%;
-  transform: translateX(-50%);
+  right: 20px;
+  top: 20px;
   z-index: 100;
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
-  width: min(28rem, calc(100% - 2rem));
-  padding: 0.75rem;
-  background: #2a2a2a;
-  border: 1px solid #555;
-  border-radius: 4px;
+  gap: 0.75rem;
+  width: min(22rem, calc(100% - 40px));
+  max-height: calc(100% - 40px);
+  overflow-y: auto;
+  padding: 1rem;
+  background: #1e1e1e;
+  border: 1px solid #333;
+  border-radius: 8px;
   font-size: var(--font-size-small);
 
-  & label {
+  & h3 {
+    margin: 0;
+  }
+
+  & .hint {
+    opacity: 0.6;
+  }
+
+  & .settings {
     display: flex;
     flex-direction: column;
-    gap: 0.4rem;
+    gap: 0.5rem;
+  }
+
+  & .settings label, & .fader {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+
+    & .name {
+      display: flex;
+      justify-content: space-between;
+    }
+
+    & .value {
+      font-variant-numeric: tabular-nums;
+      opacity: 0.6;
+    }
 
     &.disabled {
       opacity: 0.5;
     }
-
-    &.option {
-      flex-direction: row;
-      align-items: center;
-    }
   }
 
-  & .actions {
+  & .option {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+  }
+
+  & .row {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
     gap: 0.5rem;
+
+    & .hint {
+      flex: 1;
+    }
   }
 }
 </style>

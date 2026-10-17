@@ -111,6 +111,8 @@ Phases group commitments ("what we do now / next"), not dates.
   never a local path).
 - `phaseCursors`, `phaseActiveLevel`, `initialInstructions` and
   `supervisorGuidancePrefix` are client settings stored with the project.
+- `layout` holds the graph autolayout settings last applied: `spacing`
+  (connection length in radius sums, 3–5) and the solver weights.
 
 ## Versions
 

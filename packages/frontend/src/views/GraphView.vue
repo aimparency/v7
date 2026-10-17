@@ -18,7 +18,8 @@ import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
-import type { LayoutChange } from '../utils/autolayout'
+import type { LayoutSettings } from 'shared'
+import { DEFAULT_LAYOUT_SETTINGS, positionsFromStoredOffsets, sameLayoutSettings, type LayoutChange, type LayoutPlacement, type LayoutProgress } from '../utils/autolayout'
 import type { LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 import { trpc } from '../trpc'
@@ -352,36 +353,66 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
 
 // Layout: the solver proposes new connection offsets (most relevant first)
 // and places parentless ideas, whose positions live in this browser only.
-// Both are previewed live: links get the proposed offsets, parentless ideas
-// move. Nothing is saved until Apply; the slider picks how many offsets.
+// Both are previewed live while it solves: links get the proposed offsets and
+// every idea moves by how far its rest position (where the offsets put it)
+// moves, so a subtree goes along with its root at once. Every settings change
+// re-solves from the layout as it was when the panel opened. Nothing is saved
+// until Apply; the fader picks how many offsets.
 type LayoutPreview = {
+  request: Omit<LayoutRequest, 'settings'>
+  saved: LayoutSettings // as last applied, from meta.json
   changes: LayoutChange[]
+  placements: LayoutPlacement[]
+  linkByKey: Map<string, GraphLink>
   stored: Map<GraphLink, GraphLink['relativePosition']>
-  placed: Map<GraphNode, GraphNode['pos']> // position before the preview
+  restBefore: Map<string, [number, number]>
+  shifted: Map<GraphNode, [number, number]> // how far the preview moved each idea so far
 }
 const layoutPreview = shallowRef<LayoutPreview | null>(null)
-const layoutPreviewCount = ref(0)
-const layoutPositionsOnly = ref(false)
+const layoutSettings = ref<LayoutSettings>({ ...DEFAULT_LAYOUT_SETTINGS })
+const layoutSolving = ref(false)
 // The most relevant changes do most of the relaxing; the long tail is not worth its diff.
 const LAYOUT_PREVIEW_SHARE = 0.2
-const layoutRunning = ref(false)
+const LAYOUT_RESOLVE_DELAY_MS = 150
+// A share, so the fader keeps its place when a re-solve yields more or fewer changes.
+const layoutShare = ref(LAYOUT_PREVIEW_SHARE)
+const layoutPreviewCount = computed({
+  get: () => Math.round((layoutPreview.value?.changes.length ?? 0) * layoutShare.value),
+  set: count => { layoutShare.value = count / Math.max(layoutPreview.value?.changes.length ?? 0, 1) }
+})
+const layoutPositionsOnly = ref(false)
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 
-function solveLayoutInWorker(request: LayoutRequest): Promise<LayoutResult> {
+// One solve at a time: a newer one terminates the running worker, whose
+// caller then gets null.
+let cancelLayoutSolve: (() => void) | null = null
+function solveLayoutInWorker(request: LayoutRequest, onProgress: (progress: LayoutProgress) => void): Promise<LayoutProgress | null> {
+  cancelLayoutSolve?.()
   const worker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
-  return new Promise<LayoutResult>((resolve, reject) => {
-    worker.onmessage = (event: MessageEvent<LayoutResult>) => resolve(event.data)
+  const cancel = () => resolveSolve(null)
+  let resolveSolve: (result: LayoutProgress | null) => void = () => {}
+  cancelLayoutSolve = cancel
+  return new Promise<LayoutProgress | null>((resolve, reject) => {
+    resolveSolve = resolve
+    worker.onmessage = ({ data }: MessageEvent<LayoutResult>) => data.done ? resolve(data) : onProgress(data)
     worker.onerror = (event) => reject(new Error(event.message))
     worker.postMessage(request)
-  }).finally(() => worker.terminate())
+  }).finally(() => {
+    worker.terminate()
+    if (cancelLayoutSolve === cancel) cancelLayoutSolve = null
+  })
 }
 
 async function startLayoutPreview() {
-  if (layoutPreview.value || layoutRunning.value) return
-  layoutRunning.value = true
+  if (layoutPreview.value || layoutSolving.value) return
+  layoutSolving.value = true
   try {
     const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ projectPath: projectStore.projectPath })
-    const { changes, placements } = await solveLayoutInWorker({
+    const saved = dataStore.meta?.layout ?? DEFAULT_LAYOUT_SETTINGS
+    layoutSettings.value = { ...saved }
+    layoutShare.value = LAYOUT_PREVIEW_SHARE
+    layoutPositionsOnly.value = false
+    const request: LayoutPreview['request'] = {
       nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
       links: links.value.map(link => ({
         parentId: link.target.id,
@@ -391,77 +422,119 @@ async function startLayoutPreview() {
         strength: link.forceWeight
       })),
       semanticPairs
-    })
-    if (changes.length === 0 && placements.length === 0) {
-      useToastStore().info('The layout is already tidy; nothing would change.')
-      return
     }
-    const linkByKey = new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link]))
-    const stored = new Map<GraphLink, GraphLink['relativePosition']>()
-    for (const change of changes) {
-      const link = linkByKey.get(linkKey(change.parentId, change.childId))
-      if (link) stored.set(link, link.relativePosition)
+    layoutPreview.value = {
+      request,
+      saved,
+      changes: [],
+      placements: [],
+      linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
+      stored: new Map(links.value.map(link => [link, link.relativePosition])),
+      restBefore: positionsFromStoredOffsets(request.nodes, request.links),
+      shifted: new Map()
     }
-    const nodeById = new Map(nodes.value.map(node => [node.id, node]))
-    const placed = new Map<GraphNode, GraphNode['pos']>()
-    for (const { id, position } of placements) {
-      const node = nodeById.get(id)
-      if (!node) continue
-      placed.set(node, node.pos)
-      node.pos = [position[0], position[1]]
-    }
-    layoutPositionsOnly.value = changes.length === 0
-    layoutPreviewCount.value = Math.ceil(changes.length * LAYOUT_PREVIEW_SHARE)
-    layoutPreview.value = { changes, stored, placed }
   } catch (error) {
     useToastStore().error('Layout failed', error)
   } finally {
-    layoutRunning.value = false
+    layoutSolving.value = false
+  }
+  await solveLayoutPreview()
+}
+
+async function solveLayoutPreview() {
+  if (!layoutPreview.value) return
+  layoutSolving.value = true
+  const show = ({ changes, placements }: LayoutProgress) => {
+    if (layoutPreview.value) layoutPreview.value = { ...layoutPreview.value, changes, placements }
+  }
+  try {
+    const result = await solveLayoutInWorker({ ...layoutPreview.value.request, settings: { ...layoutSettings.value } }, show)
+    if (result) show(result)
+  } catch (error) {
+    useToastStore().error('Layout failed', error)
+  } finally {
+    if (!cancelLayoutSolve) layoutSolving.value = false
   }
 }
+
+let layoutResolveTimer: ReturnType<typeof setTimeout> | undefined
+watch(layoutSettings, () => {
+  if (!layoutPreview.value) return
+  clearTimeout(layoutResolveTimer)
+  layoutResolveTimer = setTimeout(solveLayoutPreview, LAYOUT_RESOLVE_DELAY_MS)
+}, { deep: true })
 
 const appliedLayoutChanges = computed(() => {
   const preview = layoutPreview.value
   return !preview || layoutPositionsOnly.value ? [] : preview.changes.slice(0, layoutPreviewCount.value)
 })
 
-// Each link gets either its proposed or its stored offset (new arrays: the
-// stored ones are shared with the data store and must stay untouched).
+// Shows the current result: each link gets its proposed or its stored offset
+// (new arrays: the stored ones are shared with the data store and must stay
+// untouched), each idea moves by how far its rest position moves. Only the
+// difference to what is already shown is added, so the simulation keeps its
+// own adjustments. Runs on every new result and fader move.
 watch(appliedLayoutChanges, applied => {
   const preview = layoutPreview.value
   if (!preview) return
-  const linkByKey = new Map([...preview.stored.keys()].map(link => [linkKey(link.target.id, link.source.id), link]))
-  preview.changes.forEach((change, index) => {
-    const link = linkByKey.get(linkKey(change.parentId, change.childId))
-    if (link) link.relativePosition = index < applied.length ? [...change.relativePosition] : preview.stored.get(link)!
-  })
+  for (const [link, relativePosition] of preview.stored) link.relativePosition = relativePosition
+  for (const change of applied) {
+    const link = preview.linkByKey.get(linkKey(change.parentId, change.childId))
+    if (link) link.relativePosition = [...change.relativePosition]
+  }
+  const placement = new Map(preview.placements.map(({ id, position }) => [id, position]))
+  const offset = new Map(applied.map(change => [linkKey(change.parentId, change.childId), change.relativePosition]))
+  const rest = positionsFromStoredOffsets(
+    preview.request.nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
+    preview.request.links.map(link => ({ ...link, relativePosition: offset.get(linkKey(link.parentId, link.childId)) ?? link.relativePosition }))
+  )
+  for (const node of nodes.value) {
+    const from = preview.restBefore.get(node.id)
+    const to = rest.get(node.id)
+    if (!from || !to) continue
+    const shift: [number, number] = [to[0] - from[0], to[1] - from[1]]
+    const shown = preview.shifted.get(node) ?? [0, 0]
+    if (shift[0] === shown[0] && shift[1] === shown[1]) continue
+    node.pos = [node.pos[0] + shift[0] - shown[0], node.pos[1] + shift[1] - shown[1]]
+    preview.shifted.set(node, shift)
+  }
 })
+
+function closeLayoutPreview() {
+  clearTimeout(layoutResolveTimer)
+  cancelLayoutSolve?.()
+  layoutPreview.value = null
+}
 
 // New graph data rebuilds the links, which drops the preview.
 watch(links, () => {
   if (!layoutPreview.value) return
-  layoutPreview.value = null
+  closeLayoutPreview()
   useToastStore().info('The graph changed, so the layout preview was closed.')
 })
 
 function cancelLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
+  closeLayoutPreview()
   for (const [link, relativePosition] of preview.stored) link.relativePosition = relativePosition
-  for (const [node, position] of preview.placed) node.pos = position
-  layoutPreview.value = null
+  for (const [node, [x, y]] of preview.shifted) node.pos = [node.pos[0] - x, node.pos[1] - y]
 }
 
 // Placed ideas keep their preview position; the simulation's periodic save
-// stores it in this browser.
+// stores it in this browser. The settings go to meta.json when they changed.
 async function applyLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
   const applied = appliedLayoutChanges.value
-  layoutPreview.value = null
+  const settings = { ...layoutSettings.value }
+  closeLayoutPreview()
   if (applied.length > 0) await dataStore.setConnectionPositions(projectStore.projectPath, applied)
+  if (!sameLayoutSettings(settings, preview.saved)) {
+    dataStore.meta = await trpc.project.setLayoutSettings.mutate({ projectPath: projectStore.projectPath, layout: settings })
+  }
   const files = new Set(applied.map(change => change.parentId)).size
-  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files and placed ${preview.placed.size} unconnected ideas.`)
+  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files and placed ${preview.placements.length} unconnected ideas.`)
 }
 
 // Helper: split node text into lines for label rendering
@@ -581,16 +654,19 @@ function toggleSpinOffPreview() {
 
     <SpinOffApplyModal />
 
-    <GraphSidePanel v-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <LayoutPreviewPanel
       v-if="layoutPreview"
       v-model:count="layoutPreviewCount"
       v-model:positions-only="layoutPositionsOnly"
+      v-model:settings="layoutSettings"
       :changes="layoutPreview.changes"
-      :placed="layoutPreview.placed.size"
+      :placed="layoutPreview.placements.length"
+      :saved="layoutPreview.saved"
+      :solving="layoutSolving"
       @apply="applyLayoutPreview"
       @cancel="cancelLayoutPreview"
     />
+    <GraphSidePanel v-else-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <div class="top-controls">
       <span
         v-if="dataStore.unreadableIdeas.length"
@@ -615,12 +691,12 @@ function toggleSpinOffPreview() {
       </button>
       <button
         class="control-btn"
-        :class="{ active: layoutPreview || layoutRunning }"
-        :disabled="layoutRunning"
+        :class="{ active: layoutPreview }"
+        :disabled="!!layoutPreview || layoutSolving"
         @click="startLayoutPreview"
-        title="Shorter connections, room between ideas, similar branches nearby; previews first, saves on Apply"
+        title="Shorter connections, room between ideas, similar branches nearby; tune and preview live, saves on Apply"
       >
-        {{ layoutRunning ? 'Layout…' : 'Layout' }}
+        Layout
       </button>
 
       <button

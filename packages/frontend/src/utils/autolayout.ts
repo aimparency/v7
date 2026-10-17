@@ -23,6 +23,8 @@
 // same rules as one of big ideas, just smaller: zooming in shows the same
 // quality. Only where sizes mix do the bigger ideas weigh more.
 
+import type { LayoutSettings } from 'shared'
+
 export interface LayoutNode {
   id: string
   position: readonly [number, number]
@@ -62,10 +64,17 @@ export interface LayoutPlacement {
 export interface LayoutOptions {
   iterations?: number
   clearance?: number // minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest
-  room?: number // connection length, in radius sums, that is never shortened
+  room?: number // connection length, in radius sums, that is never shortened; at least `clearance`
   semanticPairs?: readonly SemanticPair[]
   minimumChange?: number // residual, in radius sums, below which a connection keeps its stored offset
   weights?: Partial<typeof DEFAULT_WEIGHTS>
+  onProgress?: (progress: LayoutProgress) => void // the result so far, every `progressEvery` iterations
+  progressEvery?: number
+}
+
+export interface LayoutProgress {
+  changes: LayoutChange[]
+  placements: LayoutPlacement[]
 }
 
 // Stored offsets are rounded so a re-save of an unchanged layout is diff-free.
@@ -75,6 +84,7 @@ export const roundOffset = (offset: readonly [number, number]): [number, number]
   [Math.round(offset[0] * OFFSET_SCALE) / OFFSET_SCALE, Math.round(offset[1] * OFFSET_SCALE) / OFFSET_SCALE]
 
 // Weights are dimensionless: residuals are measured in radius sums.
+const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
   memory: 1, // keep stored offsets
   length: 2, // times connection strength: shorten connections longer than `room`
@@ -84,6 +94,11 @@ const DEFAULT_WEIGHTS = {
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05 // keeps every idea near where it was: the objective alone is translation invariant
 }
+// What the Layout panel lets you tune (the anchor only fixes translation).
+export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
+  (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => left[key] === right[key])
+export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
 // The connections around an idea share this angle, each by its strength; less
 // than a full circle, so a fan of branches can stay a fan.
 const SPREAD_ANGLE = 1.5 * Math.PI
@@ -98,7 +113,7 @@ const FINAL_SEPARATION_PASSES = 50
 export function solveLayout(
   nodes: readonly LayoutNode[],
   links: readonly LayoutLink[],
-  { iterations = 300, clearance = 3, room = 3.75, semanticPairs = [], minimumChange = 0.05, weights = {} }: LayoutOptions = {}
+  { iterations = 300, clearance = 3, room = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights = {}, onProgress, progressEvery = 10 }: LayoutOptions = {}
 ): { positions: Map<string, [number, number]>; changes: LayoutChange[]; placements: LayoutPlacement[] } {
   const { memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR } =
     { ...DEFAULT_WEIGHTS, ...weights }
@@ -170,6 +185,30 @@ export function solveLayout(
     pull(other, weight, x[center]! + vx * cos - vy * sin, y[center]! + vx * sin + vy * cos)
   }
   const order = Array.from({ length: count }, (_, index) => index)
+
+  const currentResult = (): LayoutProgress => {
+    // Ranking between the scale-free shift, which favours tidying small ideas,
+    // and the on-screen shift, which favours the big structure: the geometric
+    // mean of both. Measured on a real graph, the top 20% by it removed more
+    // crossings than by shift alone and left less crowding than by distance.
+    const meanSpan = edges.reduce((sum, edge) => sum + edge.span, 0) / Math.max(edges.length, 1)
+    const changes = edges.flatMap(({ link, child, parent, span, dx, dy }) => {
+      if (!link.editable) return []
+      const offsetX = x[child]! - x[parent]!
+      const offsetY = y[child]! - y[parent]!
+      const shift = Math.hypot(offsetX - dx, offsetY - dy) / span
+      if (shift <= minimumChange) return []
+      return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]), shift, relevance: shift * Math.sqrt(span / meanSpan) }]
+    }).sort((left, right) => right.relevance - left.relevance)
+    const hasParent = new Uint8Array(count)
+    for (const { child } of edges) hasParent[child] = 1
+    const placements = nodes.flatMap((node, index) => {
+      if (hasParent[index] || !node.movable) return []
+      const moved = Math.hypot(x[index]! - node.position[0], y[index]! - node.position[1]) / radius[index]!
+      return moved > minimumChange ? [{ id: node.id, position: [x[index]!, y[index]!] as [number, number] }] : []
+    })
+    return { changes, placements }
+  }
 
   for (let iteration = 0; iteration < iterations; iteration++) {
     for (let index = 0; index < count; index++) {
@@ -275,32 +314,13 @@ export function solveLayout(
     }
 
     separateOverlaps(nodes, x, y, radius, clearance, order)
+    if (onProgress && (iteration + 1) % progressEvery === 0 && iteration + 1 < iterations) onProgress(currentResult())
   }
   // Big ideas can keep pushing each other's neighbourhoods; finish without overlaps.
   for (let pass = 0; pass < FINAL_SEPARATION_PASSES; pass++) separateOverlaps(nodes, x, y, radius, clearance, order)
 
   const positions = new Map(nodes.map((node, index): [string, [number, number]] => [node.id, [x[index]!, y[index]!]]))
-  // Ranking between the scale-free shift, which favours tidying small ideas,
-  // and the on-screen shift, which favours the big structure: the geometric
-  // mean of both. Measured on a real graph, the top 20% by it removed more
-  // crossings than by shift alone and left less crowding than by distance.
-  const meanSpan = edges.reduce((sum, edge) => sum + edge.span, 0) / Math.max(edges.length, 1)
-  const changes = edges.flatMap(({ link, child, parent, span, dx, dy }) => {
-    if (!link.editable) return []
-    const offsetX = x[child]! - x[parent]!
-    const offsetY = y[child]! - y[parent]!
-    const shift = Math.hypot(offsetX - dx, offsetY - dy) / span
-    if (shift <= minimumChange) return []
-    return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]), shift, relevance: shift * Math.sqrt(span / meanSpan) }]
-  }).sort((left, right) => right.relevance - left.relevance)
-  const hasParent = new Uint8Array(count)
-  for (const { child } of edges) hasParent[child] = 1
-  const placements = nodes.flatMap((node, index) => {
-    if (hasParent[index] || !node.movable) return []
-    const moved = Math.hypot(x[index]! - node.position[0], y[index]! - node.position[1]) / radius[index]!
-    return moved > minimumChange ? [{ id: node.id, position: [x[index]!, y[index]!] as [number, number] }] : []
-  })
-  return { positions, changes, placements }
+  return { positions, ...currentResult() }
 }
 
 // Ideas per connected network (connection direction ignored), for each idea.

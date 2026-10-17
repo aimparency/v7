@@ -147,6 +147,15 @@ describe('solveLayout', () => {
     expect(distance('left')).toBeLessThan(0.6 * distance('right'))
   })
 
+  it('reports the result so far while it solves', () => {
+    const { nodes, links } = graph({ root: [['far', [12, 0]], ['near', [-3, 0]]] })
+    const progress: number[] = []
+    const { changes } = solveLayout(nodes, links, { iterations: 30, progressEvery: 10, onProgress: ({ changes }) => progress.push(changes[0]!.shift) })
+    expect(progress).toHaveLength(2)
+    expect(progress[1]).toBeGreaterThan(progress[0]!)
+    expect(changes[0]!.shift).toBeGreaterThanOrEqual(progress[1]!)
+  })
+
   it('never rewrites connections that are not editable', () => {
     const { nodes, links } = graph({ root: [['a', [3, 0]], ['b', [3, 0]]] })
     const locked = links.map(link => ({ ...link, editable: false }))

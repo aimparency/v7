@@ -111,6 +111,20 @@ export const LinkedRepoRegistrySchema = z.object({
 
 export type LinkedRepoRegistry = z.infer<typeof LinkedRepoRegistrySchema>;
 
+// Graph autolayout parameters, kept with the project so a tuned layout can be
+// re-run as it was. spacing: connection length in radius sums that is never
+// shortened; the rest are solver weights (see frontend utils/autolayout.ts).
+const layoutWeight = z.number().finite().nonnegative();
+export const LayoutSettingsSchema = z.object({
+  spacing: z.number().finite().min(3).max(5),
+  memory: layoutWeight,
+  length: layoutWeight,
+  spread: layoutWeight,
+  outward: layoutWeight,
+  semantic: layoutWeight,
+  isolatedSemantic: layoutWeight
+});
+
 export const ProjectMetaSchema = z.object({
   name: z.string(),
   color: z.string().regex(/^#[0-9a-fA-F]{6}$/), // hex color
@@ -124,7 +138,8 @@ export const ProjectMetaSchema = z.object({
   dataModelVersion: z.number().int().positive().optional(),
   phaseCursors: z.record(z.string(), z.string()).optional(), // column level (string) → selected phase ID
   phaseActiveLevel: z.number().int().min(0).optional(),
-  rootPhaseIds: z.array(z.string().uuid()).optional()
+  rootPhaseIds: z.array(z.string().uuid()).optional(),
+  layout: LayoutSettingsSchema.optional() // last applied graph autolayout settings
 });
 
 export const SystemStatusSchema = z.object({
@@ -141,6 +156,7 @@ export type Idea = z.infer<typeof IdeaSchema>;
 export type Phase = z.infer<typeof PhaseSchema>;
 export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>;
+export type LayoutSettings = z.infer<typeof LayoutSettingsSchema>;
 export type SystemStatus = z.infer<typeof SystemStatusSchema>;
 export type SearchIdeaResult = Idea & {
   score?: number;

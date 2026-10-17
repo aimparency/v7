@@ -6,7 +6,7 @@ import type { Dirent } from 'fs';
 import { packageRoot } from 'shared/node-entry';
 import { observable } from '@trpc/server/observable';
 import type { Idea, ProjectMeta } from 'shared';
-import { CURRENT_DATA_MODEL_VERSION } from 'shared';
+import { CURRENT_DATA_MODEL_VERSION, LayoutSettingsSchema } from 'shared';
 import { assertWritableBowman, bowmanWriteBlocker } from 'shared/bowman-migration';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { currentOrigin } from '../change-origin.js';
@@ -15,7 +15,7 @@ import { onChange, type ChangeEvent } from '../change-events.js';
 import { writeJsonAtomic } from '../storage/json.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { openGitRepository } from '../git-repository-cache.js';
-import { ensureProjectStructure, readProjectMeta } from '../storage/project.js';
+import { ensureProjectStructure, readProjectMeta, updateProjectMeta } from '../storage/project.js';
 import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
 import { listPhases } from '../storage/phases.js';
 import { indexIdeas, indexPhases } from '../search.js';
@@ -260,6 +260,16 @@ export const projectRouter = t.router({
       };
       await writeJsonAtomic(metaPath, nextMeta);
       return nextMeta;
+    }),
+
+  // The graph's Layout panel stores the settings it applied with.
+  setLayoutSettings: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      layout: LayoutSettingsSchema
+    }))
+    .mutation(async ({ input }) => {
+      return await updateProjectMeta(input.projectPath, meta => ({ ...meta, layout: input.layout }));
     }),
 
   injectAgentInstructions: delayedProcedure
