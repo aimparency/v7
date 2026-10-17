@@ -440,6 +440,15 @@ function showLayoutResult({ changes, placements, done }: LayoutResult) {
   layoutSolving.value = !done
 }
 
+// After a lot of tuning the solved layout can drift far from the stored one:
+// start again from it, keeping the settings.
+function resetLayoutPositions() {
+  const preview = layoutPreview.value
+  if (!preview || !layoutWorker) return
+  layoutSolving.value = true
+  layoutWorker.postMessage({ start: { ...preview.request, settings: { ...layoutSettings.value } } } satisfies LayoutMessage)
+}
+
 watch(layoutSettings, settings => {
   if (!layoutWorker) return
   layoutSolving.value = true
@@ -687,6 +696,7 @@ function toggleSpinOffPreview() {
       :solving="layoutSolving"
       @apply="applyLayoutPreview"
       @cancel="cancelLayoutPreview"
+      @reset-positions="resetLayoutPositions"
     />
     <GraphSidePanel v-else-if="graphUIStore.graphColorMode !== 'spin-off'" />
     <div class="top-controls">

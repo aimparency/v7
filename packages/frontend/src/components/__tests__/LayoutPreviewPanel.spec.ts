@@ -39,6 +39,12 @@ describe('LayoutPreviewPanel', () => {
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ memory: 10 * DEFAULT_LAYOUT_SETTINGS.memory })
   })
 
+  it('asks to start again from the stored layout', async () => {
+    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
+    await wrapper.findAll('button').find(button => button.text() === 'Reset positions')!.trigger('click')
+    expect(wrapper.emitted('resetPositions')).toHaveLength(1)
+  })
+
   it('warns when the settings differ from the saved ones and resets to them', async () => {
     const saved = { ...DEFAULT_LAYOUT_SETTINGS, spacing: 4.5 }
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [], saved } })
