@@ -16,9 +16,9 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "description": "Felix 2026-10-16: replace 'all' with a boxed toggle per status (review and human-dependent on by default, unclear available) and offer chronological order next to priority: by the idea's first appearance in the phases (phase before subphase, commitments in order, sub-ideas after their parent)."
+  "description": "Felix 2026-10-16: replace 'all' with a boxed toggle per status (review and human-dependent on by default, unclear available) and offer chronological order next to priority: by the idea's first appearance in the phases (phase before subphase, commitments in order, sub-ideas after their parent).",
+  "selfWeight": 1
 }

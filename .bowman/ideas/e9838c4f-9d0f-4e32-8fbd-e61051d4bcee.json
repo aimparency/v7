@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "An action-type allowlist is insufficient if attacker-controlled terminal text can ride inside allowed fields and instruct the capable worker.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

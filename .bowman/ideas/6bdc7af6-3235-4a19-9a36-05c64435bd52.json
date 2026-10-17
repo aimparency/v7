@@ -36,8 +36,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Removing a general label-target ambiguity is the last low-cost validity check before interpreting poor refusal recall as a real behavioral limitation.",
   "cost": 2,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

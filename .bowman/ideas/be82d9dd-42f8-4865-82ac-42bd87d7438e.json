@@ -44,8 +44,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A scorer cannot test a real system until a controlled runner binds immutable scenarios to auditable observations.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

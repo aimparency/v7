@@ -10,7 +10,9 @@
     "ux"
   ],
   "supportingConnections": [],
-  "supportedIdeas": [],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
   "committedIn": [
     "ce8516bc-df20-44d3-9fea-6784401e8276"
   ],
@@ -21,7 +23,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

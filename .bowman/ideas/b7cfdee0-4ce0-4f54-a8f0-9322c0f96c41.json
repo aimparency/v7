@@ -28,8 +28,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Without this correction, equal zero-intervention outcomes can falsely establish a capability hypothesis.",
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

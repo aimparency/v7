@@ -199,8 +199,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Capability growth without reliable correction, auditability, and human authority would not satisfy the project's ASI mission.",
   "cost": 13,
-  "loopWeight": 1,
   "duration": 21,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

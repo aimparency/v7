@@ -11,7 +11,8 @@
         2.523198469802153,
         -3.124057484937025
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Seeing the graph as a graph shows structure, clusters and orphans that no list reveals, so humans and agents agree on the same picture."
     },
     {
       "ideaId": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
@@ -19,7 +20,8 @@
         -3.7976710884539755,
         -5.142943763344725
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "The keyboard-driven list is where daily work happens: fast navigation and editing decide whether people keep their plans in Aimparency at all."
     },
     {
       "ideaId": "c58ae2b8-9d4b-444e-8c07-5d25e6b6fc1b",
@@ -27,7 +29,8 @@
         -5.504208897206601,
         -0.47459817848354824
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "A watchdog the human can read and steer from the UI makes autonomous agent runs visible, so cooperation does not become blind delegation."
     },
     {
       "ideaId": "7f122bed-ff75-43fc-ba0b-1b74c8141270",
@@ -35,7 +38,8 @@
         1.9879581470373617,
         1.105530497843709
       ],
-      "weight": 0.9887640449438202
+      "weight": 0.9887640449438202,
+      "hypothesis": "A clear entry page for picking or cloning a project lowers the first-use barrier, which decides whether new people try it."
     },
     {
       "ideaId": "43632e76-c211-4f2f-b563-130022a6771f",
@@ -44,7 +48,7 @@
         -3.7958890589480654
       ],
       "weight": 0.9987515605493135,
-      "hypothesis": ""
+      "hypothesis": "Reading and triaging ideas from a phone lets humans answer review and human-dependent ideas away from the desk, shortening agent wait times."
     },
     {
       "ideaId": "a0e80284-510a-45d6-a55c-c40f727118e8",
@@ -52,7 +56,8 @@
         -2.3354779223600746,
         0.8919321017704598
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Ranking a phase's ideas by priority and state shows what to do next without manual sorting."
     },
     {
       "ideaId": "a5c00572-4434-49bf-affd-6d0b550368af",
@@ -60,7 +65,8 @@
         -1.6608014452518651,
         1.8686194260601368
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "End-to-end tests that can find WebGL nodes keep the graph view from silently regressing while agents change the frontend."
     },
     {
       "ideaId": "12b234ed-1ab3-41b4-99a6-03db6e1f808c",
@@ -68,7 +74,8 @@
         0.5918225920871852,
         -2.428939278676024
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "One live copy of the project in the frontend removes stale views and per-component fetching, so concurrent agent edits show up immediately."
     },
     {
       "ideaId": "44056715-d1cc-47c3-8af5-399f9ad65cbe",
@@ -76,7 +83,8 @@
         0.5436840208584375,
         2.4401655037032226
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "One consistent word for the unit of planning makes the UI, the MCP and the docs easier to learn."
     },
     {
       "ideaId": "90cf0309-023f-486c-b7a0-322ee2910d46",
@@ -84,7 +92,8 @@
         0.25315275353337463,
         2.487149710688617
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "One queue of what waits on the human, ordered by value, turns review and human-dependent ideas into a short daily task instead of a hunt."
     },
     {
       "ideaId": "55259e27-aea5-413c-af85-8903bb5577e7",
@@ -92,7 +101,8 @@
         1.8806349027689484,
         -1.6471831599695366
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Toasts report results and errors without blocking, so the user notices failures that used to vanish in the console."
     },
     {
       "ideaId": "c5b348ab-7e25-4a20-95a6-396bcf842cd0",
@@ -100,7 +110,17 @@
         -1.25,
         -2.17
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "One icon set renders the same everywhere and reads calmer than mixed emoji glyphs."
+    },
+    {
+      "ideaId": "8b5632eb-f9ab-4639-bdfb-a809a26dacd7",
+      "relativePosition": [
+        1.86,
+        1.67
+      ],
+      "weight": 1,
+      "hypothesis": "Seeing the code diff behind an idea lets a human check what an agent actually did before accepting it, which makes review a judgment of the work rather than of its summary."
     }
   ],
   "supportedIdeas": [
@@ -108,13 +128,13 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "All direct UI branches are done or awaiting user acceptance in review; the umbrella itself now awaits integrated UI acceptance.\n\nAutonomous relevance check on 2026-07-30 found this open idea was a completed umbrella, not an actionable implementation leaf. Its direct children are list view (done), watchdog enhancements (done), Project loading page (review), and Mobile support (review). Reconciled to review so priority discovery no longer mistakes the container for unfinished build work.",
-    "date": 1785399005237
+    "state": "open",
+    "comment": "Container: it never finishes, it keeps collecting UI work (Felix 2026-10-17: containers can always be filled with ideas). Its children carry the review state.",
+    "date": 1792218782924
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

@@ -27,8 +27,8 @@
   "intrinsicValue": 0,
   "valueRationale": "An allowed client can otherwise turn individually valid control events into unbounded PTY work, repaint timers, and state churn, undermining availability of the human control plane.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

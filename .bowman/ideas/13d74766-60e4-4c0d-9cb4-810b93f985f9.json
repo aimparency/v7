@@ -64,8 +64,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Recursive improvement is central to the ASI hypothesis, but only measured, repeatable gains with regression control count as evidence.",
   "cost": 13,
-  "loopWeight": 1,
   "duration": 21,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

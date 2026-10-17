@@ -11,7 +11,8 @@
         -1.4833196767758807,
         -2.012402230293312
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Agents create near-duplicates in long runs; a report finds them before the value flow splits between two copies."
     },
     {
       "ideaId": "338c12e5-d411-42ed-8d39-e26665880dd2",
@@ -19,7 +20,8 @@
         0.8725686729340125,
         -2.3427812341348
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Merging keeps links, history and commitments of both ideas, so cleaning duplicates loses nothing."
     },
     {
       "ideaId": "b0fb3242-8866-435f-9765-a1d89256996f",
@@ -27,7 +29,8 @@
         -1.5185512105537546,
         1.9859512131282897
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Suggested parents move ideas out of catch-all containers into the place where their value actually flows."
     },
     {
       "ideaId": "7625d5e6-a29b-4b07-a4fb-94bfff3edba7",
@@ -35,7 +38,8 @@
         -1.6353456200377021,
         -1.8909375195980176
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Open ideas that are already done distort priorities and waste agent time; reconciling against the code removes them."
     },
     {
       "ideaId": "d6734796-cb97-4afa-863b-fc4d0a599f8d",
@@ -43,7 +47,8 @@
         0.8595000816615289,
         2.3476072093993547
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "One hygiene report makes graph decay visible as numbers that can be watched over time."
     },
     {
       "ideaId": "c69ab6f7-aaa5-4e3b-acec-6cdfd08e49a2",
@@ -51,7 +56,8 @@
         -1.2663947143646448,
         2.1555148868493785
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Parents that name a structural part of the product make placement predictable for agents and humans."
     },
     {
       "ideaId": "f82a961e-552a-49f1-b2f5-cf9ce4945991",
@@ -59,7 +65,8 @@
         -2.4561247957134964,
         0.4663164031870793
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Thresholds tuned to the embedding model keep duplicate reports short enough to act on."
     },
     {
       "ideaId": "a7f10b45-40af-4963-b0af-f5448da0cedf",
@@ -67,7 +74,8 @@
         -1.6633057501632023,
         1.8663906293897927
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Parent-child pairs are intentional refinements, not duplicates; excluding them removes most false alarms."
     },
     {
       "ideaId": "d9bb168f-014b-466b-935e-b14be16ff39b",
@@ -75,7 +83,8 @@
         -1.7947278503021338,
         -1.7403884461090522
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "A tested core lets the duplicate logic change without breaking the MCP tool and the UI that use it."
     },
     {
       "ideaId": "8e8d8f7a-375d-46b8-8f03-192527b59106",
@@ -110,13 +119,13 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Duplicate detection, merge, hygiene reporting, reparent suggestions, threshold calibration, status reconciliation, and durable cancellation memory are implemented. Awaiting acceptance; taxonomy choices remain a separate human-governed concern.\n\nStatus reconciliation on 2026-07-30 found the tooling essentially complete and all direct children done or review. Recurring use of the tools is operation, not unfinished implementation.",
-    "date": 1785399347038
+    "state": "open",
+    "comment": "Container: graph health needs new tools as the graph and its failure modes grow (Felix 2026-10-17: containers can always be filled with ideas).",
+    "date": 1792218786723
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

@@ -82,8 +82,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Preventing a stochastic supervisor from silently granting permissions or making ambiguous terminal decisions is a direct safety prerequisite for greater autonomy.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

@@ -55,8 +55,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The new preregistration cannot produce empirical evidence until its richer fixtures can be executed and independently verified under identical isolation.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

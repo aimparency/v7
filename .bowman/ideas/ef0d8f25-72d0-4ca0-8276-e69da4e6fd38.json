@@ -22,8 +22,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The process can provide differentiated product evidence if presented as a compact operational artifact rather than the application’s main claim.",
   "cost": 2,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

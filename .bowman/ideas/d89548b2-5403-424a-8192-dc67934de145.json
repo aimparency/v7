@@ -28,8 +28,8 @@
   "intrinsicValue": 0,
   "valueRationale": "This is the decisive system-level test of whether deterministic authority and actuation close the measured corrigibility gap without weakening safety.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

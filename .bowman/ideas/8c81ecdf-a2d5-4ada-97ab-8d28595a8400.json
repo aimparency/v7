@@ -46,8 +46,8 @@
   "intrinsicValue": 0,
   "valueRationale": "This prospective run tests whether the v1 efficiency signal reproduces on richer tasks without sacrificing completion or safety.",
   "cost": 10,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

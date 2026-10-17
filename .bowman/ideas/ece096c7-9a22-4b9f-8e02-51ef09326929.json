@@ -22,8 +22,8 @@
   "intrinsicValue": 0,
   "valueRationale": "These facts determine eligibility, narrative coherence, and whether the application is truthful.",
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

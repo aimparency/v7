@@ -26,8 +26,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Failing closed on altered evaluation inputs is necessary for trustworthy safety evidence.",
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

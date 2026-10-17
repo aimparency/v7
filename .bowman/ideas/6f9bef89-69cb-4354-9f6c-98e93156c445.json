@@ -18,8 +18,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Tool descriptions are the standing instructions every agent reads before acting; a misleading one silently distorts every session's judgment and costs graph-churn that looks like diligence.",
   "cost": 0.2,
-  "loopWeight": 1,
   "duration": 0,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

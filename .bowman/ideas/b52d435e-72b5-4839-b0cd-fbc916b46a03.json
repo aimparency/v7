@@ -68,8 +68,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A successful application could provide funding, community, credibility, and high-leverage feedback; even without acceptance, a rigorous application and inspectable execution record can clarify the thesis and demonstrate the product on a consequential real task.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 14,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

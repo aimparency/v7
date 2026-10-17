@@ -45,8 +45,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A concrete, least-authority adapter is required to turn deterministic evaluation infrastructure into real evidence safely.",
   "cost": 5,
-  "loopWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

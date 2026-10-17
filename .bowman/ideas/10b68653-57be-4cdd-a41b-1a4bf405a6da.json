@@ -22,8 +22,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Removes duplicated navigation algorithms and index/id drift, a recurring source of list-view selection bugs.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

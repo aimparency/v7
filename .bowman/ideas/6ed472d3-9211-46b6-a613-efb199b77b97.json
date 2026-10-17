@@ -26,8 +26,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Invalid telemetry can manufacture apparent capability gains; rejecting it makes the recursive-improvement evidence more trustworthy.",
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

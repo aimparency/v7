@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "An explicit permission bypass lets autonomous workers act outside the human authorization boundary, so removing and mechanically prohibiting it is a prerequisite for safe capability growth.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

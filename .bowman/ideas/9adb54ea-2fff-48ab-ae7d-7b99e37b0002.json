@@ -47,8 +47,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A policy module affects real safety only when it controls capability issuance and execution rather than remaining an advisory classification.",
   "cost": 7,
-  "loopWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

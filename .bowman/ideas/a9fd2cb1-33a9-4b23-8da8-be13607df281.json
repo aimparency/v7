@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Corrigibility controls must be inspectable after execution; structured bounded telemetry permits verification without retaining attacker-controlled prompt content.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

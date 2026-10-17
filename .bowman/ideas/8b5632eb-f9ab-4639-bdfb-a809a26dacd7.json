@@ -6,7 +6,9 @@
   "color": "#666666",
   "tags": [],
   "supportingConnections": [],
-  "supportedIdeas": [],
+  "supportedIdeas": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
   "committedIn": [
     "8533ae0b-2ba7-4eb0-b5ec-f55e7a5a7e3b"
   ],
@@ -17,7 +19,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

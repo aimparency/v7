@@ -44,8 +44,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The comparison cannot produce empirical evidence until a runner enforces matched conditions and preserves failed runs.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

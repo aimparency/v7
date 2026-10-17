@@ -26,8 +26,8 @@
   "intrinsicValue": 0,
   "valueRationale": "This is direct evidence that a test-driven reflection loop can detect and correct an over-optimistic capability claim.",
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

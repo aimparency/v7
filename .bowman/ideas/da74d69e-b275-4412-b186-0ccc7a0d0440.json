@@ -12,7 +12,7 @@
         -2.1207794473548076
       ],
       "weight": 1,
-      "hypothesis": ""
+      "hypothesis": "Pressing Enter through all follow-up dialogs makes capturing an idea one fluent motion, so ideas get written down while they are fresh."
     },
     {
       "ideaId": "b0ca7191-a484-4d5c-bd86-7fbb86efce4e",
@@ -21,7 +21,7 @@
         0.5285644803575131
       ],
       "weight": 0.9850746268656718,
-      "hypothesis": ""
+      "hypothesis": "\"Leave uncommitted\" says what actually happens, so users do not fear losing an idea they don't place in a phase."
     }
   ],
   "supportedIdeas": [
@@ -29,13 +29,13 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Both concrete children are implemented and internally verified: sequential post-creation dialogs and accurate uncommitted terminology. Awaiting user acceptance.\n\nReconciled this container after checking its two children. 87a9f3b2 fixes and tests sequential connection/phase dialogs; b0ca7191 corrects floating vs uncommitted wording. Both are in review and no open implementation leaf remains.",
-    "date": 1784895190034
+    "state": "open",
+    "comment": "Container: the creation flow keeps getting refined (Felix 2026-10-17: containers can always be filled with ideas).",
+    "date": 1792218787871
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

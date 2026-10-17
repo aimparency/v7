@@ -28,8 +28,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A correct escalation is only cooperative if the responsible human can see what was blocked and why.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

@@ -18,8 +18,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Unblocks agents from participating in cross-repo structure at all; without it the feature only exists for a human clicking in the GUI, which contradicts the human-AI cooperation thesis.",
   "cost": 0.4,
-  "loopWeight": 1,
   "duration": 0,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

@@ -14,6 +14,6 @@
     "date": 1766114606287
   },
   "intrinsicValue": 0,
-  "loopWeight": 0,
-  "cost": 10
+  "cost": 10,
+  "selfWeight": 0
 }

@@ -15,5 +15,5 @@
   "supportedIdeas": [],
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1
+  "selfWeight": 1
 }

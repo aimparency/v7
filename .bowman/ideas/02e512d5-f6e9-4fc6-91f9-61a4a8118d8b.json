@@ -55,8 +55,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The graph-grounding hypothesis cannot be tested until matched real runs have isolated fixtures and authoritative resource/outcome telemetry.",
   "cost": 8,
-  "loopWeight": 1,
   "duration": 4,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

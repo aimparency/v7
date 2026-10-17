@@ -35,8 +35,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A versioned prospective manifest prevents calibrated limits from being confused with post-hoc modifications to the invalid v2 experiment.",
   "cost": 2,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

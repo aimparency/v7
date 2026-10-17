@@ -63,8 +63,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A paired, budget-matched protocol is necessary to attribute any observed gain to Aimparency rather than model, task, or resource differences.",
   "cost": 5,
-  "loopWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

@@ -23,8 +23,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A disciplined opportunity set is the first autonomous selection step and prevents chasing flashy but economically or institutionally invalid bounties.",
   "cost": 1,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

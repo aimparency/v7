@@ -16,9 +16,9 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "description": "IdeasList shared one vuedraggable group (\"ideas\") across all lists, but handleChange saves only `moved` events. Dropping an idea into another list (another phase or parent) changed both lists' local copies, saved nothing, and left the screen out of sync until reload. Fix: each list gets its own group (`ideas-${useId()}`), so drag only reorders within its list. Whether a drag should re-parent is left open (920b1921 / Felix)."
+  "description": "IdeasList shared one vuedraggable group (\"ideas\") across all lists, but handleChange saves only `moved` events. Dropping an idea into another list (another phase or parent) changed both lists' local copies, saved nothing, and left the screen out of sync until reload. Fix: each list gets its own group (`ideas-${useId()}`), so drag only reorders within its list. Whether a drag should re-parent is left open (920b1921 / Felix).",
+  "selfWeight": 1
 }

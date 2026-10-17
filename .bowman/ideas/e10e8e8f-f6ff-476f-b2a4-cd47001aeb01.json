@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Malformed or unbounded control events can crash, exhaust, or unexpectedly manipulate a capable agent even after connection-level restrictions succeed.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

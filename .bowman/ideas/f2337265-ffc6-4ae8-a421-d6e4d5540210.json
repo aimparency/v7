@@ -335,6 +335,15 @@
         2.5
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "c2b13b69-5cd5-4d27-9704-5360376471ef",
+      "relativePosition": [
+        1.9,
+        1.63
+      ],
+      "weight": 1,
+      "hypothesis": "Opening the active phase path down to its deepest level on startup puts the user right at the current work, with no clicks before the first useful keystroke."
     }
   ],
   "supportedIdeas": [
@@ -353,7 +362,7 @@
   },
   "intrinsicValue": 0,
   "cost": 2,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

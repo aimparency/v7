@@ -38,8 +38,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Integrating deterministic actuation should close the measured correction-recovery gap while reducing model calls and preserving all safety gates.",
   "cost": 5,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

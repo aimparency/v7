@@ -65,8 +65,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The v1 null result cannot distinguish graph value under difficult work, while its resource signal is scientifically usable only if independently preregistered before a new run.",
   "cost": 6,
-  "loopWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

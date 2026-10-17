@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A supervisor should not be instructed to seek permission expansion that its deterministic safety boundary must reject; aligned contracts reduce unsafe proposals and needless automation stops.",
   "cost": 2,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

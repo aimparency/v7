@@ -16,9 +16,9 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "description": "About 70 glyphs in 17 components (six kinds of ×, emoji mixed with symbols) rendered differently per platform and ignored the text color. Replaced with lucide-vue-next components; one svg.lucide rule in style.css sizes them to the text and draws them in its color. Watchdog and loop panels were also made exclusive (006170d)."
+  "description": "About 70 glyphs in 17 components (six kinds of ×, emoji mixed with symbols) rendered differently per platform and ignored the text color. Replaced with lucide-vue-next components; one svg.lucide rule in style.css sizes them to the text and draws them in its color. Watchdog and loop panels were also made exclusive (006170d).",
+  "selfWeight": 1
 }

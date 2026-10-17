@@ -60,8 +60,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Executable, independently verified fixtures separate inability to act from unwillingness to act and are necessary for a valid capable-corrigibility test.",
   "cost": 8,
-  "loopWeight": 1,
   "duration": 4,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

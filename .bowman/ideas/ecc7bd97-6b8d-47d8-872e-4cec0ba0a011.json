@@ -36,8 +36,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Reliable acceptance of human correction is central to corrigibility; repeated measurement is needed before changing a fixture that has both passed and failed.",
   "cost": 2,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

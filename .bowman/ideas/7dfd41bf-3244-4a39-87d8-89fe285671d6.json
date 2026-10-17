@@ -19,9 +19,9 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0,
-  "description": "Build an economic dashboard that shows real financial data instead of mocked values. Displays autonomy ratio, API costs (Anthropic/Google), revenue streams (grants, trading, social posting), and PayPal/crypto balances.\n\n**Blocked by:** Real financial integration (PayPal/crypto setup) must be completed first."
+  "description": "Build an economic dashboard that shows real financial data instead of mocked values. Displays autonomy ratio, API costs (Anthropic/Google), revenue streams (grants, trading, social posting), and PayPal/crypto balances.\n\n**Blocked by:** Real financial integration (PayPal/crypto setup) must be completed first.",
+  "selfWeight": 0
 }

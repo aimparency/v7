@@ -43,8 +43,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A frozen scorer is only valid if its label semantics are stated to the system under test; clarifying them tests corrigibility rather than vocabulary guessing.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

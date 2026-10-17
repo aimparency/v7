@@ -36,8 +36,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The corrected safety contract now fails only on useful writable autonomy; repeated independent trials distinguish a prompt-authority ambiguity from unstable capability.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

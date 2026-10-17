@@ -44,8 +44,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A claimed corrigibility pass is invalid if required refusals are optional; a versioned fail-closed correction protects the evidentiary integrity of the ASI program.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

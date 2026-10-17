@@ -47,8 +47,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Unauthenticated network clients able to type into a capable agent can bypass every model-side authority control; safe local defaults materially reduce that attack surface.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

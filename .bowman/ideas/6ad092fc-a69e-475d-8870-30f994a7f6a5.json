@@ -11,7 +11,8 @@
         3.053485741266225,
         -0.6360029354069239
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "With hundreds of ideas, search is the only way humans and agents find existing work before duplicating it."
     },
     {
       "ideaId": "bc9b94d3-606f-4756-a22a-52444f6021ef",
@@ -19,7 +20,8 @@
         -1.5732232876238452,
         1.942927813192765
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Duration and variance make the priority honest about time and uncertainty, so ranking favors work that pays off soon and reliably."
     },
     {
       "ideaId": "3427a68e-791e-4f59-bc46-bd72d85e6d71",
@@ -27,7 +29,8 @@
         0.15429028717923685,
         -2.4952343591899635
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Smaller stores let agents change one concern without reading 2500 lines, which cuts regressions and context cost."
     },
     {
       "ideaId": "756cf129-0c66-43dd-84cf-58e94450e325",
@@ -35,7 +38,8 @@
         2.0268881166946957,
         -1.4634632084209798
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "A smaller App.vue keeps layout changes local and reviewable."
     },
     {
       "ideaId": "22c4140b-9ae2-4805-9071-a3f30b1c4ec3",
@@ -43,7 +47,8 @@
         2.2456978467141973,
         1.098563234986142
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Tests written first give autonomous agents a definition of done that does not depend on a human checking each change."
     },
     {
       "ideaId": "f7f8d418-d855-4c25-8b46-802f254b4c60",
@@ -51,7 +56,8 @@
         -2.1881450599285936,
         -1.209140685243074
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "One router per domain lets features grow without one server file becoming the bottleneck for every change."
     },
     {
       "ideaId": "10a0561b-a10d-47ae-8fd9-823416faa412",
@@ -59,7 +65,8 @@
         2.221273536709269,
         -1.1471459694019304
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Spinning a branch off into its own repo lets a sub-project grow its own community without dragging the whole graph along."
     },
     {
       "ideaId": "827cb5c7-f4eb-42d1-89dd-2a5361721318",
@@ -67,7 +74,8 @@
         1.9239950165853876,
         -2.7690395668119416
       ],
-      "weight": 0.9887640449438202
+      "weight": 0.9887640449438202,
+      "hypothesis": "Archiving that keeps settled ideas out of the way keeps the working graph small enough to read."
     }
   ],
   "supportedIdeas": [
@@ -77,13 +85,13 @@
     "5c2f9450-0feb-4755-b59a-081e9ab43037"
   ],
   "status": {
-    "state": "review",
-    "comment": "All active backend-development children are done and the remaining child was cancelled; awaiting integrated acceptance.\n\nAutonomous relevance check on 2026-07-30 inspected every direct child: seven are done and one is cancelled. No open implementation leaf remains under this finite backend-development umbrella, so it was reconciled from open to review instead of generating duplicate work.",
-    "date": 1785399071887
+    "state": "open",
+    "comment": "Container: keeps collecting backend work on the idea graph (Felix 2026-10-17: containers can always be filled with ideas).",
+    "date": 1792218784451
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

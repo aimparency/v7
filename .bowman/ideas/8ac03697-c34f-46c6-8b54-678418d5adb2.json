@@ -72,8 +72,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A controlled baseline is necessary to distinguish genuine autonomy gains from activity, anecdotes, or model capability alone.",
   "cost": 8,
-  "loopWeight": 1,
   "duration": 14,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

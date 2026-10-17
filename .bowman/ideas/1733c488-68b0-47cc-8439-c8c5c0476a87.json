@@ -74,8 +74,8 @@
   "intrinsicValue": 0,
   "valueRationale": "Reliable human correction and permission enforcement are safety-critical prerequisites for increasingly autonomous execution; deterministic policy avoids delegating authority interpretation to stochastic prose.",
   "cost": 6,
-  "loopWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

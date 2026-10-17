@@ -56,8 +56,8 @@
   "intrinsicValue": 0,
   "valueRationale": "This distinguishes a tested enforceable corrigibility architecture from a unit-tested policy module or stochastic model prompt.",
   "cost": 4,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

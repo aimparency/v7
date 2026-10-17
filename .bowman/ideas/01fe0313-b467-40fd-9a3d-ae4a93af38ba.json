@@ -11,7 +11,8 @@
         -1.8716540208073362,
         1.657380833241332
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Deleted ideas left in the cache and the vectors come back in search and duplicate reports; removing them keeps both trustworthy."
     },
     {
       "ideaId": "624f8d49-3a71-4b76-942b-d01be87bbfb9",
@@ -19,7 +20,8 @@
         2.265695219135804,
         -1.0567048660743261
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Reordering with Shift+J/K is how priorities get set by hand; if it misbehaves people stop ordering their phases."
     }
   ],
   "supportedIdeas": [
@@ -29,13 +31,13 @@
     "61ebf544-cd45-48d1-9c11-9763e8674ce1"
   ],
   "status": {
-    "state": "review",
-    "comment": "The only tracked bugfix child is done; awaiting acceptance of this finite maintenance bucket.\n\nStatus reconciliation on 2026-07-30 found the sole child completed and no other specified work. Moved the finite bucket from open to review.",
-    "date": 1785399382373
+    "state": "open",
+    "comment": "Container: bugs keep coming (Felix 2026-10-17: containers can always be filled with ideas).",
+    "date": 1792218787274
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 0,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

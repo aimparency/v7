@@ -11,7 +11,8 @@
         1.968430999001084,
         1.5411941481110008
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "Embedding-based parent suggestions do most of the rearranging work, leaving humans to confirm."
     },
     {
       "ideaId": "c69ab6f7-aaa5-4e3b-acec-6cdfd08e49a2",
@@ -19,7 +20,8 @@
         -2.499329537295964,
         0.05789528478159518
       ],
-      "weight": 1
+      "weight": 1,
+      "hypothesis": "An agreed convention says where each UI idea belongs, so the rearrangement holds after agents add new ideas."
     }
   ],
   "supportedIdeas": [
@@ -33,7 +35,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "loopWeight": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

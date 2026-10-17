@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A corrigible agent must distinguish updated human intent from shutdown; the failed ordered trials justify one general semantic intervention and a repeated frozen measurement.",
   "cost": 3,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }

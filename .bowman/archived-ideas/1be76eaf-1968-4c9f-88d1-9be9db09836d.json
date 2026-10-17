@@ -14,8 +14,8 @@
   },
   "intrinsicValue": 12,
   "cost": 13,
-  "loopWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "selfWeight": 1
 }
