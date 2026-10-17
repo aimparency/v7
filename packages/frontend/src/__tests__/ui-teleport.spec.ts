@@ -57,7 +57,7 @@ function baseIdea(id: string, text: string) {
     committedIn: [],
     intrinsicValue: 0,
     cost: 1,
-    loopWeight: 0
+    selfWeight: 0
   }
 }
 

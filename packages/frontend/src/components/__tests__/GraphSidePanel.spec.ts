@@ -20,7 +20,7 @@ vi.mock('../../trpc', () => ({
           committedIn: [],
           intrinsicValue: 0,
           cost: 1,
-          loopWeight: 1,
+          selfWeight: 1,
           ...idea,
         }))
       }
@@ -39,7 +39,7 @@ const makeIdea = (id: string, text: string) => ({
   status: { state: 'open' as const },
   intrinsicValue: 0,
   cost: 1,
-  loopWeight: 1,
+  selfWeight: 1,
   incoming: [] as string[],
   committedIn: [] as string[]
 })
@@ -72,7 +72,7 @@ describe('GraphSidePanel', () => {
     expect(updateIdea).toHaveBeenCalledWith('/tmp/project', 'a1', {
       intrinsicValue: 2000,
       cost: 1,
-      loopWeight: 1
+      selfWeight: 1
     })
   })
 

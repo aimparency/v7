@@ -20,7 +20,7 @@ function idea(id: string, parents: string[], children: string[], committedIn: st
     status: { state: 'open', comment: '', date: 0 },
     intrinsicValue: 0,
     cost: 1,
-    loopWeight: 0,
+    selfWeight: 0,
     duration: 1,
     costVariance: 0,
     valueVariance: 0,

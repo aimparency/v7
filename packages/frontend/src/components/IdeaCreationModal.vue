@@ -23,7 +23,7 @@ const ideaIntrinsicValue = ref(IDEA_DEFAULTS.intrinsicValue)
 const ideaValueRationale = ref(IDEA_DEFAULTS.valueRationale)
 const ideaCost = ref(dataStore.defaultCost)
 const ideaDuration = ref(IDEA_DEFAULTS.duration)
-const ideaLoopWeight = ref(IDEA_DEFAULTS.loopWeight)
+const ideaSelfWeight = ref(IDEA_DEFAULTS.selfWeight)
 const ideaTags = ref<string[]>([...IDEA_DEFAULTS.tags])
 const supportedIdeasList = ref<{ id: string, text: string, weight: number }[]>([])
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
@@ -66,7 +66,7 @@ const headerStyle = computed((): Record<string, string> => {
 
 const ideaTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
-const loopWeightInput = ref<HTMLInputElement>()
+const selfWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
@@ -141,7 +141,7 @@ const createIdea = async () => {
         description: ideaDescription.value.trim(),
         tags: ideaTags.value,
         intrinsicValue: ideaIntrinsicValue.value,
-        loopWeight: ideaLoopWeight.value,
+        selfWeight: ideaSelfWeight.value,
         cost: ideaCost.value,
         supportedIdeas: supportedIdeasList.value.map(a => a.id),
         supportingConnections: supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
@@ -215,14 +215,14 @@ const focusIdeaTextInput = () => {
 }
 
 const handleTagPrev = () => {
-  loopWeightInput.value?.focus()
+  selfWeightInput.value?.focus()
 }
 
 const handleTagNext = () => {
   submitBtn.value?.focus()
 }
 
-const handleLoopWeightNext = (event: KeyboardEvent) => {
+const handleSelfWeightNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
     document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
@@ -289,7 +289,7 @@ onMounted(async () => {
   ideaCost.value = dataStore.defaultCost
   ideaDuration.value = IDEA_DEFAULTS.duration
   validationError.value = ''
-  ideaLoopWeight.value = IDEA_DEFAULTS.loopWeight
+  ideaSelfWeight.value = IDEA_DEFAULTS.selfWeight
   searchSelection.value = null
   selectedStatus.value = 'open'
   statusComment.value = ''
@@ -486,14 +486,14 @@ onMounted(async () => {
           </div>
 
           <div class="form-group">
-            <label>Loop Weight</label>
+            <label>Self Weight</label>
             <input
-              ref="loopWeightInput"
-              v-model.number="ideaLoopWeight"
+              ref="selfWeightInput"
+              v-model.number="ideaSelfWeight"
               type="number"
               placeholder="0"
               @keydown="handleInputKeydown"
-              @keydown.tab.exact="handleLoopWeightNext"
+              @keydown.tab.exact="handleSelfWeightNext"
             />
           </div>
         </div>

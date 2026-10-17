@@ -98,7 +98,7 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
     
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-      { text: 'New Idea', description: '', tags: [], intrinsicValue: 0, loopWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
+      { text: 'New Idea', description: '', tags: [], intrinsicValue: 0, selfWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
       1
     )
   })
@@ -203,7 +203,7 @@ describe('IdeaCreationModal', () => {
 
     // With ambiguous perfect matches, index stays on "create new" entry.
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-      { text: 'Refactor', description: '', tags: [], intrinsicValue: 0, loopWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
+      { text: 'Refactor', description: '', tags: [], intrinsicValue: 0, selfWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
       1
     )
   })
@@ -336,7 +336,7 @@ describe('IdeaCreationModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
 
     expect(uiStore.createIdea).toHaveBeenCalledWith(
-      { text: 'Refactor', description: '', tags: [], intrinsicValue: 0, loopWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
+      { text: 'Refactor', description: '', tags: [], intrinsicValue: 0, selfWeight: 1, cost: 1, supportedIdeas: [], supportingConnections: [], color: null, statusState: 'open', statusComment: '', duration: 1, valueRationale: '' },
       1
     )
 

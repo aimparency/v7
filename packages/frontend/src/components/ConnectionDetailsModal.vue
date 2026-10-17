@@ -29,10 +29,10 @@ const thisConn = computed(() =>
 const siblings = computed(() =>
   (parent.value?.supportingConnections ?? []).filter((c: any) => c.ideaId !== childId.value)
 )
-// S = sum of sibling weights, L = parent's loop weight. share = w / (S + L + w).
+// S = sum of sibling weights, L = parent's self weight. share = w / (S + L + w).
 const siblingWeightSum = computed(() => siblings.value.reduce((s: number, c: any) => s + (c.weight ?? 1), 0))
-const loopWeight = computed(() => parent.value?.loopWeight ?? 0)
-const sole = computed(() => isSoleContributor(siblingWeightSum.value, loopWeight.value))
+const selfWeight = computed(() => parent.value?.selfWeight ?? 0)
+const sole = computed(() => isSoleContributor(siblingWeightSum.value, selfWeight.value))
 
 const sharePct = ref(0)
 const hypothesis = ref('')
@@ -53,7 +53,7 @@ watch(
     reflection.value = conn.reflection ?? ''
     sharePct.value = sole.value
       ? 100
-      : Math.round(weightToShare(conn.weight ?? 1, siblingWeightSum.value, loopWeight.value) * 100)
+      : Math.round(weightToShare(conn.weight ?? 1, siblingWeightSum.value, selfWeight.value) * 100)
     capHintVisible.value = false
   },
   { immediate: true }
@@ -66,7 +66,7 @@ const onPctInput = (event: Event) => {
 }
 
 const resolvedWeight = computed(() =>
-  sole.value ? 1 : shareToWeight(sharePct.value / 100, siblingWeightSum.value, loopWeight.value)
+  sole.value ? 1 : shareToWeight(sharePct.value / 100, siblingWeightSum.value, selfWeight.value)
 )
 
 const pct = (x: number) => `${Math.round(x * 100)}%`
@@ -74,16 +74,16 @@ const pct = (x: number) => `${Math.round(x * 100)}%`
 // Top-3 other contributors to the parent, with their share AFTER this change, for
 // orientation. Shares are the parent's outflow slice: weight / (S + L + thisWeight).
 const otherContributors = computed(() => {
-  const total = siblingWeightSum.value + loopWeight.value + resolvedWeight.value
+  const total = siblingWeightSum.value + selfWeight.value + resolvedWeight.value
   if (total <= 0) return []
   const entries = siblings.value.map((c: any) => ({
     id: c.ideaId,
     label: dataStore.ideas[c.ideaId]?.text ?? c.ideaId.slice(0, 8),
     share: (c.weight ?? 1) / total,
-    isLoop: false
+    isSelf: false
   }))
-  if (loopWeight.value > 0) {
-    entries.push({ id: '__loop__', label: 'self-retention (loop)', share: loopWeight.value / total, isLoop: true })
+  if (selfWeight.value > 0) {
+    entries.push({ id: '__self__', label: 'self weight (its own work)', share: selfWeight.value / total, isSelf: true })
   }
   entries.sort((a, b) => b.share - a.share)
   return entries.slice(0, 3)
@@ -180,7 +180,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
             <span class="name">{{ child?.text ?? 'This connection' }}</span>
             <span class="share">{{ sharePct }}%</span>
           </li>
-          <li v-for="o in otherContributors" :key="o.id" :class="{ loop: o.isLoop }">
+          <li v-for="o in otherContributors" :key="o.id" :class="{ self: o.isSelf }">
             <span class="name">{{ o.label }}</span>
             <span class="share">{{ pct(o.share) }}</span>
           </li>
@@ -272,7 +272,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
       & .share { color: #888; flex-shrink: 0; }
     }
     & .this-row { color: #e0e0e0; font-weight: 600; & .share { color: #6ea8fe; } }
-    & .loop { font-style: italic; }
+    & .self { font-style: italic; }
   }
 }
 

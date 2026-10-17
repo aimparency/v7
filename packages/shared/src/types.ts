@@ -53,7 +53,7 @@ export const IdeaSchema = z.object({
   intrinsicValue: z.number().finite().nonnegative().default(0), // Standalone estimated value
   valueRationale: z.string().optional(), // Human-authored explanation for the intrinsic value estimate
   cost: z.number().finite().positive().default(1), // Estimated direct present cost
-  loopWeight: z.number().default(0),
+  selfWeight: z.number().default(0), // Share of the value reaching the idea that it realizes through its own work
   // Economic refinement: temporal and uncertainty modeling
   duration: z.number().finite().nonnegative().default(1), // Estimated days from now until value is realized
   costVariance: z.number().default(0), // Uncertainty in cost estimate (std deviation)

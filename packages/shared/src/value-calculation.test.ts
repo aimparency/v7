@@ -17,7 +17,7 @@ function createMockIdea(id: string, intrinsicValue: number, cost: number, durati
     supportedIdeas: [],
     committedIn: [],
     tags: [],
-    loopWeight: 0,
+    selfWeight: 0,
     archived: false
   };
 }
@@ -87,9 +87,9 @@ test('calculateIdeaValues distributes costs weighted by value share', () => {
   // Flow A->A = 0.5 * 0.5 = 0.25?
   // Flow A->C = 0.5 * 0.5 = 0.25?
   
-  // Let's force loopWeight=0 for A and B to send ALL value to C
-  ideaA.loopWeight = 0;
-  ideaB.loopWeight = 0;
+  // Let's force selfWeight=0 for A and B to send ALL value to C
+  ideaA.selfWeight = 0;
+  ideaB.selfWeight = 0;
   
   // Now:
   // A (Weight 1 to C). Total 1. Flow A->C = 100% of A's value.
@@ -222,7 +222,7 @@ test('attribution shares split an idea between its parents by the value each sen
   connect(goal, small);
   connect(big, shared);
   connect(small, shared);
-  small.loopWeight = 1;
+  small.selfWeight = 1;
 
   const { attributionShares, flowValues } = calculateIdeaValues([goal, big, small, shared]);
 
@@ -278,7 +278,7 @@ for (const [name, spec, edges, expected] of examples) {
   test(`example: ${name}`, () => {
     const ideas = Object.entries(spec).map(([id, { i = 0, c = 1, s = 0 }]) => {
       const idea = createMockIdea(id, i, c, 0); // duration 0: no discounting
-      idea.loopWeight = s;
+      idea.selfWeight = s;
       return idea;
     });
     const byId = new Map(ideas.map(idea => [idea.id, idea]));

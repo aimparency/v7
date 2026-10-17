@@ -58,12 +58,12 @@ const editingConnectionRef = ref<{ parentId: string, childId: string } | null>(n
 
 const editedIntrinsicValue = ref(0)
 const editedCost = ref(0)
-const editedLoopWeight = ref(0)
+const editedSelfWeight = ref(0)
 
 // String versions for k-notation input
 const editedIntrinsicValueStr = ref('0')
 const editedCostStr = ref('0')
-const editedLoopWeightStr = ref('0')
+const editedSelfWeightStr = ref('0')
 
 const syncEditedConnectionFields = (link: NonNullable<typeof selectedLink.value>) => {
     editedHypothesis.value = link.connection.hypothesis || ''
@@ -88,12 +88,12 @@ watch(selectedIdea, (newVal) => {
     if (newVal) {
         editedIntrinsicValue.value = newVal.intrinsicValue || 0
         editedCost.value = newVal.cost ?? 0
-        editedLoopWeight.value = newVal.loopWeight ?? 0
+        editedSelfWeight.value = newVal.selfWeight ?? 0
 
         // Update string versions with formatting
         editedIntrinsicValueStr.value = editedIntrinsicValue.value.toString()
         editedCostStr.value = editedCost.value.toString()
-        editedLoopWeightStr.value = editedLoopWeight.value.toString()
+        editedSelfWeightStr.value = editedSelfWeight.value.toString()
     }
 }, { immediate: true })
 
@@ -117,9 +117,9 @@ const onCostInput = (event: Event) => {
     editedCost.value = parseK(input)
 }
 
-const onLoopWeightInput = (event: Event) => {
+const onSelfWeightInput = (event: Event) => {
     const input = (event.target as HTMLInputElement).value
-    editedLoopWeight.value = parseK(input)
+    editedSelfWeight.value = parseK(input)
 }
 
 const updateIdeaAttributes = async () => {
@@ -128,7 +128,7 @@ const updateIdeaAttributes = async () => {
     const updates = {
         intrinsicValue: editedIntrinsicValue.value,
         cost: editedCost.value,
-        loopWeight: editedLoopWeight.value
+        selfWeight: editedSelfWeight.value
     }
 
     try {
@@ -409,8 +409,8 @@ const isOpaque = computed(() => !hasInteracted.value)
                         <span class="label">Loop</span>
                         <input
                             type="text"
-                            v-model="editedLoopWeightStr"
-                            @input="onLoopWeightInput"
+                            v-model="editedSelfWeightStr"
+                            @input="onSelfWeightInput"
                             @change="updateIdeaAttributes"
                             class="value-input"
                             placeholder="e.g. 5k"

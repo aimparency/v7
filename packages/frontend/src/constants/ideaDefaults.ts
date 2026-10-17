@@ -11,7 +11,7 @@ export const IDEA_DEFAULTS = {
   intrinsicValue: 0,
   valueRationale: '',
   cost: DEFAULT_IDEA_COST, // projects may override it: dataStore.defaultCost
-  loopWeight: 1,
+  selfWeight: 1,
   duration: 1, // Default 1 day
   costVariance: 0,
   valueVariance: 0,

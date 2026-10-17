@@ -39,7 +39,7 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
             archived: archivedFlag,
             intrinsicValue: 0,
             cost: 1,
-            loopWeight: 1,
+            selfWeight: 1,
             supportedIdeas: [],
             supportingConnections: [],
             incoming: [],
@@ -74,7 +74,7 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
     archived: archivedFlag,
     intrinsicValue: 0,
     cost: 1,
-    loopWeight: 1,
+    selfWeight: 1,
     supportedIdeas: [],
     supportingConnections: [],
     committedIn: []
@@ -100,7 +100,7 @@ function mountBulkEditModal() {
             archived: false,
             intrinsicValue: 1,
             cost: 1,
-            loopWeight: 1,
+            selfWeight: 1,
             supportedIdeas: [],
             supportingConnections: [],
             committedIn: []
@@ -114,7 +114,7 @@ function mountBulkEditModal() {
             archived: true,
             intrinsicValue: 2,
             cost: 2,
-            loopWeight: 2,
+            selfWeight: 2,
             supportedIdeas: [],
             supportingConnections: [],
             committedIn: []
@@ -396,7 +396,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
             'idea-1': {
               id: 'idea-1', text: 'Old title', description: '', tags: [],
               status: { state: 'open', comment: '' }, archived: false,
-              intrinsicValue: 0, cost: 1, loopWeight: 1,
+              intrinsicValue: 0, cost: 1, selfWeight: 1,
               supportedIdeas: [], supportingConnections: [], incoming: [], committedIn: []
             }
           },
@@ -417,7 +417,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     dataStore.ideas['idea-1'] = {
       id: 'idea-1', text: 'Old title', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
-      intrinsicValue: 0, cost: 1, loopWeight: 1,
+      intrinsicValue: 0, cost: 1, selfWeight: 1,
       supportedIdeas: [], supportingConnections: [], committedIn: []
     } as any
 
@@ -460,7 +460,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
             'idea-1': {
               id: 'idea-1', text: 'Old title', description: '', tags: [],
               status: { state: 'open', comment: '' }, archived: false,
-              intrinsicValue: 0, cost: 1, loopWeight: 1,
+              intrinsicValue: 0, cost: 1, selfWeight: 1,
               supportedIdeas: [], supportingConnections: [], incoming: [], committedIn: []
             }
           },
@@ -481,7 +481,7 @@ describe('IdeaEditModal keyboard save behavior', () => {
     dataStore.ideas['idea-1'] = {
       id: 'idea-1', text: 'Old title', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
-      intrinsicValue: 0, cost: 1, loopWeight: 1,
+      intrinsicValue: 0, cost: 1, selfWeight: 1,
       supportedIdeas: [], supportingConnections: [], committedIn: []
     } as any
 
@@ -586,7 +586,7 @@ describe('IdeaEditModal linked repos', () => {
     dataStore.ideas['idea-1'] = {
       id: 'idea-1', text: 'Local idea', description: '', tags: [],
       status: { state: 'open', comment: '', date: Date.now() }, archived: false,
-      intrinsicValue: 0, cost: 1, loopWeight: 1,
+      intrinsicValue: 0, cost: 1, selfWeight: 1,
       supportedIdeas: [], supportingConnections: [], committedIn: [],
       supportingRepos: [{ repoId: R1, weight: 1, relativePosition: [0, 0] }]
     } as any

@@ -73,7 +73,7 @@ to the parent. The graph is directed and may contain cycles.
 - Every link is recorded on both ends. A link recorded on one end only is
   invalid.
 - `weight` (default 1) sets the child's share of the parent's value:
-  `share = weight / (sum of sibling weights + the parent's loopWeight)`.
+  `share = weight / (sum of sibling weights + the parent's selfWeight)`.
 - `hypothesis` says why the child should help; `reflection` tests it: how
   that turned out once the child is settled.
 - `relativePosition` is layout only: the child's position relative to the

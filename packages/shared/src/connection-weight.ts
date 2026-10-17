@@ -4,27 +4,27 @@
 // idea's (parent's) value flows through it. The value engine
 // (value-calculation.ts) normalizes each child by the parent's total outflow:
 //
-//     share_i = weight_i / (Σ siblingWeights + effectiveLoopWeight)
+//     share_i = weight_i / (Σ siblingWeights + effectiveSelfWeight)
 //
 // So a connection's share depends on the sum of its sibling weights (S) and the
-// parent's loop weight (L), not just its own weight. These helpers convert
+// parent's self weight (L), not just its own weight. These helpers convert
 // between an intended share and the weight that achieves it, and pick a sane
 // default weight for a freshly-created connection.
 
 /** Maximum share a single connection may claim when other flow (siblings or
- *  loop) already exists. 100% is unreachable in that case (it needs w→∞), so we
+ *  self weight) already exists. 100% is unreachable in that case (it needs w→∞), so we
  *  cap the UI input here. */
 export const MAX_SHARE = 0.9;
 
 /** Resulting share of a connection with weight `w`, given sibling-weight sum `S`
- *  and effective loop weight `L`. */
+ *  and effective self weight `L`. */
 export function weightToShare(w: number, S: number, L: number): number {
   const total = S + L + w;
   return total > 0 ? w / total : 0;
 }
 
 /** Weight needed for a connection to claim share `p`, given sibling-weight sum
- *  `S` and effective loop weight `L`.
+ *  `S` and effective self weight `L`.
  *  When `S + L === 0` any positive weight yields 100%, so we return 1.
  *  `p` is clamped to `[0, MAX_SHARE]` to stay in the reachable range. */
 export function shareToWeight(p: number, S: number, L: number): number {

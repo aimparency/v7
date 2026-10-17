@@ -2,7 +2,7 @@
 against all of them:  python3 examples.py
 
 Node fields: i = intrinsic value, c = direct cost (default 1), s = self weight
-(loopWeight, default 0). Edges: (idea, idea it builds on, weight = 1).
+(selfWeight, default 0). Edges: (idea, idea it builds on, weight = 1).
 
 Expected quantities (see models.py): value, aggregated_value, aggregated_cost,
 priority. An example only lists what it pins down.

@@ -57,7 +57,7 @@ const externalResults = computed<SearchIdeaResult[] | undefined>(() => {
     cost: 0,
     tags: [],
     archived: false,
-    loopWeight: 0,
+    selfWeight: 0,
     duration: 1,
     costVariance: 0,
     valueVariance: 0,

@@ -113,7 +113,7 @@ function makeRepoSinkNode(repoId: string): Idea {
     supportedIdeas: [],
     committedIn: [],
     tags: [],
-    loopWeight: 0,
+    selfWeight: 0,
     archived: false
   } as Idea;
 }
@@ -123,7 +123,7 @@ function makeRepoSinkNode(repoId: string): Idea {
  * Value flows top down, cost per unit of value is aggregated bottom up, both
  * along the same shares (derivation and checks: math/README.md).
  *
- * Every idea hands `weight / (loopWeight + Σ weights)` of the value reaching it
+ * Every idea hands `weight / (selfWeight + Σ weights)` of the value reaching it
  * to each idea it builds on and realizes the rest, its self share, itself. A
  * leaf realizes everything. Intrinsic value is poured in where it is set.
  *
@@ -233,7 +233,7 @@ function buildFlowGraph(ideas: Idea[]): FlowGraph {
   const children: FlowGraph['children'] = [];
   const keep: number[] = [];
   for (const idea of ideas) {
-    let selfWeight = idea.loopWeight ?? 0;
+    let selfWeight = idea.selfWeight ?? 0;
     const weights = new Map<number, number>();
     for (const connection of idea.supportingConnections ?? []) {
       const child = indexOf.get(connection.ideaId);

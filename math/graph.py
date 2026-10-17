@@ -19,7 +19,7 @@ class Graph:
     ids: list[str]
     intrinsic: np.ndarray    # value poured in from outside ("the root is worth 1000")
     cost: np.ndarray         # direct cost of realizing the idea itself
-    self_weight: np.ndarray  # loopWeight: how much of its value the idea realizes itself
+    self_weight: np.ndarray  # selfWeight: how much of its value the idea realizes itself
     edges: list[tuple[int, int, float]]  # (parent, child, weight)
     labels: list[str]
 
@@ -96,7 +96,7 @@ def load_bowman(project: str) -> Graph:
         ids=[idea["id"] for idea in raw],
         intrinsic=np.array([float(idea.get("intrinsicValue") or 0) for idea in raw]),
         cost=np.array([float(idea.get("cost") or 1) for idea in raw]),
-        self_weight=np.array([float(idea.get("loopWeight") or 0) for idea in raw]),
+        self_weight=np.array([float(idea.get("selfWeight") or 0) for idea in raw]),
         edges=edges,
         labels=[idea.get("text", "")[:50].replace("\n", " ") for idea in raw],
     )

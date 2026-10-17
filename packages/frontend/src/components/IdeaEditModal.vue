@@ -34,7 +34,7 @@ const editingIdeas = computed(() => {
   return ids.map((id) => dataStore.ideas[id]).filter((entry): entry is NonNullable<typeof entry> => !!entry)
 })
 const isBulk = computed(() => editingIdeas.value.length > 1)
-type BulkField = 'intrinsicValue' | 'valueRationale' | 'cost' | 'duration' | 'loopWeight' | 'tags' |
+type BulkField = 'intrinsicValue' | 'valueRationale' | 'cost' | 'duration' | 'selfWeight' | 'tags' |
   'status' | 'statusComment' | 'archived' | 'color'
 const mixedFields = ref<Set<BulkField>>(new Set())
 const overriddenFields = ref<Set<BulkField>>(new Set())
@@ -56,7 +56,7 @@ const ideaIntrinsicValue = ref(0)
 const ideaValueRationale = ref('')
 const ideaCost = ref(0)
 const ideaDuration = ref(1)
-const ideaLoopWeight = ref(0)
+const ideaSelfWeight = ref(0)
 const validationError = ref('')
 const ideaTags = ref<string[]>([])
 const selectedStatus = ref('')
@@ -173,7 +173,7 @@ const serializeFormState = () => JSON.stringify({
   valueRationale: ideaValueRationale.value,
   cost: ideaCost.value,
   duration: ideaDuration.value,
-  loopWeight: ideaLoopWeight.value,
+  selfWeight: ideaSelfWeight.value,
   tags: ideaTags.value,
   status: selectedStatus.value,
   statusComment: statusComment.value,
@@ -189,7 +189,7 @@ const isDirty = computed(() => serializeFormState() !== dirtySnapshot.value)
 
 const ideaTextInput = ref<HTMLInputElement>()
 const descriptionInput = ref<HTMLTextAreaElement>()
-const loopWeightInput = ref<HTMLInputElement>()
+const selfWeightInput = ref<HTMLInputElement>()
 const addParentBtn = ref<HTMLButtonElement>()
 const addPhaseBtn = ref<HTMLButtonElement>()
 const addRepoBtn = ref<HTMLButtonElement>()
@@ -301,7 +301,7 @@ watch(() => props.show, async (show) => {
       valueRationale: targets.map((entry) => entry.valueRationale ?? ''),
       cost: targets.map((entry) => entry.cost ?? 1),
       duration: targets.map((entry) => entry.duration ?? 1),
-      loopWeight: targets.map((entry) => entry.loopWeight ?? 0),
+      selfWeight: targets.map((entry) => entry.selfWeight ?? 0),
       tags: targets.map((entry) => entry.tags || []),
       status: targets.map((entry) => entry.status.state),
       statusComment: targets.map((entry) => entry.status.comment || ''),
@@ -323,7 +323,7 @@ watch(() => props.show, async (show) => {
     ideaValueRationale.value = isMixed('valueRationale') ? '' : (idea.value.valueRationale ?? '')
     ideaCost.value = isMixed('cost') ? 1 : (idea.value.cost ?? 1)
     ideaDuration.value = isMixed('duration') ? 1 : (idea.value.duration ?? 1)
-    ideaLoopWeight.value = isMixed('loopWeight') ? 0 : (idea.value.loopWeight ?? 0)
+    ideaSelfWeight.value = isMixed('selfWeight') ? 0 : (idea.value.selfWeight ?? 0)
     ideaTags.value = isMixed('tags') ? [] : [...(idea.value.tags || [])]
     selectedStatus.value = isMixed('status') ? '' : idea.value.status.state
     statusComment.value = isMixed('statusComment') ? '' : (idea.value.status.comment || '')
@@ -457,7 +457,7 @@ const handleTextareaKeydown = (event: KeyboardEvent) => {
   }
 }
 
-const handleLoopWeightNext = (event: KeyboardEvent) => {
+const handleSelfWeightNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
     addParentBtn.value?.focus()
@@ -465,7 +465,7 @@ const handleLoopWeightNext = (event: KeyboardEvent) => {
 }
 
 const handleTagPrev = () => {
-  loopWeightInput.value?.focus()
+  selfWeightInput.value?.focus()
 }
 
 const handleTagNext = () => {
@@ -515,7 +515,7 @@ const handleSave = async () => {
     if (shouldWrite('valueRationale')) updates.valueRationale = ideaValueRationale.value.trim() || undefined
     if (shouldWrite('cost')) updates.cost = ideaCost.value
     if (shouldWrite('duration')) updates.duration = ideaDuration.value
-    if (shouldWrite('loopWeight')) updates.loopWeight = ideaLoopWeight.value
+    if (shouldWrite('selfWeight')) updates.selfWeight = ideaSelfWeight.value
     if (shouldWrite('tags')) updates.tags = ideaTags.value
     if (shouldWrite('archived')) updates.archived = archived.value
     if (shouldWrite('color')) updates.color = ideaColor.value || null
@@ -893,17 +893,17 @@ const discardChanges = () => {
           />
         </div>
 
-        <div class="form-group" :class="{ 'mixed-field': isMixed('loopWeight') }" @click="activateOverride('loopWeight')">
-          <label>Loop Weight</label>
+        <div class="form-group" :class="{ 'mixed-field': isMixed('selfWeight') }" @click="activateOverride('selfWeight')">
+          <label>Self Weight</label>
           <input
-            ref="loopWeightInput"
-            v-model.number="ideaLoopWeight"
+            ref="selfWeightInput"
+            v-model.number="ideaSelfWeight"
             type="text"
             class="text-input"
-            :placeholder="mixedPlaceholder('loopWeight', '0')"
-            :readonly="isMixed('loopWeight')"
+            :placeholder="mixedPlaceholder('selfWeight', '0')"
+            :readonly="isMixed('selfWeight')"
             @keydown="handleInputKeydown"
-            @keydown.tab.exact="handleLoopWeightNext"
+            @keydown.tab.exact="handleSelfWeightNext"
           />
         </div>
       </div>

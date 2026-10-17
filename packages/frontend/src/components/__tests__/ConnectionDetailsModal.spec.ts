@@ -36,7 +36,7 @@ describe('ConnectionDetailsModal', () => {
             'parent-1': {
               id: 'parent-1',
               text: 'Parent Idea',
-              loopWeight: 0,
+              selfWeight: 0,
               supportingConnections: [
                 { ideaId: 'child-1', weight: 1, hypothesis: '' },
                 { ideaId: 'sibling-1', weight: 1 }

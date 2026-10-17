@@ -51,7 +51,7 @@ export type NewIdea = {
   description?: string
   tags?: string[]
   intrinsicValue?: number
-  loopWeight?: number
+  selfWeight?: number
   cost?: number
   supportedIdeas?: string[]
   supportingConnections?: { ideaId: string, weight?: number, relativePosition?: [number, number] }[]
@@ -383,7 +383,7 @@ export const useUIStore = defineStore('ui', {
         supportedIdeas: idea.supportedIdeas ?? [],
         intrinsicValue: idea.intrinsicValue ?? IDEA_DEFAULTS.intrinsicValue,
         valueRationale: (idea.valueRationale ?? IDEA_DEFAULTS.valueRationale).trim() || undefined,
-        loopWeight: idea.loopWeight ?? IDEA_DEFAULTS.loopWeight,
+        selfWeight: idea.selfWeight ?? IDEA_DEFAULTS.selfWeight,
         cost: idea.cost ?? useDataStore().defaultCost,
         duration: idea.duration ?? IDEA_DEFAULTS.duration,
         costVariance: 0,

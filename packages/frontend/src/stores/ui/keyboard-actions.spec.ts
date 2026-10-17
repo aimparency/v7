@@ -17,7 +17,7 @@ const makeIdea = (id: string, text: string) => ({
   status: { state: 'open', comment: '', date: 0 },
   intrinsicValue: 0,
   cost: 1,
-  loopWeight: 1,
+  selfWeight: 1,
   incoming: [] as string[],
   committedIn: [] as string[]
 })

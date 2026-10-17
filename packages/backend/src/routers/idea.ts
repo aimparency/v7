@@ -36,7 +36,7 @@ const newIdeaInputSchema = z.object({
   valueRationale: z.string().optional(),
   cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
   duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
-  loopWeight: z.number().optional(),
+  selfWeight: z.number().optional(),
   supportedIdeas: z.array(z.string()).optional(),
   supportingConnections: z.array(z.object({
     ideaId: z.string(),
@@ -94,7 +94,7 @@ async function storeNewIdea(
     intrinsicValue: input.intrinsicValue ?? options.defaultIntrinsicValue ?? 0,
     valueRationale: input.valueRationale,
     cost: input.cost ?? await projectDefaultCost(projectPath),
-    loopWeight: input.loopWeight ?? 1,
+    selfWeight: input.selfWeight ?? 1,
     duration: input.duration ?? 1,
     costVariance: 0,
     valueVariance: 0,
@@ -456,7 +456,7 @@ export const ideaRouter = t.router({
           intrinsicValue: proposed.intrinsicValue ?? 0,
           valueRationale: proposed.valueRationale,
           cost: proposed.cost ?? defaultCost,
-          loopWeight: 1,
+          selfWeight: 1,
           duration: 1,
           costVariance: 0,
           valueVariance: 0,
@@ -544,7 +544,7 @@ export const ideaRouter = t.router({
         valueRationale: z.string().optional(),
         cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
         duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
-        loopWeight: z.number().optional(),
+        selfWeight: z.number().optional(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/).nullable().optional()
       })
     }))
