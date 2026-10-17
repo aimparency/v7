@@ -88,7 +88,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     </label>
     <div class="row">
       <button class="btn-secondary" @click="emit('cancel')">Cancel</button>
-      <button class="btn-primary" :disabled="solving" @click="emit('apply')">Apply</button>
+      <button class="btn-primary" @click="emit('apply')">Apply</button>
     </div>
   </div>
 </template>

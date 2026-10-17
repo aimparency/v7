@@ -92,10 +92,11 @@ const DEFAULT_WEIGHTS = {
   outward: 0.15, // a moving child goes to the half circle facing away from its grandparents; too weak to overrule memory
   semantic: 0.03, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
-  anchor: 0.05 // keeps every idea near where it was: the objective alone is translation invariant
+  anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
+  separation: 4 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
 }
-// What the Layout panel lets you tune (the anchor only fixes translation).
-export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+// What the Layout panel lets you tune (anchor and separation are mechanics).
+export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
   (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => left[key] === right[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
@@ -108,15 +109,37 @@ const SPREAD_ANGLE = 1.5 * Math.PI
 const SEMANTIC_SHARPNESS = 0.1
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
 const DAMPING = 0.5
-const FINAL_SEPARATION_PASSES = 50
+const FINISH_ITERATIONS = 50
+const FINISH_SEPARATION = 4
 
 export function solveLayout(
   nodes: readonly LayoutNode[],
   links: readonly LayoutLink[],
-  { iterations = 300, clearance = 3, room = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights = {}, onProgress, progressEvery = 10 }: LayoutOptions = {}
+  options: LayoutOptions = {}
 ): { positions: Map<string, [number, number]>; changes: LayoutChange[]; placements: LayoutPlacement[] } {
-  const { memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR } =
-    { ...DEFAULT_WEIGHTS, ...weights }
+  const { iterations = 300, onProgress, progressEvery = 10 } = options
+  const solver = createLayoutSolver(nodes, links, options)
+  for (let iteration = 0; iteration < iterations; iteration++) {
+    // Spread is weak at first, so branches can still pass each other, firm at the end.
+    solver.step((iteration + 1) / iterations)
+    if (onProgress && (iteration + 1) % progressEvery === 0 && iteration + 1 < iterations) onProgress(solver.result())
+  }
+  solver.finish()
+  return { positions: solver.positions(), ...solver.result() }
+}
+
+// The solver's state between iterations: the live Layout panel keeps one
+// running and changes its settings on the way, so a small change continues
+// from the current layout instead of solving again from the stored one.
+export type LayoutSolver = ReturnType<typeof createLayoutSolver>
+
+export function createLayoutSolver(
+  nodes: readonly LayoutNode[],
+  links: readonly LayoutLink[],
+  { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
+) {
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0
+  let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
   const x = Float64Array.from(nodes, node => node.position[0])
@@ -128,7 +151,14 @@ export function solveLayout(
     const parent = indexOf.get(link.parentId)
     if (child === undefined || parent === undefined || child === parent) return []
     const span = radius[child]! + radius[parent]!
-    return [{ link, child, parent, span, dx: link.relativePosition[0] * span, dy: link.relativePosition[1] * span }]
+    // Memory keeps the stored direction but no closer than the clearance:
+    // a target inside it would fight the separation every iteration, so the
+    // solver would cycle instead of coming to rest.
+    const stored = Math.hypot(link.relativePosition[0], link.relativePosition[1])
+    const keep = stored > 0 && stored < clearance ? clearance / stored : 1
+    const dx = link.relativePosition[0] * span
+    const dy = link.relativePosition[1] * span
+    return [{ link, child, parent, span, dx, dy, keepX: dx * keep, keepY: dy * keep }]
   })
   const parentsOf = nodes.map(() => [] as number[])
   // Every connection of an idea, to parents and children alike.
@@ -161,8 +191,25 @@ export function solveLayout(
   // moves toward the big one rather than the other way round.
   const networkSize = connectedNetworkSizes(count, edges)
   const largestNetwork = Math.max(1, ...networkSize)
-  const semanticWeight = Float64Array.from(networkSize, size =>
-    (SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))))
+  const semanticWeight = new Float64Array(count)
+  // Outward and spread push only children, so the terms add up to a net drift
+  // along the direction the tree grows; the anchor alone lets it build up
+  // while the live solver keeps running. Translation is free for every other
+  // term, so after each iteration the largest network's centre goes back
+  // where it started (smaller networks may still move toward it). Not when
+  // fixed ideas hold it in place anyway.
+  const main = networkSize.flatMap((size, index) => size === largestNetwork ? [index] : [])
+  const pinned = main.every(index => nodes[index]!.movable)
+
+  const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
+    room = newRoom
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION } =
+      { ...DEFAULT_WEIGHTS, ...weights })
+    networkSize.forEach((size, index) => {
+      semanticWeight[index] = SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))
+    })
+  }
+  setSettings({ room: initialRoom, weights: initialWeights })
 
   placeFromStoredOffsets(nodes, edges, x, y)
   const startX = x.slice()
@@ -210,7 +257,13 @@ export function solveLayout(
     return { changes, placements }
   }
 
-  for (let iteration = 0; iteration < iterations; iteration++) {
+  const previousX = new Float64Array(count)
+  const previousY = new Float64Array(count)
+  // One iteration; spreadShare scales the spread term (0–1). Returns the
+  // largest move of an idea, in radius sums: near 0 once it has converged.
+  const step = (spreadShare: number): number => {
+    previousX.set(x)
+    previousY.set(y)
     for (let index = 0; index < count; index++) {
       const drift = Math.hypot(x[index]! - startX[index]!, y[index]! - startY[index]!) / radius[index]!
       sumX[index] = 0
@@ -219,13 +272,13 @@ export function solveLayout(
       pull(index, ANCHOR / Math.max(drift, SMOOTHING), startX[index]!, startY[index]!)
     }
 
-    for (const { link, child, parent, span, dx, dy } of edges) {
+    for (const { link, child, parent, span, keepX, keepY } of edges) {
       const vx = x[child]! - x[parent]!
       const vy = y[child]! - y[parent]!
 
-      const memory = MEMORY / Math.max(Math.hypot(vx - dx, vy - dy) / span, SMOOTHING)
-      pull(child, memory, x[parent]! + dx, y[parent]! + dy)
-      pull(parent, memory, x[child]! - dx, y[child]! - dy)
+      const memory = MEMORY / Math.max(Math.hypot(vx - keepX, vy - keepY) / span, SMOOTHING)
+      pull(child, memory, x[parent]! + keepX, y[parent]! + keepY)
+      pull(parent, memory, x[child]! - keepX, y[child]! - keepY)
 
       const length = Math.hypot(vx, vy)
       if (length > room * span) {
@@ -271,8 +324,7 @@ export function solveLayout(
     // their strength share of SPREAD_ANGLE; tighter pairs rotate apart. Only
     // children rotate, parents stay put. Rotations push on through the next
     // neighbours, so a branch pulled to one side makes room on the other.
-    // Weak at first, so branches can still pass each other, firm at the end.
-    const spread = SPREAD * (iteration + 1) / iterations
+    const spread = SPREAD * spreadShare
     for (let center = 0; center < count; center++) {
       const connections = around[center]!
       if (connections.length < 2) continue
@@ -307,20 +359,73 @@ export function solveLayout(
       pull(a, semanticWeight[a]! * similarity[index]! / similarityTotal[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
+    // Ideas closer than the clearance: each pulled to where the pair would be
+    // just far enough apart. Pushing them apart outright after each
+    // iteration (as `separate` does at the end) fights the other terms, and
+    // the iterations cycle instead of coming to rest.
+    forEachOverlap(x, y, radius, clearance, order, (a, b, deltaX, deltaY, distance, minimum) => {
+      const push = (minimum - distance) / distance
+      pull(a, SEPARATION, x[a]! - deltaX * push, y[a]! - deltaY * push)
+      pull(b, SEPARATION, x[b]! + deltaX * push, y[b]! + deltaY * push)
+    })
+
     for (let index = 0; index < count; index++) {
       if (!nodes[index]!.movable) continue
       x[index] = x[index]! + DAMPING * (sumX[index]! / sumWeight[index]! - x[index]!)
       y[index] = y[index]! + DAMPING * (sumY[index]! / sumWeight[index]! - y[index]!)
     }
 
-    separateOverlaps(nodes, x, y, radius, clearance, order)
-    if (onProgress && (iteration + 1) % progressEvery === 0 && iteration + 1 < iterations) onProgress(currentResult())
+    if (pinned) pinCentre()
+    let largestMove = 0
+    for (let index = 0; index < count; index++) {
+      largestMove = Math.max(largestMove, Math.hypot(x[index]! - previousX[index]!, y[index]! - previousY[index]!) / (2 * radius[index]!))
+    }
+    return largestMove
   }
-  // Big ideas can keep pushing each other's neighbourhoods; finish without overlaps.
-  for (let pass = 0; pass < FINAL_SEPARATION_PASSES; pass++) separateOverlaps(nodes, x, y, radius, clearance, order)
 
-  const positions = new Map(nodes.map((node, index): [string, [number, number]] => [node.id, [x[index]!, y[index]!]]))
-  return { positions, ...currentResult() }
+  const pinCentre = () => {
+    let driftX = 0
+    let driftY = 0
+    for (const index of main) {
+      driftX += x[index]! - startX[index]!
+      driftY += y[index]! - startY[index]!
+    }
+    driftX /= main.length
+    driftY /= main.length
+    for (let index = 0; index < count; index++) {
+      if (!nodes[index]!.movable) continue
+      x[index] = x[index]! - driftX
+      y[index] = y[index]! - driftY
+    }
+  }
+
+  return {
+    step,
+    setSettings,
+    result: currentResult,
+    // Ends without overlaps: a few iterations with the separation stronger.
+    // Pushing ideas apart outright instead scatters crowded areas.
+    finish: () => {
+      const separation = SEPARATION
+      SEPARATION *= FINISH_SEPARATION
+      for (let iteration = 0; iteration < FINISH_ITERATIONS; iteration++) step(1)
+      SEPARATION = separation
+    },
+    positions: () => new Map(nodes.map((node, index): [string, [number, number]] => [node.id, [x[index]!, y[index]!]]))
+  }
+}
+
+/** The ideas of the largest connected network: what pinning the layout's centre refers to. */
+export function largestNetworkIds(nodes: readonly LayoutNode[], links: readonly LayoutLink[]): Set<string> {
+  const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
+  const edges = links.flatMap(link => {
+    const child = indexOf.get(link.childId)
+    const parent = indexOf.get(link.parentId)
+    return child === undefined || parent === undefined ? [] : [{ child, parent }]
+  })
+  const sizes = connectedNetworkSizes(nodes.length, edges)
+  const largest = Math.max(0, ...sizes)
+  return new Set(nodes.flatMap((node, index) => sizes[index] === largest ? [node.id] : []))
 }
 
 // Ideas per connected network (connection direction ignored), for each idea.
@@ -392,13 +497,14 @@ function placeFromStoredOffsets(
 }
 
 // Sweep along x; pushes each overlapping pair apart, the smaller idea moving more.
-function separateOverlaps(
-  nodes: readonly LayoutNode[],
+// Calls back for each pair of ideas closer than `clearance` radius sums.
+function forEachOverlap(
   x: Float64Array,
   y: Float64Array,
   radius: Float64Array,
   clearance: number,
-  order: number[]
+  order: number[],
+  overlap: (a: number, b: number, deltaX: number, deltaY: number, distance: number, minimum: number) => void
 ) {
   order.sort((left, right) => (x[left]! - radius[left]! * clearance) - (x[right]! - radius[right]! * clearance))
   for (let i = 0; i < order.length; i++) {
@@ -408,25 +514,13 @@ function separateOverlaps(
       const b = order[j]!
       if (x[b]! - radius[b]! * clearance > reachA) break
       const minimum = (radius[a]! + radius[b]!) * clearance
-      let deltaX = x[b]! - x[a]!
-      let deltaY = y[b]! - y[a]!
-      let distance = Math.hypot(deltaX, deltaY)
+      const deltaX = x[b]! - x[a]!
+      const deltaY = y[b]! - y[a]!
+      const distance = Math.hypot(deltaX, deltaY)
       if (distance >= minimum) continue
-      if (distance === 0) {
-        // Deterministic direction for coincident ideas.
-        deltaX = 1
-        deltaY = 0
-        distance = 1
-      }
-      const areaA = nodes[a]!.movable ? radius[a]! ** 2 : Infinity
-      const areaB = nodes[b]!.movable ? radius[b]! ** 2 : Infinity
-      if (areaA === Infinity && areaB === Infinity) continue
-      const shareA = areaA === Infinity ? 0 : areaB === Infinity ? 1 : areaB / (areaA + areaB)
-      const push = (minimum - distance) / distance
-      x[a] = x[a]! - deltaX * push * shareA
-      y[a] = y[a]! - deltaY * push * shareA
-      x[b] = x[b]! + deltaX * push * (1 - shareA)
-      y[b] = y[b]! + deltaY * push * (1 - shareA)
+      // Deterministic direction for coincident ideas.
+      if (distance === 0) overlap(a, b, 1, 0, 1, minimum)
+      else overlap(a, b, deltaX, deltaY, distance, minimum)
     }
   }
 }

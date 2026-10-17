@@ -19,8 +19,8 @@ import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, positionsFromStoredOffsets, sameLayoutSettings, type LayoutChange, type LayoutPlacement, type LayoutProgress } from '../utils/autolayout'
-import type { LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
+import { DEFAULT_LAYOUT_SETTINGS, largestNetworkIds, positionsFromStoredOffsets, sameLayoutSettings, type LayoutChange, type LayoutPlacement } from '../utils/autolayout'
+import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 import { trpc } from '../trpc'
 import { GitBranch, X } from 'lucide-vue-next'
@@ -351,13 +351,13 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
   zoomOut: 1.2,
 })
 
-// Layout: the solver proposes new connection offsets (most relevant first)
+// Layout: a live solver proposes new connection offsets (most relevant first)
 // and places parentless ideas, whose positions live in this browser only.
-// Both are previewed live while it solves: links get the proposed offsets and
-// every idea moves by how far its rest position (where the offsets put it)
-// moves, so a subtree goes along with its root at once. Every settings change
-// re-solves from the layout as it was when the panel opened. Nothing is saved
-// until Apply; the fader picks how many offsets.
+// It keeps running while the panel is open; a settings change continues from
+// its current state. Links get the proposed offsets, and every idea glides by
+// how far its rest position (where the offsets put it) moves, so a subtree
+// moves along with its root. Nothing is saved until Apply; the fader picks
+// how many offsets.
 type LayoutPreview = {
   request: Omit<LayoutRequest, 'settings'>
   saved: LayoutSettings // as last applied, from meta.json
@@ -366,15 +366,17 @@ type LayoutPreview = {
   linkByKey: Map<string, GraphLink>
   stored: Map<GraphLink, GraphLink['relativePosition']>
   restBefore: Map<string, [number, number]>
-  shifted: Map<GraphNode, [number, number]> // how far the preview moved each idea so far
+  mainNetwork: Set<string> // its centre stays put
 }
 const layoutPreview = shallowRef<LayoutPreview | null>(null)
 const layoutSettings = ref<LayoutSettings>({ ...DEFAULT_LAYOUT_SETTINGS })
 const layoutSolving = ref(false)
 // The most relevant changes do most of the relaxing; the long tail is not worth its diff.
 const LAYOUT_PREVIEW_SHARE = 0.2
-const LAYOUT_RESOLVE_DELAY_MS = 150
-// A share, so the fader keeps its place when a re-solve yields more or fewer changes.
+// A shown connection stays in the share until another outranks it by this
+// factor, so small setting changes don't swap connections in and out.
+const LAYOUT_HYSTERESIS = 1.25
+// A share, so the fader keeps its place when the solver finds more or fewer changes.
 const layoutShare = ref(LAYOUT_PREVIEW_SHARE)
 const layoutPreviewCount = computed({
   get: () => Math.round((layoutPreview.value?.changes.length ?? 0) * layoutShare.value),
@@ -382,26 +384,7 @@ const layoutPreviewCount = computed({
 })
 const layoutPositionsOnly = ref(false)
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
-
-// One solve at a time: a newer one terminates the running worker, whose
-// caller then gets null.
-let cancelLayoutSolve: (() => void) | null = null
-function solveLayoutInWorker(request: LayoutRequest, onProgress: (progress: LayoutProgress) => void): Promise<LayoutProgress | null> {
-  cancelLayoutSolve?.()
-  const worker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
-  const cancel = () => resolveSolve(null)
-  let resolveSolve: (result: LayoutProgress | null) => void = () => {}
-  cancelLayoutSolve = cancel
-  return new Promise<LayoutProgress | null>((resolve, reject) => {
-    resolveSolve = resolve
-    worker.onmessage = ({ data }: MessageEvent<LayoutResult>) => data.done ? resolve(data) : onProgress(data)
-    worker.onerror = (event) => reject(new Error(event.message))
-    worker.postMessage(request)
-  }).finally(() => {
-    worker.terminate()
-    if (cancelLayoutSolve === cancel) cancelLayoutSolve = null
-  })
-}
+let layoutWorker: Worker | null = null
 
 async function startLayoutPreview() {
   if (layoutPreview.value || layoutSolving.value) return
@@ -412,6 +395,8 @@ async function startLayoutPreview() {
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
     layoutPositionsOnly.value = false
+    glideTarget.clear()
+    glideShown.clear()
     const request: LayoutPreview['request'] = {
       nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
       links: links.value.map(link => ({
@@ -431,37 +416,34 @@ async function startLayoutPreview() {
       linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
       stored: new Map(links.value.map(link => [link, link.relativePosition])),
       restBefore: positionsFromStoredOffsets(request.nodes, request.links),
-      shifted: new Map()
+      mainNetwork: largestNetworkIds(request.nodes, request.links)
     }
+    layoutWorker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
+    layoutWorker.onmessage = ({ data }: MessageEvent<LayoutResult>) => showLayoutResult(data)
+    layoutWorker.onerror = (event) => {
+      useToastStore().error('Layout failed', new Error(event.message))
+      cancelLayoutPreview()
+    }
+    layoutWorker.postMessage({ start: { ...request, settings: { ...layoutSettings.value } } } satisfies LayoutMessage)
   } catch (error) {
     useToastStore().error('Layout failed', error)
-  } finally {
     layoutSolving.value = false
   }
-  await solveLayoutPreview()
 }
 
-async function solveLayoutPreview() {
-  if (!layoutPreview.value) return
+function showLayoutResult({ changes, placements, done }: LayoutResult) {
+  const preview = layoutPreview.value
+  if (!preview) return
+  const shown = new Set(appliedLayoutChanges.value.map(change => linkKey(change.parentId, change.childId)))
+  const rank = (change: LayoutChange) => change.relevance * (shown.has(linkKey(change.parentId, change.childId)) ? LAYOUT_HYSTERESIS : 1)
+  layoutPreview.value = { ...preview, changes: [...changes].sort((left, right) => rank(right) - rank(left)), placements }
+  layoutSolving.value = !done
+}
+
+watch(layoutSettings, settings => {
+  if (!layoutWorker) return
   layoutSolving.value = true
-  const show = ({ changes, placements }: LayoutProgress) => {
-    if (layoutPreview.value) layoutPreview.value = { ...layoutPreview.value, changes, placements }
-  }
-  try {
-    const result = await solveLayoutInWorker({ ...layoutPreview.value.request, settings: { ...layoutSettings.value } }, show)
-    if (result) show(result)
-  } catch (error) {
-    useToastStore().error('Layout failed', error)
-  } finally {
-    if (!cancelLayoutSolve) layoutSolving.value = false
-  }
-}
-
-let layoutResolveTimer: ReturnType<typeof setTimeout> | undefined
-watch(layoutSettings, () => {
-  if (!layoutPreview.value) return
-  clearTimeout(layoutResolveTimer)
-  layoutResolveTimer = setTimeout(solveLayoutPreview, LAYOUT_RESOLVE_DELAY_MS)
+  layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })
 
 const appliedLayoutChanges = computed(() => {
@@ -469,11 +451,35 @@ const appliedLayoutChanges = computed(() => {
   return !preview || layoutPositionsOnly.value ? [] : preview.changes.slice(0, layoutPreviewCount.value)
 })
 
+// Ideas glide toward the shift the preview wants for them: each frame covers
+// a share of the rest of the way, the simulation keeps working meanwhile.
+const LAYOUT_GLIDE = 0.15
+const glideTarget = new Map<GraphNode, [number, number]>()
+const glideShown = new Map<GraphNode, [number, number]>()
+let glideFrame = 0
+function glide() {
+  glideFrame = 0
+  for (const [node, [targetX, targetY]] of glideTarget) {
+    const [shownX, shownY] = glideShown.get(node) ?? [0, 0]
+    const restX = targetX - shownX
+    const restY = targetY - shownY
+    const share = Math.abs(restX) + Math.abs(restY) < 0.5 ? 1 : LAYOUT_GLIDE
+    node.pos = [node.pos[0] + restX * share, node.pos[1] + restY * share]
+    glideShown.set(node, [shownX + restX * share, shownY + restY * share])
+    if (share < 1) continue
+    glideTarget.delete(node)
+    if (targetX === 0 && targetY === 0) glideShown.delete(node)
+  }
+  if (glideTarget.size > 0) glideFrame = requestAnimationFrame(glide)
+}
+const startGlide = () => {
+  if (!glideFrame && glideTarget.size > 0) glideFrame = requestAnimationFrame(glide)
+}
+onUnmounted(() => cancelAnimationFrame(glideFrame))
+
 // Shows the current result: each link gets its proposed or its stored offset
 // (new arrays: the stored ones are shared with the data store and must stay
-// untouched), each idea moves by how far its rest position moves. Only the
-// difference to what is already shown is added, so the simulation keeps its
-// own adjustments. Runs on every new result and fader move.
+// untouched), each idea glides to how far its rest position moved.
 watch(appliedLayoutChanges, applied => {
   const preview = layoutPreview.value
   if (!preview) return
@@ -488,21 +494,35 @@ watch(appliedLayoutChanges, applied => {
     preview.request.nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
     preview.request.links.map(link => ({ ...link, relativePosition: offset.get(linkKey(link.parentId, link.childId)) ?? link.relativePosition }))
   )
-  for (const node of nodes.value) {
-    const from = preview.restBefore.get(node.id)
-    const to = rest.get(node.id)
-    if (!from || !to) continue
-    const shift: [number, number] = [to[0] - from[0], to[1] - from[1]]
-    const shown = preview.shifted.get(node) ?? [0, 0]
-    if (shift[0] === shown[0] && shift[1] === shown[1]) continue
-    node.pos = [node.pos[0] + shift[0] - shown[0], node.pos[1] + shift[1] - shown[1]]
-    preview.shifted.set(node, shift)
+  // Applied offsets carry the solver's lean in the direction the tree grows;
+  // the main network's centre stays where it is.
+  const shiftOf = new Map<string, [number, number]>()
+  let centreX = 0
+  let centreY = 0
+  for (const [id, from] of preview.restBefore) {
+    const to = rest.get(id)
+    if (!to) continue
+    shiftOf.set(id, [to[0] - from[0], to[1] - from[1]])
+    if (!preview.mainNetwork.has(id)) continue
+    centreX += to[0] - from[0]
+    centreY += to[1] - from[1]
   }
+  centreX /= Math.max(preview.mainNetwork.size, 1)
+  centreY /= Math.max(preview.mainNetwork.size, 1)
+  for (const node of nodes.value) {
+    const shift = shiftOf.get(node.id)
+    if (!shift) continue
+    const target: [number, number] = [shift[0] - centreX, shift[1] - centreY]
+    const shown = glideShown.get(node) ?? [0, 0]
+    if (target[0] !== shown[0] || target[1] !== shown[1]) glideTarget.set(node, target)
+  }
+  startGlide()
 })
 
 function closeLayoutPreview() {
-  clearTimeout(layoutResolveTimer)
-  cancelLayoutSolve?.()
+  layoutWorker?.terminate()
+  layoutWorker = null
+  layoutSolving.value = false
   layoutPreview.value = null
 }
 
@@ -513,12 +533,14 @@ watch(links, () => {
   useToastStore().info('The graph changed, so the layout preview was closed.')
 })
 
+// Everything glides back.
 function cancelLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
   closeLayoutPreview()
   for (const [link, relativePosition] of preview.stored) link.relativePosition = relativePosition
-  for (const [node, [x, y]] of preview.shifted) node.pos = [node.pos[0] - x, node.pos[1] - y]
+  for (const node of glideShown.keys()) glideTarget.set(node, [0, 0])
+  startGlide()
 }
 
 // Placed ideas keep their preview position; the simulation's periodic save
