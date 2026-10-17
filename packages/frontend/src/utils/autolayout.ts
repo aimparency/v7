@@ -88,7 +88,7 @@ const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
   memory: 1, // keep stored offsets
   length: 2, // times connection strength: pull connections toward `room` long
-  spread: 2, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
+  spread: 1, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
   outward: 0.15, // a moving child goes to the half circle facing away from its grandparents; too weak to overrule memory
   semantic: 0.03, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
@@ -322,6 +322,10 @@ export function createLayoutSolver(
     // their strength share of SPREAD_ANGLE; tighter pairs rotate apart. Only
     // children rotate, parents stay put. Rotations push on through the next
     // neighbours, so a branch pulled to one side makes room on the other.
+    // The push is constant, whatever the overlap (weight 1/overlap, like
+    // memory): a pull stronger than it takes a branch past its neighbour,
+    // which then pushes the other way, so branches can swap places. A push
+    // growing with the overlap would be strongest exactly where they pass.
     const spread = SPREAD * spreadShare
     for (let center = 0; center < count; center++) {
       const connections = around[center]!
@@ -342,8 +346,9 @@ export function createLayoutSolver(
         const { other: secondOther, isChild: secondIsChild } = connections[second]!
         if (!firstIsChild && !secondIsChild) continue
         const firstShare = firstIsChild ? (secondIsChild ? 0.5 : 1) : 0
-        if (firstShare > 0) rotate(center, firstOther, -(needed - gap) * firstShare, spread)
-        if (firstShare < 1) rotate(center, secondOther, (needed - gap) * (1 - firstShare), spread)
+        const push = spread / Math.max(needed - gap, SMOOTHING)
+        if (firstShare > 0) rotate(center, firstOther, -(needed - gap) * firstShare, push)
+        if (firstShare < 1) rotate(center, secondOther, (needed - gap) * (1 - firstShare), push)
       }
     }
 

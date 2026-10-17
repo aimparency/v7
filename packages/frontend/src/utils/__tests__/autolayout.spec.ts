@@ -104,6 +104,19 @@ describe('solveLayout', () => {
     expect(angle(positions, 'b')).toBeGreaterThan(Math.PI / 2 + 0.1)
   })
 
+  it('lets a branch pulled across pass its neighbour', () => {
+    const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 4, Math.sin(degrees * Math.PI / 180) * 4] as [number, number]
+    const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(120)], ['c', at(240)]] })
+    // Something similar to `a` lies beyond `b`.
+    const anchor: LayoutNode = { id: 'anchor', position: [Math.cos(2.6) * 300, Math.sin(2.6) * 300], radius: R, movable: false }
+    const angle = (positions: Map<string, [number, number]>, id: string) =>
+      (Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0]) + 2 * Math.PI) % (2 * Math.PI)
+    // Spread at full strength from the start, as for a solver that keeps running.
+    const solver = createLayoutSolver([...nodes, anchor], links, { semanticPairs: [{ source: 'a', target: 'anchor', distance: 0 }], weights: { semantic: 2 } })
+    for (let iteration = 0; iteration < 300; iteration++) solver.step(1)
+    expect(angle(solver.positions(), 'a')).toBeGreaterThan(angle(solver.positions(), 'b'))
+  })
+
   it('keeps children out of the half circle behind their parent', () => {
     // Gentle: it decides where a connection goes once it moves anyway (here:
     // no memory), it does not overrule a stored offset. Spread is off because
