@@ -1,4 +1,4 @@
-import { ref, shallowRef, watch } from 'vue'
+import { computed, ref, shallowRef, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
@@ -14,6 +14,7 @@ const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
 const BASE_SEMANTIC_STIFFNESS = 0.75
+const SIMULATION_NEAREST_NEIGHBOURS = 3
 const MIN_NODE_RADIUS = 40
 
 type Box = [number, number, number, number]
@@ -99,6 +100,17 @@ export function useGraphSimulation() {
   const links = shallowRef<GraphLink[]>([])
   const nodeMap = new Map<string, GraphNode>()
   const semanticLinks = shallowRef<any[]>([])
+  // The simulation springs only the 3 nearest (plus the furthest) per idea; the
+  // autolayout reads all nearest neighbours from `semanticLinks`.
+  const springSemanticLinks = computed(() => {
+    const nearestBySource = new Map<string, number>()
+    return semanticLinks.value.filter(link => {
+      if (link.type !== 'nearest') return true
+      const seen = nearestBySource.get(link.source) ?? 0
+      nearestBySource.set(link.source, seen + 1)
+      return seen < SIMULATION_NEAREST_NEIGHBOURS
+    })
+  })
   
   // Layout State
   const loadedPositions = new Map<string, { x: number, y: number }>()
@@ -502,11 +514,11 @@ export function useGraphSimulation() {
         }
 
         // Semantic Forces
-        if (semanticLinks.value.length > 0 && semanticForceMultiplier.value > 0.001) {
+        if (springSemanticLinks.value.length > 0 && semanticForceMultiplier.value > 0.001) {
             const maxGap = effectiveMaxGap
             const effectiveStiffness = BASE_SEMANTIC_STIFFNESS * semanticForceMultiplier.value
 
-            for (const link of semanticLinks.value) {
+            for (const link of springSemanticLinks.value) {
                 const nodeA = nodeMap.get(link.source)
                 const nodeB = nodeMap.get(link.target)
                 if (!nodeA || !nodeB) continue

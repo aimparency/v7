@@ -353,11 +353,13 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
   zoomOut: 1.2,
 })
 
-// Layout: the solver proposes new connection offsets (largest shifts first).
+// Layout: the solver proposes new connection offsets (most relevant first).
 // They are previewed live by giving the simulation's links the proposed
 // offsets; nothing is saved until Apply, and the slider picks how many.
 const layoutPreview = shallowRef<{ changes: LayoutChange[]; stored: Map<GraphLink, GraphLink['relativePosition']> } | null>(null)
 const layoutPreviewCount = ref(0)
+// The most relevant changes do most of the relaxing; the long tail is not worth its diff.
+const LAYOUT_PREVIEW_SHARE = 0.2
 const layoutRunning = ref(false)
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 
@@ -380,9 +382,13 @@ async function startLayoutPreview() {
         parentId: link.target.id,
         childId: link.source.id,
         relativePosition: [link.relativePosition[0], link.relativePosition[1]],
-        editable: isIdeaNode(link.source) && isIdeaNode(link.target)
+        editable: isIdeaNode(link.source) && isIdeaNode(link.target),
+        strength: link.forceWeight
       })),
-      semanticPairs: simulation.semanticLinks.value.map(pair => ({ source: pair.source, target: pair.target, distance: pair.distance }))
+      // The furthest pairs only matter to the simulation's spreading; here everything attracts.
+      semanticPairs: simulation.semanticLinks.value
+        .filter(pair => pair.type === 'nearest')
+        .map(pair => ({ source: pair.source, target: pair.target, distance: pair.distance }))
     })
     if (changes.length === 0) {
       useToastStore().info('The layout is already tidy; no connection would change.')
@@ -395,7 +401,7 @@ async function startLayoutPreview() {
       if (link) stored.set(link, link.relativePosition)
     }
     layoutPreview.value = { changes, stored }
-    layoutPreviewCount.value = changes.length
+    layoutPreviewCount.value = Math.ceil(changes.length * LAYOUT_PREVIEW_SHARE)
   } catch (error) {
     useToastStore().error('Layout failed', error)
   } finally {

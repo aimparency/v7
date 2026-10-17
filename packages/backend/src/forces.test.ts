@@ -3,10 +3,10 @@ import assert from 'node:assert/strict';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
-import { calculateSemanticGraph, invalidateSemanticCache, getSemanticGraph } from './forces.js';
+import { calculateSemanticGraph, invalidateSemanticCache, getSemanticGraph, NEAREST_NEIGHBOURS, FURTHEST_NEIGHBOURS } from './forces.js';
 import { saveEmbedding, invalidateVectorCache } from './embeddings.js';
 
-test('calculateSemanticGraph: assigns 3 nearest and 3 furthest ideas for each idea', async () => {
+test('calculateSemanticGraph: assigns the nearest and furthest ideas for each idea', async () => {
   const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
 
   try {
@@ -36,7 +36,8 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest ideas for each id
     assert.ok(typeof graph.averageDistance === 'number', 'Should have average distance');
     assert.ok(typeof graph.lastUpdated === 'number', 'Should have timestamp');
 
-    // Each idea should have 6 links (3 nearest + 3 furthest)
+    const nearestCount = Math.min(NEAREST_NEIGHBOURS, ideaIds.length - 1)
+    const furthestCount = Math.min(FURTHEST_NEIGHBOURS, ideaIds.length - 1)
     const linksBySource = new Map<string, any[]>();
     for (const link of graph.links) {
       if (!linksBySource.has(link.source)) {
@@ -47,13 +48,13 @@ test('calculateSemanticGraph: assigns 3 nearest and 3 furthest ideas for each id
 
     for (const ideaId of ideaIds) {
       const links = linksBySource.get(ideaId) || [];
-      assert.equal(links.length, 6, `Idea ${ideaId} should have exactly 6 links (3 nearest + 3 furthest)`);
+      assert.equal(links.length, nearestCount + furthestCount, `Idea ${ideaId} should have one link per nearest and furthest neighbour`);
 
       const nearest = links.filter(l => l.type === 'nearest');
       const furthest = links.filter(l => l.type === 'furthest');
 
-      assert.equal(nearest.length, 3, `Idea ${ideaId} should have 3 nearest links`);
-      assert.equal(furthest.length, 3, `Idea ${ideaId} should have 3 furthest links`);
+      assert.equal(nearest.length, nearestCount, `Idea ${ideaId} should have ${nearestCount} nearest links`);
+      assert.equal(furthest.length, furthestCount, `Idea ${ideaId} should have ${furthestCount} furthest links`);
     }
 
     // Verify cache was saved to disk
@@ -178,7 +179,7 @@ test('semantic graph regression: cache invalidation on idea creation', async () 
 
     // Verify the new idea has its relationships
     const newIdeaLinks = graphAfter.links.filter(l => l.source === 'idea-4-new');
-    assert.equal(newIdeaLinks.length, 6, 'New idea should have 6 links (3 nearest + 3 furthest)');
+    assert.equal(newIdeaLinks.length, 6, 'New idea should link to each of the 3 others as nearest and as furthest');
 
   } finally {
     await fs.remove(testDir);

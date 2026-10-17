@@ -10,7 +10,7 @@ function graph(offsets: Record<string, [string, [number, number]][]>) {
   const links: LayoutLink[] = []
   const place = (parentId: string) => {
     for (const [childId, relativePosition] of offsets[parentId] ?? []) {
-      links.push({ parentId, childId, relativePosition, editable: true })
+      links.push({ parentId, childId, relativePosition, editable: true, strength: 0.5 })
       if (position.has(childId)) continue
       const [px, py] = position.get(parentId)!
       position.set(childId, [px + relativePosition[0] * 2 * R, py + relativePosition[1] * 2 * R])
@@ -24,12 +24,12 @@ function graph(offsets: Record<string, [string, [number, number]][]>) {
 
 const crowded = (positions: Map<string, [number, number]>) => {
   const list = [...positions.values()]
-  return list.some((a, i) => list.slice(i + 1).some(b => Math.hypot(a[0] - b[0], a[1] - b[1]) < 2 * R * 1.99)) // default clearance 2
+  return list.some((a, i) => list.slice(i + 1).some(b => Math.hypot(a[0] - b[0], a[1] - b[1]) < 2 * R * 2.99)) // default clearance 3
 }
 
 describe('solveLayout', () => {
   it('changes nothing when the stored offsets already form a clean layout', () => {
-    const { nodes, links } = graph({ root: [['a', [3, 0]], ['b', [-3, 0]]], a: [['c', [0, 3]]] })
+    const { nodes, links } = graph({ root: [['a', [3, 0]], ['b', [-3, 0]]], a: [['c', [3, 0]]] })
     expect(solveLayout(nodes, links).changes).toEqual([])
   })
 
@@ -79,6 +79,50 @@ describe('solveLayout', () => {
     const plain = solveLayout(nodes, links).positions
     const semantic = solveLayout(nodes, links, { semanticPairs: [{ source: 'l1', target: 'r1', distance: 0.1 }], weights: { semantic: 0.5 } }).positions
     expect(distance(semantic)).toBeLessThan(distance(plain))
+  })
+
+  it('spreads a crowded fan of connections around its idea', () => {
+    const fan = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 3.75, Math.sin(degrees * Math.PI / 180) * 3.75] as [number, number]
+    const { nodes, links } = graph({ root: [['a', fan(0)], ['b', fan(15)], ['c', fan(30)], ['d', fan(45)]] })
+    const { positions } = solveLayout(nodes, links)
+    const [rootX, rootY] = positions.get('root')!
+    const angles = ['a', 'b', 'c', 'd'].map(id => Math.atan2(positions.get(id)![1] - rootY, positions.get(id)![0] - rootX)).sort((left, right) => left - right)
+    const gaps = angles.map((angle, index) => (angles[(index + 1) % angles.length]! - angle + 2 * Math.PI) % (2 * Math.PI))
+    expect(Math.min(...gaps)).toBeGreaterThan(0.6 * (1.5 * Math.PI / 4))
+  })
+
+  it('makes room: a branch drawn to one side pushes its neighbour on', () => {
+    const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 3.75, Math.sin(degrees * Math.PI / 180) * 3.75] as [number, number]
+    const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(90)], ['c', at(180)], ['d', at(270)]] })
+    const anchor: LayoutNode = { id: 'anchor', position: [Math.cos(1.4) * 300, Math.sin(1.4) * 300], radius: R, movable: false }
+    const angle = (positions: Map<string, [number, number]>, id: string) =>
+      Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0])
+    const { positions } = solveLayout([...nodes, anchor], links, { semanticPairs: [{ source: 'a', target: 'anchor', distance: 0 }], weights: { semantic: 2 } })
+    expect(angle(positions, 'a')).toBeGreaterThan(0.4)
+    expect(angle(positions, 'b')).toBeGreaterThan(Math.PI / 2 + 0.1)
+  })
+
+  it('keeps children out of the half circle behind their parent', () => {
+    // Gentle: it decides where a connection goes once it moves anyway (here:
+    // no memory), it does not overrule a stored offset. Spread is off because
+    // alone it would also turn the child away from its parent.
+    const { nodes, links } = graph({ root: [['a', [6, 0]]], a: [['back', [-3.5, 1.4]]] })
+    const behind = (outward?: number) => {
+      const { positions } = solveLayout(nodes, links, { weights: { spread: 0, memory: 0.001, ...(outward === undefined ? {} : { outward }) } })
+      return positions.get('a')![0] - positions.get('back')![0]
+    }
+    expect(behind()).toBeLessThan(0.5 * behind(0))
+  })
+
+  it('lists the most relevant changes first: big ideas outrank equally misplaced small ones', () => {
+    const node = (id: string, x: number, radius: number): LayoutNode => ({ id, position: [x, 0], radius, movable: true })
+    const nodes = [node('root', 0, R), node('small', -12 * 2 * R, R), node('big', 12 * 4 * R, 3 * R)]
+    const links: LayoutLink[] = [
+      { parentId: 'root', childId: 'small', relativePosition: [-12, 0], editable: true, strength: 0.5 },
+      { parentId: 'root', childId: 'big', relativePosition: [12, 0], editable: true, strength: 0.5 }
+    ]
+    const { changes } = solveLayout(nodes, links)
+    expect(changes.map(change => change.childId)).toEqual(['big', 'small'])
   })
 
   it('never rewrites connections that are not editable', () => {

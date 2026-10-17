@@ -208,7 +208,7 @@ export async function listIdeas(projectPath: string, archived: boolean = false):
 // Helper to generate random relative position
 export function getRandomRelativePosition(): [number, number] {
   const angle = Math.random() * 2 * Math.PI;
-  const length = 2.5;
+  const length = 3.75;
   // Two decimals, like every other writer: no float noise in diffs.
   return [Math.round(Math.cos(angle) * length * 100) / 100, Math.round(Math.sin(angle) * length * 100) / 100];
 }

@@ -19,6 +19,11 @@ interface SemanticGraph {
 
 const semanticCache = new Map<string, SemanticGraph>();
 
+// Nearest neighbours feed the autolayout's semantic attraction; more of them
+// give it a steadier picture. Cost stays linear in the number of ideas.
+export const NEAREST_NEIGHBOURS = 12;
+export const FURTHEST_NEIGHBOURS = 3;
+
 export async function getSemanticGraph(rawProjectPath: string): Promise<SemanticGraph> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const cacheKey = projectPath;
@@ -78,14 +83,12 @@ export async function calculateSemanticGraph(rawProjectPath: string): Promise<Se
     // Sort by distance
     candidates.sort((a, b) => a.dist - b.dist);
 
-    // Top 3 Nearest
-    for (let i = 0; i < Math.min(3, candidates.length); i++) {
+    for (let i = 0; i < Math.min(NEAREST_NEIGHBOURS, candidates.length); i++) {
       const item = candidates[i];
       if (item) addLink(idA, item.id, item.dist, 'nearest');
     }
 
-    // Top 3 Furthest
-    for (let i = 0; i < Math.min(3, candidates.length); i++) {
+    for (let i = 0; i < Math.min(FURTHEST_NEIGHBOURS, candidates.length); i++) {
         const item = candidates[candidates.length - 1 - i];
         if (item) addLink(idA, item.id, item.dist, 'furthest');
     }
