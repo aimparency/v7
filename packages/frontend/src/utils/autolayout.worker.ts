@@ -1,5 +1,5 @@
 // Runs the layout solver off the main thread (hundreds of ms on large graphs).
-import { solveLayout, type LayoutLink, type LayoutNode, type SemanticPair } from './autolayout'
+import { solveLayout, type LayoutChange, type LayoutLink, type LayoutNode, type LayoutPlacement, type SemanticPair } from './autolayout'
 
 export interface LayoutRequest {
   nodes: LayoutNode[]
@@ -7,7 +7,13 @@ export interface LayoutRequest {
   semanticPairs: SemanticPair[]
 }
 
+export interface LayoutResult {
+  changes: LayoutChange[]
+  placements: LayoutPlacement[]
+}
+
 self.onmessage = (event: MessageEvent<LayoutRequest>) => {
   const { nodes, links, semanticPairs } = event.data
-  self.postMessage(solveLayout(nodes, links, { semanticPairs }).changes)
+  const { changes, placements } = solveLayout(nodes, links, { semanticPairs })
+  self.postMessage({ changes, placements } satisfies LayoutResult)
 }

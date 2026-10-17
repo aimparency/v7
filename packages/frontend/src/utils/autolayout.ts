@@ -52,6 +52,13 @@ export interface LayoutChange {
   relevance: number // shift × √(span / mean span); changes are sorted by it, most relevant first
 }
 
+// A parentless idea's position is not a connection offset: it is stored per
+// browser only, so moving it costs no file change.
+export interface LayoutPlacement {
+  id: string
+  position: [number, number]
+}
+
 export interface LayoutOptions {
   iterations?: number
   clearance?: number // minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest
@@ -74,11 +81,16 @@ const DEFAULT_WEIGHTS = {
   spread: 2, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
   outward: 0.15, // a moving child goes to the half circle facing away from its grandparents; too weak to overrule memory
   semantic: 0.03, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums
+  isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05 // keeps every idea near where it was: the objective alone is translation invariant
 }
 // The connections around an idea share this angle, each by its strength; less
 // than a full circle, so a fan of branches can stay a fan.
 const SPREAD_ANGLE = 1.5 * Math.PI
+// Cosine distance: a neighbour 0.1 closer weighs e times more. On a real graph
+// unconnected ideas then land nearer their closest neighbours (16 vs 21
+// radius sums) than with equal weights.
+const SEMANTIC_SHARPNESS = 0.1
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
 const DAMPING = 0.5
 const FINAL_SEPARATION_PASSES = 50
@@ -87,8 +99,9 @@ export function solveLayout(
   nodes: readonly LayoutNode[],
   links: readonly LayoutLink[],
   { iterations = 300, clearance = 3, room = 3.75, semanticPairs = [], minimumChange = 0.05, weights = {} }: LayoutOptions = {}
-): { positions: Map<string, [number, number]>; changes: LayoutChange[] } {
-  const { memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, anchor: ANCHOR } = { ...DEFAULT_WEIGHTS, ...weights }
+): { positions: Map<string, [number, number]>; changes: LayoutChange[]; placements: LayoutPlacement[] } {
+  const { memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR } =
+    { ...DEFAULT_WEIGHTS, ...weights }
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
   const x = Float64Array.from(nodes, node => node.position[0])
@@ -115,13 +128,26 @@ export function solveLayout(
     const a = indexOf.get(pair.source)
     const b = indexOf.get(pair.target)
     if (a === undefined || b === undefined || a === b || connected.has(a * count + b) || connected.has(b * count + a)) return []
-    return [{ a, b, span: radius[a]! + radius[b]!, length: clearance * (1 + 2 * pair.distance) }]
+    return [{ a, b, distance: pair.distance, span: radius[a]! + radius[b]!, length: clearance * (1 + 2 * pair.distance) }]
   })
-  const pairCount = new Float64Array(count)
-  for (const { a, b } of pairs) {
-    pairCount[a] = pairCount[a]! + 1
-    pairCount[b] = pairCount[b]! + 1
-  }
+  // Each idea shares its semantic weight among its pairs, the closest ones
+  // getting most (softmax over distance): pulled toward the mean of all its
+  // neighbours, an idea would settle between them, next to none.
+  const similarity = pairs.map(pair => Math.exp(-pair.distance / SEMANTIC_SHARPNESS))
+  const similarityTotal = new Float64Array(count)
+  pairs.forEach(({ a, b }, index) => {
+    similarityTotal[a] = similarityTotal[a]! + similarity[index]!
+    similarityTotal[b] = similarityTotal[b]! + similarity[index]!
+  })
+  // The smaller an idea's network, the more its semantic neighbours decide
+  // where it goes: the largest network keeps the weak pull (strong pulls
+  // tangle its connections), an unconnected idea gets the strong one, and
+  // since each end of a pair is weighted by its own network, a small network
+  // moves toward the big one rather than the other way round.
+  const networkSize = connectedNetworkSizes(count, edges)
+  const largestNetwork = Math.max(1, ...networkSize)
+  const semanticWeight = Float64Array.from(networkSize, size =>
+    (SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))))
 
   placeFromStoredOffsets(nodes, edges, x, y)
   const startX = x.slice()
@@ -232,14 +258,14 @@ export function solveLayout(
       }
     }
 
-    for (const { a, b, span, length } of pairs) {
+    for (const [index, { a, b, span, length }] of pairs.entries()) {
       const vx = x[b]! - x[a]!
       const vy = y[b]! - y[a]!
       const distance = Math.hypot(vx, vy)
       if (distance <= length * span) continue
       const scale = length * span / distance
-      pull(b, SEMANTIC / pairCount[b]!, x[a]! + vx * scale, y[a]! + vy * scale)
-      pull(a, SEMANTIC / pairCount[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
+      pull(b, semanticWeight[b]! * similarity[index]! / similarityTotal[b]!, x[a]! + vx * scale, y[a]! + vy * scale)
+      pull(a, semanticWeight[a]! * similarity[index]! / similarityTotal[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
     for (let index = 0; index < count; index++) {
@@ -267,7 +293,27 @@ export function solveLayout(
     if (shift <= minimumChange) return []
     return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]), shift, relevance: shift * Math.sqrt(span / meanSpan) }]
   }).sort((left, right) => right.relevance - left.relevance)
-  return { positions, changes }
+  const hasParent = new Uint8Array(count)
+  for (const { child } of edges) hasParent[child] = 1
+  const placements = nodes.flatMap((node, index) => {
+    if (hasParent[index] || !node.movable) return []
+    const moved = Math.hypot(x[index]! - node.position[0], y[index]! - node.position[1]) / radius[index]!
+    return moved > minimumChange ? [{ id: node.id, position: [x[index]!, y[index]!] as [number, number] }] : []
+  })
+  return { positions, changes, placements }
+}
+
+// Ideas per connected network (connection direction ignored), for each idea.
+function connectedNetworkSizes(count: number, edges: readonly { child: number; parent: number }[]): number[] {
+  const root = Array.from({ length: count }, (_, index) => index)
+  const find = (index: number): number => {
+    while (root[index] !== index) index = root[index] = root[root[index]!]!
+    return index
+  }
+  for (const { child, parent } of edges) root[find(child)] = find(parent)
+  const size = new Map<number, number>()
+  for (let index = 0; index < count; index++) size.set(find(index), (size.get(find(index)) ?? 0) + 1)
+  return root.map((_, index) => size.get(find(index))!)
 }
 
 /** Where the stored offsets alone put each idea; what the simulation settles toward. */

@@ -13,13 +13,13 @@ import PhaseSearchModal from '../components/PhaseSearchModal.vue'
 import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
-import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/useGraphSimulation'
+import { isIdeaNode, useGraphSimulation, type GraphLink, type GraphNode } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutChange } from '../utils/autolayout'
-import type { LayoutRequest } from '../utils/autolayout.worker'
+import type { LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 import { trpc } from '../trpc'
 import { GitBranch, X } from 'lucide-vue-next'
@@ -350,20 +350,27 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
   zoomOut: 1.2,
 })
 
-// Layout: the solver proposes new connection offsets (most relevant first).
-// They are previewed live by giving the simulation's links the proposed
-// offsets; nothing is saved until Apply, and the slider picks how many.
-const layoutPreview = shallowRef<{ changes: LayoutChange[]; stored: Map<GraphLink, GraphLink['relativePosition']> } | null>(null)
+// Layout: the solver proposes new connection offsets (most relevant first)
+// and places parentless ideas, whose positions live in this browser only.
+// Both are previewed live: links get the proposed offsets, parentless ideas
+// move. Nothing is saved until Apply; the slider picks how many offsets.
+type LayoutPreview = {
+  changes: LayoutChange[]
+  stored: Map<GraphLink, GraphLink['relativePosition']>
+  placed: Map<GraphNode, GraphNode['pos']> // position before the preview
+}
+const layoutPreview = shallowRef<LayoutPreview | null>(null)
 const layoutPreviewCount = ref(0)
+const layoutPositionsOnly = ref(false)
 // The most relevant changes do most of the relaxing; the long tail is not worth its diff.
 const LAYOUT_PREVIEW_SHARE = 0.2
 const layoutRunning = ref(false)
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 
-function solveLayoutInWorker(request: LayoutRequest): Promise<LayoutChange[]> {
+function solveLayoutInWorker(request: LayoutRequest): Promise<LayoutResult> {
   const worker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
-  return new Promise<LayoutChange[]>((resolve, reject) => {
-    worker.onmessage = (event: MessageEvent<LayoutChange[]>) => resolve(event.data)
+  return new Promise<LayoutResult>((resolve, reject) => {
+    worker.onmessage = (event: MessageEvent<LayoutResult>) => resolve(event.data)
     worker.onerror = (event) => reject(new Error(event.message))
     worker.postMessage(request)
   }).finally(() => worker.terminate())
@@ -374,7 +381,7 @@ async function startLayoutPreview() {
   layoutRunning.value = true
   try {
     const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ projectPath: projectStore.projectPath })
-    const changes = await solveLayoutInWorker({
+    const { changes, placements } = await solveLayoutInWorker({
       nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
       links: links.value.map(link => ({
         parentId: link.target.id,
@@ -385,8 +392,8 @@ async function startLayoutPreview() {
       })),
       semanticPairs
     })
-    if (changes.length === 0) {
-      useToastStore().info('The layout is already tidy; no connection would change.')
+    if (changes.length === 0 && placements.length === 0) {
+      useToastStore().info('The layout is already tidy; nothing would change.')
       return
     }
     const linkByKey = new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link]))
@@ -395,8 +402,17 @@ async function startLayoutPreview() {
       const link = linkByKey.get(linkKey(change.parentId, change.childId))
       if (link) stored.set(link, link.relativePosition)
     }
-    layoutPreview.value = { changes, stored }
+    const nodeById = new Map(nodes.value.map(node => [node.id, node]))
+    const placed = new Map<GraphNode, GraphNode['pos']>()
+    for (const { id, position } of placements) {
+      const node = nodeById.get(id)
+      if (!node) continue
+      placed.set(node, node.pos)
+      node.pos = [position[0], position[1]]
+    }
+    layoutPositionsOnly.value = changes.length === 0
     layoutPreviewCount.value = Math.ceil(changes.length * LAYOUT_PREVIEW_SHARE)
+    layoutPreview.value = { changes, stored, placed }
   } catch (error) {
     useToastStore().error('Layout failed', error)
   } finally {
@@ -404,14 +420,20 @@ async function startLayoutPreview() {
   }
 }
 
+const appliedLayoutChanges = computed(() => {
+  const preview = layoutPreview.value
+  return !preview || layoutPositionsOnly.value ? [] : preview.changes.slice(0, layoutPreviewCount.value)
+})
+
 // Each link gets either its proposed or its stored offset (new arrays: the
 // stored ones are shared with the data store and must stay untouched).
-watch([layoutPreview, layoutPreviewCount], ([preview, count]) => {
+watch(appliedLayoutChanges, applied => {
+  const preview = layoutPreview.value
   if (!preview) return
   const linkByKey = new Map([...preview.stored.keys()].map(link => [linkKey(link.target.id, link.source.id), link]))
   preview.changes.forEach((change, index) => {
     const link = linkByKey.get(linkKey(change.parentId, change.childId))
-    if (link) link.relativePosition = index < count ? [...change.relativePosition] : preview.stored.get(link)!
+    if (link) link.relativePosition = index < applied.length ? [...change.relativePosition] : preview.stored.get(link)!
   })
 })
 
@@ -426,16 +448,20 @@ function cancelLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
   for (const [link, relativePosition] of preview.stored) link.relativePosition = relativePosition
+  for (const [node, position] of preview.placed) node.pos = position
   layoutPreview.value = null
 }
 
+// Placed ideas keep their preview position; the simulation's periodic save
+// stores it in this browser.
 async function applyLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
+  const applied = appliedLayoutChanges.value
   layoutPreview.value = null
-  const applied = preview.changes.slice(0, layoutPreviewCount.value)
-  await dataStore.setConnectionPositions(projectStore.projectPath, applied)
-  useToastStore().info(`Layout saved ${applied.length} connections in ${new Set(applied.map(change => change.parentId)).size} idea files.`)
+  if (applied.length > 0) await dataStore.setConnectionPositions(projectStore.projectPath, applied)
+  const files = new Set(applied.map(change => change.parentId)).size
+  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files and placed ${preview.placed.size} unconnected ideas.`)
 }
 
 // Helper: split node text into lines for label rendering
@@ -559,7 +585,9 @@ function toggleSpinOffPreview() {
     <LayoutPreviewPanel
       v-if="layoutPreview"
       v-model:count="layoutPreviewCount"
+      v-model:positions-only="layoutPositionsOnly"
       :changes="layoutPreview.changes"
+      :placed="layoutPreview.placed.size"
       @apply="applyLayoutPreview"
       @cancel="cancelLayoutPreview"
     />

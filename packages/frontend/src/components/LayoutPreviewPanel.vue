@@ -3,9 +3,11 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import type { LayoutChange } from '../utils/autolayout'
 
 // Preview of an autolayout: the graph already shows the first `count` changes
-// (largest shifts first); nothing is saved until Apply.
-const props = defineProps<{ changes: LayoutChange[] }>()
+// (largest shifts first) and the placed unconnected ideas; nothing is saved
+// until Apply. Positions only: no connection changes, so no file changes.
+const props = defineProps<{ changes: LayoutChange[]; placed: number }>()
 const count = defineModel<number>('count', { required: true })
+const positionsOnly = defineModel<boolean>('positionsOnly', { required: true })
 const emit = defineEmits<{ apply: []; cancel: [] }>()
 
 const files = computed(() => new Set(props.changes.slice(0, count.value).map(change => change.parentId)).size)
@@ -21,9 +23,14 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 
 <template>
   <div id="layout-preview">
-    <label>
-      <span>Connections changed: {{ count }} of {{ changes.length }} ({{ files }} idea files)</span>
-      <input v-model.number="count" type="range" min="1" :max="changes.length" step="1" />
+    <label v-if="changes.length > 0" :class="{ disabled: positionsOnly }">
+      <span>Connections changed: {{ positionsOnly ? 0 : count }} of {{ changes.length }} ({{ positionsOnly ? 0 : files }} idea files)</span>
+      <input v-model.number="count" type="range" min="1" :max="changes.length" step="1" :disabled="positionsOnly" />
+    </label>
+    <span>Unconnected ideas placed: {{ placed }} (positions in this browser)</span>
+    <label class="option">
+      <input v-model="positionsOnly" type="checkbox" :disabled="changes.length === 0" />
+      <span>Only update absolute positions (local, no file changes)</span>
     </label>
     <div class="actions">
       <button class="btn-secondary" @click="emit('cancel')">Cancel</button>
@@ -53,6 +60,15 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     display: flex;
     flex-direction: column;
     gap: 0.4rem;
+
+    &.disabled {
+      opacity: 0.5;
+    }
+
+    &.option {
+      flex-direction: row;
+      align-items: center;
+    }
   }
 
   & .actions {
