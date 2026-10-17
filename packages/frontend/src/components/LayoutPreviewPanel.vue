@@ -17,7 +17,7 @@ type Weight = Exclude<keyof LayoutSettings, 'spacing'>
 // Each weight slides logarithmically from a tenth to ten times its default.
 const WEIGHTS: { key: Weight; label: string; hint: string }[] = [
   { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes' },
-  { key: 'length', label: 'Short connections', hint: 'Pull connections longer than the spacing shorter, strong connections more so' },
+  { key: 'length', label: 'Connection length', hint: 'Pull connections toward the spacing, strong connections more so' },
   { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle' },
   { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent' },
   { key: 'semantic', label: 'Similar nearby', hint: 'Pull semantically similar ideas of the connected network together' },
@@ -49,7 +49,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
   <div id="layout-preview">
     <h3>Layout <span v-if="solving" class="hint">solving…</span></h3>
     <div class="settings">
-      <label title="Connection length, in radius sums, that is never shortened; 3 is the minimum distance between any two ideas">
+      <label title="The length connections are pulled toward, in radius sums (strength: Connection length); 3 is the minimum distance between any two ideas">
         <span class="name">Spacing <span class="value">{{ settings.spacing.toFixed(1) }}</span></span>
         <input
           type="range" min="3" max="5" step="0.1"

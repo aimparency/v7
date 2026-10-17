@@ -44,7 +44,7 @@ describe('solveLayout', () => {
       a: [['a1', [3, 0]]],
       b: [['b1', [3, 0.5]]]
     })
-    const { positions, changes } = solveLayout(nodes, links)
+    const { positions, changes } = solveLayout(nodes, links, { room: 3 }) // the stored lengths: only the crowding moves anything
     expect(crowded(positions)).toBe(false)
     expect(changes.map(change => `${change.parentId}>${change.childId}`).every(id => ['root>a', 'root>b'].includes(id))).toBe(true)
   })

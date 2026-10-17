@@ -35,7 +35,6 @@ const run = () => {
     largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / SPREAD_RAMP)))
   }
   const done = remaining === 0 || (iterations >= SPREAD_RAMP && largestMove < CONVERGED)
-  if (done) solver.finish()
   self.postMessage({ ...solver.result(), done } satisfies LayoutResult)
   running = !done
   // Yields between chunks, so a settings message gets in.

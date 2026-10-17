@@ -64,7 +64,7 @@ export interface LayoutPlacement {
 export interface LayoutOptions {
   iterations?: number
   clearance?: number // minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest
-  room?: number // connection length, in radius sums, that is never shortened; at least `clearance`
+  room?: number // connection length, in radius sums, that connections are pulled toward; at least `clearance`
   semanticPairs?: readonly SemanticPair[]
   minimumChange?: number // residual, in radius sums, below which a connection keeps its stored offset
   weights?: Partial<typeof DEFAULT_WEIGHTS>
@@ -87,13 +87,13 @@ export const roundOffset = (offset: readonly [number, number]): [number, number]
 const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
   memory: 1, // keep stored offsets
-  length: 2, // times connection strength: shorten connections longer than `room`
+  length: 2, // times connection strength: pull connections toward `room` long
   spread: 2, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
   outward: 0.15, // a moving child goes to the half circle facing away from its grandparents; too weak to overrule memory
   semantic: 0.03, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
-  separation: 4 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
+  separation: 8 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
 }
 // What the Layout panel lets you tune (anchor and separation are mechanics).
 export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
@@ -109,8 +109,6 @@ const SPREAD_ANGLE = 1.5 * Math.PI
 const SEMANTIC_SHARPNESS = 0.1
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
 const DAMPING = 0.5
-const FINISH_ITERATIONS = 50
-const FINISH_SEPARATION = 4
 
 export function solveLayout(
   nodes: readonly LayoutNode[],
@@ -124,7 +122,6 @@ export function solveLayout(
     solver.step((iteration + 1) / iterations)
     if (onProgress && (iteration + 1) % progressEvery === 0 && iteration + 1 < iterations) onProgress(solver.result())
   }
-  solver.finish()
   return { positions: solver.positions(), ...solver.result() }
 }
 
@@ -280,8 +277,10 @@ export function createLayoutSolver(
       pull(child, memory, x[parent]! + keepX, y[parent]! + keepY)
       pull(parent, memory, x[child]! - keepX, y[child]! - keepY)
 
+      // Toward the spacing from both sides: longer connections shorten,
+      // shorter ones lengthen.
       const length = Math.hypot(vx, vy)
-      if (length > room * span) {
+      if (length > 0) {
         const scale = room * span / length
         pull(child, LENGTH * link.strength, x[parent]! + vx * scale, y[parent]! + vy * scale)
         pull(parent, LENGTH * link.strength, x[child]! - vx * scale, y[child]! - vy * scale)
@@ -403,14 +402,6 @@ export function createLayoutSolver(
     step,
     setSettings,
     result: currentResult,
-    // Ends without overlaps: a few iterations with the separation stronger.
-    // Pushing ideas apart outright instead scatters crowded areas.
-    finish: () => {
-      const separation = SEPARATION
-      SEPARATION *= FINISH_SEPARATION
-      for (let iteration = 0; iteration < FINISH_ITERATIONS; iteration++) step(1)
-      SEPARATION = separation
-    },
     positions: () => new Map(nodes.map((node, index): [string, [number, number]] => [node.id, [x[index]!, y[index]!]]))
   }
 }
