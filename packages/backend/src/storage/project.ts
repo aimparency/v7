@@ -23,7 +23,10 @@ Plain JSON, versioned by git, made with [Aimparency](https://github.com/aimparen
   versions ([format](https://github.com/aimparency/v7/tree/main/protocol)).
 - \`runtime/\` and the other gitignored files are local to one machine.
 `;
-const GITIGNORE_CONTENT = 'vectors.json\ncache.db\nsemantic-graph.json\nruntime/\nsecrets.json\n.migration-lock\n';
+// Older projects may still list vectors.json, cache.db and semantic-graph.json
+// (now inside cache/); those lines stay for checkouts running an older version.
+const GITIGNORE_ENTRIES = ['cache/', 'runtime/', 'secrets.json', '.migration-lock'];
+const GITIGNORE_CONTENT = GITIGNORE_ENTRIES.join('\n') + '\n';
 const DEFAULT_AUTONOMY_POLICY = {
   version: 1,
   autonomyMode: 'supervised',
@@ -91,36 +94,11 @@ export async function ensureProjectStructure(rawProjectPath: string) {
   if (!(await fs.pathExists(gitignorePath))) {
     await fs.writeFile(gitignorePath, GITIGNORE_CONTENT);
   } else {
-    let currentContent = await fs.readFile(gitignorePath, 'utf8');
-    let needsUpdate = false;
-    
-    if (!currentContent.includes('vectors.json')) {
-      currentContent += '\nvectors.json';
-      needsUpdate = true;
-    }
-    if (!currentContent.includes('cache.db')) {
-        currentContent += '\ncache.db';
-        needsUpdate = true;
-    }
-    if (!currentContent.includes('semantic-graph.json')) {
-        currentContent += '\nsemantic-graph.json';
-        needsUpdate = true;
-    }
-    if (!currentContent.includes('runtime/')) {
-        currentContent += '\nruntime/';
-        needsUpdate = true;
-    }
-    if (!currentContent.includes('secrets.json')) {
-        currentContent += '\nsecrets.json';
-        needsUpdate = true;
-    }
-    if (!currentContent.includes('.migration-lock')) {
-        currentContent += '\n.migration-lock';
-        needsUpdate = true;
-    }
-    
-    if (needsUpdate) {
-        await fs.writeFile(gitignorePath, currentContent);
+    const currentContent = await fs.readFile(gitignorePath, 'utf8');
+    const lines = new Set(currentContent.split('\n').map(line => line.trim()));
+    const missing = GITIGNORE_ENTRIES.filter(entry => !lines.has(entry) && !lines.has(`/${entry}`));
+    if (missing.length > 0) {
+      await fs.writeFile(gitignorePath, `${currentContent.replace(/\n*$/, '\n')}${missing.join('\n')}\n`);
     }
   }
 }

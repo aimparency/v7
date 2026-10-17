@@ -6,7 +6,6 @@ import { t, delayedProcedure } from '../trpc.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
 import { addIdeaToIndex, updateIdeaInIndex } from '../search.js';
-import { invalidateSemanticCache } from '../forces.js';
 import { deleteIdeaCompletely, listIdeas, writeIdea } from '../storage/ideas.js';
 import { ensureProjectStructure, readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { cleanupCommitments } from '../storage/commitments.js';
@@ -104,7 +103,6 @@ export const spinOffRouter = t.router({
         await writeIdea(target, idea);
         addIdeaToIndex(target, idea);
       }
-      invalidateSemanticCache(target);
 
       // Prune the source (optional): rewrite kept ideas that lost edges, then
       // delete the exclusive ideas, then clean up dangling phase commitments.
@@ -119,7 +117,6 @@ export const spinOffRouter = t.router({
           deletedFromSource++;
         }
         await cleanupCommitments(source);
-        invalidateSemanticCache(source);
       }
 
       return {

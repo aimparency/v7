@@ -16,12 +16,14 @@
     "@huggingface/transformers": "^4.2.0",
     "@trpc/client": "^11.19.0",
     "backend": "workspace:*",
+    "better-sqlite3": "^12.11.1",
     "fs-extra": "^11.3.2",
     "shared": "workspace:*",
     "uuid": "^13.0.0",
     "zod": "^3.25.76"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/fs-extra": "^11.0.4",
     "@types/node": "^25.0.1",
     "typescript": "^5.9.3"

@@ -1,9 +1,16 @@
 import Database from 'better-sqlite3';
 import path from 'path';
 import fs from 'fs-extra';
+import { CACHE_DATABASE_FILE_NAME, CACHE_DIR_NAME } from 'shared';
 import { normalizeProjectPath } from './project-path.js';
 
+// One SQLite cache per project in .bowman/cache/: derived data only (idea
+// values, embeddings, semantic neighbours), regenerable and gitignored.
 const dbCache = new Map<string, Database.Database>();
+
+export function cacheDatabasePath(rawProjectPath: string): string {
+  return path.join(normalizeProjectPath(rawProjectPath), CACHE_DIR_NAME, CACHE_DATABASE_FILE_NAME);
+}
 
 export function getDb(rawProjectPath: string): Database.Database {
   const projectPath = normalizeProjectPath(rawProjectPath);
@@ -12,11 +19,13 @@ export function getDb(rawProjectPath: string): Database.Database {
     return dbCache.get(projectPath)!;
   }
 
-  const dbPath = path.join(projectPath, 'cache.db');
-  fs.ensureDirSync(path.dirname(dbPath)); // Ensure .bowman directory exists
+  const dbPath = cacheDatabasePath(projectPath);
+  fs.ensureDirSync(path.dirname(dbPath));
+  moveLegacyDatabase(projectPath, dbPath);
   const db = new Database(dbPath);
-  
-  // Initialize schema
+  // Readers in other processes (agent tools) never block the backend's writes.
+  db.pragma('journal_mode = WAL');
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS idea_values (
       id TEXT PRIMARY KEY,
@@ -26,6 +35,21 @@ export function getDb(rawProjectPath: string): Database.Database {
       priority REAL DEFAULT 0
     );
     DROP TABLE IF EXISTS aim_values;
+    -- Float32 embeddings, one row per idea: a save writes one row, not the whole store.
+    CREATE TABLE IF NOT EXISTS vectors (
+      id TEXT PRIMARY KEY,
+      vector BLOB NOT NULL
+    );
+    -- Per idea its nearest and furthest ideas, as JSON [[id, distance], ...] (sorted).
+    CREATE TABLE IF NOT EXISTS semantic_neighbours (
+      source TEXT PRIMARY KEY,
+      nearest TEXT NOT NULL,
+      furthest TEXT NOT NULL
+    );
+    CREATE TABLE IF NOT EXISTS cache_meta (
+      key TEXT PRIMARY KEY,
+      value TEXT NOT NULL
+    );
   `);
   
   // Migration: Add priority column if missing
@@ -39,8 +63,73 @@ export function getDb(rawProjectPath: string): Database.Database {
       }
   }
 
+  importLegacyVectors(projectPath, db);
+  fs.removeSync(path.join(projectPath, 'semantic-graph.json'));
+
   dbCache.set(projectPath, db);
   return db;
+}
+
+export function getCacheMeta(db: Database.Database, key: string): string | undefined {
+  return (db.prepare('SELECT value FROM cache_meta WHERE key = ?').get(key) as { value: string } | undefined)?.value;
+}
+
+export function setCacheMeta(db: Database.Database, key: string, value: string) {
+  db.prepare('INSERT OR REPLACE INTO cache_meta (key, value) VALUES (?, ?)').run(key, value);
+}
+
+export const encodeVector = (vector: ArrayLike<number>): Buffer => {
+  const floats = Float32Array.from(vector);
+  return Buffer.from(floats.buffer, floats.byteOffset, floats.byteLength);
+};
+
+// Copies: a Buffer's offset need not be Float32-aligned.
+export const decodeVector = (blob: Buffer): Float32Array =>
+  new Float32Array(blob.buffer.slice(blob.byteOffset, blob.byteOffset + blob.byteLength));
+
+// Before the cache folder, cache.db sat directly in .bowman.
+function moveLegacyDatabase(projectPath: string, dbPath: string) {
+  const legacyPath = path.join(projectPath, CACHE_DATABASE_FILE_NAME);
+  if (!fs.existsSync(legacyPath) || fs.existsSync(dbPath)) return;
+  for (const suffix of ['', '-wal', '-shm']) {
+    if (fs.existsSync(legacyPath + suffix)) fs.moveSync(legacyPath + suffix, dbPath + suffix);
+  }
+}
+
+// Before the vectors table, embeddings lived in .bowman/vectors.json, rewritten
+// in full on every save. Imported once (regenerating them costs model time).
+function importLegacyVectors(projectPath: string, db: Database.Database) {
+  const legacyPath = path.join(projectPath, 'vectors.json');
+  if (!fs.existsSync(legacyPath)) return;
+  let legacy: Record<string, unknown> = {};
+  try {
+    legacy = fs.readJsonSync(legacyPath);
+  } catch (error: any) {
+    console.warn(`Unreadable legacy vectors.json, embeddings will be regenerated: ${error.message}`);
+  }
+  const insert = db.prepare('INSERT OR IGNORE INTO vectors (id, vector) VALUES (?, ?)');
+  db.transaction(() => {
+    for (const [id, vector] of Object.entries(legacy)) {
+      if (Array.isArray(vector) && vector.length > 0 && vector.every(item => typeof item === 'number' && Number.isFinite(item))) {
+        insert.run(id, encodeVector(vector));
+      }
+    }
+    bumpVectorsVersion(db);
+  })();
+  fs.removeSync(legacyPath);
+  fs.removeSync(`${legacyPath}.tmp`);
+}
+
+// Every change to the vectors table bumps this, so derived data (semantic
+// neighbours) can tell whether it still matches, across processes too.
+export function vectorsVersion(db: Database.Database): number {
+  return Number(getCacheMeta(db, 'vectors_version') ?? 0);
+}
+
+export function bumpVectorsVersion(db: Database.Database): number {
+  const version = vectorsVersion(db) + 1;
+  setCacheMeta(db, 'vectors_version', String(version));
+  return version;
 }
 
 export function closeDb(rawProjectPath: string) {

@@ -18,7 +18,6 @@ import { moveIdea } from '../storage/idea-move.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { addIdeaToIndex, updateIdeaInIndex, removeIdeaFromIndex, searchIdeas } from '../search.js';
 import { generateEmbedding, generateQueryEmbedding, saveEmbedding, removeEmbedding, searchVectors } from '../embeddings.js';
-import { invalidateSemanticCache } from '../forces.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { generateIdeaProposal } from '../idea-proposal-generator.js';
 
@@ -55,7 +54,6 @@ const refreshEmbeddingInBackground = (projectPath: string, idea: Idea) => {
     .then(async vector => {
       if (!vector) return;
       await saveEmbedding(projectPath, idea.id, vector);
-      invalidateSemanticCache(projectPath);
     })
     .catch(error => console.warn(`Embedding refresh failed for idea ${idea.id}:`, error));
 };
@@ -686,7 +684,6 @@ export const ideaRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const deletedIds = await deleteIdeas(input.projectPath, input.ideaIds, input);
-      if (!input.dryRun && process.env.NODE_ENV !== 'test') invalidateSemanticCache(input.projectPath);
       return { deletedIds };
     }),
 
@@ -1235,7 +1232,6 @@ export const ideaRouter = t.router({
       // environment. Skipping this in test-mode also affects real MCP
       // processes launched with NODE_ENV=test and leaves an orphaned vector.
       await removeEmbedding(projectPath, sourceId);
-      invalidateSemanticCache(projectPath);
 
       return {
         success: true,

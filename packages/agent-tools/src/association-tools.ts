@@ -1,7 +1,8 @@
 import fs from 'fs-extra';
 import path from 'path';
+import Database from 'better-sqlite3';
 import { pipeline, type FeatureExtractionPipeline } from '@huggingface/transformers';
-import { cosineSimilarity, type Idea } from 'shared';
+import { CACHE_DATABASE_FILE_NAME, CACHE_DIR_NAME, cosineSimilarity, type Idea } from 'shared';
 import { normalizeBowmanPath } from './loop-state.js';
 
 const MODEL_ID = 'BAAI/bge-small-en-v1.5';
@@ -38,18 +39,22 @@ export async function embedDocuments(texts: string[]): Promise<number[][]> {
   return texts.map((_, index) => flat.slice(index * dimension, (index + 1) * dimension));
 }
 
+// Read-only from the backend's cache database (WAL: never blocks its writes).
 async function readVectorStore(projectPath: string): Promise<Record<string, number[]>> {
+  const databasePath = path.join(normalizeBowmanPath(projectPath), CACHE_DIR_NAME, CACHE_DATABASE_FILE_NAME);
+  if (!(await fs.pathExists(databasePath))) return {};
+  let db: Database.Database | null = null;
   try {
-    const raw = await fs.readJson(path.join(normalizeBowmanPath(projectPath), 'vectors.json'));
+    db = new Database(databasePath, { readonly: true, fileMustExist: true });
     const store: Record<string, number[]> = {};
-    for (const [id, vector] of Object.entries(raw as Record<string, unknown>)) {
-      if (Array.isArray(vector) && vector.every((value) => typeof value === 'number' && Number.isFinite(value))) {
-        store[id] = vector as number[];
-      }
+    for (const { id, vector } of db.prepare('SELECT id, vector FROM vectors').all() as { id: string, vector: Buffer }[]) {
+      store[id] = Array.from(new Float32Array(vector.buffer.slice(vector.byteOffset, vector.byteOffset + vector.byteLength)));
     }
     return store;
   } catch {
     return {};
+  } finally {
+    db?.close();
   }
 }
 

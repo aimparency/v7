@@ -22,6 +22,11 @@ export const AIMPARENCY_DIR_NAME = processEnv?.AIMPARENCY_DIR_NAME
   ? processEnv.AIMPARENCY_DIR_NAME
   : '.bowman';
 
+// Machine-local derived data (idea values, embeddings, semantic neighbours),
+// next to runtime/ inside the .bowman directory. Safe to delete.
+export const CACHE_DIR_NAME = 'cache';
+export const CACHE_DATABASE_FILE_NAME = 'cache.db';
+
 export interface IdeaState {
   key: string;
   color: string;

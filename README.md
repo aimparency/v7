@@ -169,9 +169,8 @@ my-project/
     phases/
     meta.json
     .gitignore
-    vectors.json
-    cache.db
-    semantic-graph.json
+    runtime/
+    cache/
 ```
 
 What each part is for:
@@ -181,7 +180,8 @@ What each part is for:
 - `phases/`: phase definitions stored as JSON files
 - `meta.json`: project name, color, and available statuses
 - `.gitignore`: generated `.bowman` artifacts that should not be committed
-- `vectors.json`, `cache.db`, `semantic-graph.json`: generated search/cache data
+- `runtime/`: machine-local runtime state
+- `cache/`: generated data (embeddings, semantic neighbours, idea values), safe to delete
 
 The format is specified in [`protocol/`](protocol/README.md) with JSON Schemas, so other tools can read and write it. Check a project with `pnpm validate:bowman <path>`.
 
@@ -269,9 +269,8 @@ In normal use, these files are user-authored project state and are reasonable to
 
 These files are generated runtime/search artifacts and should usually stay uncommitted:
 
-- `.bowman/vectors.json`
-- `.bowman/cache.db`
-- `.bowman/semantic-graph.json`
+- `.bowman/runtime/`
+- `.bowman/cache/`
 
 The backend keeps those generated artifacts listed in `.bowman/.gitignore` automatically.
 
@@ -309,7 +308,7 @@ Common local startup failures are usually one of these:
 - A wrapped-agent session type does not start:
   The core UI can run without Claude, Gemini, or Codex CLIs, but launching that specific session type still requires the corresponding local tooling to be installed and working on your machine.
 - Semantic search looks stale or unexpectedly weak:
-  Delete `.bowman/vectors.json` and `.bowman/semantic-graph.json`, then rerun `project.buildSearchIndex` or reload the project so the backend regenerates local embeddings.
+  Delete `.bowman/cache/`, then rerun `project.buildSearchIndex` or reload the project so the backend regenerates local embeddings.
 
 ## Repository Notes
 

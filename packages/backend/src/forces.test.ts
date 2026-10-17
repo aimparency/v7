@@ -1,187 +1,121 @@
-import { test } from 'vitest';
+import { afterEach, beforeEach, test } from 'vitest';
 import assert from 'node:assert/strict';
 import fs from 'fs-extra';
 import path from 'path';
 import os from 'os';
-import { calculateSemanticGraph, invalidateSemanticCache, getSemanticGraph, NEAREST_NEIGHBOURS, FURTHEST_NEIGHBOURS } from './forces.js';
-import { saveEmbedding, invalidateVectorCache } from './embeddings.js';
+import { getSemanticGraph, NEAREST_NEIGHBOURS, FURTHEST_NEIGHBOURS } from './forces.js';
+import { EMBEDDING_DIMENSION, invalidateVectorCache, removeEmbedding, saveEmbeddings } from './embeddings.js';
+import { bumpVectorsVersion, closeDb, encodeVector, getDb } from './db.js';
 
-test('calculateSemanticGraph: assigns the nearest and furthest ideas for each idea', async () => {
-  const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
+let testDir = '';
 
-  try {
-    // Create .bowman directory
-    await fs.ensureDir(path.join(testDir, '.bowman'));
-
-    // Create a vectors.json with 10 ideas
-    const vectors: Record<string, number[]> = {};
-    const ideaIds: string[] = [];
-
-    // Generate 10 different embeddings (simplified 3D vectors)
-    for (let i = 0; i < 10; i++) {
-      const id = `idea-${i}`;
-      ideaIds.push(id);
-      // Create distinct embeddings: spread them in 3D space
-      const angle = (i / 10) * Math.PI * 2;
-      vectors[id] = [Math.cos(angle), Math.sin(angle), i * 0.1];
-    }
-
-    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), vectors);
-
-    // Calculate semantic graph
-    const graph = await calculateSemanticGraph(testDir);
-
-    // Check structure
-    assert.ok(graph.links.length > 0, 'Should have links');
-    assert.ok(typeof graph.averageDistance === 'number', 'Should have average distance');
-    assert.ok(typeof graph.lastUpdated === 'number', 'Should have timestamp');
-
-    const nearestCount = Math.min(NEAREST_NEIGHBOURS, ideaIds.length - 1)
-    const furthestCount = Math.min(FURTHEST_NEIGHBOURS, ideaIds.length - 1)
-    const linksBySource = new Map<string, any[]>();
-    for (const link of graph.links) {
-      if (!linksBySource.has(link.source)) {
-        linksBySource.set(link.source, []);
-      }
-      linksBySource.get(link.source)!.push(link);
-    }
-
-    for (const ideaId of ideaIds) {
-      const links = linksBySource.get(ideaId) || [];
-      assert.equal(links.length, nearestCount + furthestCount, `Idea ${ideaId} should have one link per nearest and furthest neighbour`);
-
-      const nearest = links.filter(l => l.type === 'nearest');
-      const furthest = links.filter(l => l.type === 'furthest');
-
-      assert.equal(nearest.length, nearestCount, `Idea ${ideaId} should have ${nearestCount} nearest links`);
-      assert.equal(furthest.length, furthestCount, `Idea ${ideaId} should have ${furthestCount} furthest links`);
-    }
-
-    // Verify cache was saved to disk
-    const cacheFile = path.join(testDir, '.bowman', 'semantic-graph.json');
-    assert.ok(await fs.pathExists(cacheFile), 'Should save semantic graph to disk');
-
-  } finally {
-    await fs.remove(testDir);
-  }
+beforeEach(async () => {
+  testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
+  await fs.ensureDir(path.join(testDir, '.bowman'));
 });
 
-test('calculateSemanticGraph: handles < 2 ideas gracefully', async () => {
-  const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
+afterEach(async () => {
+  closeDb(testDir);
+  invalidateVectorCache(testDir);
+  await fs.remove(testDir);
+});
 
-  try {
-    // Create .bowman directory
-    await fs.ensureDir(path.join(testDir, '.bowman'));
+// Deterministic pseudo-random embeddings.
+function randomVectors(count: number, seed: number, prefix = 'idea') {
+  let state = seed;
+  const random = () => (state = (state * 1103515245 + 12345) % 2147483648) / 2147483648 - 0.5;
+  return Array.from({ length: count }, (_, index) => ({
+    ideaId: `${prefix}-${index}`,
+    vector: Array.from({ length: EMBEDDING_DIMENSION }, random)
+  }));
+}
 
-    // Empty vectors
-    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), {});
-
-    const graph = await calculateSemanticGraph(testDir);
-
-    assert.equal(graph.links.length, 0, 'Should have no links for empty project');
-    assert.equal(graph.averageDistance, 0, 'Should have 0 average distance');
-
-    // Single idea
-    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), {
-      'idea-1': [1, 0, 0]
+// What the lists must be: every pair compared, rows fully sorted.
+function bruteForce(vectors: Map<string, number[]>) {
+  const unit = new Map([...vectors].map(([id, vector]) => {
+    const norm = Math.hypot(...vector);
+    return [id, vector.map(value => value / norm)];
+  }));
+  const expected = new Map<string, { nearest: string[], furthest: string[] }>();
+  for (const [id, vector] of unit) {
+    const row = [...unit].filter(([other]) => other !== id).map(([other, otherVector]) => ({
+      id: other,
+      distance: 1 - vector.reduce((sum, value, index) => sum + value * otherVector[index]!, 0)
+    })).sort((a, b) => a.distance - b.distance);
+    expected.set(id, {
+      nearest: row.slice(0, NEAREST_NEIGHBOURS).map(entry => entry.id),
+      furthest: row.slice(-FURTHEST_NEIGHBOURS).reverse().map(entry => entry.id)
     });
-
-    const graph2 = await calculateSemanticGraph(testDir);
-
-    assert.equal(graph2.links.length, 0, 'Should have no links for single idea');
-
-  } finally {
-    await fs.remove(testDir);
   }
+  return expected;
+}
+
+async function actualLists() {
+  const graph = await getSemanticGraph(testDir);
+  const lists = new Map<string, { nearest: string[], furthest: string[] }>();
+  for (const link of graph.links) {
+    if (!lists.has(link.source)) lists.set(link.source, { nearest: [], furthest: [] });
+    lists.get(link.source)![link.type].push(link.target);
+  }
+  return lists;
+}
+
+const sorted = (lists: Map<string, unknown>) => new Map([...lists].sort(([a], [b]) => a.localeCompare(b)));
+
+test('lists every idea\'s nearest and furthest ideas, exactly', async () => {
+  const entries = randomVectors(30, 1);
+  await saveEmbeddings(testDir, entries);
+  assert.deepEqual(sorted(await actualLists()), sorted(bruteForce(new Map(entries.map(entry => [entry.ideaId, entry.vector])))));
 });
 
-test('invalidateSemanticCache: clears memory cache', async () => {
-  const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
+test('incremental updates give the same lists as a full build', async () => {
+  const entries = randomVectors(40, 2);
+  const current = new Map(entries.map(entry => [entry.ideaId, entry.vector]));
+  await saveEmbeddings(testDir, entries);
+  await getSemanticGraph(testDir); // index loaded: later changes apply incrementally
 
-  try {
-    // Create .bowman directory
-    await fs.ensureDir(path.join(testDir, '.bowman'));
-
-    // Create initial vectors
-    const vectors = {
-      'idea-1': [1, 0, 0],
-      'idea-2': [0, 1, 0],
-      'idea-3': [0, 0, 1]
-    };
-    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), vectors);
-
-    // Get semantic graph (caches it)
-    const graph1 = await getSemanticGraph(testDir);
-    assert.ok(graph1.links.length > 0, 'Should have links');
-
-    // Modify vectors.json directly
-    const newVectors = {
-      ...vectors,
-      'idea-4': [1, 1, 0],
-      'idea-5': [1, 0, 1]
-    };
-    await fs.writeJson(path.join(testDir, '.bowman', 'vectors.json'), newVectors);
-
-    // WITHOUT invalidation, we'd get the old cached result
-    // But first let's verify the cache is working (get same result)
-    const graph2 = await getSemanticGraph(testDir);
-    // Note: timestamps might differ, so compare structure not exact object
-    assert.equal(graph2.links.length, graph1.links.length, 'Should return same number of links (cached)');
-
-    // Invalidate caches (vectors.json was edited behind the store's back)
-    invalidateVectorCache(testDir);
-    invalidateSemanticCache(testDir);
-
-    // Now we should get a fresh calculation with new ideas
-    const graph3 = await getSemanticGraph(testDir);
-
-    // Graph should be different (has more ideas now)
-    assert.notDeepEqual(graph1, graph3, 'Should recalculate after invalidation');
-
-    // Verify new ideas are included
-    const sources = new Set(graph3.links.map(l => l.source));
-    assert.ok(sources.has('idea-4'), 'Should include newly added idea-4');
-    assert.ok(sources.has('idea-5'), 'Should include newly added idea-5');
-
-  } finally {
-    await fs.remove(testDir);
+  const changed = randomVectors(3, 3).map((entry, index) => ({ ideaId: `idea-${index * 7}`, vector: entry.vector }));
+  const added = randomVectors(2, 4, 'new');
+  await saveEmbeddings(testDir, [...changed, ...added]);
+  for (const entry of [...changed, ...added]) current.set(entry.ideaId, entry.vector);
+  for (const id of ['idea-1', 'idea-20', 'new-0']) {
+    await removeEmbedding(testDir, id);
+    current.delete(id);
   }
+
+  assert.deepEqual(sorted(await actualLists()), sorted(bruteForce(current)));
 });
 
-test('semantic graph regression: cache invalidation on idea creation', async () => {
-  // This is a regression test for the bug where newly created ideas
-  // didn't appear in the semantic force UI because the cache wasn't invalidated
+test('rebuilds when vectors changed behind its back (another process)', async () => {
+  await saveEmbeddings(testDir, randomVectors(10, 5));
+  assert.equal((await actualLists()).size, 10);
 
-  const testDir = await fs.mkdtemp(path.join(os.tmpdir(), 'test-forces-'));
+  const db = getDb(testDir);
+  db.transaction(() => {
+    db.prepare('INSERT INTO vectors (id, vector) VALUES (?, ?)').run('outside', encodeVector(randomVectors(1, 6)[0]!.vector));
+    bumpVectorsVersion(db);
+  })();
+  assert.ok((await actualLists()).has('outside'));
+});
 
-  try {
-    // Start with 3 ideas
-    await saveEmbedding(testDir, 'idea-1', [1, 0, 0]);
-    await saveEmbedding(testDir, 'idea-2', [0, 1, 0]);
-    await saveEmbedding(testDir, 'idea-3', [0, 0, 1]);
-
-    // Get semantic graph (this caches it)
-    const graphBefore = await getSemanticGraph(testDir);
-    const sourcesBefore = new Set(graphBefore.links.map(l => l.source));
-
-    assert.equal(sourcesBefore.size, 3, 'Should have 3 ideas initially');
-
-    // Simulate creating a new idea (what happens in server.ts createFloatingIdea)
-    await saveEmbedding(testDir, 'idea-4-new', [1, 1, 0]);
-    invalidateSemanticCache(testDir); // This is the fix!
-
-    // Get semantic graph again
-    const graphAfter = await getSemanticGraph(testDir);
-    const sourcesAfter = new Set(graphAfter.links.map(l => l.source));
-
-    assert.equal(sourcesAfter.size, 4, 'Should have 4 ideas after creation');
-    assert.ok(sourcesAfter.has('idea-4-new'), 'Should include the newly created idea');
-
-    // Verify the new idea has its relationships
-    const newIdeaLinks = graphAfter.links.filter(l => l.source === 'idea-4-new');
-    assert.equal(newIdeaLinks.length, 6, 'New idea should link to each of the 3 others as nearest and as furthest');
-
-  } finally {
-    await fs.remove(testDir);
+test('persists the lists with the vectors version they reflect', async () => {
+  await saveEmbeddings(testDir, randomVectors(8, 7));
+  await getSemanticGraph(testDir);
+  const db = getDb(testDir);
+  const rows = db.prepare('SELECT nearest, furthest FROM semantic_neighbours').all() as { nearest: string, furthest: string }[];
+  assert.equal(rows.length, 8);
+  for (const row of rows) {
+    assert.equal(JSON.parse(row.nearest).length, 7); // 7 others: fewer than NEAREST_NEIGHBOURS
+    assert.equal(JSON.parse(row.furthest).length, FURTHEST_NEIGHBOURS);
   }
+  const meta = (key: string) => (db.prepare('SELECT value FROM cache_meta WHERE key = ?').get(key) as { value: string }).value;
+  assert.equal(meta('neighbours_version'), meta('vectors_version'));
+});
+
+test('handles fewer than two ideas and ignores vectors of another dimension', async () => {
+  assert.deepEqual((await getSemanticGraph(testDir)).links, []);
+  await saveEmbeddings(testDir, [{ ideaId: 'only', vector: randomVectors(1, 8)[0]!.vector }, { ideaId: 'legacy', vector: [1, 0, 0] }]);
+  const graph = await getSemanticGraph(testDir);
+  assert.deepEqual(graph.links, []);
+  assert.equal(graph.averageDistance, 0);
 });

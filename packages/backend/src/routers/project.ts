@@ -40,8 +40,7 @@ const DISCOVERY_IGNORED_DIRS = new Set([
   '.test-tmp' // projects that backend tests create (and an interrupted run leaves behind)
 ]);
 
-// Vectors are stored in one JSON file, so each flush rewrites the whole store.
-// Batch the startup backfill instead of paying that per idea.
+// One cache transaction (and one neighbour update) per batch, not per idea.
 const EMBEDDING_BACKFILL_FLUSH_SIZE = 25;
 const EMBEDDING_BACKFILL_MAX_PAUSE_MS = 250;
 
@@ -188,9 +187,8 @@ export const projectRouter = t.router({
             if (ideasToEmbed.length > 0) {
                 console.log(`Starting embedding generation for ${ideasToEmbed.length} ideas (skipped ${ideas.length - ideasToEmbed.length} existing)...`);
                 // This backfill runs right after startup, while the user is already
-                // working. Flush in batches (one vectors.json rewrite per batch, not
-                // per idea) and yield between ideas so queued requests - e.g. creating
-                // an idea - are not stuck behind the loop.
+                // working. Flush in batches and yield between ideas so queued
+                // requests - e.g. creating an idea - are not stuck behind the loop.
                 let pending: { ideaId: string, vector: number[] }[] = [];
                 for (const idea of ideasToEmbed) {
                     const startedAt = Date.now();

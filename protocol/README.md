@@ -25,8 +25,8 @@ pnpm validate:bowman <project root or .bowman directory>
 | `phases/<id>.json` | One phase | [`phase.schema.json`](schemas/phase.schema.json) |
 
 Everything else in `.bowman/` is not part of the protocol. Some of it is
-machine-local and gitignored (`runtime/`, `cache.db`, `vectors.json`,
-`semantic-graph.json`, `secrets.json`, `.migration-lock`); some is
+machine-local and gitignored (`runtime/`, `cache/`, `secrets.json`,
+`.migration-lock`); some is
 tool-specific and committed (`system.json`, `memory/`, `thoughts/`). Readers
 ignore what they do not know; validators do not check it.
 

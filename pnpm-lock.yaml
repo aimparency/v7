@@ -38,6 +38,9 @@ importers:
       backend:
         specifier: workspace:*
         version: link:../backend
+      better-sqlite3:
+        specifier: ^12.11.1
+        version: 12.11.1
       fs-extra:
         specifier: ^11.3.2
         version: 11.4.1
@@ -51,6 +54,9 @@ importers:
         specifier: ^3.25.76
         version: 3.25.76
     devDependencies:
+      '@types/better-sqlite3':
+        specifier: ^7.6.13
+        version: 7.6.13
       '@types/fs-extra':
         specifier: ^11.0.4
         version: 11.0.4
@@ -4970,7 +4976,7 @@ snapshots:
 
   '@types/better-sqlite3@7.6.13':
     dependencies:
-      '@types/node': 20.19.43
+      '@types/node': 25.9.9
 
   '@types/body-parser@1.19.6':
     dependencies:

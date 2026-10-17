@@ -7,7 +7,6 @@ import { IdeaSchema, PhaseSchema, ProjectMetaSchema, describeSchemaError } from 
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { addIdeaToIndex, addPhaseToIndex, removeIdeaFromIndex, removePhaseFromIndex } from '../search.js';
 import { embeddingTextForIdea, generateEmbedding, removeEmbedding, saveEmbedding } from '../embeddings.js';
-import { invalidateSemanticCache } from '../forces.js';
 import { t, delayedProcedure } from '../trpc.js';
 import { emitChange } from '../change-events.js';
 import { normalizeProjectPath } from '../project-path.js';
@@ -113,7 +112,6 @@ export const historyRouter = t.router({
       for (let index = 0; index < changes.length; index++) {
         await applyChange(projectPath, changes[index]!, currents[index]);
       }
-      if (changes.some((change) => change.type === 'idea')) invalidateSemanticCache(projectPath);
       return { ok: true as const, conflicts: [] };
     })
 });

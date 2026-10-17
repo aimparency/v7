@@ -1,9 +1,8 @@
-import fs from 'fs-extra';
-import path from 'path';
 import { cosineSimilarity } from 'shared';
 import type { FeatureExtractionPipeline } from '@huggingface/transformers';
 import type { Idea } from 'shared';
 import { normalizeProjectPath } from './project-path.js';
+import { bumpVectorsVersion, decodeVector, encodeVector, getDb } from './db.js';
 
 // bge-small-en-v1.5: 384-dim sentence embeddings, native ONNX, 512-token window.
 // Runs in-process via onnxruntime-node (inference on native threads, off the JS event loop).
@@ -84,140 +83,74 @@ export interface VectorStore {
   [ideaId: string]: number[];
 }
 
-async function getVectorStorePath(projectPath: string) {
-  return path.join(normalizeProjectPath(projectPath), 'vectors.json');
-}
-
-// Cache per project
+// In-memory copy per project, loaded once from the cache database.
 const vectorCache = new Map<string, VectorStore>();
 
-// Simple Mutex for file operations to prevent corruption
-class Mutex {
-  private promise: Promise<void> = Promise.resolve();
-  async acquire(): Promise<() => void> {
-    let release: () => void;
-    const nextPromise = new Promise<void>(resolve => {
-      release = resolve;
-    });
-    const currentPromise = this.promise;
-    this.promise = currentPromise.then(() => nextPromise);
-    await currentPromise;
-    return release!;
-  }
-}
-const projectLocks = new Map<string, Mutex>();
+export type VectorChange = { projectPath: string, changed: Map<string, Float32Array>, removed: string[], version: number };
+const vectorListeners = new Set<(change: VectorChange) => void>();
 
-function getProjectLock(projectPath: string): Mutex {
-  if (!projectLocks.has(projectPath)) {
-    projectLocks.set(projectPath, new Mutex());
-  }
-  return projectLocks.get(projectPath)!;
+/** Called after every committed vector write (the semantic neighbours update incrementally). */
+export function onVectorsChanged(listener: (change: VectorChange) => void): () => void {
+  vectorListeners.add(listener);
+  return () => vectorListeners.delete(listener);
 }
 
 export async function loadVectorStore(rawProjectPath: string): Promise<VectorStore> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const lock = getProjectLock(projectPath);
-  const release = await lock.acquire();
-  try {
-    if (vectorCache.has(projectPath)) {
-      return vectorCache.get(projectPath)!;
-    }
-
-    const storePath = await getVectorStorePath(projectPath);
-    let store: VectorStore = {};
-    let needsRewrite = false;
-    
-    if (await fs.pathExists(storePath)) {
-      try {
-        const rawStore = await fs.readJson(storePath);
-        for (const [ideaId, vector] of Object.entries(rawStore as Record<string, unknown>)) {
-          if (isStoredVector(vector)) {
-            // Already rounded on write (saveEmbeddings); no need to re-round on load.
-            store[ideaId] = vector;
-          } else {
-            needsRewrite = true;
-          }
-        }
-      } catch (e: any) {
-        console.error(`Error reading vectors.json (might be corrupted), starting fresh:`, e.message);
-        needsRewrite = true;
-        store = {}; // reset to empty
-      }
-    }
-
-    if (needsRewrite) {
-      // Write to a temporary file first, then rename for atomic write
-      const tempPath = `${storePath}.tmp`;
-      await fs.ensureDir(path.dirname(storePath));
-      await fs.writeJson(tempPath, store, { spaces: 0 });
-      await fs.rename(tempPath, storePath);
-    }
-    
-    vectorCache.set(projectPath, store);
-    return store;
-  } finally {
-    release();
-  }
+  const cached = vectorCache.get(projectPath);
+  if (cached) return cached;
+  const store: VectorStore = {};
+  const rows = getDb(projectPath).prepare('SELECT id, vector FROM vectors').all() as { id: string, vector: Buffer }[];
+  for (const { id, vector } of rows) store[id] = Array.from(decodeVector(vector));
+  vectorCache.set(projectPath, store);
+  return store;
 }
 
 export async function saveEmbedding(projectPath: string, ideaId: string, vector: number[]) {
   return saveEmbeddings(projectPath, [{ ideaId, vector }]);
 }
 
-/**
- * Persist several vectors with a single rewrite of vectors.json.
- *
- * The store is one JSON file, so every save serializes and writes all of it
- * (megabytes once a project has a few hundred ideas). Saving per idea inside a
- * backfill loop is quadratic and stalls the event loop in long synchronous
- * stringify bursts, which shows up as multi-second latency on unrelated
- * requests. Batch the writes instead; the in-memory cache is updated up front,
- * so searches see the new vectors before the file lands.
- */
+/** Persist several vectors in one transaction (one row each). */
 export async function saveEmbeddings(rawProjectPath: string, entries: { ideaId: string, vector: number[] }[]) {
   const projectPath = normalizeProjectPath(rawProjectPath);
   if (entries.length === 0) return;
   const store = await loadVectorStore(projectPath);
-  const lock = getProjectLock(projectPath);
-  const release = await lock.acquire();
+  const changed = new Map(entries.map(({ ideaId, vector }) => [ideaId, Float32Array.from(vector)]));
+  let version: number;
   try {
-    for (const { ideaId, vector } of entries) {
-      // Reduce precision to 6 decimals to save space (plenty for cosine similarity)
-      store[ideaId] = vector.map(v => parseFloat(v.toFixed(6)));
-      // Cache is updated by reference
-    }
-
-    const storePath = await getVectorStorePath(projectPath);
-    const tempPath = `${storePath}.tmp`;
-    await fs.ensureDir(path.dirname(storePath)); // Ensure .bowman directory exists
-    // Write atomically
-    await fs.writeJson(tempPath, store, { spaces: 0 });  // Compact format (no indentation)
-    await fs.rename(tempPath, storePath);
+    const db = getDb(projectPath);
+    const upsert = db.prepare('INSERT OR REPLACE INTO vectors (id, vector) VALUES (?, ?)');
+    version = db.transaction(() => {
+      for (const [ideaId, vector] of changed) upsert.run(ideaId, encodeVector(vector));
+      return bumpVectorsVersion(db);
+    })();
   } catch (error: any) {
-    if (error.code === 'ENOENT') {
-      console.warn(`Failed to save embedding: Project directory might have been deleted (${projectPath})`);
-    } else {
-      console.error('Error saving embedding:', error);
-    }
-  } finally {
-    release();
+    console.error('Error saving embedding:', error);
+    return;
   }
+  for (const [ideaId, vector] of changed) store[ideaId] = Array.from(vector);
+  notify({ projectPath, changed, removed: [], version });
 }
 
 export async function removeEmbedding(rawProjectPath: string, ideaId: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const store = await loadVectorStore(projectPath);
-  if (store[ideaId]) {
-    const lock = getProjectLock(projectPath);
-    const release = await lock.acquire();
+  if (!store[ideaId]) return;
+  const db = getDb(projectPath);
+  const version = db.transaction(() => {
+    db.prepare('DELETE FROM vectors WHERE id = ?').run(ideaId);
+    return bumpVectorsVersion(db);
+  })();
+  delete store[ideaId];
+  notify({ projectPath, changed: new Map(), removed: [ideaId], version });
+}
+
+function notify(change: VectorChange) {
+  for (const listener of vectorListeners) {
     try {
-      delete store[ideaId];
-      const storePath = await getVectorStorePath(projectPath);
-      const tempPath = `${storePath}.tmp`;
-      await fs.writeJson(tempPath, store);
-      await fs.rename(tempPath, storePath);
-    } finally {
-      release();
+      listener(change);
+    } catch (error) {
+      console.error('Vector change listener failed:', error);
     }
   }
 }
@@ -238,10 +171,7 @@ export async function searchVectors(rawProjectPath: string, queryVector: number[
   return results.sort((a, b) => b.score - a.score).slice(0, limit);
 }
 
-/**
- * Invalidate the vector store cache for a project.
- * Call this when vectors.json is modified externally or needs to be reloaded.
- */
+/** Drop the in-memory copy so the next load reads the cache database again. */
 export function invalidateVectorCache(rawProjectPath: string): void {
   const projectPath = normalizeProjectPath(rawProjectPath);
   vectorCache.delete(projectPath);
@@ -250,11 +180,5 @@ export function invalidateVectorCache(rawProjectPath: string): void {
 export function hasCurrentEmbedding(value: unknown): value is number[] {
   return Array.isArray(value)
     && value.length === EMBEDDING_DIMENSION
-    && value.every(item => typeof item === 'number' && Number.isFinite(item));
-}
-
-function isStoredVector(value: unknown): value is number[] {
-  return Array.isArray(value)
-    && value.length > 0
     && value.every(item => typeof item === 'number' && Number.isFinite(item));
 }
