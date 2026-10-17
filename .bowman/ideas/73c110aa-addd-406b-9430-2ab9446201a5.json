@@ -1,6 +1,6 @@
 {
   "id": "73c110aa-addd-406b-9430-2ab9446201a5",
-  "text": "Idea cursor: one row key instead of selection fields scattered over entities",
+  "text": "Idea cursor: select ideas by id instead of index",
   "description": "Slice 3 of 562cdb60. Replace phase.selectedIdeaIndex (a UI field on data-store Phase entities), floatingIdeaIndex and the nested AimUIState.selectedIncomingIndex chains with one cursor row key per list, e.g. the aimId path. Derive the selection path from it; move-actions (J/K/H/L, x/p) and restore/persist use the same key. Should be decided together with the phase selection model question (focused entry + derived path + children remembered by id, explicit scroll intents); see 98f05e67.",
   "archived": false,
   "color": "#666666",
@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Decided by Felix 2026-10-16: a single focused entry in the list UI, with the path derived from it. Phase columns already work this way (selectedEntryKeyByColumn). Checked 2026-10-17: the idea cursor is not refactored yet. phase.selectedIdeaIndex, uiStore.floatingIdeaIndex and selectedIncomingIndex still carry it, about 200 uses in 25 frontend files (move-actions, list-store, ui-persistence, keyboard-actions, navigation-helpers, data.ts and their specs).",
-    "date": 1792172553980
+    "state": "review",
+    "comment": "Scoped down with Felix 2026-10-17 to selection by id; merging the three fields into one cursor was dropped. Done: the phase selection is uiStore.selectedIdeaIdByPhaseId (moved off the Phase entities), the floating selection is floatingIdeaId, and the child selection is IdeaUIState.selectedChildId. The index repair in replacePhase/replaceIdea is gone. keepIdeaSelection now runs for every pushed change and only steps in when the selected idea leaves its list: it then selects the successor, or the new last entry, as dd does. Move actions lost most of their index bookkeeping (Shift+J/K up/down merged into one function). Saved view state stores ids; a saved state from before restores without the remembered per-phase ideas once. Tests: new idea-moves.spec (Shift+J/K in a phase, across phases, inside a parent) and selection-anchor.spec (insert above, removal, child removal); frontend 316 tests, pnpm check 25/25. Needs Felix's live check of j/k, Shift+J/K, h/l, dd, x/p and reload.",
+    "date": 1792225506755
   },
   "intrinsicValue": 0,
   "cost": 3,
