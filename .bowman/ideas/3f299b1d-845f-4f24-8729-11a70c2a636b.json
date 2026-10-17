@@ -15,13 +15,13 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "Reworked after Felix's feedback 2026-10-15: one Layout button (Relax merged away), live unsaved preview with a 'connections changed k of N' slider and Apply/Cancel, shorter connections, the simulation's spacing, outward branches, weak embedding attraction, spatial memory. Lag found and fixed: each saved idea cost ~54 ms of main-thread work; now one batch save plus coalesced change events.\n\nMeasured on this repo's graph (794 ideas, 893 connections), stored layout → full new layout: mean connection length 7.3 → 4.5 radius sums, crossings 3467 → about 1500, pairs inside the simulation's 2-radius-sum margin 1494 → about 860, overlaps 550 → 1; semantic neighbours 59 → about 50 radius sums apart. The solver runs in a Web Worker in about 0.8 s. It proposes about 850 changes in about 235 files; most stored offsets are the default 2.5, so siblings have to fan out. The slider applies only the largest shifts. Lag: the old save sent one updateIdea per parent and got one change event back per file, each rebuilding the graph (~45–54 ms each, about 12 s blocked for 233 files). Now one setConnectionPositions request, events applied in 16 ms batches: full apply blocks 1.6 s in total, at most 138 ms at once; k=10 blocks 0.35 s. Verified in the running app on a scratch copy: Cancel restores all 893 links and writes nothing; Apply at k=10 wrote exactly 10 files, offsets only. Not verified: settling frames after Apply (headless Puppeteer runs no animation frames); judging the look is Felix's.",
+    "comment": "Reworked again after Felix's feedback 2026-10-17 (commit 3cbcc4d6): 1.5x room (clearance 3, room 3.75, new connections default 3.75); spread term: neighbouring connections around an idea need their strength share of 270 deg, only children rotate, weight ramps up over the run so branches can pass each other, and rotations chain so a branch pulled to one side makes room on the other; outward kept as a weak tie-breaker that only acts on children behind the parent's half circle; length pull weighted by connection strength; semantic raised (per idea, nearest pairs only; the furthest pairs used to attract too), backend now sends 12 nearest neighbours while the simulation still springs 3; memory weight 3 -> 1 so the layout terms win. Preview starts at the top 20%, ranked by shift x sqrt(span/mean span): measured on this repo, ranking by connection strength was worse than plain shift (crossings 2338 vs 2210); sqrt(span) sits between scale-free shift (2210 crossings, 574 crowded) and on-screen shift (1401, 840). Top 20% vs the previous solver: crossings 2408 -> 1672, mean length 17.0 -> 14.1 radius sums, 84 files. Full solve: semantic neighbours 60 -> 40 radius sums, pairs inside 2 radius sums 458 -> 8. Measurement placed root ideas on an artificial grid and settled partial applies from offsets only, without the simulation. Tests: 14 autolayout specs (spread, make room, outward, ranking each checked by disabling the term), pnpm check 25/25. Not verified: how it looks in the running app; that's Felix's call.",
     "date": 1792069686061
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }
