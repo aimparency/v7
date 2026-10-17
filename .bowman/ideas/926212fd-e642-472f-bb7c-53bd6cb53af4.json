@@ -1,0 +1,28 @@
+{
+  "id": "926212fd-e642-472f-bb7c-53bd6cb53af4",
+  "text": "Multi-session benchmark: does the idea graph help when context is reset between sessions?",
+  "description": "Follow-up to the graph-grounding benchmark (8ac03697), whose v1–v3 runs were a valid null: single-session synthetic tasks hit a ceiling in both conditions. Its own lesson: test only where durable context is genuinely needed across sessions.\n\nSetup idea: multi-session tasks with a context reset between sessions, where decisions made in session 2 constrain session 5. Two candidate task sources:\n- SWE-EVO / SWE-Milestone as-is (cheap to adopt; not designed with an idea graph in mind). MemTrace (arXiv 2610.04838) reports its largest gains exactly there (+17.8 on SWE-Milestone).\n- Replay a stretch of this repo's own history as a sequence of sessions (closer to what Aimparency claims; scoring is harder). Score completion, rework, and contradictions with earlier decisions.\n\nProcess: design the experiment fully (pre-registered tasks and pass criteria) before building anything.",
+  "archived": false,
+  "color": "#288f72",
+  "tags": [
+    "benchmark",
+    "evidence",
+    "hypothesis"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7634e681-d234-48fa-ad82-876ef97460ca"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Felix (2026-10-17): interesting, no decision yet. Open: which task source (SWE-EVO/SWE-Milestone vs. replaying this repo's history), and whether to spend the effort now.",
+    "date": 1792224476703
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,28 @@
+{
+  "id": "2a75885e-680c-459c-a58a-dd6a178a090e",
+  "text": "Rethink archiving: what is an archived idea, and do we need it at all?",
+  "description": "Today (2026-10-17): 'archived' is a status; writeIdea moves the file to archived-ideas/ and default lists, search and proposals skip it. A separate archived boolean is redundant (never true in ideas/). All 10 archived ideas have zero connections — mostly merge_ideas leftovers, so archiving is effectively a soft delete. Meanwhile 538 of 809 active ideas are finished (implemented/cancelled) and are what actually clutters the graph. (Earlier \"revise idea archiving\", 827cb5c7, was cancelled for lacking a concrete requirement; this is that requirement.)\n\nProblems:\n- Archived mixes two axes: outcome (implemented/cancelled/failed) and liveness. Archiving overwrites the outcome. → archived should be a flag beside the status (stored-format change → migration).\n- Merged ideas are redirects, not archive: \"merged into X\" should resolve old IDs (commits reference them), not be disconnected nodes.\n\nCandidate meaning of archived: a settled, finished subtree — frozen (text/status/connections incl. incoming edges not editable; explicit unarchive possible), shown compressed, archivable only as a whole finished subtree. Still visible to dedupe, lessons lookup, and commit history; out of prioritization, default lists and rendering.\n\nAlternative (leaning): if subtree compression is a cache available for any finished subtree (see the summary-cache idea), archiving loses its compressing job; what remains is freeze + hide, and hide is a view filter. Then drop archiving entirely and keep only merge redirects.\n\nOpen questions: does a finished child still absorb a share of its parent's value (archiving would shift open siblings' priorities)? Who archives and when (agent proposes, human confirms)? Can an archived idea gain new parents? Is a cancelled idea archivable immediately even with open children?",
+  "archived": false,
+  "color": "#2d663c",
+  "tags": [
+    "archiving",
+    "data-model",
+    "graph-tidiness"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Felix (2026-10-17): wants to keep the thoughts, cannot decide now. Decision: keep archiving as freeze+compress, or drop it in favor of a 'hide finished' view filter plus merge redirects.",
+    "date": 1792224477135
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -106,6 +106,15 @@
       ],
       "weight": 1,
       "hypothesis": "Provides controlled evidence about graph-grounded autonomous execution."
+    },
+    {
+      "ideaId": "926212fd-e642-472f-bb7c-53bd6cb53af4",
+      "relativePosition": [
+        2.2,
+        1.19
+      ],
+      "weight": 1,
+      "hypothesis": "Multi-session tasks are where durable graph context can show an effect that easy single-session tasks hid."
     }
   ],
   "supportedIdeas": [
@@ -121,8 +130,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

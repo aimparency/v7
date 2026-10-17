@@ -1,0 +1,29 @@
+{
+  "id": "0eeec63e-6943-4e18-a508-4950ef7281e6",
+  "text": "Cache compressed summaries of subtrees, keyed by a content hash",
+  "description": "Inspired by HIPIF (arXiv 2606.10507) and Task-Decoupled Planning (2601.07577): fold completed sub-goals into short summaries, keep the active work raw. get_idea_context currently returns parents, children and 5 semantic neighbours in full. (Distinct from session-memory compression, 654b56f9, which compresses session summaries, not graph subtrees.)\n\nDesign thoughts:\n- Key: Merkle-style hash(text, status, status comment, sorted child hashes). Not a dirty flag — git pull, branch switches, wrapped agents and manual edits change .bowman outside the backend. Stale summaries just miss the cache; multi-parent propagation is automatic. Store in cache.db (gitignored, derived data). Probably exclude value/cost/weights from the hash.\n- Bottom-up: a parent's summary is built from its children's summaries, so a leaf change regenerates only its path(s) to the root.\n- Two tiers: mechanical (status counts, open leaves, 'Lesson:' lines from status comments) — free, computed on read; LLM summary — cached, regenerated lazily, served stale with a marker.\n- Mostly worth it for finished subtrees (stable → cache hits). get_idea_context: finished children as one cached line each, open children raw, open subtrees mechanical only.\n- Who writes LLM summaries: not the working agent mid-task. Preferred: the supervisor/loop as idle work through a hash-checked set_summary(ideaId, hash, text) (rejected on hash mismatch). Later: MCP sampling if clients support it. Backend calling a model itself = new dependency.\n- Caveats: summaries are text other agents read → on the hosted instance set_summary needs edit permission and authorship (injection vector). Wrong summaries persist until content changes → show node count and a regenerate action.\n\nOpen: use it for the graph view too (finished subtree as one collapsed node)? Is the mechanical tier alone enough?",
+  "archived": false,
+  "color": "#662d4d",
+  "tags": [
+    "context",
+    "compression",
+    "cache",
+    "mcp"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Felix (2026-10-17): liked the direction, no decision yet. Open: mechanical tier only vs. LLM tier written by the loop; agent context only or also the graph view.",
+    "date": 1792224477703
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

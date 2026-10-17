@@ -76,6 +76,24 @@
       ],
       "weight": 0.9887640449438202,
       "hypothesis": "Archiving that keeps settled ideas out of the way keeps the working graph small enough to read."
+    },
+    {
+      "ideaId": "2a75885e-680c-459c-a58a-dd6a178a090e",
+      "relativePosition": [
+        2.32,
+        0.92
+      ],
+      "weight": 1,
+      "hypothesis": "A clear meaning for archived keeps settled ideas out of the way without losing outcomes or breaking commit references."
+    },
+    {
+      "ideaId": "0eeec63e-6943-4e18-a508-4950ef7281e6",
+      "relativePosition": [
+        -0.88,
+        2.34
+      ],
+      "weight": 1,
+      "hypothesis": "Folding finished subtrees into cached summaries keeps agent context small without hiding what was learned."
     }
   ],
   "supportedIdeas": [
