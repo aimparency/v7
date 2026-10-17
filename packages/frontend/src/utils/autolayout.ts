@@ -17,11 +17,11 @@
 // subtrees move rigidly with their root. The other terms are quadratic, so they
 // only win where they are large.
 //
-// Scale: every residual is measured in radius sums and every term's cost grows
-// with the squared span of the pair involved (like the simulation's surface
-// mass). A neighbourhood of small ideas is therefore laid out by exactly the
-// same rules as one of big ideas, just smaller: zooming in shows the same
-// quality. Only where sizes mix do the bigger ideas weigh more.
+// Scale: every target distance is measured in radius sums of the pair
+// involved, and every weight is dimensionless, independent of idea size. A
+// neighbourhood of small ideas is therefore laid out by exactly the same rules
+// as one of big ideas, just smaller: zooming in shows the same quality. Where
+// sizes mix, both ends of a pair are pulled equally hard.
 
 import type { LayoutSettings } from 'shared'
 
