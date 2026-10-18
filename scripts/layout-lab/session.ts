@@ -2,83 +2,46 @@
 // project and drawn side by side with the app's own graph renderer, to pick
 // the nicer one and say why. The page copies a report to paste back.
 //
-//   pnpm layout-lab:session [comparisons=10] [seed] [project...]
+//   pnpm layout-lab:session <design> [project...]
 //
-// Most comparisons turn one setting from far below to far above its slider
-// range, the rest set every setting at random against the defaults. Writes
-// results/sessions/<id>.html (the page) and <id>.json (with metrics).
+// <design> names a module in sessions/ (see SessionDesign). Comparisons and
+// sides are shuffled, so the rating is blind. Writes
+// results/sessions/<id>.html (the page) and <id>.json (with metrics); keep
+// the pasted report in ratings/<id>.json next to a copy of the metrics.
 import { execFileSync } from 'node:child_process'
 import fs from 'node:fs'
 import path from 'node:path'
-import type { LayoutSettings } from '../../packages/shared/src/types.ts'
-import { DEFAULT_LAYOUT_SETTINGS } from '../../packages/frontend/src/utils/autolayout.ts'
 import { measureLayout } from '../../packages/frontend/src/utils/layout-metrics.ts'
 import { loadSnapshot, mulberry32 } from './snapshot.ts'
-import { loadProjects, solve } from './solve.ts'
-import type { SessionComparison, SessionData, SessionProject } from './viewer/session-data.ts'
+import { loadProjects, solve, type Run } from './solve.ts'
+import type { SessionComparison, SessionData, SessionProject, SessionSide } from './viewer/session-data.ts'
 
-// Beyond the panel's slider ranges, about three times on both ends.
-const EXTREMES: Record<keyof LayoutSettings, [number, number]> = {
-  spacing: [3, 7],
-  memory: [0.1, 30],
-  length: [0.2, 60],
-  spread: [0.03, 15],
-  outward: [0.05, 45],
-  semantic: [0.003, 0.3], // 0 (the default) is the low end
-  isolatedSemantic: [0.03, 30]
+type Side = Pick<Run, 'settings' | 'weights'> // unset: the defaults
+export interface SessionDesign {
+  description: string
+  comparisons: { hypothesis: string; sides: [Side, Side] }[]
 }
-const KNOBS = Object.keys(EXTREMES) as (keyof LayoutSettings)[]
 
 const LAB = import.meta.dirname
-const [count = '10', seedArgument = String(Date.now() % 1e6)] = process.argv.slice(2)
-const seed = Number(seedArgument)
+const [designName, ...projectFilter] = process.argv.slice(2)
+if (!designName) {
+  console.error(`usage: pnpm layout-lab:session <design> [project...]\ndesigns: ${fs.readdirSync(path.join(LAB, 'sessions')).map(file => file.replace(/\.ts$/, '')).join(', ')}`)
+  process.exit(1)
+}
+const design: SessionDesign = (await import(path.join(LAB, 'sessions', `${designName}.ts`))).default
+const seed = Date.now() % 1e6
 const random = mulberry32(seed)
-const between = (low: number, high: number) => low * (high / low) ** random()
-const round = (value: number) => Number(value.toPrecision(2))
-
-// From well below the default to well above it, or 0 for a default of 0.
-function low(knob: keyof LayoutSettings) {
-  const [min] = EXTREMES[knob]
-  const fallback = DEFAULT_LAYOUT_SETTINGS[knob]
-  if (knob === 'spacing') return round(min + random() * 0.3)
-  return fallback === 0 ? 0 : round(between(min, fallback / 3))
-}
-function high(knob: keyof LayoutSettings) {
-  const [min, max] = EXTREMES[knob]
-  const fallback = DEFAULT_LAYOUT_SETTINGS[knob]
-  if (knob === 'spacing') return round(max - random() * 1.5)
-  return round(between(fallback === 0 ? min * 10 : fallback * 3, max))
-}
-function anywhere(): LayoutSettings {
-  return Object.fromEntries(KNOBS.map(knob => {
-    const [min, max] = EXTREMES[knob]
-    if (knob === 'spacing') return [knob, round(min + random() * (max - min))]
-    if (knob === 'semantic' && random() < 0.5) return [knob, 0]
-    return [knob, round(between(min, max))]
-  })) as LayoutSettings
-}
-
-const pairs: { change: string; sides: [LayoutSettings, LayoutSettings] }[] = []
-const knobs = shuffle([...KNOBS])
-for (let index = 0; index < Number(count); index++) {
-  const knob = knobs[index]
-  if (knob && index < Number(count) - 3) {
-    pairs.push({ change: `${knob} low vs high`, sides: [{ ...DEFAULT_LAYOUT_SETTINGS, [knob]: low(knob) }, { ...DEFAULT_LAYOUT_SETTINGS, [knob]: high(knob) }] })
-  } else {
-    pairs.push({ change: 'all random vs defaults', sides: [anywhere(), { ...DEFAULT_LAYOUT_SETTINGS }] })
-  }
-}
-shuffle(pairs)
+const pairs = shuffle(design.comparisons.map(comparison => ({ ...comparison, sides: [...comparison.sides] as [Side, Side] })))
 for (const pair of pairs) if (random() < 0.5) pair.sides.reverse()
 
 const now = new Date()
 const two = (value: number) => String(value).padStart(2, '0')
 const id = `session-${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}-${two(now.getHours())}${two(now.getMinutes())}`
 const projects: SessionProject[] = []
+const sides: SessionSide[][] = pairs.map(() => [])
 const metrics: Record<string, unknown>[][] = pairs.map(() => [])
-const layouts: number[][][] = pairs.map(() => [])
-const solved = new Map<string, { layout: number[]; metrics: Record<string, unknown> }>()
-for (const [name, projectPath] of loadProjects(process.argv.slice(4))) {
+const solved = new Map<string, { settings: SessionSide['settings']; layout: number[]; metrics: Record<string, unknown> }>()
+for (const [name, projectPath] of loadProjects(projectFilter)) {
   const snapshot = loadSnapshot(name, projectPath, 0)
   const index = new Map(snapshot.nodes.map((node, at) => [node.id, at]))
   projects.push({
@@ -90,33 +53,38 @@ for (const [name, projectPath] of loadProjects(process.argv.slice(4))) {
     links: snapshot.links.map((link, at) => [index.get(link.childId)!, index.get(link.parentId)!, Number(snapshot.attributionShares[at]!.toFixed(3))])
   })
   const start = new Map(snapshot.nodes.map(node => [node.id, node.position]))
-  pairs.forEach((pair, at) => {
-    for (const settings of pair.sides) {
-      const key = `${name} ${JSON.stringify(settings)}`
-      if (!solved.has(key)) {
-        const result = solve(snapshot, { settings })
-        const measured = measureLayout(snapshot.nodes, snapshot.links, result.positions, { spacing: settings.spacing, start, semanticPairs: snapshot.semanticPairs })
-        solved.set(key, {
-          layout: snapshot.nodes.flatMap(node => result.positions.get(node.id)!.map(Math.round)),
-          metrics: { ...measured, iterations: result.iterations, files: new Set(result.changes.map(change => change.parentId)).size }
-        })
-        console.log(`${name}  comparison ${at + 1}  ${result.iterations} iterations  ${result.milliseconds} ms  crossings ${measured.crossings}`)
-      }
-      layouts[at]!.push(solved.get(key)!.layout)
-      metrics[at]!.push({ project: name, ...solved.get(key)!.metrics })
+  pairs.forEach((pair, at) => pair.sides.forEach((side, sideIndex) => {
+    const key = `${name} ${JSON.stringify(side)}`
+    if (!solved.has(key)) {
+      const result = solve(snapshot, side)
+      const measured = measureLayout(snapshot.nodes, snapshot.links, result.positions, { spacing: result.settings.spacing, start, semanticPairs: snapshot.semanticPairs })
+      solved.set(key, {
+        settings: result.settings,
+        layout: snapshot.nodes.flatMap(node => result.positions.get(node.id)!.map(Math.round)),
+        metrics: { ...measured, iterations: result.iterations, files: new Set(result.changes.map(change => change.parentId)).size }
+      })
+      console.log(`${name}  comparison ${at + 1}  ${result.iterations} iterations  ${result.milliseconds} ms  crossings ${measured.crossings}`)
     }
-  })
+    const { settings, layout, metrics: measured } = solved.get(key)!
+    sides[at]![sideIndex] ??= { settings, mechanics: side.weights, layouts: [] }
+    sides[at]![sideIndex]!.layouts.push(layout)
+    metrics[at]!.push({ project: name, side: sideIndex === 0 ? 'left' : 'right', ...measured })
+  }))
 }
-
-const comparisons: SessionComparison[] = pairs.map((pair, at) => ({
-  change: pair.change,
-  sides: [0, 1].map(side => ({ settings: pair.sides[side]!, layouts: projects.map((_, project) => layouts[at]![project * 2 + side]!) })) as SessionComparison['sides']
-}))
+const comparisons: SessionComparison[] = pairs.map((pair, at) => ({ hypothesis: pair.hypothesis, sides: sides[at] as SessionComparison['sides'] }))
 const session: SessionData = { id, projects, comparisons }
 
 const out = path.join(LAB, 'results', 'sessions')
 fs.mkdirSync(out, { recursive: true })
-fs.writeFileSync(path.join(out, `${id}.json`), JSON.stringify({ seed, comparisons: pairs.map((pair, at) => ({ ...pair, metrics: metrics[at] })) }, null, 1))
+fs.writeFileSync(path.join(out, `${id}.json`), JSON.stringify({
+  design: designName,
+  seed,
+  comparisons: comparisons.map((comparison, at) => ({
+    hypothesis: comparison.hypothesis,
+    sides: comparison.sides.map(side => ({ ...side.settings, ...side.mechanics })),
+    metrics: metrics[at]
+  }))
+}, null, 1))
 fs.writeFileSync(path.join(out, `${id}.html`), page(session))
 console.log(`session: ${path.join(out, `${id}.html`)}`)
 
@@ -139,4 +107,3 @@ function shuffle<T>(items: T[]) {
   }
   return items
 }
-

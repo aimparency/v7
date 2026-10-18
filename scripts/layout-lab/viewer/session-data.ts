@@ -12,11 +12,12 @@ export interface SessionProject {
 
 export interface SessionSide {
   settings: LayoutSettings
+  mechanics?: Record<string, number | boolean> // solver options beyond the panel's settings
   layouts: number[][] // per project: x0, y0, x1, y1, … rounded
 }
 
 export interface SessionComparison {
-  change: string // what differs between the sides; in the report, not shown while rating
+  hypothesis: string // what the comparison tests; in the report, not shown while rating
   sides: [left: SessionSide, right: SessionSide]
 }
 
@@ -30,6 +31,7 @@ export type Choice = 'left' | 'same' | 'right'
 
 export interface SessionRating {
   projects: Record<string, Choice> // project name → the nicer side
+  notes: Record<string, string> // project name → why
   overall?: Choice
   why: string
 }

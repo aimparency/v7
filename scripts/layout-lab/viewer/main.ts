@@ -12,12 +12,15 @@ const session = JSON.parse(document.getElementById('session')!.textContent!) as 
 const STORAGE_KEY = `layout-rating:${session.id}`
 const TAA_FRAMES = 24 // frames to render after a change, until the antialiasing has settled
 const LABEL_MIN_RADIUS = 20 // screen pixels, as GraphView
-const CHOICES: { choice: Choice; label: string }[] = [{ choice: 'left', label: 'Left' }, { choice: 'same', label: 'Same' }, { choice: 'right', label: 'Right' }]
+const CHOICES: { choice: Choice; label: string; key: string }[] = [{ choice: 'left', label: 'Left', key: 'h' }, { choice: 'same', label: 'Same', key: 'j' }, { choice: 'right', label: 'Right', key: 'l' }]
+const FIT_ROOM = 1.5 // breathing room around the fitted core
 
-const ratings: SessionRating[] = load() ?? session.comparisons.map(() => ({ projects: {}, why: '' }))
+const ratings: SessionRating[] = load() ?? session.comparisons.map(() => ({ projects: {}, notes: {}, why: '' }))
 let current = Math.max(0, ratings.findIndex(rating => !rating.overall))
 
-interface Camera { x: number; y: number; zoom: number } // screen = world · zoom + (x, y), in CSS pixels
+// Both panes of a project share zoom and pan, but each centres its own
+// layout: screen = (world − pane centre) · zoom + pane middle + (x, y), in CSS pixels.
+interface Camera { x: number; y: number; zoom: number }
 
 class Pane {
   readonly element = document.createElement('div')
@@ -28,6 +31,7 @@ class Pane {
   private taa: TAAPass | null = null
   private nodes: NodeData[] = []
   private labels: string[] = []
+  private center = { x: 0, y: 0, width: 1, height: 1 } // the nearest 90% of ideas: middle and extent
 
   constructor(side: string) {
     this.element.className = 'pane'
@@ -68,15 +72,26 @@ class Pane {
     })
     this.renderer.updateNodes(this.nodes)
     this.arrows!.updateEdges(edges)
+    this.center = core(this.nodes)
   }
 
-  positions() {
-    return this.nodes
+  // The zoom at which this layout's core fits, with room around it.
+  fittingZoom() {
+    return Math.min(this.element.clientWidth / this.center.width, this.element.clientHeight / this.center.height) / FIT_ROOM
+  }
+
+  // Where the world origin lands on screen.
+  private origin(camera: Camera) {
+    return {
+      x: this.element.clientWidth / 2 + camera.x - this.center.x * camera.zoom,
+      y: this.element.clientHeight / 2 + camera.y - this.center.y * camera.zoom
+    }
   }
 
   draw(camera: Camera, moving: boolean) {
     const ratio = this.renderer.resizeToDisplaySize()
-    const [x, y, zoom] = [camera.x * ratio, camera.y * ratio, camera.zoom * ratio]
+    const origin = this.origin(camera)
+    const [x, y, zoom] = [origin.x * ratio, origin.y * ratio, camera.zoom * ratio]
     this.renderer.setCamera(x, y, zoom)
     this.arrows!.setCamera(new Float32Array([zoom, 0, 0, 0, zoom, 0, x, y, 1]))
     const jitterX = moving ? 0 : Math.random() - 0.5
@@ -93,24 +108,30 @@ class Pane {
     this.svg.classList.toggle('hidden', !visible)
     if (!visible) return
     const { clientWidth: width, clientHeight: height } = this.element
+    const origin = this.origin(camera)
     const parts: string[] = []
     this.nodes.forEach((node, index) => {
       if (node.r * camera.zoom <= LABEL_MIN_RADIUS) return
-      const [x, y] = [node.x * camera.zoom + camera.x, node.y * camera.zoom + camera.y]
+      const [x, y] = [node.x * camera.zoom + origin.x, node.y * camera.zoom + origin.y]
       const r = node.r * camera.zoom
       if (x + r < 0 || x - r > width || y + r < 0 || y - r > height) return
       const lines = titleLines(this.labels[index]!)
       const spans = lines.map((line, at) => `<tspan x="0" dy="${at === 0 ? -(lines.length - 1) * 0.6 : 1.2}em">${escape(line)}</tspan>`).join('')
       parts.push(`<g transform="translate(${node.x},${node.y}) scale(${node.r})"><text dominant-baseline="central" text-anchor="middle" fill="#fff" font-size="0.25">${spans}</text></g>`)
     })
-    this.svg.innerHTML = `<g transform="translate(${camera.x},${camera.y}) scale(${camera.zoom})">${parts.join('')}</g>`
+    this.svg.innerHTML = `<g transform="translate(${origin.x},${origin.y}) scale(${camera.zoom})">${parts.join('')}</g>`
   }
 }
 
 class Row {
   readonly element = document.createElement('section')
   readonly panes = [new Pane('Left'), new Pane('Right')] as const
-  private readonly choices = document.createElement('span')
+  readonly choice = choiceControl(choice => {
+    ratings[current]!.projects[this.project.name] = choice
+    save()
+    this.update()
+  })
+  private readonly note = document.createElement('textarea')
   private camera: Camera = { x: 0, y: 0, zoom: 1 }
   private frames = 0
   private moving = false
@@ -128,11 +149,23 @@ class Row {
       enlarge.textContent = this.element.classList.contains('expanded') ? 'Shrink' : 'Enlarge'
       requestAnimationFrame(() => this.fit())
     })
-    bar.append(name, this.choices, enlarge)
+    enlarge.tabIndex = -1
+    bar.append(name, enlarge)
     const panes = document.createElement('div')
     panes.className = 'panes'
     panes.append(...this.panes.map(pane => pane.element))
-    this.element.append(bar, panes)
+    this.note.rows = 2
+    this.note.placeholder = 'Why? (optional)'
+    this.note.addEventListener('input', () => {
+      ratings[current]!.notes[this.project.name] = this.note.value
+      save()
+    })
+    const rating = document.createElement('div')
+    rating.className = 'rating'
+    rating.append(this.choice.element, this.note)
+    this.element.append(bar, panes, rating)
+    // Rating a project shows it whole: its name, both layouts and the controls.
+    this.choice.element.addEventListener('focus', () => this.element.scrollIntoView({ block: 'start', behavior: 'smooth' }))
     for (const pane of this.panes) this.interact(pane.element)
     new ResizeObserver(() => this.redraw()).observe(panes)
   }
@@ -146,36 +179,18 @@ class Row {
     this.element.querySelector('.name')!.textContent = `${project.name} · ${project.radius.length} ideas, ${project.links.length} connections`
     this.panes.forEach((pane, side) => pane.show(project, layouts[side]!))
     this.fit()
-    this.updateChoices()
+    this.update()
   }
 
-  updateChoices() {
-    const rating = ratings[current]!
-    this.choices.replaceChildren(...CHOICES.map(({ choice, label }) => {
-      const element = button(label, () => {
-        rating.projects[this.project.name] = choice
-        save()
-        render()
-      })
-      element.classList.toggle('chosen', rating.projects[this.project.name] === choice)
-      return element
-    }))
+  update() {
+    this.choice.set(ratings[current]!.projects[this.project.name])
+    this.note.value = ratings[current]!.notes[this.project.name] ?? ''
+    renderDots()
   }
 
-  // The nearest 90% of ideas of both sides, with 1.2× room, as the graph's recenter button.
+  // Each layout centred in its pane, both at the scale that fits the larger.
   fit() {
-    const all = this.panes.flatMap(pane => pane.positions())
-    if (all.length === 0) return
-    const median = (values: number[]) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)]!
-    const [cx, cy] = [median(all.map(node => node.x)), median(all.map(node => node.y))]
-    const nearest = all.sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy)).slice(0, Math.max(1, Math.ceil(all.length * 0.9)))
-    const left = Math.min(...nearest.map(node => node.x - node.r))
-    const right = Math.max(...nearest.map(node => node.x + node.r))
-    const top = Math.min(...nearest.map(node => node.y - node.r))
-    const bottom = Math.max(...nearest.map(node => node.y + node.r))
-    const { clientWidth: width, clientHeight: height } = this.panes[0].element
-    const zoom = Math.min(width / (right - left), height / (bottom - top)) / 1.2
-    this.camera = { zoom, x: width / 2 - zoom * (left + right) / 2, y: height / 2 - zoom * (top + bottom) / 2 }
+    this.camera = { x: 0, y: 0, zoom: Math.min(...this.panes.map(pane => pane.fittingZoom())) }
     this.redraw()
   }
 
@@ -216,8 +231,9 @@ class Row {
     element.addEventListener('pointerup', () => { drag = null })
     element.addEventListener('wheel', event => {
       event.preventDefault()
+      // Zoom about the cursor: the pane middle plus pan scales away from it.
       const bounds = element.getBoundingClientRect()
-      const [px, py] = [event.clientX - bounds.left, event.clientY - bounds.top]
+      const [px, py] = [event.clientX - bounds.left - bounds.width / 2, event.clientY - bounds.top - bounds.height / 2]
       const factor = Math.exp(-event.deltaY * 0.0015)
       this.camera = { zoom: this.camera.zoom * factor, x: px - (px - this.camera.x) * factor, y: py - (py - this.camera.y) * factor }
       this.move()
@@ -229,31 +245,44 @@ class Row {
 const rows = session.projects.map(() => new Row())
 document.getElementById('projects')!.append(...rows.map(row => row.element))
 
+const overall = choiceControl(choice => {
+  ratings[current]!.overall = choice
+  save()
+  overall.set(choice)
+  renderDots()
+})
+document.getElementById('overall')!.append(overall.element)
 const why = document.getElementById('why') as HTMLTextAreaElement
 why.addEventListener('input', () => {
   ratings[current]!.why = why.value
   save()
-  renderDots()
 })
+const nextComparison = document.getElementById('next-comparison') as HTMLButtonElement
+nextComparison.addEventListener('click', () => current + 1 < session.comparisons.length ? go(current + 1) : showReport())
 document.getElementById('previous')!.addEventListener('click', () => go(current - 1))
 document.getElementById('next')!.addEventListener('click', () => go(current + 1))
 const dialog = document.getElementById('report-dialog') as HTMLDialogElement
 const reportText = document.getElementById('report-text') as HTMLTextAreaElement
-document.getElementById('report')!.addEventListener('click', () => {
-  reportText.value = report()
-  dialog.showModal()
-})
+document.getElementById('report')!.addEventListener('click', showReport)
 document.getElementById('copy')!.addEventListener('click', () => {
   reportText.select()
   void navigator.clipboard?.writeText(reportText.value)
 })
 document.getElementById('close')!.addEventListener('click', () => dialog.close())
+// The header is for the mouse: Tab walks the ratings only.
+for (const element of document.querySelectorAll<HTMLElement>('header button')) element.tabIndex = -1
+
+function showReport() {
+  reportText.value = report()
+  dialog.showModal()
+}
 
 function go(index: number) {
   if (index < 0 || index >= session.comparisons.length) return
   current = index
   render()
   window.scrollTo({ top: 0 })
+  rows[0]?.choice.element.focus({ preventScroll: true })
 }
 
 let shown = -1
@@ -263,38 +292,62 @@ function render() {
     rows.forEach((row, project) => row.show(session.projects[project]!, [comparison.sides[0].layouts[project]!, comparison.sides[1].layouts[project]!]))
     shown = current
   }
-  for (const row of rows) row.updateChoices()
-  const rating = ratings[current]!
-  document.getElementById('overall')!.replaceChildren(...CHOICES.map(({ choice, label }) => {
-    const element = button(label, () => {
-      rating.overall = choice
-      save()
-      render()
-    })
-    element.classList.toggle('chosen', rating.overall === choice)
-    return element
-  }))
-  why.value = rating.why
+  overall.set(ratings[current]!.overall)
+  why.value = ratings[current]!.why
+  nextComparison.textContent = current + 1 < session.comparisons.length ? 'Next comparison →' : 'Show report'
   document.getElementById('position')!.textContent = `comparison ${current + 1} of ${session.comparisons.length}`
   renderDots()
 }
 
 function renderDots() {
-  document.getElementById('dots')!.replaceChildren(...session.comparisons.map((_, index) => {
+  const dots = session.comparisons.map((_, index) => {
     const dot = button(String(index + 1), () => go(index))
     dot.classList.add('dot')
+    dot.tabIndex = -1
     dot.classList.toggle('done', !!ratings[index]!.overall)
     dot.classList.toggle('current', index === current)
     return dot
-  }))
+  })
+  document.getElementById('dots')!.replaceChildren(...dots)
+}
+
+// One tab stop with three options: h left, j or k same, l right (or the arrow keys).
+function choiceControl(onChoose: (choice: Choice) => void) {
+  const element = document.createElement('div')
+  element.className = 'choice'
+  element.tabIndex = 0
+  element.setAttribute('role', 'radiogroup')
+  const buttons = CHOICES.map(({ choice, label, key }) => {
+    const option = button(`${label} (${key})`, () => onChoose(choice))
+    option.tabIndex = -1
+    option.setAttribute('role', 'radio')
+    return option
+  })
+  element.append(...buttons)
+  const keys: Record<string, Choice> = { h: 'left', ArrowLeft: 'left', j: 'same', k: 'same', ArrowDown: 'same', l: 'right', ArrowRight: 'right' }
+  element.addEventListener('keydown', event => {
+    const choice = keys[event.key]
+    if (!choice || event.ctrlKey || event.metaKey || event.altKey) return
+    event.preventDefault()
+    onChoose(choice)
+  })
+  return {
+    element,
+    set(chosen: Choice | undefined) {
+      buttons.forEach((option, index) => {
+        option.classList.toggle('chosen', CHOICES[index]!.choice === chosen)
+        option.setAttribute('aria-checked', String(CHOICES[index]!.choice === chosen))
+      })
+    }
+  }
 }
 
 function report() {
   return `Layout rating report ${session.id}\n` + JSON.stringify(session.comparisons.map((comparison, index) => ({
     comparison: index + 1,
-    change: comparison.change,
-    left: comparison.sides[0].settings,
-    right: comparison.sides[1].settings,
+    hypothesis: comparison.hypothesis,
+    left: { ...comparison.sides[0].settings, ...comparison.sides[0].mechanics },
+    right: { ...comparison.sides[1].settings, ...comparison.sides[1].mechanics },
     ...ratings[index]
   })), null, 1)
 }
@@ -346,6 +399,20 @@ function titleLines(text: string) {
     lines[2] += '...'
   }
   return lines
+}
+
+// The nearest 90% of ideas around the median, as the graph's recenter button:
+// far unconnected ideas would otherwise shrink everything.
+function core(nodes: NodeData[]) {
+  if (nodes.length === 0) return { x: 0, y: 0, width: 1, height: 1 }
+  const median = (values: number[]) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)]!
+  const [cx, cy] = [median(nodes.map(node => node.x)), median(nodes.map(node => node.y))]
+  const nearest = [...nodes].sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy)).slice(0, Math.ceil(nodes.length * 0.9))
+  const left = Math.min(...nearest.map(node => node.x - node.r))
+  const right = Math.max(...nearest.map(node => node.x + node.r))
+  const top = Math.min(...nearest.map(node => node.y - node.r))
+  const bottom = Math.max(...nearest.map(node => node.y + node.r))
+  return { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left, height: bottom - top }
 }
 
 function escape(text: string) {

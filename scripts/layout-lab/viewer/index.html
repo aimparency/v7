@@ -39,8 +39,20 @@ main { padding: 8px 16px 32px; }
   display: flex; flex-direction: column; gap: 6px;
   & .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
   & .name { font-weight: 600; margin-right: auto; }
-  & .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 42vh; }
-  &.expanded .panes { height: calc(100vh - 140px); }
+  scroll-margin-top: 56px;
+  & .panes { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; height: 60vh; }
+  &.expanded .panes { height: calc(100vh - 180px); }
+}
+.rating { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 8px;
+  & textarea { flex: 1; min-width: 200px; }
+}
+.choice {
+  display: flex; gap: 4px; padding: 3px; border: 1px solid transparent; border-radius: 8px;
+  &:focus { outline: none; border-color: var(--accent); }
+}
+textarea {
+  background: var(--background); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit;
+  &:focus { outline: none; border-color: var(--accent); }
 }
 .pane {
   position: relative; overflow: hidden; border: 1px solid var(--line); border-radius: 6px; background: var(--background); touch-action: none; cursor: grab;
@@ -52,7 +64,10 @@ main { padding: 8px 16px 32px; }
 .overall {
   display: flex; flex-direction: column; gap: 8px; padding: 12px; background: var(--panel); border: 1px solid var(--line); border-radius: 6px;
   & .bar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
-  & textarea { width: 100%; min-height: 80px; background: var(--background); color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 8px; font: inherit; }
+  & textarea { width: 100%; min-height: 80px; }
+  & #next-comparison { align-self: flex-end;
+    &:focus { outline: none; border-color: var(--accent); }
+  }
 }
 dialog {
   width: min(800px, calc(100vw - 32px)); background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 8px;
@@ -75,7 +90,7 @@ dialog {
   <button id="report">Report</button>
 </header>
 <main>
-  <p class="hint">Same projects, two layout settings. Drag to pan, scroll to zoom (both sides follow), double-click to fit. Pick the nicer side per project, then overall, and say why.</p>
+  <p class="hint">Same projects, two layout settings. Drag to pan, scroll to zoom (both sides follow), double-click to fit. Tab walks the ratings: on a choice, h = left, j = same, l = right; then a note on why; at the end the overall choice, why, and Enter for the next comparison.</p>
   <div id="projects"></div>
   <section class="overall">
     <div class="bar">
@@ -83,6 +98,7 @@ dialog {
       <span id="overall"></span>
     </div>
     <textarea id="why" placeholder="Why? What looks better or worse: long important connections, clutter, crossings, gaps, balance…"></textarea>
+    <button id="next-comparison">Next comparison →</button>
   </section>
 </main>
 <dialog id="report-dialog">

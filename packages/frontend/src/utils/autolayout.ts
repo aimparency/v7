@@ -94,10 +94,11 @@ const DEFAULT_WEIGHTS = {
   semantic: 0, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums; the lab found no benefit, so off
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
+  strengthFloor: 0, // the length pull counts weaker connections as this strong; the layout lab tests whether weak ones then stay shorter
   separation: 4 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
 }
-// What the Layout panel lets you tune (anchor and separation are mechanics).
-export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+// What the Layout panel lets you tune (anchor, separation and the strength floor are mechanics).
+export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, strengthFloor: _strengthFloor, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
   (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => left[key] === right[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
@@ -135,7 +136,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, STRENGTH_FLOOR = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -200,7 +201,7 @@ export function createLayoutSolver(
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION } =
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION, strengthFloor: STRENGTH_FLOOR } =
       { ...DEFAULT_WEIGHTS, ...weights })
     networkSize.forEach((size, index) => {
       semanticWeight[index] = SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))
@@ -282,8 +283,9 @@ export function createLayoutSolver(
       const length = Math.hypot(vx, vy)
       if (length > 0) {
         const scale = room * span / length
-        pull(child, LENGTH * link.strength, x[parent]! + vx * scale, y[parent]! + vy * scale)
-        pull(parent, LENGTH * link.strength, x[child]! - vx * scale, y[child]! - vy * scale)
+        const lengthWeight = LENGTH * Math.max(link.strength, STRENGTH_FLOOR)
+        pull(child, lengthWeight, x[parent]! + vx * scale, y[parent]! + vy * scale)
+        pull(parent, lengthWeight, x[child]! - vx * scale, y[child]! - vy * scale)
       }
 
       // Seen from the grandparents, a child must not lie behind its parent:

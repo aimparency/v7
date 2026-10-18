@@ -1,0 +1,92 @@
+[
+ {
+  "comparison": 1,
+  "change": "length low vs high",
+  "left": { "spacing": 4, "memory": 1, "length": 1.6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4, "memory": 1, "length": 52, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "left", "ways-of-will": "left", "v7": "left", "ideas": "left" },
+  "why": "Left is much more spreaded and less overlap. On the right side ideas even accumulate on one side of the parent in one case and are very dense there then, which is bad. ",
+  "overall": "left"
+ },
+ {
+  "comparison": 2,
+  "change": "all random vs defaults",
+  "left": { "spacing": 4, "memory": 0.81, "length": 0.65, "spread": 0.059, "outward": 0.23, "semantic": 0.089, "isolatedSemantic": 0.16 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "left", "ways-of-will": "right", "v7": "right", "ideas": "right" },
+  "why": "Hmm... this one is hard. In some cases, left is too dense, too crowded. Right is more spread, which is good",
+  "overall": "same"
+ },
+ {
+  "comparison": 3,
+  "change": "semantic low vs high",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0.11, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "same", "ways-of-will": "right", "v7": "left", "ideas": "left" },
+  "why": "",
+  "overall": "left"
+ },
+ {
+  "comparison": 4,
+  "change": "all random vs defaults",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 3.6, "memory": 5, "length": 17, "spread": 4.1, "outward": 0.82, "semantic": 0, "isolatedSemantic": 14 },
+  "projects": { "an-der-rax": "right", "ways-of-will": "right", "v7": "left", "ideas": "left" },
+  "why": "for small graphs, right is \"rounder\" (more circular the entire graph). But for large graphs, left has better spacing. Since we want to support large graphs, left is better overall",
+  "overall": "left"
+ },
+ {
+  "comparison": 5,
+  "change": "isolatedSemantic low vs high",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 7.7 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 0.12 },
+  "projects": { "an-der-rax": "same", "ways-of-will": "same", "v7": "same", "ideas": "right" },
+  "why": "barely any difference. bit better spreaded on the right side in one case. ",
+  "overall": "same"
+ },
+ {
+  "comparison": 6,
+  "change": "memory low vs high",
+  "left": { "spacing": 4, "memory": 0.15, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4, "memory": 10, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "ideas": "left", "v7": "left", "ways-of-will": "left", "an-der-rax": "right" },
+  "why": "both not sooo goood. right has overlapping ideas in one case ",
+  "overall": "same"
+ },
+ {
+  "comparison": 7,
+  "change": "spread low vs high",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 0.11, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 5.6, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "ways-of-will": "right", "an-der-rax": "right", "v7": "left", "ideas": "left" },
+  "why": "Right: small graphs are more circular, but large graphs have very long connections for some aims with tiny connection value (looks cool but it a bit suboptimal). ",
+  "overall": "left"
+ },
+ {
+  "comparison": 8,
+  "change": "all random vs defaults",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4.5, "memory": 0.11, "length": 8.6, "spread": 0.031, "outward": 0.083, "semantic": 0.0049, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "left", "ways-of-will": "left", "v7": "left", "ideas": "left" },
+  "why": "Right has a problem: contributors to the central idea align rather on one side of that center idea",
+  "overall": "left"
+ },
+ {
+  "comparison": 9,
+  "change": "outward low vs high",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 20, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 0.26, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "right", "ways-of-will": "same", "v7": "right", "ideas": "right" },
+  "why": "left has that problem, that it's very directed so on a large graph 90% of ideas end up in a stream of 60 degree from the central root idea",
+  "overall": "right"
+ },
+ {
+  "comparison": 10,
+  "change": "spacing low vs high",
+  "left": { "spacing": 6.8, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 3.1, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "right", "ways-of-will": "right", "v7": "right", "ideas": "right" },
+  "why": "Right is not perfect, but left has exagerratedly long connections and becomes too sparse",
+  "overall": "right"
+ }
+]
