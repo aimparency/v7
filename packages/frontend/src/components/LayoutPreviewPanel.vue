@@ -35,8 +35,7 @@ const GROUPS: { name: string; sliders: Slider[] }[] = [
     { key: 'spaceCurve', label: 'Space curve', hint: '0: the same push throughout the space; 1: growing with 1 / the gap between their edges, endless when touching; 2: with its square', min: 0, max: 2, scale: 'linear' }
   ] },
   { name: 'Similarity', sliders: [
-    { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; tangles its connections, so off by default', min: 0, max: 0.1, scale: 'log' },
-    { key: 'isolatedSemantic', label: 'Unconnected to similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both', min: 0.1, max: 10, scale: 'log' }
+    { key: 'semantic', label: 'Toward similar', hint: 'Pull every idea, connected or not, toward its 12 most similar ideas; higher tangles the network', min: 0, max: 1, scale: 'log' }
   ] }
 ]
 const OFF_RANGE = 100 // a logarithmic range from 0: its logarithmic part spans max / 100 to max

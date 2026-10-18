@@ -122,7 +122,6 @@ export const LayoutSettingsSchema = z.object({
   spread: layoutWeight,
   outward: layoutWeight,
   semantic: layoutWeight,
-  isolatedSemantic: layoutWeight,
   // Added later, so absent in older meta.json files (the defaults apply).
   space: z.number().finite().min(1).max(10).optional(), // radius sums every idea keeps from every other
   separation: layoutWeight.optional(), // how hard the space pushes

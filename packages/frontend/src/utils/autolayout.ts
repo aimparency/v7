@@ -92,8 +92,13 @@ const DEFAULT_WEIGHTS = {
   length: 3, // times connection strength: pull connections toward `room` long; the layout lab's strongest lever against crossings
   spread: 1, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
   outward: 1.5, // a moving child goes to the half circle facing away from its grandparents
-  semantic: 0, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums; the lab found no benefit, so off
-  isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
+  // Per idea, connected or not, shared by its semantic pairs (its 12 most
+  // similar ideas and those that count it among theirs); pulls toward
+  // clearance · (1 + 2 · distance) radius sums. Higher brings unconnected
+  // ideas closer to their similar ones but tangles the network: in the lab,
+  // 0.1 against 1 on ideas left them 18 instead of 6 radius sums from the
+  // closest similar idea, with 968 instead of 1537 crossings.
+  semantic: 0.1,
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
   separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge
   space: 5, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides). At 3, ideas sat almost touching in large graphs
@@ -140,7 +145,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, SPACE_CURVE = 0, IMPORTANCE = 0
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, SPACE_CURVE = 0, IMPORTANCE = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -187,14 +192,8 @@ export function createLayoutSolver(
     similarityTotal[a] = similarityTotal[a]! + similarity[index]!
     similarityTotal[b] = similarityTotal[b]! + similarity[index]!
   })
-  // The smaller an idea's network, the more its semantic neighbours decide
-  // where it goes: the largest network keeps the weak pull (strong pulls
-  // tangle its connections), an unconnected idea gets the strong one, and
-  // since each end of a pair is weighted by its own network, a small network
-  // moves toward the big one rather than the other way round.
   const networkSize = connectedNetworkSizes(count, edges)
   const largestNetwork = Math.max(1, ...networkSize)
-  const semanticWeight = new Float64Array(count)
   // Outward and spread push only children, so the terms add up to a net drift
   // along the direction the tree grows; the anchor alone lets it build up
   // while the live solver keeps running. Translation is free for every other
@@ -206,11 +205,8 @@ export function createLayoutSolver(
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, spaceCurve: SPACE_CURVE, importance: IMPORTANCE } =
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, spaceCurve: SPACE_CURVE, importance: IMPORTANCE } =
       { ...DEFAULT_WEIGHTS, ...weights })
-    networkSize.forEach((size, index) => {
-      semanticWeight[index] = SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))
-    })
     edges.forEach(({ link }, edge) => {
       strength[edge] = link.flowShare === undefined ? link.strength : 1 - IMPORTANCE + IMPORTANCE * link.flowShare
     })
@@ -370,8 +366,8 @@ export function createLayoutSolver(
       const distance = Math.hypot(vx, vy)
       if (distance <= length * span) continue
       const scale = length * span / distance
-      pull(b, semanticWeight[b]! * similarity[index]! / similarityTotal[b]!, x[a]! + vx * scale, y[a]! + vy * scale)
-      pull(a, semanticWeight[a]! * similarity[index]! / similarityTotal[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
+      pull(b, SEMANTIC * similarity[index]! / similarityTotal[b]!, x[a]! + vx * scale, y[a]! + vy * scale)
+      pull(a, SEMANTIC * similarity[index]! / similarityTotal[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
     // Ideas closer than the space: each pulled to where the pair would be

@@ -43,11 +43,11 @@ describe('LayoutPreviewPanel', () => {
   })
 
   it('turns a weight whose range starts at 0 off at the left end', async () => {
-    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
+    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, settings: { ...DEFAULT_LAYOUT_SETTINGS, semantic: 0 }, changes: [] } })
     const semantic = wrapper.find('.settings input[name=semantic]')
     expect(Number((semantic.element as HTMLInputElement).value)).toBe(0)
     await semantic.setValue(0.5)
-    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0.01 })
+    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0.1 })
     await semantic.setValue(0)
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0 })
   })

@@ -70,3 +70,21 @@ flow share, not a power of the share: flow shares span orders of magnitude,
 so any power starved weak connections (ideas: mean length 6 → 25 radius
 sums at power 0.3). Default 0.5 with pull to spacing 3 (the strengths are
 now about twice the simulation's).
+
+## One similarity force
+
+"Unconnected toward similar" barely mattered: for an unconnected idea the
+similarity pull is nearly its only term, so its size hardly changes where
+the idea goes. Merged with "similar together" into one weight for every
+idea, connected or not (default 0.1). One weight trades closeness to similar
+ideas against a calm network (median radius sums from an unconnected idea
+to its closest similar one, and crossings):
+
+| weight | v7 similar | v7 crossings | ideas similar | ideas crossings |
+|---|---|---|---|---|
+| split (0 / 1) | 41 | 1656 | 7 | 1421 |
+| 0.03 | 34 | 1602 | 30 | 708 |
+| 0.1 | 21 | 1785 | 18 | 968 |
+| 0.3 | 10 | 2194 | 11 | 1537 |
+
+A softer hold on start positions (anchor) changed nothing.

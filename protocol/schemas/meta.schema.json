@@ -129,10 +129,6 @@
           "type": "number",
           "minimum": 0
         },
-        "isolatedSemantic": {
-          "type": "number",
-          "minimum": 0
-        },
         "space": {
           "type": "number",
           "minimum": 1,
@@ -159,8 +155,7 @@
         "length",
         "spread",
         "outward",
-        "semantic",
-        "isolatedSemantic"
+        "semantic"
       ],
       "additionalProperties": false
     }
