@@ -426,7 +426,7 @@ export function createLayoutSolver(
 }
 
 const RELAX_BUDGET = 1200 // iterations at most, after the start and after every settings change
-const RELAX_DURATION = 5000 // ms instead, with a clock (the live panel): the same calm-down whatever the graph's size
+const RELAX_DURATION = 5000 // ms instead, with a clock (the live panel): the same calm-down whatever the graph's size; it then goes on with settled steps
 const RELAX_CHUNK = 10 // iterations between results
 const SPREAD_RAMP = 300 // the first iterations, while branches can still pass each other
 // Each idea moves this share of the way to its target: the full step at
@@ -436,8 +436,10 @@ const FREE_STEP = 0.5
 const SETTLED_STEP = 0.05
 const CONVERGED = 0.2 // radius sums per full step: no idea's target was further in any iteration of a chunk
 
-// Relaxes in chunks until converged or the budget (iterations, or with
-// `now` milliseconds) is spent: what the worker and the lab both run.
+// Relaxes in chunks until converged or the budget is spent (iterations):
+// what the lab runs. With `now` (the live panel), the budget is
+// milliseconds of calming down, and chunks go on with settled steps after it;
+// `done` then only says it has calmed down.
 export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, spreadRamp = SPREAD_RAMP, now }: { budget?: number; spreadRamp?: number; now?: () => number } = {}) {
   let iterations = 0
   let sinceResume = 0
@@ -451,8 +453,8 @@ export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, 
     },
     chunk: () => {
       let largestMove = 0
-      for (let step = 0; step < RELAX_CHUNK && progress() < 1; step++, sinceResume++, iterations++) {
-        const stepSize = FREE_STEP + (SETTLED_STEP - FREE_STEP) * progress()
+      for (let step = 0; step < RELAX_CHUNK && (now || progress() < 1); step++, sinceResume++, iterations++) {
+        const stepSize = FREE_STEP + (SETTLED_STEP - FREE_STEP) * Math.min(progress(), 1)
         largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / spreadRamp), stepSize) / stepSize)
       }
       return { done: progress() >= 1 || (iterations >= spreadRamp && largestMove < CONVERGED), largestMove }
