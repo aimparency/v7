@@ -1,5 +1,6 @@
-import { describe, it, expect } from 'vitest'
+import { describe, it, expect, beforeEach } from 'vitest'
 import { mount } from '@vue/test-utils'
+import { createPinia, setActivePinia } from 'pinia'
 import LayoutPreviewPanel from '../LayoutPreviewPanel.vue'
 import { DEFAULT_LAYOUT_SETTINGS, type LayoutChange } from '../../utils/autolayout'
 
@@ -7,6 +8,8 @@ const change = (parentId: string, childId: string): LayoutChange => ({ parentId,
 const base = { placed: 0, count: 0, positionsOnly: false, settings: DEFAULT_LAYOUT_SETTINGS, saved: DEFAULT_LAYOUT_SETTINGS, solving: false }
 
 describe('LayoutPreviewPanel', () => {
+  beforeEach(() => setActivePinia(createPinia()))
+
   it('shows connection and file counts for the fader position', () => {
     const wrapper = mount(LayoutPreviewPanel, {
       props: { ...base, changes: [change('p1', 'a'), change('p1', 'b'), change('p2', 'c')], placed: 4, count: 2 }

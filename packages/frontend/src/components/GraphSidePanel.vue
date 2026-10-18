@@ -10,6 +10,7 @@ import NumericTextInput from './NumericTextInput.vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { deleteIdeasAsking } from '../stores/ui/idea-removal'
 import { ArrowDown } from 'lucide-vue-next'
+import SidePanel from './SidePanel.vue'
 
 const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
@@ -254,32 +255,6 @@ const vFocus = {
   mounted: (el: HTMLElement) => el.focus()
 }
 
-// Resizing logic
-const panelWidth = computed(() => graphUIStore.graphPanelWidth)
-const isResizing = ref(false)
-
-const startResize = (e: MouseEvent) => {
-    e.preventDefault()
-    isResizing.value = true
-    window.addEventListener('mousemove', onResize)
-    window.addEventListener('mouseup', stopResize)
-}
-
-const onResize = (e: MouseEvent) => {
-    if (isResizing.value) {
-        // Resize from left edge (panel is on right)
-        // Width = Window Width - Mouse X - Right Margin (20)
-        const newWidth = window.innerWidth - e.clientX - 20
-        graphUIStore.setGraphPanelWidth(newWidth)
-    }
-}
-
-const stopResize = () => {
-    isResizing.value = false
-    window.removeEventListener('mousemove', onResize)
-    window.removeEventListener('mouseup', stopResize)
-}
-
 // Interaction tracking for opacity
 const hasInteracted = ref(false)
 
@@ -306,13 +281,11 @@ const isOpaque = computed(() => !hasInteracted.value)
 </script>
 
 <template>
-    <div 
-        class="side-panel" 
+    <SidePanel
         v-if="selectedIdea || selectedLink"
-        :style="{ width: panelWidth + 'px' }"
+        class="idea-panel"
         :class="{ opaque: isOpaque }"
     >
-        <div class="resize-handle" @mousedown="startResize"></div>
 
         <!-- CONNECTION SELECTED -->
         <div v-if="selectedLink" class="panel-content">
@@ -482,28 +455,18 @@ const isOpaque = computed(() => !hasInteracted.value)
                 </div>
             </div>
         </div>
-    </div>
+    </SidePanel>
 </template>
 
 <style scoped>
-.side-panel {
-    position: absolute;
-    right: 20px;
-    top: 20px;
+.idea-panel {
     bottom: 20px;
-    background: #1e1e1e; 
-    border: 1px solid #333;
-    border-radius: 8px;
-    color: inherit; 
-    font-size: 1rem; 
+    font-size: 1rem;
     opacity: 0.3;
     transition: opacity 0.2s;
-    display: flex; 
-    flex-direction: row; 
-    overflow: hidden; 
 }
 
-.side-panel:hover, .side-panel:focus-within, .side-panel:active, .side-panel.opaque {
+.idea-panel:hover, .idea-panel:focus-within, .idea-panel:active, .idea-panel.opaque {
     opacity: 1;
 }
 
@@ -745,20 +708,6 @@ textarea.input-field {
     background: #ff4444;
     color: white;
     border-color: #ff0000;
-}
-
-.resize-handle {
-    position: relative; 
-    width: 15px; 
-    cursor: ew-resize;
-    background: transparent;
-    transition: background 0.2s;
-    flex-shrink: 0;
-    top: 0; bottom: 0; left: 0; 
-}
-
-.resize-handle:hover, .side-panel:hover .resize-handle {
-    background: rgba(255, 255, 255, 0.05);
 }
 
 .idea-actions {
