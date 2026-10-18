@@ -16,16 +16,28 @@ describe('measureLayout', () => {
   })
 
   it('weighs crossings by strength and flags shallow ones', () => {
-    const nodes = [node('a', 0, 0), node('b', 400, 0), node('c', 100, -20), node('d', 300, 20), node('e', 200, -200), node('f', 200, 200)]
+    // Arcs bulge to the same side, so a–b and c–d cross once, flat.
+    const nodes = [node('a', 0, 0), node('b', 400, 0), node('c', 0, 40), node('d', 400, -40), node('e', 200, -300), node('f', 200, 300)]
     const metrics = measureLayout(nodes, [link('a', 'b', 0.75), link('c', 'd', 0.25), link('e', 'f')])
     expect(metrics.crossings).toBe(3)
-    expect(metrics.shallowCrossings).toBe(1) // a–b and c–d, at about 11°
+    expect(metrics.shallowCrossings).toBe(1)
     expect(metrics.weightedCrossings).toBeCloseTo((0.75 * 0.25 + 0.75 * 0.5 + 0.25 * 0.5) / 0.25)
   })
 
   it('counts connections passing through an idea that is not their end', () => {
-    const nodes = [node('a', 0, 0), node('b', 200, 0), node('under', 100, 5), node('beside', 100, 40)]
+    // The arc from b to a bulges 41 to one side of the straight line.
+    const nodes = [node('a', 0, 0), node('b', 200, 0), node('under', 100, -40), node('beside', 100, 5)]
     expect(measureLayout(nodes, [link('a', 'b')]).underIdea).toBe(1)
+  })
+
+  it('shares the arrow ink that lies on other arrows', () => {
+    const nodes = [node('a', 0, 0), node('b', 400, 0), node('c', 200, -200), node('d', 200, 200), node('e', 0, 1000), node('f', 400, 1000)]
+    const wide = (parentId: string, childId: string) => ({ parentId, childId, width: 20 })
+    expect(measureLayout(nodes, [wide('a', 'b'), wide('e', 'f')]).arrowOverlap).toBe(0)
+    const crossing = measureLayout(nodes, [wide('a', 'b'), wide('c', 'd')]).arrowOverlap
+    expect(crossing).toBeGreaterThan(0)
+    expect(crossing).toBeLessThan(0.1)
+    expect(measureLayout(nodes, [link('a', 'b')]).arrowOverlap).toBeNaN()
   })
 
   it('rates the narrowest angle at an idea against an even spread', () => {

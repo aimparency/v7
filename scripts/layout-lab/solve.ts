@@ -11,6 +11,16 @@ export interface Run {
   weights?: LayoutOptions['weights'] // also the mechanics (anchor, separation)
   options?: Omit<LayoutOptions, 'room' | 'weights' | 'semanticPairs'>
   relax?: Parameters<typeof createRelaxation>[1]
+  // Connection strengths other than the simulation's (0.25–0.75, square-root
+  // compressed): 'flow' uncompressed (0–1), 'child-share' the share of the
+  // child's value that comes through the connection (a small idea's only
+  // connection counts fully).
+  strengths?: 'flow' | 'child-share'
+}
+
+const strengthOf = {
+  flow: (simulation: number) => ((simulation - 0.25) / 0.5) ** 2, // undoes graph-forces' compression
+  'child-share': (_: number, attributionShare: number) => attributionShare
 }
 
 // Projects come from projects.local.json ({ "name": "/path/to/project" },
@@ -26,7 +36,9 @@ export function loadProjects(filter: string[] = []): [string, string][] {
 }
 
 export function solve(snapshot: Snapshot, run: Run) {
-  const { nodes, links, semanticPairs } = snapshot
+  const { nodes, semanticPairs } = snapshot
+  const strength = run.strengths && strengthOf[run.strengths]
+  const links = strength ? snapshot.links.map((link, index) => ({ ...link, strength: strength(link.strength, snapshot.attributionShares[index]!) })) : snapshot.links
   const settings: LayoutSettings = { ...DEFAULT_LAYOUT_SETTINGS, ...run.settings }
   const started = Date.now()
   const options = layoutOptions(settings)

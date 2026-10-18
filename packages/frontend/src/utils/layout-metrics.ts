@@ -1,6 +1,7 @@
 // How readable a layout is, for the autolayout tests and the layout lab
 // (scripts/layout-lab). Lengths and distances are in radius sums of the pair
-// involved, so graphs of different idea sizes compare.
+// involved, so graphs of different idea sizes compare. Connections are
+// measured as the graph view draws them: arcs from child to parent.
 
 export interface MeasuredNode {
   id: string
@@ -12,6 +13,7 @@ export interface MeasuredLink {
   parentId: string
   childId: string
   strength?: number // 0.25–0.75 like LayoutLink; default 0.5
+  width?: number // the drawn arrow's width, for `arrowOverlap`
 }
 
 export interface MeasureContext {
@@ -25,7 +27,7 @@ export interface MeasureContext {
 export interface LayoutMetrics {
   meanLength: number // per connection
   lengthMisfit: number // mean |length − spacing|; NaN without spacing
-  crossings: number // pairs of connections without a shared idea that intersect
+  crossings: number // pairs of connections without a shared idea whose arcs intersect
   weightedCrossings: number // the same, each counted as the product of the two strengths over 0.25
   shallowCrossings: number // crossings at less than 30°, hard to follow
   underIdea: number // a connection passing through an idea that is neither of its ends
@@ -37,11 +39,15 @@ export interface LayoutMetrics {
   displacementMax: number
   semanticNeighbourhood: number // share of each idea's most similar ideas among its nearest on screen; NaN without pairs
   outwardViolations: number // share of children behind their parent, seen from the grandparents
+  arrowOverlap: number // share of the arrows' ink that lies on other arrows; NaN without widths
 }
 
 type Point = readonly [number, number]
 
 const SHALLOW = Math.sin(Math.PI / 6)
+const ARC_CURVATURE = 0.5 // as the graph view's arrows: the arc's centre lies this many lengths off the midpoint
+const ARC_STEPS = 8 // straight pieces per arc
+const INK_CELLS = 1000 // raster cells along the longer side, for `arrowOverlap`
 
 export function measureLayout(
   nodes: readonly MeasuredNode[],
@@ -58,10 +64,13 @@ export function measureLayout(
   const segments = links.flatMap(link => {
     const parent = positionOf(link.parentId)
     const child = positionOf(link.childId)
-    const span = (nodeById.get(link.parentId)?.radius ?? 0) + (nodeById.get(link.childId)?.radius ?? 0)
+    const parentRadius = nodeById.get(link.parentId)?.radius ?? 0
+    const childRadius = nodeById.get(link.childId)?.radius ?? 0
+    const span = parentRadius + childRadius
     if (!parent || !child || span <= 0 || link.parentId === link.childId) return []
     const length = Math.hypot(child[0] - parent[0], child[1] - parent[1])
-    return [{ link, parent, child, length, relative: length / span, strength: link.strength ?? 0.5 }]
+    const arc = arcPoints(child, parent)
+    return [{ link, parent, child, parentRadius, childRadius, length, relative: length / span, strength: link.strength ?? 0.5, arc, box: boxOf(arc) }]
   })
 
   let crossings = 0
@@ -73,25 +82,22 @@ export function measureLayout(
       const b = segments[j]!
       if (a.link.parentId === b.link.parentId || a.link.parentId === b.link.childId
         || a.link.childId === b.link.parentId || a.link.childId === b.link.childId) continue
-      if (!segmentsIntersect(a.parent, a.child, b.parent, b.child)) continue
+      if (!boxesOverlap(a.box, b.box)) continue
+      const sine = arcsIntersect(a.arc, b.arc)
+      if (sine === null) continue
       crossings++
       weightedCrossings += a.strength * b.strength / 0.25
-      const sine = Math.abs(cross([0, 0], [a.child[0] - a.parent[0], a.child[1] - a.parent[1]], [b.child[0] - b.parent[0], b.child[1] - b.parent[1]])) / (a.length * b.length)
       if (sine < SHALLOW) shallowCrossings++
     }
   }
 
   let underIdea = 0
-  for (const { link, parent, child } of segments) {
-    const left = Math.min(parent[0], child[0])
-    const right = Math.max(parent[0], child[0])
-    const bottom = Math.min(parent[1], child[1])
-    const top = Math.max(parent[1], child[1])
+  for (const { link, arc, box } of segments) {
     for (const node of placed) {
       const [px, py] = node.position
-      if (px + node.radius < left || px - node.radius > right || py + node.radius < bottom || py - node.radius > top) continue
+      if (px + node.radius < box.left || px - node.radius > box.right || py + node.radius < box.top || py - node.radius > box.bottom) continue
       if (node.id === link.parentId || node.id === link.childId) continue
-      if (distanceToSegment(node.position, parent, child) < node.radius) underIdea++
+      if (distanceToPolyline(node.position, arc) < node.radius) underIdea++
     }
   }
 
@@ -115,9 +121,10 @@ export function measureLayout(
     list.push(Math.atan2(to[1] - from[1], to[0] - from[0]))
     angles.set(id, list)
   }
-  for (const { link, parent, child } of segments) {
-    addAngle(link.parentId, parent, child)
-    addAngle(link.childId, child, parent)
+  // The directions the arcs leave each idea in.
+  for (const { link, arc } of segments) {
+    addAngle(link.childId, arc[0]!, arc[1]!)
+    addAngle(link.parentId, arc[ARC_STEPS]!, arc[ARC_STEPS - 1]!)
   }
   const resolutions = [...angles.values()].filter(list => list.length >= 2).map(list => {
     list.sort((left, right) => left - right)
@@ -139,8 +146,106 @@ export function measureLayout(
     angleLow: quantile(resolutions, 0.1),
     ...displacement(placed, links, start),
     semanticNeighbourhood: semanticPairs ? neighbourhood(placed, semanticPairs, neighbours) : NaN,
-    outwardViolations: outward(segments, positionOf)
+    outwardViolations: outward(segments, positionOf),
+    arrowOverlap: arrowOverlap(segments)
   }
+}
+
+// The arc the graph view draws from `from` (the child) to `to` (the parent).
+function arcPoints(from: Point, to: Point): Point[] {
+  const dx = to[0] - from[0]
+  const dy = to[1] - from[1]
+  const length = Math.hypot(dx, dy)
+  if (length === 0) return Array.from({ length: ARC_STEPS + 1 }, () => from)
+  const centerX = (from[0] + to[0]) / 2 + dy / length * length * ARC_CURVATURE
+  const centerY = (from[1] + to[1]) / 2 - dx / length * length * ARC_CURVATURE
+  const radius = Math.hypot(from[0] - centerX, from[1] - centerY)
+  const start = Math.atan2(from[1] - centerY, from[0] - centerX)
+  let sweep = Math.atan2(to[1] - centerY, to[0] - centerX) - start
+  if (sweep > Math.PI) sweep -= 2 * Math.PI
+  if (sweep < -Math.PI) sweep += 2 * Math.PI
+  return Array.from({ length: ARC_STEPS + 1 }, (_, step) => {
+    if (step === 0) return from
+    if (step === ARC_STEPS) return to
+    const angle = start + sweep * step / ARC_STEPS
+    return [centerX + Math.cos(angle) * radius, centerY + Math.sin(angle) * radius] as const
+  })
+}
+
+interface Box { left: number; right: number; top: number; bottom: number }
+function boxOf(points: readonly Point[], margin = 0): Box {
+  const xs = points.map(point => point[0])
+  const ys = points.map(point => point[1])
+  return { left: Math.min(...xs) - margin, right: Math.max(...xs) + margin, top: Math.min(...ys) - margin, bottom: Math.max(...ys) + margin }
+}
+const boxesOverlap = (a: Box, b: Box) => a.left <= b.right && b.left <= a.right && a.top <= b.bottom && b.top <= a.bottom
+
+// The sine of the angle at the first intersection of two arcs, or null.
+function arcsIntersect(a: readonly Point[], b: readonly Point[]): number | null {
+  for (let i = 0; i < a.length - 1; i++) {
+    for (let j = 0; j < b.length - 1; j++) {
+      if (!segmentsIntersect(a[i]!, a[i + 1]!, b[j]!, b[j + 1]!)) continue
+      const ax = a[i + 1]![0] - a[i]![0]
+      const ay = a[i + 1]![1] - a[i]![1]
+      const bx = b[j + 1]![0] - b[j]![0]
+      const by = b[j + 1]![1] - b[j]![1]
+      return Math.abs(ax * by - ay * bx) / (Math.hypot(ax, ay) * Math.hypot(bx, by))
+    }
+  }
+  return null
+}
+
+function distanceToPolyline(point: Point, line: readonly Point[]) {
+  let nearest = Infinity
+  for (let i = 0; i < line.length - 1; i++) nearest = Math.min(nearest, distanceToSegment(point, line[i]!, line[i + 1]!))
+  return nearest
+}
+
+// The arrows rasterised at their drawn width, outside the ideas they join:
+// the share of inked cells that more than one arrow covers.
+function arrowOverlap(segments: readonly { link: MeasuredLink; parent: Point; child: Point; parentRadius: number; childRadius: number; arc: readonly Point[] }[]) {
+  const arrows = segments.filter(segment => (segment.link.width ?? 0) > 0)
+  if (arrows.length === 0) return NaN
+  const box = boxOf(arrows.flatMap(arrow => arrow.arc))
+  const extent = Math.max(box.right - box.left, box.bottom - box.top)
+  if (extent === 0) return 0
+  const cell = extent / INK_CELLS
+  const columns = Math.ceil((box.right - box.left) / cell) + 1
+  const rows = Math.ceil((box.bottom - box.top) / cell) + 1
+  const count = new Uint16Array(columns * rows)
+  const stamp = new Int32Array(columns * rows).fill(-1)
+  arrows.forEach((arrow, index) => {
+    const half = arrow.link.width! / 2
+    for (let i = 0; i < arrow.arc.length - 1; i++) {
+      const [x0, y0] = arrow.arc[i]!
+      const [x1, y1] = arrow.arc[i + 1]!
+      const steps = Math.max(1, Math.ceil(Math.hypot(x1 - x0, y1 - y0) / (cell / 2)))
+      for (let step = 0; step <= steps; step++) {
+        const x = x0 + (x1 - x0) * step / steps
+        const y = y0 + (y1 - y0) * step / steps
+        if (Math.hypot(x - arrow.child[0], y - arrow.child[1]) < arrow.childRadius || Math.hypot(x - arrow.parent[0], y - arrow.parent[1]) < arrow.parentRadius) continue
+        const reach = Math.ceil(half / cell)
+        const column = Math.round((x - box.left) / cell)
+        const row = Math.round((y - box.top) / cell)
+        for (let r = Math.max(0, row - reach); r <= Math.min(rows - 1, row + reach); r++) {
+          for (let c = Math.max(0, column - reach); c <= Math.min(columns - 1, column + reach); c++) {
+            if (Math.hypot(c - column, r - row) * cell > half + cell / 2) continue
+            const at = r * columns + c
+            if (stamp[at] === index) continue
+            stamp[at] = index
+            count[at] = count[at]! + 1
+          }
+        }
+      }
+    }
+  })
+  let inked = 0
+  let overlapped = 0
+  for (const covered of count) {
+    if (covered > 0) inked++
+    if (covered > 1) overlapped++
+  }
+  return inked === 0 ? 0 : overlapped / inked
 }
 
 function displacement(

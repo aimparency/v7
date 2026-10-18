@@ -1,8 +1,9 @@
 # Layout ratings
 
-Each session: pairs of layout settings, rated blind on all four projects in
+Each session: pairs of layout settings (since session 2, one hypothesis per pair), rated blind on all four projects in
 the session page (`pnpm layout-lab:session <design>`, designs in
-`../sessions/`). Per session: the pasted report (`<id>.json`), the metrics
+`../sessions/`; past designs are removed when a mechanic they used goes,
+the reports keep every side's full settings). Per session: the pasted report (`<id>.json`), the metrics
 of every layout (`<id>.metrics.json`) and the conclusions below.
 
 ## session-20261018-1527: extremes (`01-extremes`)
@@ -33,3 +34,24 @@ misfit and displacement are near chance (≈ 19/35).
 Viewer feedback, done for the next session: both layouts centred at one
 scale, zoomed out further; a note per project; Tab through the ratings
 with h / j / l.
+
+## session-20261018-1609: hypotheses (7 of 10 rated)
+
+- **Control** (pull 6 vs 6.2): "same" on every project, so a vote for a
+  side means something.
+- **Strength floor 0.3**: no visible effect, rightly: every connection
+  strength is 0.4–0.6 (the simulation compresses flow into 0.25–0.75), so
+  important connections barely pull harder than minor ones. The floor is
+  removed (no thresholds on importance: keep it continuous).
+- **Combination** (pull 3, spacing 3.5, outward 0.5, spread 1.5, memory
+  0.5): won on three projects; on v7 "no arrow chaos". On ideas the
+  cross-links pulled the graph to one side of the root; defaults rounder.
+- **Pull 3 vs 6**: 3 for small graphs, 6 for large ones.
+- **Outward 0.4 vs 1.5**: 0.4 on the small graphs, unclear on large.
+- **Separation 8 vs 4**: same, except an-der-rax.
+- Unrated: keep as is 0.3, spread 2.5, strength floor.
+
+Further feedback: connections are arcs (measure them as such: done); v7
+mostly shows arrows, no background ("more spread or fewer arrows"); ideas
+should keep room from all ideas, not only connected ones (minimum space,
+session 3); s for same; fit the whole graph.

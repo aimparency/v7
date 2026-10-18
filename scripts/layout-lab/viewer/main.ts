@@ -12,8 +12,8 @@ const session = JSON.parse(document.getElementById('session')!.textContent!) as 
 const STORAGE_KEY = `layout-rating:${session.id}`
 const TAA_FRAMES = 24 // frames to render after a change, until the antialiasing has settled
 const LABEL_MIN_RADIUS = 20 // screen pixels, as GraphView
-const CHOICES: { choice: Choice; label: string; key: string }[] = [{ choice: 'left', label: 'Left', key: 'h' }, { choice: 'same', label: 'Same', key: 'j' }, { choice: 'right', label: 'Right', key: 'l' }]
-const FIT_ROOM = 1.5 // breathing room around the fitted core
+const CHOICES: { choice: Choice; label: string; key: string }[] = [{ choice: 'left', label: 'Left', key: 'h' }, { choice: 'same', label: 'Same', key: 's' }, { choice: 'right', label: 'Right', key: 'l' }]
+const FIT_ROOM = 1.15 // breathing room around the fitted layout
 
 const ratings: SessionRating[] = load() ?? session.comparisons.map(() => ({ projects: {}, notes: {}, why: '' }))
 let current = Math.max(0, ratings.findIndex(rating => !rating.overall))
@@ -31,7 +31,7 @@ class Pane {
   private taa: TAAPass | null = null
   private nodes: NodeData[] = []
   private labels: string[] = []
-  private center = { x: 0, y: 0, width: 1, height: 1 } // the nearest 90% of ideas: middle and extent
+  private center = { x: 0, y: 0, width: 1, height: 1 } // all ideas: middle and extent
 
   constructor(side: string) {
     this.element.className = 'pane'
@@ -72,10 +72,10 @@ class Pane {
     })
     this.renderer.updateNodes(this.nodes)
     this.arrows!.updateEdges(edges)
-    this.center = core(this.nodes)
+    this.center = bounds(this.nodes)
   }
 
-  // The zoom at which this layout's core fits, with room around it.
+  // The zoom at which this whole layout fits, with room around it.
   fittingZoom() {
     return Math.min(this.element.clientWidth / this.center.width, this.element.clientHeight / this.center.height) / FIT_ROOM
   }
@@ -311,7 +311,7 @@ function renderDots() {
   document.getElementById('dots')!.replaceChildren(...dots)
 }
 
-// One tab stop with three options: h left, j or k same, l right (or the arrow keys).
+// One tab stop with three options: h left, s same, l right (or the arrow keys).
 function choiceControl(onChoose: (choice: Choice) => void) {
   const element = document.createElement('div')
   element.className = 'choice'
@@ -324,7 +324,7 @@ function choiceControl(onChoose: (choice: Choice) => void) {
     return option
   })
   element.append(...buttons)
-  const keys: Record<string, Choice> = { h: 'left', ArrowLeft: 'left', j: 'same', k: 'same', ArrowDown: 'same', l: 'right', ArrowRight: 'right' }
+  const keys: Record<string, Choice> = { h: 'left', ArrowLeft: 'left', s: 'same', ArrowDown: 'same', l: 'right', ArrowRight: 'right' }
   element.addEventListener('keydown', event => {
     const choice = keys[event.key]
     if (!choice || event.ctrlKey || event.metaKey || event.altKey) return
@@ -401,17 +401,12 @@ function titleLines(text: string) {
   return lines
 }
 
-// The nearest 90% of ideas around the median, as the graph's recenter button:
-// far unconnected ideas would otherwise shrink everything.
-function core(nodes: NodeData[]) {
+function bounds(nodes: NodeData[]) {
   if (nodes.length === 0) return { x: 0, y: 0, width: 1, height: 1 }
-  const median = (values: number[]) => values.sort((a, b) => a - b)[Math.floor(values.length / 2)]!
-  const [cx, cy] = [median(nodes.map(node => node.x)), median(nodes.map(node => node.y))]
-  const nearest = [...nodes].sort((a, b) => Math.hypot(a.x - cx, a.y - cy) - Math.hypot(b.x - cx, b.y - cy)).slice(0, Math.ceil(nodes.length * 0.9))
-  const left = Math.min(...nearest.map(node => node.x - node.r))
-  const right = Math.max(...nearest.map(node => node.x + node.r))
-  const top = Math.min(...nearest.map(node => node.y - node.r))
-  const bottom = Math.max(...nearest.map(node => node.y + node.r))
+  const left = Math.min(...nodes.map(node => node.x - node.r))
+  const right = Math.max(...nodes.map(node => node.x + node.r))
+  const top = Math.min(...nodes.map(node => node.y - node.r))
+  const bottom = Math.max(...nodes.map(node => node.y + node.r))
   return { x: (left + right) / 2, y: (top + bottom) / 2, width: right - left, height: bottom - top }
 }
 

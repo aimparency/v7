@@ -12,7 +12,7 @@ export interface SessionProject {
 
 export interface SessionSide {
   settings: LayoutSettings
-  mechanics?: Record<string, number | boolean> // solver options beyond the panel's settings
+  mechanics?: Record<string, number | string> // solver options beyond the panel's settings
   layouts: number[][] // per project: x0, y0, x1, y1, … rounded
 }
 

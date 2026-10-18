@@ -94,11 +94,12 @@ const DEFAULT_WEIGHTS = {
   semantic: 0, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums; the lab found no benefit, so off
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
-  strengthFloor: 0, // the length pull counts weaker connections as this strong; the layout lab tests whether weak ones then stay shorter
-  separation: 4 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
+  separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge
+  space: 3, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides)
+  spaceCurve: 0 // how the push grows inside `space`: 0 constant, 1 with 1 / gap between their edges (endless when touching), 2 with its square
 }
-// What the Layout panel lets you tune (anchor, separation and the strength floor are mechanics).
-export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, strengthFloor: _strengthFloor, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+// What the Layout panel lets you tune (the rest are mechanics).
+export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, space: _space, spaceCurve: _spaceCurve, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
   (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => left[key] === right[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
@@ -136,7 +137,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, STRENGTH_FLOOR = 0
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, SPACE_CURVE = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -201,7 +202,7 @@ export function createLayoutSolver(
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION, strengthFloor: STRENGTH_FLOOR } =
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, spaceCurve: SPACE_CURVE } =
       { ...DEFAULT_WEIGHTS, ...weights })
     networkSize.forEach((size, index) => {
       semanticWeight[index] = SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))
@@ -283,9 +284,8 @@ export function createLayoutSolver(
       const length = Math.hypot(vx, vy)
       if (length > 0) {
         const scale = room * span / length
-        const lengthWeight = LENGTH * Math.max(link.strength, STRENGTH_FLOOR)
-        pull(child, lengthWeight, x[parent]! + vx * scale, y[parent]! + vy * scale)
-        pull(parent, lengthWeight, x[child]! - vx * scale, y[child]! - vy * scale)
+        pull(child, LENGTH * link.strength, x[parent]! + vx * scale, y[parent]! + vy * scale)
+        pull(parent, LENGTH * link.strength, x[child]! - vx * scale, y[child]! - vy * scale)
       }
 
       // Seen from the grandparents, a child must not lie behind its parent:
@@ -338,6 +338,7 @@ export function createLayoutSolver(
         totalStrength += connection.strength
         return Math.atan2(y[connection.other]! - y[center]!, x[connection.other]! - x[center]!)
       })
+      if (totalStrength <= 0) continue
       const sorted = connections.map((_, index) => index).sort((left, right) => angles[left]! - angles[right]!)
       for (let i = 0; i < sorted.length; i++) {
         const first = sorted[i]!
@@ -365,14 +366,23 @@ export function createLayoutSolver(
       pull(a, semanticWeight[a]! * similarity[index]! / similarityTotal[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
-    // Ideas closer than the clearance: each pulled to where the pair would be
+    // Ideas closer than the space: each pulled to where the pair would be
     // just far enough apart. Pushing them apart outright after each
     // iteration (as `separate` does at the end) fights the other terms, and
     // the iterations cycle instead of coming to rest.
-    forEachOverlap(x, y, radius, clearance, order, (a, b, deltaX, deltaY, distance, minimum) => {
+    const linkedSpace = Math.min(SPACE, room)
+    forEachOverlap(x, y, radius, SPACE, order, (a, b, deltaX, deltaY, distance, minimum) => {
+      const span = radius[a]! + radius[b]!
+      if (minimum > linkedSpace * span && (connected.has(a * count + b) || connected.has(b * count + a))) {
+        if (distance >= linkedSpace * span) return
+        minimum = linkedSpace * span
+      }
       const push = (minimum - distance) / distance
-      pull(a, SEPARATION, x[a]! - deltaX * push, y[a]! - deltaY * push)
-      pull(b, SEPARATION, x[b]! + deltaX * push, y[b]! + deltaY * push)
+      // The gap between their edges, relative to the gap at the edge of the space.
+      const gap = Math.max(distance / span - 1, SMOOTHING) / Math.max(minimum / span - 1, SMOOTHING)
+      const weight = SEPARATION * gap ** -SPACE_CURVE
+      pull(a, weight, x[a]! - deltaX * push, y[a]! - deltaY * push)
+      pull(b, weight, x[b]! + deltaX * push, y[b]! + deltaY * push)
     })
 
     for (let index = 0; index < count; index++) {
@@ -526,23 +536,23 @@ function placeFromStoredOffsets(
 }
 
 // Sweep along x; pushes each overlapping pair apart, the smaller idea moving more.
-// Calls back for each pair of ideas closer than `clearance` radius sums.
+// Calls back for each pair of ideas closer than `reach` radius sums.
 function forEachOverlap(
   x: Float64Array,
   y: Float64Array,
   radius: Float64Array,
-  clearance: number,
+  reach: number,
   order: number[],
   overlap: (a: number, b: number, deltaX: number, deltaY: number, distance: number, minimum: number) => void
 ) {
-  order.sort((left, right) => (x[left]! - radius[left]! * clearance) - (x[right]! - radius[right]! * clearance))
+  order.sort((left, right) => (x[left]! - radius[left]! * reach) - (x[right]! - radius[right]! * reach))
   for (let i = 0; i < order.length; i++) {
     const a = order[i]!
-    const reachA = x[a]! + radius[a]! * clearance
+    const reachA = x[a]! + radius[a]! * reach
     for (let j = i + 1; j < order.length; j++) {
       const b = order[j]!
-      if (x[b]! - radius[b]! * clearance > reachA) break
-      const minimum = (radius[a]! + radius[b]!) * clearance
+      if (x[b]! - radius[b]! * reach > reachA) break
+      const minimum = (radius[a]! + radius[b]!) * reach
       const deltaX = x[b]! - x[a]!
       const deltaY = y[b]! - y[a]!
       const distance = Math.hypot(deltaX, deltaY)

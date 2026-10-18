@@ -20,6 +20,7 @@ export const COLUMNS: Column[] = [
   { label: 'crossings', hint: 'per connection', better: 'lower', digits: 2, value: (r, v) => perConnection(r[v].crossings, r) },
   { label: 'weighted', hint: 'crossings by strength, per connection', better: 'lower', digits: 2, value: (r, v) => perConnection(r[v].weightedCrossings, r) },
   { label: 'shallow', hint: 'share of crossings under 30°', better: 'lower', digits: 2, value: (r, v) => r[v].shallowCrossings / Math.max(r[v].crossings, 1) },
+  { label: 'arrow overlap', hint: 'share of arrow ink on other arrows', better: 'lower', digits: 3, value: (r, v) => r[v].arrowOverlap },
   { label: 'under idea', hint: 'connections through a foreign idea, per connection', better: 'lower', digits: 3, value: (r, v) => perConnection(r[v].underIdea, r) },
   { label: 'overlaps', hint: 'pairs under 1 radius sum, per 100 ideas', better: 'lower', digits: 1, value: (r, v) => per100Ideas(r[v].overlaps, r) },
   { label: 'crowded', hint: 'pairs under the clearance, per 100 ideas', better: 'lower', digits: 1, value: (r, v) => per100Ideas(r[v].crowdedPairs, r) },

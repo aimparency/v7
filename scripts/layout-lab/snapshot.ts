@@ -13,6 +13,7 @@ import { IdeaSchema, ProjectMetaSchema, type Idea } from '../../packages/shared/
 import { INITIAL_STATES } from '../../packages/shared/src/constants.ts'
 import { nodeRadius, normalizedFlowForceWeights } from '../../packages/frontend/src/utils/graph-forces.ts'
 import { positionsFromStoredOffsets, type LayoutLink, type LayoutNode, type SemanticPair } from '../../packages/frontend/src/utils/autolayout.ts'
+import { connectionArrowWidth } from '../../packages/frontend/src/webgl/utils/arrow-geometry.ts'
 
 const NEAREST_NEIGHBOURS = 12 // as packages/backend/src/semantic-neighbours.ts
 const OFFSET_JITTER = 0.02 // radius sums, below the solver's minimum change, so seeds differ only in chaos
@@ -20,7 +21,7 @@ const OFFSET_JITTER = 0.02 // radius sums, below the solver's minimum change, so
 export interface Snapshot {
   name: string
   nodes: LayoutNode[] // positions: where the stored offsets put each idea
-  links: LayoutLink[]
+  links: (LayoutLink & { width: number })[] // width: the drawn arrow's, for the metrics
   semanticPairs: SemanticPair[]
   // What the graph view draws besides positions, for the rating session.
   labels: { text: string; state: string }[] // per node
@@ -47,8 +48,12 @@ export function loadSnapshot(name: string, projectPath: string, seed: number): S
     flowValue: flowValues.get(`${idea.id}->${connection.ideaId}`) ?? 0
   })))
   const strengths = normalizedFlowForceWeights(raw.map(link => ({ sourceId: link.childId, targetId: link.parentId, flowValue: link.flowValue })))
-  const links: LayoutLink[] = raw.map(({ parentId, childId, relativePosition }, index) => ({ parentId, childId, relativePosition, editable: true, strength: strengths[index]! }))
-  const unplaced: LayoutNode[] = ideas.map(idea => ({ id: idea.id, position: [0, 0], radius: nodeRadius(values.get(idea.id) ?? 0, averageValue), movable: true }))
+  const radiusOf = (id: string) => nodeRadius(values.get(id) ?? 0, averageValue)
+  const links = raw.map(({ parentId, childId, relativePosition }, index) => ({
+    parentId, childId, relativePosition, editable: true, strength: strengths[index]!,
+    width: connectionArrowWidth({ source: { r: radiusOf(childId) }, attributionShare: attributionShares.get(`${parentId}->${childId}`) ?? 0 })
+  }))
+  const unplaced: LayoutNode[] = ideas.map(idea => ({ id: idea.id, position: [0, 0], radius: radiusOf(idea.id), movable: true }))
 
   const meta = ProjectMetaSchema.partial().safeParse(JSON.parse(fs.readFileSync(path.join(bowman, 'meta.json'), 'utf8')))
   return {
