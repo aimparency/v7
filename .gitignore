@@ -36,3 +36,7 @@ next
 .claude/settings.json
 
 .grok
+
+# layout lab: machine-specific project list and results
+scripts/layout-lab/projects.local.json
+scripts/layout-lab/results/

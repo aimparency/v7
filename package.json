@@ -37,7 +37,8 @@
     "knip": "knip --no-progress",
     "protocol:schemas": "tsx packages/shared/scripts/protocol-schemas.ts",
     "validate:bowman": "tsx packages/shared/scripts/validate-bowman.ts",
-    "dev:mobile": "sh scripts/dev-mobile.sh"
+    "dev:mobile": "sh scripts/dev-mobile.sh",
+    "layout-lab": "tsx scripts/layout-lab/run.ts"
   },
   "keywords": [
     "aimparency",
@@ -49,6 +50,8 @@
   "author": "Aimparency contributors",
   "license": "ISC",
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "better-sqlite3": "^12.11.1",
     "concurrently": "^10.0.3",
     "dotenv-cli": "^11.0.0",
     "knip": "^5.88.1",

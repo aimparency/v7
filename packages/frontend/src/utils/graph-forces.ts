@@ -58,3 +58,11 @@ export function normalizedFlowForceWeights(links: FlowForceLink[]) {
         * Math.sqrt(endpointNormalizedStrength)
   })
 }
+
+const MIN_NODE_RADIUS = 40
+
+// Area ∝ value; the radius floor keeps value-less ideas clickable without
+// inflating the others.
+export function nodeRadius(value: number, averageValue: number) {
+  return Math.max(Math.sqrt(value / (averageValue || 1)) * 150, MIN_NODE_RADIUS)
+}
