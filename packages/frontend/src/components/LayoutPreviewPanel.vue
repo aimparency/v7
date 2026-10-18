@@ -20,11 +20,9 @@ const emit = defineEmits<{ apply: []; cancel: []; resetPositions: [] }>()
 // stored as distances between centres, in radius sums: the gap is one less.
 interface Slider { key: keyof LayoutSettings; label: string; hint: string; min: number; max: number; scale: 'linear' | 'log'; gap?: true }
 const GROUPS: { name: string; sliders: Slider[] }[] = [
-  { name: 'Connection length', sliders: [
+  { name: 'Connections', sliders: [
     { key: 'spacing', label: 'Target gap', hint: 'The gap between connected ideas that connections are pulled toward, in radius sums', min: 3, max: 5, scale: 'linear', gap: true },
-    { key: 'length', label: 'Amount', hint: 'How strongly connections are pulled toward the target gap, longer ones in and shorter ones out', min: 0.3, max: 10, scale: 'log' }
-  ] },
-  { name: 'Importance', sliders: [
+    { key: 'length', label: 'Amount', hint: 'How strongly connections are pulled toward the target gap, longer ones in and shorter ones out', min: 0.3, max: 10, scale: 'log' },
     { key: 'importance', label: 'Weight by flow', hint: 'How much a connection\'s value flow decides how hard it pulls toward the target gap and how wide an angle it gets around its ideas: 0 every connection alike, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' }
   ] },
   { name: 'Keep as is', sliders: [
@@ -154,13 +152,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 
   & .settings {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: 0.5rem;
 
     & fieldset {
-      flex: 1 1 9rem;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
+      grid-template-columns: 1fr 1fr;
       gap: 0.3rem 0.75rem;
       margin: 0;
       padding: 0.3rem 0.5rem 0.5rem;
