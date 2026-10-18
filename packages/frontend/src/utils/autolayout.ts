@@ -88,13 +88,13 @@ export const roundOffset = (offset: readonly [number, number]): [number, number]
 const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
   memory: 1, // keep stored offsets
-  length: 2, // times connection strength: pull connections toward `room` long
+  length: 6, // times connection strength: pull connections toward `room` long; the layout lab's strongest lever against crossings
   spread: 1, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
-  outward: 0.15, // a moving child goes to the half circle facing away from its grandparents; too weak to overrule memory
-  semantic: 0.03, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums
+  outward: 1.5, // a moving child goes to the half circle facing away from its grandparents
+  semantic: 0, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums; the lab found no benefit, so off
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
-  separation: 8 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
+  separation: 4 // pushes ideas closer than the clearance apart, as one pull among the others so the iterations converge
 }
 // What the Layout panel lets you tune (anchor and separation are mechanics).
 export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
@@ -411,7 +411,7 @@ export function createLayoutSolver(
   }
 }
 
-const RELAX_BUDGET = 600 // iterations at most, after the start and after every settings change
+const RELAX_BUDGET = 1200 // iterations at most, after the start and after every settings change
 const RELAX_CHUNK = 10 // iterations between results
 const SPREAD_RAMP = 300 // the first iterations, while branches can still pass each other
 const CONVERGED = 0.1 // radius sums: no idea moved further in any iteration of a chunk

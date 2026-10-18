@@ -31,12 +31,22 @@ describe('LayoutPreviewPanel', () => {
     expect((wrapper.find('input[type="checkbox"]').element as HTMLInputElement).checked).toBe(true)
   })
 
-  it('slides a weight logarithmically around its default', async () => {
+  it('slides a weight logarithmically over its range', async () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
     const memory = wrapper.findAll('.settings input')[1]!
-    expect(Number((memory.element as HTMLInputElement).value)).toBeCloseTo(0.5)
+    expect(Number((memory.element as HTMLInputElement).value)).toBeCloseTo(Math.log(1 / 0.3) / Math.log(10 / 0.3))
     await memory.setValue(1)
-    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ memory: 10 * DEFAULT_LAYOUT_SETTINGS.memory })
+    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ memory: 10 })
+  })
+
+  it('turns a weight whose range starts at 0 off at the left end', async () => {
+    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
+    const semantic = wrapper.findAll('.settings input')[5]!
+    expect(Number((semantic.element as HTMLInputElement).value)).toBe(0)
+    await semantic.setValue(0.5)
+    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0.01 })
+    await semantic.setValue(0)
+    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0 })
   })
 
   it('asks to start again from the stored layout', async () => {

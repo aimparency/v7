@@ -14,20 +14,27 @@ const settings = defineModel<LayoutSettings>('settings', { required: true })
 const emit = defineEmits<{ apply: []; cancel: []; resetPositions: [] }>()
 
 type Weight = Exclude<keyof LayoutSettings, 'spacing'>
-// Each weight slides logarithmically from a tenth to ten times its default.
-const WEIGHTS: { key: Weight; label: string; hint: string }[] = [
-  { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes' },
-  { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; strong connections more so' },
-  { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle' },
-  { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent' },
-  { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; weak, strong pulls tangle its connections' },
-  { key: 'isolatedSemantic', label: 'Unconnected toward similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both' }
+// Each weight slides logarithmically over its range, found with the layout
+// lab (scripts/layout-lab). A range from 0 is off at the left end, then
+// logarithmic from a hundredth of its maximum.
+const WEIGHTS: { key: Weight; label: string; hint: string; min: number; max: number }[] = [
+  { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes', min: 0.3, max: 10 },
+  { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; strong connections more so', min: 0.6, max: 20 },
+  { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle', min: 0.1, max: 5 },
+  { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent', min: 0.15, max: 15 },
+  { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; tangles its connections, so off by default', min: 0, max: 0.1 },
+  { key: 'isolatedSemantic', label: 'Unconnected toward similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both', min: 0.1, max: 10 }
 ]
-const RANGE = 100 // max / min
-const toSlider = (key: Weight) => Math.log(settings.value[key] * 10 / DEFAULT_LAYOUT_SETTINGS[key]) / Math.log(RANGE)
-const setWeight = (key: Weight, slider: number) => {
-  const value = DEFAULT_LAYOUT_SETTINGS[key] / 10 * RANGE ** slider
-  settings.value = { ...settings.value, [key]: Number(value.toPrecision(2)) }
+const OFF_RANGE = 100 // a range from 0: its logarithmic part spans max / 100 to max
+const logMin = ({ min, max }: { min: number; max: number }) => min > 0 ? min : max / OFF_RANGE
+const toSlider = (weight: (typeof WEIGHTS)[number]) => {
+  const value = settings.value[weight.key]
+  if (value <= 0) return 0
+  return Math.min(1, Math.max(0, Math.log(value / logMin(weight)) / Math.log(weight.max / logMin(weight))))
+}
+const setWeight = (weight: (typeof WEIGHTS)[number], slider: number) => {
+  const value = weight.min === 0 && slider === 0 ? 0 : logMin(weight) * (weight.max / logMin(weight)) ** slider
+  settings.value = { ...settings.value, [weight.key]: Number(value.toPrecision(2)) }
 }
 
 const noChanges = computed(() => props.changes.length === 0)
@@ -72,8 +79,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
         </span>
         <input
           type="range" min="0" max="1" step="0.01"
-          :value="toSlider(weight.key)"
-          @input="setWeight(weight.key, Number(($event.target as HTMLInputElement).value))"
+          :value="toSlider(weight)"
+          @input="setWeight(weight, Number(($event.target as HTMLInputElement).value))"
         />
       </label>
     </div>

@@ -31,7 +31,7 @@ export const COLUMNS: Column[] = [
   { label: 'moved max', hint: 'largest displacement, idea diameters', better: 'lower', digits: 1, value: (r, v) => r[v].displacementMax },
   { label: 'similar near', hint: 'share of the 5 most similar among the 5 nearest', better: 'higher', digits: 3, value: (r, v) => r[v].semanticNeighbourhood },
   { label: 'behind', hint: 'share of children behind their parent', better: 'lower', digits: 3, value: (r, v) => r[v].outwardViolations },
-  { label: 'iterations', hint: 'until rest (600 = budget used up)', better: 'lower', digits: 0, value: r => r.iterations },
+  { label: 'iterations', hint: 'until rest (1200 = budget used up)', better: 'lower', digits: 0, value: r => r.iterations },
   { label: 'files', hint: 'idea files changed: all / at the default share', better: 'lower', digits: 0, value: (r, v) => v === 'shown' ? r.shownFiles : r.files }
 ]
 

@@ -24,12 +24,12 @@ function graph(offsets: Record<string, [string, [number, number]][]>) {
 
 const crowded = (positions: Map<string, [number, number]>) => {
   const list = [...positions.values()]
-  return list.some((a, i) => list.slice(i + 1).some(b => Math.hypot(a[0] - b[0], a[1] - b[1]) < 2 * R * 2.8)) // default clearance 3, a soft constraint: ends within a few percent of it, far above the simulation's 2
+  return list.some((a, i) => list.slice(i + 1).some(b => Math.hypot(a[0] - b[0], a[1] - b[1]) < 2 * R * 2.6)) // default clearance 3, a soft constraint: ends within about 10% of it, far above the simulation's 2
 }
 
 describe('solveLayout', () => {
   it('changes nothing when the stored offsets already form a clean layout', () => {
-    const { nodes, links } = graph({ root: [['a', [3, 0]], ['b', [-3, 0]]], a: [['c', [3, 0]]] })
+    const { nodes, links } = graph({ root: [['a', [4, 0]], ['b', [-4, 0]]], a: [['c', [4, 0]]] })
     expect(solveLayout(nodes, links).changes).toEqual([])
   })
 
