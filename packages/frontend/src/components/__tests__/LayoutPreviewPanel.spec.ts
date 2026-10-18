@@ -33,7 +33,7 @@ describe('LayoutPreviewPanel', () => {
 
   it('slides a weight logarithmically over its range', async () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
-    const memory = wrapper.findAll('.settings input')[2]!
+    const memory = wrapper.find('.settings input[name=memory]')
     expect(Number((memory.element as HTMLInputElement).value)).toBeCloseTo(Math.log(1 / 0.3) / Math.log(10 / 0.3))
     await memory.setValue(1)
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ memory: 10 })
@@ -41,7 +41,7 @@ describe('LayoutPreviewPanel', () => {
 
   it('turns a weight whose range starts at 0 off at the left end', async () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
-    const semantic = wrapper.findAll('.settings input')[6]!
+    const semantic = wrapper.find('.settings input[name=semantic]')
     expect(Number((semantic.element as HTMLInputElement).value)).toBe(0)
     await semantic.setValue(0.5)
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0.01 })

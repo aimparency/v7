@@ -1,7 +1,7 @@
 // Runs the live layout solver off the main thread. One solver per Layout
 // panel: it relaxes in chunks, streaming the result after each, until it has
-// converged; a settings change continues from the current state, so small
-// changes move little.
+// converged or calmed down (5 s after the start or a change); a settings
+// change continues from the current state, so small changes move little.
 import type { LayoutSettings } from 'shared'
 import { createLayoutSolver, createRelaxation, layoutOptions, type LayoutLink, type LayoutNode, type LayoutProgress, type LayoutSolver, type SemanticPair } from './autolayout'
 
@@ -35,7 +35,7 @@ self.onmessage = ({ data }: MessageEvent<LayoutMessage>) => {
   if ('start' in data) {
     const { nodes, links, semanticPairs, settings } = data.start
     solver = createLayoutSolver(nodes, links, { ...layoutOptions(settings), semanticPairs })
-    relaxation = createRelaxation(solver)
+    relaxation = createRelaxation(solver, { now: () => performance.now() })
   } else {
     solver?.setSettings(layoutOptions(data.settings))
     relaxation?.resume()

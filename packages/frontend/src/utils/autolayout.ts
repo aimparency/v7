@@ -114,7 +114,6 @@ const SPREAD_ANGLE = 2 * Math.PI
 // radius sums) than with equal weights.
 const SEMANTIC_SHARPNESS = 0.1
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
-const DAMPING = 0.5
 
 export function solveLayout(
   nodes: readonly LayoutNode[],
@@ -266,9 +265,10 @@ export function createLayoutSolver(
 
   const previousX = new Float64Array(count)
   const previousY = new Float64Array(count)
-  // One iteration; spreadShare scales the spread term (0–1). Returns the
+  // One iteration; spreadShare scales the spread term (0–1), stepSize is
+  // the share of the way each idea moves toward its target. Returns the
   // largest move of an idea, in radius sums: near 0 once it has converged.
-  const step = (spreadShare: number): number => {
+  const step = (spreadShare: number, stepSize = FREE_STEP): number => {
     previousX.set(x)
     previousY.set(y)
     for (let index = 0; index < count; index++) {
@@ -395,8 +395,8 @@ export function createLayoutSolver(
 
     for (let index = 0; index < count; index++) {
       if (!nodes[index]!.movable) continue
-      x[index] = x[index]! + DAMPING * (sumX[index]! / sumWeight[index]! - x[index]!)
-      y[index] = y[index]! + DAMPING * (sumY[index]! / sumWeight[index]! - y[index]!)
+      x[index] = x[index]! + stepSize * (sumX[index]! / sumWeight[index]! - x[index]!)
+      y[index] = y[index]! + stepSize * (sumY[index]! / sumWeight[index]! - y[index]!)
     }
 
     if (pinned) pinCentre()
@@ -432,24 +432,36 @@ export function createLayoutSolver(
 }
 
 const RELAX_BUDGET = 1200 // iterations at most, after the start and after every settings change
+const RELAX_DURATION = 5000 // ms instead, with a clock (the live panel): the same calm-down whatever the graph's size
 const RELAX_CHUNK = 10 // iterations between results
 const SPREAD_RAMP = 300 // the first iterations, while branches can still pass each other
-const CONVERGED = 0.1 // radius sums: no idea moved further in any iteration of a chunk
+// Each idea moves this share of the way to its target: the full step at
+// first, shrinking linearly to the settled one by the end of the budget, so
+// the solver calms down instead of oscillating until the budget cuts it off.
+const FREE_STEP = 0.5
+const SETTLED_STEP = 0.05
+const CONVERGED = 0.2 // radius sums per full step: no idea's target was further in any iteration of a chunk
 
-// The live solve's schedule, shared by the Layout panel's worker and the
-// layout lab: chunks until it has converged or the budget is used up.
-export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, spreadRamp = SPREAD_RAMP } = {}) {
+// Relaxes in chunks until converged or the budget (iterations, or with
+// `now` milliseconds) is spent: what the worker and the lab both run.
+export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, spreadRamp = SPREAD_RAMP, now }: { budget?: number; spreadRamp?: number; now?: () => number } = {}) {
   let iterations = 0
-  let remaining = budget
+  let sinceResume = 0
+  let resumedAt = now?.() ?? 0
+  const progress = () => now ? (now() - resumedAt) / RELAX_DURATION : sinceResume / budget
   return {
-    // After a settings change: a fresh budget, continuing from the current state.
-    resume: () => { remaining = budget },
+    // After a settings change: a fresh budget and full steps again, continuing from the current state.
+    resume: () => {
+      sinceResume = 0
+      resumedAt = now?.() ?? 0
+    },
     chunk: () => {
       let largestMove = 0
-      for (let step = 0; step < RELAX_CHUNK && remaining > 0; step++, remaining--, iterations++) {
-        largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / spreadRamp)))
+      for (let step = 0; step < RELAX_CHUNK && progress() < 1; step++, sinceResume++, iterations++) {
+        const stepSize = FREE_STEP + (SETTLED_STEP - FREE_STEP) * progress()
+        largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / spreadRamp), stepSize) / stepSize)
       }
-      return { done: remaining === 0 || (iterations >= spreadRamp && largestMove < CONVERGED), largestMove }
+      return { done: progress() >= 1 || (iterations >= spreadRamp && largestMove < CONVERGED), largestMove }
     },
     iterations: () => iterations
   }

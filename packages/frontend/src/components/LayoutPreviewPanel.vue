@@ -17,18 +17,26 @@ const emit = defineEmits<{ apply: []; cancel: []; resetPositions: [] }>()
 // range from 0 is off at the left end, then logarithmic from a hundredth of
 // its maximum.
 interface Slider { key: keyof LayoutSettings; label: string; hint: string; min: number; max: number; scale: 'linear' | 'log' }
-const SLIDERS: Slider[] = [
-  { key: 'spacing', label: 'Spacing', hint: 'The length connections are pulled toward, in radius sums (strength: Pull to spacing)', min: 3, max: 5, scale: 'linear' },
-  { key: 'space', label: 'Minimum space', hint: 'Radius sums every idea keeps from every other, connected or not; connected ideas at most the spacing', min: 3, max: 8, scale: 'linear' },
-  { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' },
-  { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; important connections more so', min: 0.3, max: 10, scale: 'log' },
-  { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle', min: 0.1, max: 5, scale: 'log' },
-  { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent', min: 0.15, max: 15, scale: 'log' },
-  { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; tangles its connections, so off by default', min: 0, max: 0.1, scale: 'log' },
-  { key: 'isolatedSemantic', label: 'Unconnected toward similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both', min: 0.1, max: 10, scale: 'log' },
-  { key: 'separation', label: 'Space push', hint: 'How hard ideas inside the minimum space push apart', min: 0.5, max: 50, scale: 'log' },
-  { key: 'spaceCurve', label: 'Space curve', hint: '0: the same push throughout the space; 1: growing with 1 / the gap between their edges, endless when touching; 2: with its square', min: 0, max: 2, scale: 'linear' },
-  { key: 'importance', label: 'Importance', hint: 'How much a connection\'s value decides its pull and angle: 0 all equal, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' }
+const GROUPS: { name: string; sliders: Slider[] }[] = [
+  { name: 'Connections', sliders: [
+    { key: 'spacing', label: 'Spacing', hint: 'The length connections are pulled toward, in radius sums (strength: Pull to spacing)', min: 3, max: 5, scale: 'linear' },
+    { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; important connections more so', min: 0.3, max: 10, scale: 'log' },
+    { key: 'importance', label: 'Importance', hint: 'How much a connection\'s value decides its pull and angle: 0 all equal, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' },
+    { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' }
+  ] },
+  { name: 'Angles', sliders: [
+    { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle', min: 0.1, max: 5, scale: 'log' },
+    { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent', min: 0.15, max: 15, scale: 'log' }
+  ] },
+  { name: 'Space', sliders: [
+    { key: 'space', label: 'Minimum space', hint: 'Radius sums every idea keeps from every other, connected or not; connected ideas at most the spacing', min: 3, max: 8, scale: 'linear' },
+    { key: 'separation', label: 'Space push', hint: 'How hard ideas inside the minimum space push apart', min: 0.5, max: 50, scale: 'log' },
+    { key: 'spaceCurve', label: 'Space curve', hint: '0: the same push throughout the space; 1: growing with 1 / the gap between their edges, endless when touching; 2: with its square', min: 0, max: 2, scale: 'linear' }
+  ] },
+  { name: 'Similarity', sliders: [
+    { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; tangles its connections, so off by default', min: 0, max: 0.1, scale: 'log' },
+    { key: 'isolatedSemantic', label: 'Unconnected to similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both', min: 0.1, max: 10, scale: 'log' }
+  ] }
 ]
 const OFF_RANGE = 100 // a logarithmic range from 0: its logarithmic part spans max / 100 to max
 const logMin = ({ min, max }: Slider) => min > 0 ? min : max / OFF_RANGE
@@ -64,28 +72,29 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
   <div id="layout-preview">
     <h3>Layout <span v-if="solving" class="hint">solving…</span></h3>
     <div class="settings">
-      <label v-for="slider in SLIDERS" :key="slider.key" :title="slider.hint">
-        <span class="name">
-          <span>
-            {{ slider.label }}
-            <button
-              v-if="slider.key === 'memory'"
-              class="btn-secondary"
-              title="Start again from the stored layout, with these settings"
-              @click.prevent="emit('resetPositions')"
-            >Reset positions</button>
+      <button
+        class="btn-secondary reset-positions"
+        title="Start again from the stored layout, with these settings"
+        @click="emit('resetPositions')"
+      >Reset positions</button>
+      <fieldset v-for="group in GROUPS" :key="group.name">
+        <legend>{{ group.name }}</legend>
+        <label v-for="slider in group.sliders" :key="slider.key" :title="slider.hint">
+          <span class="name">
+            <span>{{ slider.label }}</span>
+            <span class="value">{{ settings[slider.key] }}</span>
           </span>
-          <span class="value">{{ settings[slider.key] }}</span>
-        </span>
-        <input
-          type="range"
-          :min="slider.scale === 'linear' ? slider.min : 0"
-          :max="slider.scale === 'linear' ? slider.max : 1"
-          :step="slider.scale === 'linear' ? (slider.max - slider.min) / 100 : 0.01"
-          :value="toSlider(slider)"
-          @input="setSetting(slider, Number(($event.target as HTMLInputElement).value))"
-        />
-      </label>
+          <input
+            type="range"
+            :name="slider.key"
+            :min="slider.scale === 'linear' ? slider.min : 0"
+            :max="slider.scale === 'linear' ? slider.max : 1"
+            :step="slider.scale === 'linear' ? (slider.max - slider.min) / 100 : 0.01"
+            :value="toSlider(slider)"
+            @input="setSetting(slider, Number(($event.target as HTMLInputElement).value))"
+          />
+        </label>
+      </fieldset>
     </div>
     <div v-if="unsaved || !isDefault" class="row">
       <span v-if="unsaved" class="hint">Differs from the saved settings; Apply saves them to meta.json.</span>
@@ -144,12 +153,35 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+
+    & .reset-positions {
+      align-self: flex-end;
+    }
+
+    & fieldset {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.3rem 0.75rem;
+      margin: 0;
+      padding: 0.3rem 0.5rem 0.5rem;
+      border: 1px solid #333;
+      border-radius: 4px;
+    }
+
+    & legend {
+      padding: 0 0.3rem;
+      opacity: 0.6;
+    }
+
+    & input {
+      width: 100%;
+      margin: 0;
+    }
   }
 
   & .settings label, & .fader {
     display: flex;
     flex-direction: column;
-    gap: 0.2rem;
 
     & .name {
       display: flex;
