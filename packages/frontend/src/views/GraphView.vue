@@ -569,7 +569,7 @@ async function applyLayoutPreview() {
     dataStore.meta = await trpc.project.setLayoutSettings.mutate({ projectPath: projectStore.projectPath, layout: settings })
   }
   const files = new Set(applied.map(change => change.parentId)).size
-  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files and placed ${preview.placements.length} ideas without parent.`)
+  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files.`)
 }
 
 // Helper: split node text into lines for label rendering
@@ -695,7 +695,6 @@ function toggleSpinOffPreview() {
       v-model:positions-only="layoutPositionsOnly"
       v-model:settings="layoutSettings"
       :changes="layoutPreview.changes"
-      :placed="layoutPreview.placements.length"
       :saved="layoutPreview.saved"
       :solving="layoutSolving"
       @apply="applyLayoutPreview"

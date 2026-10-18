@@ -5,17 +5,16 @@ import LayoutPreviewPanel from '../LayoutPreviewPanel.vue'
 import { DEFAULT_LAYOUT_SETTINGS, type LayoutChange } from '../../utils/autolayout'
 
 const change = (parentId: string, childId: string): LayoutChange => ({ parentId, childId, relativePosition: [1, 0], shift: 1, relevance: 1 })
-const base = { placed: 0, count: 0, positionsOnly: false, settings: DEFAULT_LAYOUT_SETTINGS, saved: DEFAULT_LAYOUT_SETTINGS, solving: false }
+const base = { count: 0, positionsOnly: false, settings: DEFAULT_LAYOUT_SETTINGS, saved: DEFAULT_LAYOUT_SETTINGS, solving: false }
 
 describe('LayoutPreviewPanel', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
   it('shows connection and file counts for the fader position', () => {
     const wrapper = mount(LayoutPreviewPanel, {
-      props: { ...base, changes: [change('p1', 'a'), change('p1', 'b'), change('p2', 'c')], placed: 4, count: 2 }
+      props: { ...base, changes: [change('p1', 'a'), change('p1', 'b'), change('p2', 'c')], count: 2 }
     })
     expect(wrapper.text()).toContain('Connections changed: 2 of 3 (1 idea files)')
-    expect(wrapper.text()).toContain('Ideas without parent placed: 4')
   })
 
   it('changes no connections when only absolute positions are updated', async () => {
@@ -28,7 +27,7 @@ describe('LayoutPreviewPanel', () => {
   })
 
   it('locks the fader and the option when no connection would change', () => {
-    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [], placed: 3 } })
+    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
     expect(wrapper.find('.fader input').attributes('disabled')).toBeDefined()
     expect(wrapper.find('input[type="checkbox"]').attributes('disabled')).toBeDefined()
     expect((wrapper.find('input[type="checkbox"]').element as HTMLInputElement).checked).toBe(true)
