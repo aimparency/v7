@@ -10,22 +10,19 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { LayoutSettings } from '../../packages/shared/src/types.ts'
-import { createLayoutSolver, createRelaxation, DEFAULT_LAYOUT_SETTINGS, layoutOptions, positionsFromStoredOffsets, type LayoutChange, type LayoutOptions, type LayoutPlacement } from '../../packages/frontend/src/utils/autolayout.ts'
+import { DEFAULT_LAYOUT_SETTINGS } from '../../packages/frontend/src/utils/autolayout.ts'
 import { measureLayout, type LayoutMetrics } from '../../packages/frontend/src/utils/layout-metrics.ts'
 import { loadSnapshot, type Snapshot } from './snapshot.ts'
 import { writeReport } from './report.ts'
+import { applied, loadProjects, solve, type Run } from './solve.ts'
 
 export interface Experiment {
   description: string
   seeds?: number // runs per setting; seed 0 is the stored layout as is, others jitter it slightly
-  runs: {
+  runs: (Run & {
     name: string
-    settings?: Partial<LayoutSettings> // what the panel tunes
-    weights?: LayoutOptions['weights'] // also the mechanics (anchor, separation)
-    options?: Omit<LayoutOptions, 'room' | 'weights' | 'semanticPairs'>
-    relax?: Parameters<typeof createRelaxation>[1]
     shownShare?: number // the share measured as `shown`; default the panel's
-  }[]
+  })[]
 }
 
 export interface RunResult {
@@ -56,13 +53,7 @@ if (!experimentName) {
   console.error(`usage: pnpm layout-lab <experiment> [project...]\nexperiments: ${fs.readdirSync(path.join(LAB, 'experiments')).map(file => file.replace(/\.ts$/, '')).join(', ')}`)
   process.exit(1)
 }
-const projectsFile = path.join(LAB, 'projects.local.json')
-if (!fs.existsSync(projectsFile)) {
-  console.error(`missing ${projectsFile}; copy projects.example.json and point it at your projects`)
-  process.exit(1)
-}
-const projects = Object.entries(JSON.parse(fs.readFileSync(projectsFile, 'utf8')) as Record<string, string>)
-  .filter(([name]) => projectFilter.length === 0 || projectFilter.includes(name))
+const projects = loadProjects(projectFilter)
 const experiment: Experiment = (await import(path.join(LAB, 'experiments', `${experimentName}.ts`))).default
 
 fs.mkdirSync(path.join(LAB, 'results'), { recursive: true })
@@ -89,20 +80,10 @@ console.log(`report: ${path.join(LAB, 'results', `${experimentName}.html`)}`)
 
 function layOut(snapshot: Snapshot, run: Experiment['runs'][number], seed: number, before: LayoutMetrics): RunResult {
   const { nodes, links, semanticPairs } = snapshot
-  const settings = { ...DEFAULT_LAYOUT_SETTINGS, ...run.settings }
-  const started = Date.now()
-  const options = layoutOptions(settings)
-  const solver = createLayoutSolver(nodes, links, { ...options, ...run.options, weights: { ...options.weights, ...run.weights }, semanticPairs })
-  const relaxation = createRelaxation(solver, run.relax)
-  let chunk = relaxation.chunk()
-  while (!chunk.done) chunk = relaxation.chunk()
-  const { changes, placements } = solver.result()
-  const milliseconds = Date.now() - started
-
+  const { settings, changes, placements, positions: full, iterations, lastMove, milliseconds } = solve(snapshot, run)
   const start = new Map(nodes.map(node => [node.id, node.position]))
   const context = { clearance: run.options?.clearance ?? 3, spacing: settings.spacing, start, semanticPairs }
   const shownCount = Math.round(changes.length * (run.shownShare ?? SHOWN_SHARE))
-  const full = applied(snapshot, changes, placements)
   return {
     project: snapshot.name,
     run: run.name,
@@ -110,8 +91,8 @@ function layOut(snapshot: Snapshot, run: Experiment['runs'][number], seed: numbe
     settings,
     ideas: nodes.length,
     connections: links.length,
-    iterations: relaxation.iterations(),
-    lastMove: chunk.largestMove,
+    iterations,
+    lastMove,
     milliseconds,
     changes: changes.length,
     files: new Set(changes.map(change => change.parentId)).size,
@@ -122,15 +103,4 @@ function layOut(snapshot: Snapshot, run: Experiment['runs'][number], seed: numbe
     before,
     positions: seed === 0 ? Object.fromEntries([...full].map(([id, [x, y]]) => [id, [Math.round(x), Math.round(y)]])) : undefined
   }
-}
-
-// Where the stored offsets put each idea once these changes are saved: what
-// the panel shows, and what the simulation settles toward after Apply.
-function applied({ nodes, links }: Snapshot, changes: readonly LayoutChange[], placements: readonly LayoutPlacement[]) {
-  const offset = new Map(changes.map(change => [`${change.parentId}>${change.childId}`, change.relativePosition]))
-  const placement = new Map(placements.map(({ id, position }) => [id, position]))
-  return positionsFromStoredOffsets(
-    nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
-    links.map(link => ({ ...link, relativePosition: offset.get(`${link.parentId}>${link.childId}`) ?? link.relativePosition }))
-  )
 }

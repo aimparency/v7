@@ -39,7 +39,8 @@
     "validate:bowman": "tsx packages/shared/scripts/validate-bowman.ts",
     "dev:mobile": "sh scripts/dev-mobile.sh",
     "layout-lab": "tsx scripts/layout-lab/run.ts",
-    "layout-lab:summary": "tsx scripts/layout-lab/summary.ts"
+    "layout-lab:summary": "tsx scripts/layout-lab/summary.ts",
+    "layout-lab:session": "tsx scripts/layout-lab/session.ts"
   },
   "keywords": [
     "aimparency",

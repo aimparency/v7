@@ -9,7 +9,8 @@ import fs from 'node:fs'
 import path from 'node:path'
 import Database from 'better-sqlite3'
 import { calculateIdeaValues } from '../../packages/shared/src/value-calculation.ts'
-import { IdeaSchema, type Idea } from '../../packages/shared/src/types.ts'
+import { IdeaSchema, ProjectMetaSchema, type Idea } from '../../packages/shared/src/types.ts'
+import { INITIAL_STATES } from '../../packages/shared/src/constants.ts'
 import { nodeRadius, normalizedFlowForceWeights } from '../../packages/frontend/src/utils/graph-forces.ts'
 import { positionsFromStoredOffsets, type LayoutLink, type LayoutNode, type SemanticPair } from '../../packages/frontend/src/utils/autolayout.ts'
 
@@ -21,6 +22,10 @@ export interface Snapshot {
   nodes: LayoutNode[] // positions: where the stored offsets put each idea
   links: LayoutLink[]
   semanticPairs: SemanticPair[]
+  // What the graph view draws besides positions, for the rating session.
+  labels: { text: string; state: string }[] // per node
+  attributionShares: number[] // per link: the share of the child's value that comes from the parent
+  statuses: { key: string; color: string }[] // the project's status colors
 }
 
 export function loadSnapshot(name: string, projectPath: string, seed: number): Snapshot {
@@ -30,7 +35,7 @@ export function loadSnapshot(name: string, projectPath: string, seed: number): S
     return parsed.success ? [parsed.data as Idea] : []
   })
   const byId = new Map(ideas.map(idea => [idea.id, idea]))
-  const { values, flowValues } = calculateIdeaValues(ideas)
+  const { values, flowValues, attributionShares } = calculateIdeaValues(ideas)
   const averageValue = ideas.reduce((sum, idea) => sum + (values.get(idea.id) ?? 0), 0) / Math.max(ideas.length, 1)
 
   const random = mulberry32(seed)
@@ -45,7 +50,16 @@ export function loadSnapshot(name: string, projectPath: string, seed: number): S
   const links: LayoutLink[] = raw.map(({ parentId, childId, relativePosition }, index) => ({ parentId, childId, relativePosition, editable: true, strength: strengths[index]! }))
   const unplaced: LayoutNode[] = ideas.map(idea => ({ id: idea.id, position: [0, 0], radius: nodeRadius(values.get(idea.id) ?? 0, averageValue), movable: true }))
 
-  return { name, nodes: placeRoots(unplaced, links, random), links, semanticPairs: semanticNeighbours(bowman, new Set(byId.keys())) }
+  const meta = ProjectMetaSchema.partial().safeParse(JSON.parse(fs.readFileSync(path.join(bowman, 'meta.json'), 'utf8')))
+  return {
+    name,
+    nodes: placeRoots(unplaced, links, random),
+    links,
+    semanticPairs: semanticNeighbours(bowman, new Set(byId.keys())),
+    labels: ideas.map(idea => ({ text: idea.text, state: idea.status.state })),
+    attributionShares: links.map(link => attributionShares.get(`${link.parentId}->${link.childId}`) ?? 0),
+    statuses: ((meta.success ? meta.data.statuses : undefined) ?? INITIAL_STATES).map(({ key, color }) => ({ key, color }))
+  }
 }
 
 // Each parentless idea with its subtree (as the stored offsets lay it out
@@ -139,7 +153,7 @@ function unit(vector: ArrayLike<number>) {
   return Float64Array.from(vector, value => value / length)
 }
 
-function mulberry32(seed: number) {
+export function mulberry32(seed: number) {
   let state = seed >>> 0
   return () => {
     state = (state + 0x6d2b79f5) >>> 0
