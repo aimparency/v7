@@ -38,6 +38,7 @@ export interface LayoutLink {
   relativePosition: readonly [number, number]
   editable: boolean
   strength: number // the simulation's normalized connection force, 0.25 (thin sibling) to 0.75 (sole connection)
+  flowShare?: number // flow normalized at both ends (0–1, 0 without flow); when given, it sets the strength with the importance weight
 }
 
 export interface SemanticPair {
@@ -88,20 +89,23 @@ export const roundOffset = (offset: readonly [number, number]): [number, number]
 const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
   memory: 1, // keep stored offsets
-  length: 6, // times connection strength: pull connections toward `room` long; the layout lab's strongest lever against crossings
+  length: 3, // times connection strength: pull connections toward `room` long; the layout lab's strongest lever against crossings
   spread: 1, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
   outward: 1.5, // a moving child goes to the half circle facing away from its grandparents
   semantic: 0, // per idea, shared by its semantic pairs; pulls toward clearance · (1 + 2 · distance) radius sums; the lab found no benefit, so off
   isolatedSemantic: 1, // the same for an unconnected idea: semantic neighbours are its only reason to be anywhere
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
   separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge
-  space: 3, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides)
-  spaceCurve: 0 // how the push grows inside `space`: 0 constant, 1 with 1 / gap between their edges (endless when touching), 2 with its square
+  space: 5, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides). At 3, ideas sat almost touching in large graphs
+  spaceCurve: 0, // how the push grows inside `space`: 0 constant, 1 with 1 / gap between their edges (endless when touching), 2 with its square
+  importance: 0.5 // connection strength = 1 − importance + importance · flow share: 0 all equal, 1 in proportion to the flow (weak connections then fly far out)
 }
-// What the Layout panel lets you tune (the rest are mechanics).
-export const DEFAULT_LAYOUT_SETTINGS: LayoutSettings = (({ anchor: _anchor, separation: _separation, space: _space, spaceCurve: _spaceCurve, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+// What the Layout panel lets you tune (the anchor is a mechanic). Settings
+// saved before a setting existed lack it: `withLayoutDefaults` fills it in.
+export const DEFAULT_LAYOUT_SETTINGS: Required<LayoutSettings> = (({ anchor: _anchor, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+export const withLayoutDefaults = (settings: LayoutSettings | undefined): Required<LayoutSettings> => ({ ...DEFAULT_LAYOUT_SETTINGS, ...settings })
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
-  (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => left[key] === right[key])
+  (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => withLayoutDefaults(left)[key] === withLayoutDefaults(right)[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
 // The connections around an idea share this angle, each by its strength.
 const SPREAD_ANGLE = 2 * Math.PI
@@ -137,7 +141,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, SPACE_CURVE = 0
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ISOLATED_SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, SPACE_CURVE = 0, IMPORTANCE = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -161,12 +165,13 @@ export function createLayoutSolver(
   })
   const parentsOf = nodes.map(() => [] as number[])
   // Every connection of an idea, to parents and children alike.
-  const around = nodes.map(() => [] as { other: number; isChild: boolean; strength: number }[])
-  for (const { link, child, parent } of edges) {
+  const around = nodes.map(() => [] as { other: number; isChild: boolean; edge: number }[])
+  edges.forEach(({ child, parent }, edge) => {
     parentsOf[child]!.push(parent)
-    around[parent]!.push({ other: child, isChild: true, strength: link.strength })
-    around[child]!.push({ other: parent, isChild: false, strength: link.strength })
-  }
+    around[parent]!.push({ other: child, isChild: true, edge })
+    around[child]!.push({ other: parent, isChild: false, edge })
+  })
+  const strength = new Float64Array(edges.length) // per edge, from the importance setting
   const connected = new Set(edges.map(edge => edge.child * count + edge.parent))
   const pairs = semanticPairs.flatMap(pair => {
     const a = indexOf.get(pair.source)
@@ -202,10 +207,13 @@ export function createLayoutSolver(
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, spaceCurve: SPACE_CURVE } =
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, isolatedSemantic: ISOLATED_SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, spaceCurve: SPACE_CURVE, importance: IMPORTANCE } =
       { ...DEFAULT_WEIGHTS, ...weights })
     networkSize.forEach((size, index) => {
       semanticWeight[index] = SEMANTIC + (ISOLATED_SEMANTIC - SEMANTIC) * (1 - (size - 1) / Math.max(largestNetwork - 1, 1))
+    })
+    edges.forEach(({ link }, edge) => {
+      strength[edge] = link.flowShare === undefined ? link.strength : 1 - IMPORTANCE + IMPORTANCE * link.flowShare
     })
   }
   setSettings({ room: initialRoom, weights: initialWeights })
@@ -271,7 +279,7 @@ export function createLayoutSolver(
       pull(index, ANCHOR / Math.max(drift, SMOOTHING), startX[index]!, startY[index]!)
     }
 
-    for (const { link, child, parent, span, keepX, keepY } of edges) {
+    for (const [edge, { child, parent, span, keepX, keepY }] of edges.entries()) {
       const vx = x[child]! - x[parent]!
       const vy = y[child]! - y[parent]!
 
@@ -284,8 +292,8 @@ export function createLayoutSolver(
       const length = Math.hypot(vx, vy)
       if (length > 0) {
         const scale = room * span / length
-        pull(child, LENGTH * link.strength, x[parent]! + vx * scale, y[parent]! + vy * scale)
-        pull(parent, LENGTH * link.strength, x[child]! - vx * scale, y[child]! - vy * scale)
+        pull(child, LENGTH * strength[edge]!, x[parent]! + vx * scale, y[parent]! + vy * scale)
+        pull(parent, LENGTH * strength[edge]!, x[child]! - vx * scale, y[child]! - vy * scale)
       }
 
       // Seen from the grandparents, a child must not lie behind its parent:
@@ -335,7 +343,7 @@ export function createLayoutSolver(
       if (connections.length < 2) continue
       let totalStrength = 0
       const angles = connections.map(connection => {
-        totalStrength += connection.strength
+        totalStrength += strength[connection.edge]!
         return Math.atan2(y[connection.other]! - y[center]!, x[connection.other]! - x[center]!)
       })
       if (totalStrength <= 0) continue
@@ -344,7 +352,7 @@ export function createLayoutSolver(
         const first = sorted[i]!
         const second = sorted[(i + 1) % sorted.length]!
         const gap = angles[second]! - angles[first]! + (i === sorted.length - 1 ? 2 * Math.PI : 0)
-        const needed = SPREAD_ANGLE * (connections[first]!.strength + connections[second]!.strength) / 2 / totalStrength
+        const needed = SPREAD_ANGLE * (strength[connections[first]!.edge]! + strength[connections[second]!.edge]!) / 2 / totalStrength
         if (gap >= needed) continue
         const { other: firstOther, isChild: firstIsChild } = connections[first]!
         const { other: secondOther, isChild: secondIsChild } = connections[second]!

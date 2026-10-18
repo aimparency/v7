@@ -55,3 +55,18 @@ Further feedback: connections are arcs (measure them as such: done); v7
 mostly shows arrows, no background ("more spread or fewer arrows"); ideas
 should keep room from all ideas, not only connected ones (minimum space,
 session 3); s for same; fit the whole graph.
+
+## session-20261018-1721: minimum space (2 of 10 rated)
+
+- **Space push 16 vs 4** (at space 5): 4 on both large graphs, "better
+  distributed and more compact at the same time".
+- **Keep as is 0.3 vs 1** (at space 3): no clear winner; on both large
+  graphs ideas sit almost touching, "very bad".
+
+Then: everything goes into the Layout panel as sliders to try live:
+minimum space (reach, default now 5), space push, space curve and
+importance. Importance is a blend, strength = 1 − importance + importance ·
+flow share, not a power of the share: flow shares span orders of magnitude,
+so any power starved weak connections (ideas: mean length 6 → 25 radius
+sums at power 0.3). Default 0.5 with pull to spacing 3 (the strengths are
+now about twice the simulation's).

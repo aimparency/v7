@@ -21,7 +21,10 @@ const SINGLE_CONNECTION_FORCE_WEIGHT = 0.75
 const MIN_POSITIVE_FLOW_FORCE_WEIGHT = 0.25
 const ABSENT_FLOW_FORCE_WEIGHT = 0.5
 
-export function normalizedFlowForceWeights(links: FlowForceLink[]) {
+// Each connection's flow, normalized at both incident ideas (0–1):
+// flow / sqrt(sourceTotal · targetTotal), so both ends use the same pair
+// strength and connection forces stay equal and opposite. NaN without flow.
+export function endpointFlowShares(links: FlowForceLink[]) {
   const incidentFlow = new Map<string, number>()
 
   for (const link of links) {
@@ -35,28 +38,21 @@ export function normalizedFlowForceWeights(links: FlowForceLink[]) {
 
   return links.map(link => {
     const flow = link.flowValue
-    if (!Number.isFinite(flow) || flow <= 0) return ABSENT_FLOW_FORCE_WEIGHT
-
+    if (!Number.isFinite(flow) || flow <= 0) return NaN
     const sourceTotal = incidentFlow.get(link.sourceId) ?? flow
     const targetTotal = incidentFlow.get(link.targetId) ?? flow
-
-    // Normalize at both ideas, then combine the two endpoint shares
-    // symmetrically. This is flow / sqrt(sourceTotal * targetTotal), so both
-    // ends use exactly the same pair strength: connection forces remain
-    // equal-and-opposite and cannot introduce global drift. A thicker
-    // connection still has more influence than a thinner sibling.
-    const endpointNormalizedStrength = Math.min(
-      1,
-      flow / Math.sqrt(sourceTotal * targetTotal),
-    )
-
-    // Flow can span orders of magnitude. Square-root compression keeps small
-    // structural links active while a sole connection retains the established
-    // 0.75 settling strength.
-    return MIN_POSITIVE_FLOW_FORCE_WEIGHT
-      + (SINGLE_CONNECTION_FORCE_WEIGHT - MIN_POSITIVE_FLOW_FORCE_WEIGHT)
-        * Math.sqrt(endpointNormalizedStrength)
+    return Math.min(1, flow / Math.sqrt(sourceTotal * targetTotal))
   })
+}
+
+export function normalizedFlowForceWeights(links: FlowForceLink[]) {
+  // Flow can span orders of magnitude. Square-root compression keeps small
+  // structural links active while a sole connection retains the established
+  // 0.75 settling strength. A thicker connection still has more influence
+  // than a thinner sibling.
+  return endpointFlowShares(links).map(share => Number.isNaN(share)
+    ? ABSENT_FLOW_FORCE_WEIGHT
+    : MIN_POSITIVE_FLOW_FORCE_WEIGHT + (SINGLE_CONNECTION_FORCE_WEIGHT - MIN_POSITIVE_FLOW_FORCE_WEIGHT) * Math.sqrt(share))
 }
 
 const MIN_NODE_RADIUS = 40

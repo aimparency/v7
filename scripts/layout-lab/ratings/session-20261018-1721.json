@@ -1,0 +1,19 @@
+[
+ { "comparison": 1, "hypothesis": "Pushing 4× harder (amount 16) beats amount 4, at space 5",
+  "left": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1, "space": 5 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1, "space": 5, "separation": 16 },
+  "projects": { "ideas": "left", "v7": "left" }, "notes": {},
+  "why": "for large graphs, left is better distributed and more compact at the same time", "overall": "left" },
+ { "comparison": 2, "hypothesis": "Keep as is 0.3 beats 1 (unrated in session 2)",
+  "left": { "spacing": 4, "memory": 0.3, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "right": { "spacing": 4, "memory": 1, "length": 6, "spread": 1, "outward": 1.5, "semantic": 0, "isolatedSemantic": 1 },
+  "projects": { "an-der-rax": "left", "ways-of-will": "right", "v7": "same", "ideas": "same" },
+  "notes": {
+   "v7": "both bad. regions where distance is < sum of radiuses. that's very bad. ",
+   "ideas": "also here. regions where ideas almost overlap. Very bad. we need more aim distance force i think? And maybe we need more thematic clustering force... How does that work again? we need clusters based on embedding and then distribute that on the expected graph dimensions? Do we have something like expected graph dimensions somewhere that could be influencing how much everything is pushed too close together? \nIf we have, give me a fader for that so that i can try in realtime. \nBtw. put things into faders and ranges, so that i can experiment myself. "
+  },
+  "why": "" },
+ { "comparison": 3, "unrated": true }, { "comparison": 4, "unrated": true }, { "comparison": 5, "unrated": true },
+ { "comparison": 6, "unrated": true }, { "comparison": 7, "unrated": true }, { "comparison": 8, "unrated": true },
+ { "comparison": 9, "unrated": true }, { "comparison": 10, "unrated": true }
+]

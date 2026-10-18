@@ -132,6 +132,25 @@
         "isolatedSemantic": {
           "type": "number",
           "minimum": 0
+        },
+        "space": {
+          "type": "number",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "separation": {
+          "type": "number",
+          "minimum": 0
+        },
+        "spaceCurve": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 3
+        },
+        "importance": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1
         }
       },
       "required": [

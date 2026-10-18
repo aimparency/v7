@@ -19,7 +19,8 @@ import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, largestNetworkIds, positionsFromStoredOffsets, sameLayoutSettings, type LayoutChange, type LayoutPlacement } from '../utils/autolayout'
+import { DEFAULT_LAYOUT_SETTINGS, largestNetworkIds, positionsFromStoredOffsets, sameLayoutSettings, withLayoutDefaults, type LayoutChange, type LayoutPlacement } from '../utils/autolayout'
+import { endpointFlowShares } from '../utils/graph-forces'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 import { trpc } from '../trpc'
@@ -360,7 +361,7 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
 // how many offsets.
 type LayoutPreview = {
   request: Omit<LayoutRequest, 'settings'>
-  saved: LayoutSettings // as last applied, from meta.json
+  saved: Required<LayoutSettings> // as last applied, from meta.json, defaults filled in
   changes: LayoutChange[]
   placements: LayoutPlacement[]
   linkByKey: Map<string, GraphLink>
@@ -369,7 +370,7 @@ type LayoutPreview = {
   mainNetwork: Set<string> // its centre stays put
 }
 const layoutPreview = shallowRef<LayoutPreview | null>(null)
-const layoutSettings = ref<LayoutSettings>({ ...DEFAULT_LAYOUT_SETTINGS })
+const layoutSettings = ref<Required<LayoutSettings>>({ ...DEFAULT_LAYOUT_SETTINGS })
 const layoutSolving = ref(false)
 // The most relevant changes do most of the relaxing; the long tail is not worth its diff.
 const LAYOUT_PREVIEW_SHARE = 0.2
@@ -391,20 +392,22 @@ async function startLayoutPreview() {
   layoutSolving.value = true
   try {
     const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ projectPath: projectStore.projectPath })
-    const saved = dataStore.meta?.layout ?? DEFAULT_LAYOUT_SETTINGS
+    const saved = withLayoutDefaults(dataStore.meta?.layout)
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
     layoutPositionsOnly.value = false
     glideTarget.clear()
     glideShown.clear()
+    const flowShares = endpointFlowShares(links.value.map(link => ({ sourceId: link.source.id, targetId: link.target.id, flowValue: link.flowValue })))
     const request: LayoutPreview['request'] = {
       nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
-      links: links.value.map(link => ({
+      links: links.value.map((link, index) => ({
         parentId: link.target.id,
         childId: link.source.id,
         relativePosition: [link.relativePosition[0], link.relativePosition[1]],
         editable: isIdeaNode(link.source) && isIdeaNode(link.target),
-        strength: link.forceWeight
+        strength: link.forceWeight,
+        flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!
       })),
       semanticPairs
     }

@@ -134,7 +134,10 @@ describe('solveLayout', () => {
     const angle = (positions: Map<string, [number, number]>, id: string) =>
       (Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0]) + 2 * Math.PI) % (2 * Math.PI)
     // Spread at full strength from the start, as for a solver that keeps running.
-    const solver = createLayoutSolver([...nodes, anchor], links, { semanticPairs: [{ source: 'a', target: 'anchor', distance: 0 }], weights: { semantic: 2 } })
+    // A minimum space wider than the siblings' distance blocks the pass (space
+    // 5 here; on real graphs crossings fell on two projects and rose on one),
+    // so this tests the spread alone.
+    const solver = createLayoutSolver([...nodes, anchor], links, { semanticPairs: [{ source: 'a', target: 'anchor', distance: 0 }], weights: { semantic: 2, space: 3 } })
     for (let iteration = 0; iteration < 300; iteration++) solver.step(1)
     expect(angle(solver.positions(), 'a')).toBeGreaterThan(angle(solver.positions(), 'b'))
   })

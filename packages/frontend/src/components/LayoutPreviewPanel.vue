@@ -7,34 +7,42 @@ import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, type LayoutChange } from '
 // relevant first) and the placed unconnected ideas, and re-solves whenever the
 // settings change. Nothing is saved until Apply. Positions only: no connection
 // changes, so no idea file changes.
-const props = defineProps<{ changes: LayoutChange[]; placed: number; saved: LayoutSettings; solving: boolean }>()
+const props = defineProps<{ changes: LayoutChange[]; placed: number; saved: Required<LayoutSettings>; solving: boolean }>()
 const count = defineModel<number>('count', { required: true })
 const positionsOnly = defineModel<boolean>('positionsOnly', { required: true })
-const settings = defineModel<LayoutSettings>('settings', { required: true })
+const settings = defineModel<Required<LayoutSettings>>('settings', { required: true })
 const emit = defineEmits<{ apply: []; cancel: []; resetPositions: [] }>()
 
-type Weight = Exclude<keyof LayoutSettings, 'spacing'>
-// Each weight slides logarithmically over its range, found with the layout
-// lab (scripts/layout-lab). A range from 0 is off at the left end, then
-// logarithmic from a hundredth of its maximum.
-const WEIGHTS: { key: Weight; label: string; hint: string; min: number; max: number }[] = [
-  { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes', min: 0.3, max: 10 },
-  { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; strong connections more so', min: 0.6, max: 20 },
-  { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle', min: 0.1, max: 5 },
-  { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent', min: 0.15, max: 15 },
-  { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; tangles its connections, so off by default', min: 0, max: 0.1 },
-  { key: 'isolatedSemantic', label: 'Unconnected toward similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both', min: 0.1, max: 10 }
+// Ranges found with the layout lab (scripts/layout-lab). A logarithmic
+// range from 0 is off at the left end, then logarithmic from a hundredth of
+// its maximum.
+interface Slider { key: keyof LayoutSettings; label: string; hint: string; min: number; max: number; scale: 'linear' | 'log' }
+const SLIDERS: Slider[] = [
+  { key: 'spacing', label: 'Spacing', hint: 'The length connections are pulled toward, in radius sums (strength: Pull to spacing)', min: 3, max: 5, scale: 'linear' },
+  { key: 'space', label: 'Minimum space', hint: 'Radius sums every idea keeps from every other, connected or not; connected ideas at most the spacing', min: 3, max: 8, scale: 'linear' },
+  { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' },
+  { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; important connections more so', min: 0.3, max: 10, scale: 'log' },
+  { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle', min: 0.1, max: 5, scale: 'log' },
+  { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent', min: 0.15, max: 15, scale: 'log' },
+  { key: 'semantic', label: 'Similar together', hint: 'Pull semantically similar ideas of the big network together; tangles its connections, so off by default', min: 0, max: 0.1, scale: 'log' },
+  { key: 'isolatedSemantic', label: 'Unconnected toward similar', hint: 'Pull unconnected ideas and small networks toward their most similar ideas; small networks get a mix of both', min: 0.1, max: 10, scale: 'log' },
+  { key: 'separation', label: 'Space push', hint: 'How hard ideas inside the minimum space push apart', min: 0.5, max: 50, scale: 'log' },
+  { key: 'spaceCurve', label: 'Space curve', hint: '0: the same push throughout the space; 1: growing with 1 / the gap between their edges, endless when touching; 2: with its square', min: 0, max: 2, scale: 'linear' },
+  { key: 'importance', label: 'Importance', hint: 'How much a connection\'s value decides its pull and angle: 0 all equal, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' }
 ]
-const OFF_RANGE = 100 // a range from 0: its logarithmic part spans max / 100 to max
-const logMin = ({ min, max }: { min: number; max: number }) => min > 0 ? min : max / OFF_RANGE
-const toSlider = (weight: (typeof WEIGHTS)[number]) => {
-  const value = settings.value[weight.key]
+const OFF_RANGE = 100 // a logarithmic range from 0: its logarithmic part spans max / 100 to max
+const logMin = ({ min, max }: Slider) => min > 0 ? min : max / OFF_RANGE
+const toSlider = (slider: Slider) => {
+  const value = settings.value[slider.key]
+  if (slider.scale === 'linear') return value
   if (value <= 0) return 0
-  return Math.min(1, Math.max(0, Math.log(value / logMin(weight)) / Math.log(weight.max / logMin(weight))))
+  return Math.min(1, Math.max(0, Math.log(value / logMin(slider)) / Math.log(slider.max / logMin(slider))))
 }
-const setWeight = (weight: (typeof WEIGHTS)[number], slider: number) => {
-  const value = weight.min === 0 && slider === 0 ? 0 : logMin(weight) * (weight.max / logMin(weight)) ** slider
-  settings.value = { ...settings.value, [weight.key]: Number(value.toPrecision(2)) }
+const setSetting = (slider: Slider, position: number) => {
+  const value = slider.scale === 'linear' ? position
+    : slider.min === 0 && position === 0 ? 0
+    : logMin(slider) * (slider.max / logMin(slider)) ** position
+  settings.value = { ...settings.value, [slider.key]: Number(value.toPrecision(2)) }
 }
 
 const noChanges = computed(() => props.changes.length === 0)
@@ -56,31 +64,26 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
   <div id="layout-preview">
     <h3>Layout <span v-if="solving" class="hint">solving…</span></h3>
     <div class="settings">
-      <label title="The length connections are pulled toward, in radius sums (strength: Pull to spacing); 3 is the minimum distance between any two ideas">
-        <span class="name">Spacing <span class="value">{{ settings.spacing.toFixed(1) }}</span></span>
-        <input
-          type="range" min="3" max="5" step="0.1"
-          :value="settings.spacing"
-          @input="settings = { ...settings, spacing: Number(($event.target as HTMLInputElement).value) }"
-        />
-      </label>
-      <label v-for="weight in WEIGHTS" :key="weight.key" :title="weight.hint">
+      <label v-for="slider in SLIDERS" :key="slider.key" :title="slider.hint">
         <span class="name">
           <span>
-            {{ weight.label }}
+            {{ slider.label }}
             <button
-              v-if="weight.key === 'memory'"
+              v-if="slider.key === 'memory'"
               class="btn-secondary"
               title="Start again from the stored layout, with these settings"
               @click.prevent="emit('resetPositions')"
             >Reset positions</button>
           </span>
-          <span class="value">{{ settings[weight.key] }}</span>
+          <span class="value">{{ settings[slider.key] }}</span>
         </span>
         <input
-          type="range" min="0" max="1" step="0.01"
-          :value="toSlider(weight)"
-          @input="setWeight(weight, Number(($event.target as HTMLInputElement).value))"
+          type="range"
+          :min="slider.scale === 'linear' ? slider.min : 0"
+          :max="slider.scale === 'linear' ? slider.max : 1"
+          :step="slider.scale === 'linear' ? (slider.max - slider.min) / 100 : 0.01"
+          :value="toSlider(slider)"
+          @input="setSetting(slider, Number(($event.target as HTMLInputElement).value))"
         />
       </label>
     </div>

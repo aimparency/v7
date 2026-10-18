@@ -16,7 +16,7 @@ import { loadSnapshot, mulberry32 } from './snapshot.ts'
 import { loadProjects, solve, type Run } from './solve.ts'
 import type { SessionComparison, SessionData, SessionProject, SessionSide } from './viewer/session-data.ts'
 
-type Side = Pick<Run, 'settings' | 'weights' | 'strengths'> // unset: the defaults
+type Side = Pick<Run, 'settings' | 'weights'> // unset: the defaults
 export interface SessionDesign {
   description: string
   comparisons: { hypothesis: string; sides: [Side, Side] }[]
@@ -66,7 +66,7 @@ for (const [name, projectPath] of loadProjects(projectFilter)) {
       console.log(`${name}  comparison ${at + 1}  ${result.iterations} iterations  ${result.milliseconds} ms  crossings ${measured.crossings}`)
     }
     const { settings, layout, metrics: measured } = solved.get(key)!
-    sides[at]![sideIndex] ??= { settings, mechanics: { ...side.weights, ...side.strengths && { strengths: side.strengths } }, layouts: [] }
+    sides[at]![sideIndex] ??= { settings, mechanics: side.weights, layouts: [] }
     sides[at]![sideIndex]!.layouts.push(layout)
     metrics[at]!.push({ project: name, side: sideIndex === 0 ? 'left' : 'right', ...measured })
   }))

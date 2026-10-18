@@ -11,7 +11,7 @@ import Database from 'better-sqlite3'
 import { calculateIdeaValues } from '../../packages/shared/src/value-calculation.ts'
 import { IdeaSchema, ProjectMetaSchema, type Idea } from '../../packages/shared/src/types.ts'
 import { INITIAL_STATES } from '../../packages/shared/src/constants.ts'
-import { nodeRadius, normalizedFlowForceWeights } from '../../packages/frontend/src/utils/graph-forces.ts'
+import { endpointFlowShares, nodeRadius, normalizedFlowForceWeights } from '../../packages/frontend/src/utils/graph-forces.ts'
 import { positionsFromStoredOffsets, type LayoutLink, type LayoutNode, type SemanticPair } from '../../packages/frontend/src/utils/autolayout.ts'
 import { connectionArrowWidth } from '../../packages/frontend/src/webgl/utils/arrow-geometry.ts'
 
@@ -47,10 +47,13 @@ export function loadSnapshot(name: string, projectPath: string, seed: number): S
     relativePosition: [connection.relativePosition[0] + jitter(), connection.relativePosition[1] + jitter()] as [number, number],
     flowValue: flowValues.get(`${idea.id}->${connection.ideaId}`) ?? 0
   })))
-  const strengths = normalizedFlowForceWeights(raw.map(link => ({ sourceId: link.childId, targetId: link.parentId, flowValue: link.flowValue })))
+  const flowLinks = raw.map(link => ({ sourceId: link.childId, targetId: link.parentId, flowValue: link.flowValue }))
+  const strengths = normalizedFlowForceWeights(flowLinks)
+  const flowShares = endpointFlowShares(flowLinks)
   const radiusOf = (id: string) => nodeRadius(values.get(id) ?? 0, averageValue)
   const links = raw.map(({ parentId, childId, relativePosition }, index) => ({
     parentId, childId, relativePosition, editable: true, strength: strengths[index]!,
+    flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!, // as GraphView passes it
     width: connectionArrowWidth({ source: { r: radiusOf(childId) }, attributionShare: attributionShares.get(`${parentId}->${childId}`) ?? 0 })
   }))
   const unplaced: LayoutNode[] = ideas.map(idea => ({ id: idea.id, position: [0, 0], radius: radiusOf(idea.id), movable: true }))
