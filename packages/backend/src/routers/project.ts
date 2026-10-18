@@ -5,10 +5,9 @@ import path from 'path';
 import type { Dirent } from 'fs';
 import { packageRoot } from 'shared/node-entry';
 import { observable } from '@trpc/server/observable';
-import type { Idea, ProjectMeta } from 'shared';
+import type { ProjectMeta } from 'shared';
 import { CURRENT_DATA_MODEL_VERSION, LayoutSettingsSchema } from 'shared';
 import { assertWritableBowman, bowmanWriteBlocker } from 'shared/bowman-migration';
-import { embeddingTextForIdea } from '../embeddings.js';
 import { currentOrigin } from '../change-origin.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
 import { onChange, type ChangeEvent } from '../change-events.js';
@@ -19,7 +18,8 @@ import { ensureProjectStructure, readProjectMeta, updateProjectMeta } from '../s
 import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
 import { listPhases } from '../storage/phases.js';
 import { indexIdeas, indexPhases } from '../search.js';
-import { loadVectorStore, hasCurrentEmbedding, generateEmbedding, saveEmbeddings } from '../embeddings.js';
+import { loadVectorStore } from '../embeddings.js';
+import { backfillEmbeddings, ensureEmbeddings } from '../embedding-backfill.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { t, procedure, delayedProcedure } from '../trpc.js';
 import { roleAtLeast } from '../auth/accounts.js';
@@ -40,9 +40,6 @@ const DISCOVERY_IGNORED_DIRS = new Set([
   '.test-tmp' // projects that backend tests create (and an interrupted run leaves behind)
 ]);
 
-// One cache transaction (and one neighbour update) per batch, not per idea.
-const EMBEDDING_BACKFILL_FLUSH_SIZE = 25;
-const EMBEDDING_BACKFILL_MAX_PAUSE_MS = 250;
 
 const getDefaultDiscoveryRoots = () => {
   const cwd = path.resolve(process.cwd());
@@ -106,9 +103,11 @@ export const projectRouter = t.router({
     }))
     .query(async ({ input }) => {
       // Clients call getMeta first when opening a project: warm the search index
-      // and vector store now so the first idea-creation search isn't the cold one.
+      // and vector store now so the first idea-creation search isn't the cold
+      // one, and embed ideas that have no current embedding yet.
       void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
         .catch(error => console.warn('[Search] Warm-up failed:', error));
+      if (process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.projectPath).catch(console.error);
       return await readProjectMeta(input.projectPath);
     }),
 
@@ -179,41 +178,7 @@ export const projectRouter = t.router({
       indexPhases(input.projectPath, phases);
 
       // Background embedding generation
-      if (process.env.NODE_ENV !== 'test') {
-        (async () => {
-            const vectorStore = await loadVectorStore(input.projectPath);
-            const ideasToEmbed = ideas.filter((idea: Idea) => !hasCurrentEmbedding(vectorStore[idea.id]));
-
-            if (ideasToEmbed.length > 0) {
-                console.log(`Starting embedding generation for ${ideasToEmbed.length} ideas (skipped ${ideas.length - ideasToEmbed.length} existing)...`);
-                // This backfill runs right after startup, while the user is already
-                // working. Flush in batches and yield between ideas so queued
-                // requests - e.g. creating an idea - are not stuck behind the loop.
-                let pending: { ideaId: string, vector: number[] }[] = [];
-                for (const idea of ideasToEmbed) {
-                    const startedAt = Date.now();
-                    const vector = await generateEmbedding(embeddingTextForIdea(idea));
-                    if (vector) {
-                        pending.push({ ideaId: idea.id, vector });
-                    }
-                    if (pending.length >= EMBEDDING_BACKFILL_FLUSH_SIZE) {
-                        await saveEmbeddings(input.projectPath, pending);
-                        pending = [];
-                    }
-                    // Tokenization and tensor post-processing run on the JS thread and
-                    // block it for tens of milliseconds per idea. Idle for roughly as
-                    // long as the last idea took, so the backfill uses at most half the
-                    // event loop and interactive requests keep getting served.
-                    const busyMs = Date.now() - startedAt;
-                    await new Promise(resolve => setTimeout(resolve, Math.min(busyMs, EMBEDDING_BACKFILL_MAX_PAUSE_MS)));
-                }
-                await saveEmbeddings(input.projectPath, pending);
-                console.log('Embedding generation complete.');
-            } else {
-                console.log(`Embeddings up to date (checked ${ideas.length} ideas).`);
-            }
-        })().catch(console.error);
-      }
+      if (process.env.NODE_ENV !== 'test') void backfillEmbeddings(input.projectPath).catch(console.error);
 
       return {
         success: true,
