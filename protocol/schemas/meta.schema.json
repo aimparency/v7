@@ -138,11 +138,6 @@
           "type": "number",
           "minimum": 0
         },
-        "spaceCurve": {
-          "type": "number",
-          "minimum": 0,
-          "maximum": 3
-        },
         "importance": {
           "type": "number",
           "minimum": 0,

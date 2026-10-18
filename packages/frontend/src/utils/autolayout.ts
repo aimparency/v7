@@ -100,9 +100,8 @@ const DEFAULT_WEIGHTS = {
   // closest similar idea, with 968 instead of 1537 crossings.
   semantic: 0.1,
   anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
-  separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge
+  separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge; strongest when they touch, 1 / (1 + gap in radius sums)
   space: 5, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides). At 3, ideas sat almost touching in large graphs
-  spaceCurve: 0, // how the push grows inside `space`: 0 constant, 1 with 1 / gap between their edges (endless when touching), 2 with its square
   importance: 0.5 // connection strength = 1 − importance + importance · flow share: 0 all equal, 1 in proportion to the flow (weak connections then fly far out)
 }
 // What the Layout panel lets you tune (the anchor is a mechanic). Settings
@@ -145,7 +144,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, SPACE_CURVE = 0, IMPORTANCE = 0
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, IMPORTANCE = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -205,7 +204,7 @@ export function createLayoutSolver(
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, spaceCurve: SPACE_CURVE, importance: IMPORTANCE } =
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, importance: IMPORTANCE } =
       { ...DEFAULT_WEIGHTS, ...weights })
     edges.forEach(({ link }, edge) => {
       strength[edge] = link.flowShare === undefined ? link.strength : 1 - IMPORTANCE + IMPORTANCE * link.flowShare
@@ -382,9 +381,8 @@ export function createLayoutSolver(
         minimum = linkedSpace * span
       }
       const push = (minimum - distance) / distance
-      // The gap between their edges, relative to the gap at the edge of the space.
-      const gap = Math.max(distance / span - 1, SMOOTHING) / Math.max(minimum / span - 1, SMOOTHING)
-      const weight = SEPARATION * gap ** -SPACE_CURVE
+      // Strongest when they touch, half as strong one radius sum apart.
+      const weight = SEPARATION / (1 + Math.max(distance / span - 1, 0))
       pull(a, weight, x[a]! - deltaX * push, y[a]! - deltaY * push)
       pull(b, weight, x[b]! + deltaX * push, y[b]! + deltaY * push)
     })

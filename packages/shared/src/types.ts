@@ -125,7 +125,6 @@ export const LayoutSettingsSchema = z.object({
   // Added later, so absent in older meta.json files (the defaults apply).
   space: z.number().finite().min(1).max(10).optional(), // radius sums every idea keeps from every other
   separation: layoutWeight.optional(), // how hard the space pushes
-  spaceCurve: z.number().finite().min(0).max(3).optional(), // 0 constant, 1 with 1 / gap between edges
   importance: z.number().finite().min(0).max(1).optional() // connection strength = 1 − importance + importance · flow share
 });
 

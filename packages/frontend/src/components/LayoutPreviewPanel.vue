@@ -14,30 +14,37 @@ const positionsOnly = defineModel<boolean>('positionsOnly', { required: true })
 const settings = defineModel<Required<LayoutSettings>>('settings', { required: true })
 const emit = defineEmits<{ apply: []; cancel: []; resetPositions: [] }>()
 
-// Ranges found with the layout lab (scripts/layout-lab). A logarithmic
-// range from 0 is off at the left end, then logarithmic from a hundredth of
-// its maximum.
-interface Slider { key: keyof LayoutSettings; label: string; hint: string; min: number; max: number; scale: 'linear' | 'log' }
+// One block per force; "Amount" is how strongly it pulls. Ranges found with
+// the layout lab (scripts/layout-lab). A logarithmic range from 0 is off at
+// the left end, then logarithmic from a hundredth of its maximum. Gaps are
+// stored as distances between centres, in radius sums: the gap is one less.
+interface Slider { key: keyof LayoutSettings; label: string; hint: string; min: number; max: number; scale: 'linear' | 'log'; gap?: true }
 const GROUPS: { name: string; sliders: Slider[] }[] = [
-  { name: 'Connections', sliders: [
-    { key: 'spacing', label: 'Spacing', hint: 'The length connections are pulled toward, in radius sums (strength: Pull to spacing)', min: 3, max: 5, scale: 'linear' },
-    { key: 'length', label: 'Pull to spacing', hint: 'Pull connections toward the spacing length, longer ones in and shorter ones out; important connections more so', min: 0.3, max: 10, scale: 'log' },
-    { key: 'importance', label: 'Importance', hint: 'How much a connection\'s value decides its pull and angle: 0 all equal, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' },
-    { key: 'memory', label: 'Keep as is', hint: 'Keep stored connection offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' }
+  { name: 'Connection length', sliders: [
+    { key: 'spacing', label: 'Target gap', hint: 'The gap between connected ideas that connections are pulled toward, in radius sums', min: 3, max: 5, scale: 'linear', gap: true },
+    { key: 'length', label: 'Amount', hint: 'How strongly connections are pulled toward the target gap, longer ones in and shorter ones out', min: 0.3, max: 10, scale: 'log' }
   ] },
-  { name: 'Angles', sliders: [
-    { key: 'spread', label: 'Even spread', hint: 'Turn the connections around an idea apart when they share too narrow an angle', min: 0.1, max: 5, scale: 'log' },
-    { key: 'outward', label: 'Outward', hint: 'Keep children out of the half circle behind their parent', min: 0.15, max: 15, scale: 'log' }
+  { name: 'Importance', sliders: [
+    { key: 'importance', label: 'Weight by flow', hint: 'How much a connection\'s value flow decides how hard it pulls toward the target gap and how wide an angle it gets around its ideas: 0 every connection alike, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' }
   ] },
-  { name: 'Space', sliders: [
-    { key: 'space', label: 'Minimum space', hint: 'Radius sums every idea keeps from every other, connected or not; connected ideas at most the spacing', min: 3, max: 8, scale: 'linear' },
-    { key: 'separation', label: 'Space push', hint: 'How hard ideas inside the minimum space push apart', min: 0.5, max: 50, scale: 'log' },
-    { key: 'spaceCurve', label: 'Space curve', hint: '0: the same push throughout the space; 1: growing with 1 / the gap between their edges, endless when touching; 2: with its square', min: 0, max: 2, scale: 'linear' }
+  { name: 'Keep as is', sliders: [
+    { key: 'memory', label: 'Amount', hint: 'How strongly connections keep their stored offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' }
+  ] },
+  { name: 'Even spread', sliders: [
+    { key: 'spread', label: 'Amount', hint: 'How strongly the connections around an idea turn apart when they share too narrow an angle', min: 0.1, max: 5, scale: 'log' }
+  ] },
+  { name: 'Outward', sliders: [
+    { key: 'outward', label: 'Amount', hint: 'How strongly children are kept out of the half circle behind their parent', min: 0.15, max: 15, scale: 'log' }
+  ] },
+  { name: 'Minimum distance', sliders: [
+    { key: 'space', label: 'Minimum gap', hint: 'The gap every idea keeps from every other, connected or not, in radius sums; connected ideas at most the target gap', min: 3, max: 8, scale: 'linear', gap: true },
+    { key: 'separation', label: 'Amount', hint: 'How hard ideas closer than the minimum gap push apart: strongest when they touch, 1 / (1 + gap)', min: 0.5, max: 50, scale: 'log' }
   ] },
   { name: 'Similarity', sliders: [
-    { key: 'semantic', label: 'Toward similar', hint: 'Pull every idea, connected or not, toward its 12 most similar ideas; higher tangles the network', min: 0, max: 1, scale: 'log' }
+    { key: 'semantic', label: 'Amount', hint: 'How strongly every idea, connected or not, is pulled toward its 12 most similar ideas; higher tangles the network', min: 0, max: 1, scale: 'log' }
   ] }
 ]
+const shownValue = (slider: Slider) => slider.gap ? Number((settings.value[slider.key] - 1).toFixed(2)) : settings.value[slider.key]
 const OFF_RANGE = 100 // a logarithmic range from 0: its logarithmic part spans max / 100 to max
 const logMin = ({ min, max }: Slider) => min > 0 ? min : max / OFF_RANGE
 const toSlider = (slider: Slider) => {
@@ -73,17 +80,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     <div id="layout-preview">
       <h3>Layout <span v-if="solving" class="hint">solving…</span></h3>
       <div class="settings">
-        <button
-          class="btn-secondary reset-positions"
-          title="Start again from the stored layout, with these settings"
-          @click="emit('resetPositions')"
-        >Reset positions</button>
         <fieldset v-for="group in GROUPS" :key="group.name">
           <legend>{{ group.name }}</legend>
           <label v-for="slider in group.sliders" :key="slider.key" :title="slider.hint">
             <span class="name">
               <span>{{ slider.label }}</span>
-              <span class="value">{{ settings[slider.key] }}</span>
+              <span class="value">{{ shownValue(slider) }}</span>
             </span>
             <input
               type="range"
@@ -95,6 +97,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
               @input="setSetting(slider, Number(($event.target as HTMLInputElement).value))"
             />
           </label>
+          <button
+            v-if="group.name === 'Keep as is'"
+            class="btn-secondary"
+            title="Start again from the stored layout, with these settings"
+            @click="emit('resetPositions')"
+          >Reset positions</button>
         </fieldset>
       </div>
       <div v-if="unsaved || !isDefault" class="row">
@@ -146,16 +154,13 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
 
   & .settings {
     display: flex;
-    flex-direction: column;
+    flex-wrap: wrap;
     gap: 0.5rem;
 
-    & .reset-positions {
-      align-self: flex-end;
-    }
-
     & fieldset {
+      flex: 1 1 9rem;
       display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr));
+      grid-template-columns: repeat(auto-fill, minmax(8rem, 1fr));
       gap: 0.3rem 0.75rem;
       margin: 0;
       padding: 0.3rem 0.5rem 0.5rem;
