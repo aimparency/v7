@@ -54,8 +54,9 @@ export interface LayoutChange {
   relevance: number // shift × √(span / mean span); changes are sorted by it, most relevant first
 }
 
-// A parentless idea's position is not a connection offset: it is stored per
-// browser only, so moving it costs no file change.
+// A root's position is not a connection offset (nor that of the idea a
+// network that is only a cycle starts from): it is stored per browser only,
+// so moving it costs no file change.
 export interface LayoutPlacement {
   id: string
   position: [number, number]
@@ -207,7 +208,7 @@ export function createLayoutSolver(
   }
   setSettings({ room: initialRoom, weights: initialWeights })
 
-  placeFromStoredOffsets(nodes, edges, x, y)
+  const seeds = placeFromStoredOffsets(nodes, edges, x, y)
   const startX = x.slice()
   const startY = y.slice()
 
@@ -243,10 +244,10 @@ export function createLayoutSolver(
       if (shift <= minimumChange) return []
       return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]), shift, relevance: shift * Math.sqrt(span / meanSpan) }]
     }).sort((left, right) => right.relevance - left.relevance)
-    const hasParent = new Uint8Array(count)
-    for (const { child } of edges) hasParent[child] = 1
+    // Seeds are placed by position, not by an offset: roots, and the idea a
+    // network that is only a cycle starts from.
     const placements = nodes.flatMap((node, index) => {
-      if (hasParent[index] || !node.movable) return []
+      if (!seeds[index] || !node.movable) return []
       const moved = Math.hypot(x[index]! - node.position[0], y[index]! - node.position[1]) / radius[index]!
       return moved > minimumChange ? [{ id: node.id, position: [x[index]!, y[index]!] as [number, number] }] : []
     })
@@ -410,6 +411,30 @@ export function createLayoutSolver(
   }
 }
 
+const RELAX_BUDGET = 600 // iterations at most, after the start and after every settings change
+const RELAX_CHUNK = 10 // iterations between results
+const SPREAD_RAMP = 300 // the first iterations, while branches can still pass each other
+const CONVERGED = 0.1 // radius sums: no idea moved further in any iteration of a chunk
+
+// The live solve's schedule, shared by the Layout panel's worker and the
+// layout lab: chunks until it has converged or the budget is used up.
+export function createRelaxation(solver: LayoutSolver) {
+  let iterations = 0
+  let remaining = RELAX_BUDGET
+  return {
+    // After a settings change: a fresh budget, continuing from the current state.
+    resume: () => { remaining = RELAX_BUDGET },
+    chunk: () => {
+      let largestMove = 0
+      for (let step = 0; step < RELAX_CHUNK && remaining > 0; step++, remaining--, iterations++) {
+        largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / SPREAD_RAMP)))
+      }
+      return { done: remaining === 0 || (iterations >= SPREAD_RAMP && largestMove < CONVERGED), largestMove }
+    },
+    iterations: () => iterations
+  }
+}
+
 /** The ideas of the largest connected network: what pinning the layout's centre refers to. */
 export function largestNetworkIds(nodes: readonly LayoutNode[], links: readonly LayoutLink[]): Set<string> {
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -455,6 +480,7 @@ export function positionsFromStoredOffsets(nodes: readonly LayoutNode[], links: 
 // The diff is measured against the stored offsets, not against what the
 // simulation currently shows, so start where the stored offsets put each idea:
 // roots (and fixed ideas) stay put, descendants follow their first placed parent.
+// Returns which ideas were seeds, kept where they were.
 function placeFromStoredOffsets(
   nodes: readonly LayoutNode[],
   edges: readonly { child: number; parent: number; dx: number; dy: number }[],
@@ -468,11 +494,16 @@ function placeFromStoredOffsets(
     hasParent[edge.child] = 1
   }
   const placed = new Uint8Array(nodes.length)
+  const seeds = new Uint8Array(nodes.length)
   const queue: number[] = []
-  const seed = (index: number) => {
-    if (placed[index]) return
+  const place = (index: number) => {
     placed[index] = 1
     queue.push(index)
+  }
+  const seed = (index: number) => {
+    if (placed[index]) return
+    seeds[index] = 1
+    place(index)
   }
   const drain = () => {
     while (queue.length > 0) {
@@ -481,7 +512,7 @@ function placeFromStoredOffsets(
         if (placed[edge.child]) continue
         x[edge.child] = x[parent]! + edge.dx
         y[edge.child] = y[parent]! + edge.dy
-        seed(edge.child)
+        place(edge.child)
       }
     }
   }
@@ -489,6 +520,7 @@ function placeFromStoredOffsets(
   drain()
   // Ideas only reachable through a cycle keep their current position as a seed.
   nodes.forEach((_, index) => { seed(index); drain() })
+  return seeds
 }
 
 // Sweep along x; pushes each overlapping pair apart, the smaller idea moving more.

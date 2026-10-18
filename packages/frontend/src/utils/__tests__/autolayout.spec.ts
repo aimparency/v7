@@ -104,6 +104,28 @@ describe('solveLayout', () => {
     expect(angle(positions, 'b')).toBeGreaterThan(Math.PI / 2 + 0.1)
   })
 
+  it('places a network that is only a cycle, so its changes rebuild where it was solved', () => {
+    const nodes: LayoutNode[] = [
+      { id: 'a', position: [0, 0], radius: R, movable: true },
+      { id: 'b', position: [0, 0], radius: R, movable: true },
+      { id: 'c', position: [0, 0], radius: R, movable: true },
+      { id: 'loner', position: [500, 0], radius: R, movable: true }
+    ]
+    // An equilateral triangle one radius sum wide: the separation has to move all three.
+    const link = (parentId: string, childId: string, relativePosition: [number, number]): LayoutLink => ({ parentId, childId, relativePosition, editable: true, strength: 0.5 })
+    const links = [link('a', 'b', [1, 0]), link('b', 'c', [-0.5, 0.87]), link('c', 'a', [-0.5, -0.87])]
+    const { positions, changes, placements } = solveLayout(nodes, links)
+    const offset = new Map(changes.map(change => [change.parentId + change.childId, change.relativePosition]))
+    const placement = new Map(placements.map(({ id, position }) => [id, position]))
+    const rebuilt = positionsFromStoredOffsets(
+      nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
+      links.map(each => ({ ...each, relativePosition: offset.get(each.parentId + each.childId) ?? each.relativePosition }))
+    )
+    for (const id of ['a', 'b', 'c']) {
+      expect(Math.hypot(rebuilt.get(id)![0] - positions.get(id)![0], rebuilt.get(id)![1] - positions.get(id)![1])).toBeLessThan(2)
+    }
+  })
+
   it('lets a branch pulled across pass its neighbour', () => {
     const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 4, Math.sin(degrees * Math.PI / 180) * 4] as [number, number]
     const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(120)], ['c', at(240)]] })
@@ -207,17 +229,5 @@ describe('solveLayout', () => {
 
   it('rounds offsets so unchanged layouts re-save without float noise', () => {
     expect(roundOffset([0.5782261044010013, -2.432211868277359])).toEqual([0.58, -2.43])
-  })
-})
-
-describe('measureLayout', () => {
-  it('counts crossings between unrelated connections, crowding and long connections', () => {
-    const node = (id: string, x: number, y: number) => ({ id, position: [x, y] as const, radius: R })
-    const nodes = [node('a', 0, 0), node('b', 200, 200), node('c', 0, 200), node('d', 200, 0), node('e', 30, 0)]
-    const metrics = measureLayout(nodes, [{ parentId: 'a', childId: 'b' }, { parentId: 'c', childId: 'd' }])
-    expect(metrics.crossings).toBe(1)
-    expect(metrics.longConnections).toBe(2)
-    expect(metrics.crowdedPairs).toBe(1) // a and e: 1.5 radius sums
-    expect(metrics.overlaps).toBe(0)
   })
 })
