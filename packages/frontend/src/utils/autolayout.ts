@@ -418,18 +418,18 @@ const CONVERGED = 0.1 // radius sums: no idea moved further in any iteration of 
 
 // The live solve's schedule, shared by the Layout panel's worker and the
 // layout lab: chunks until it has converged or the budget is used up.
-export function createRelaxation(solver: LayoutSolver) {
+export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, spreadRamp = SPREAD_RAMP } = {}) {
   let iterations = 0
-  let remaining = RELAX_BUDGET
+  let remaining = budget
   return {
     // After a settings change: a fresh budget, continuing from the current state.
-    resume: () => { remaining = RELAX_BUDGET },
+    resume: () => { remaining = budget },
     chunk: () => {
       let largestMove = 0
       for (let step = 0; step < RELAX_CHUNK && remaining > 0; step++, remaining--, iterations++) {
-        largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / SPREAD_RAMP)))
+        largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / spreadRamp)))
       }
-      return { done: remaining === 0 || (iterations >= SPREAD_RAMP && largestMove < CONVERGED), largestMove }
+      return { done: remaining === 0 || (iterations >= spreadRamp && largestMove < CONVERGED), largestMove }
     },
     iterations: () => iterations
   }

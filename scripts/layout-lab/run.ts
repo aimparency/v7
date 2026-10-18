@@ -18,7 +18,14 @@ import { writeReport } from './report.ts'
 export interface Experiment {
   description: string
   seeds?: number // runs per setting; seed 0 is the stored layout as is, others jitter it slightly
-  runs: { name: string; settings?: Partial<LayoutSettings>; options?: Omit<LayoutOptions, 'room' | 'weights' | 'semanticPairs'> }[]
+  runs: {
+    name: string
+    settings?: Partial<LayoutSettings> // what the panel tunes
+    weights?: LayoutOptions['weights'] // also the mechanics (anchor, separation)
+    options?: Omit<LayoutOptions, 'room' | 'weights' | 'semanticPairs'>
+    relax?: Parameters<typeof createRelaxation>[1]
+    shownShare?: number // the share measured as `shown`; default the panel's
+  }[]
 }
 
 export interface RunResult {
@@ -84,8 +91,9 @@ function layOut(snapshot: Snapshot, run: Experiment['runs'][number], seed: numbe
   const { nodes, links, semanticPairs } = snapshot
   const settings = { ...DEFAULT_LAYOUT_SETTINGS, ...run.settings }
   const started = Date.now()
-  const solver = createLayoutSolver(nodes, links, { ...layoutOptions(settings), ...run.options, semanticPairs })
-  const relaxation = createRelaxation(solver)
+  const options = layoutOptions(settings)
+  const solver = createLayoutSolver(nodes, links, { ...options, ...run.options, weights: { ...options.weights, ...run.weights }, semanticPairs })
+  const relaxation = createRelaxation(solver, run.relax)
   let chunk = relaxation.chunk()
   while (!chunk.done) chunk = relaxation.chunk()
   const { changes, placements } = solver.result()
@@ -93,7 +101,7 @@ function layOut(snapshot: Snapshot, run: Experiment['runs'][number], seed: numbe
 
   const start = new Map(nodes.map(node => [node.id, node.position]))
   const context = { clearance: run.options?.clearance ?? 3, spacing: settings.spacing, start, semanticPairs }
-  const shownCount = Math.round(changes.length * SHOWN_SHARE)
+  const shownCount = Math.round(changes.length * (run.shownShare ?? SHOWN_SHARE))
   const full = applied(snapshot, changes, placements)
   return {
     project: snapshot.name,
