@@ -5,9 +5,10 @@ import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, type LayoutChange } from '
 import SidePanel from './SidePanel.vue'
 
 // Live autolayout: the graph already shows the first `count` changes (most
-// relevant first) and the placed unconnected ideas, and re-solves whenever the
-// settings change. Nothing is saved until Apply. Positions only: no connection
-// changes, so no idea file changes.
+// relevant first) and the new positions of parentless ideas (stored in the
+// browser, not as offsets), and re-solves whenever the settings change.
+// Nothing is saved until Apply. Positions only: no connection changes, so no
+// idea file changes.
 const props = defineProps<{ changes: LayoutChange[]; placed: number; saved: Required<LayoutSettings>; solving: boolean }>()
 const count = defineModel<number>('count', { required: true })
 const positionsOnly = defineModel<boolean>('positionsOnly', { required: true })
@@ -113,7 +114,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
         <span>Connections changed: {{ shown }} of {{ changes.length }} ({{ files }} idea files)</span>
         <input v-model.number="count" type="range" min="0" :max="changes.length" step="1" :disabled="positionsOnly || noChanges" />
       </label>
-      <span>Unconnected ideas placed: {{ placed }} (positions in this browser)</span>
+      <span>Ideas without parent placed: {{ placed }} (positions in this browser)</span>
       <label class="option">
         <input
           type="checkbox"

@@ -35,7 +35,7 @@ export interface LayoutMetrics {
   overlaps: number // closer than 1 radius sum
   angleMedian: number // per idea with 2+ connections: narrowest gap / the gap of an even spread
   angleLow: number // its 10th percentile
-  displacementMean: number // in idea diameters, net of the largest network's shift; NaN without start
+  displacementMean: number // in idea diameters, net of the shift of all ideas' centre; NaN without start
   displacementMax: number
   semanticNeighbourhood: number // share of each idea's most similar ideas among its nearest on screen; NaN without pairs
   outwardViolations: number // share of children behind their parent, seen from the grandparents
@@ -254,36 +254,16 @@ function displacement(
   start: ReadonlyMap<string, Point> | undefined
 ) {
   if (!start) return { displacementMean: NaN, displacementMax: NaN }
-  const main = largestNetwork(placed.map(node => node.id), links)
   const moved = placed.flatMap(node => {
     const before = start.get(node.id)
     return before ? [{ node, dx: node.position[0] - before[0], dy: node.position[1] - before[1] }] : []
   })
-  const inMain = moved.filter(({ node }) => main.has(node.id))
-  const shiftX = mean(inMain.map(entry => entry.dx)) || 0
-  const shiftY = mean(inMain.map(entry => entry.dy)) || 0
+  // Net of the shift of all ideas' centre, weighted by area, as the solver pins it.
+  const totalMass = moved.reduce((sum, { node }) => sum + node.radius ** 2, 0) || 1
+  const shiftX = moved.reduce((sum, { node, dx }) => sum + node.radius ** 2 * dx, 0) / totalMass
+  const shiftY = moved.reduce((sum, { node, dy }) => sum + node.radius ** 2 * dy, 0) / totalMass
   const distances = moved.map(({ node, dx, dy }) => Math.hypot(dx - shiftX, dy - shiftY) / (2 * node.radius))
   return { displacementMean: mean(distances), displacementMax: Math.max(0, ...distances) }
-}
-
-function largestNetwork(ids: readonly string[], links: readonly MeasuredLink[]): Set<string> {
-  const root = new Map(ids.map(id => [id, id]))
-  const find = (id: string): string => {
-    while (root.get(id) !== id) {
-      const next = root.get(root.get(id)!)!
-      root.set(id, next)
-      id = next
-    }
-    return id
-  }
-  for (const { parentId, childId } of links) {
-    if (root.has(parentId) && root.has(childId)) root.set(find(childId), find(parentId))
-  }
-  const members = new Map<string, string[]>()
-  for (const id of ids) members.set(find(id), [...(members.get(find(id)) ?? []), id])
-  let largest: string[] = []
-  for (const list of members.values()) if (list.length > largest.length) largest = list
-  return new Set(largest)
 }
 
 function neighbourhood(

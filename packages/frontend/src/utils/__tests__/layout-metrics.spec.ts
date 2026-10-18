@@ -52,13 +52,14 @@ describe('measureLayout', () => {
     expect(measureLayout(nodes, [link('a', 'b'), link('a', 'c')], undefined, { spacing: 4 }).lengthMisfit).toBeCloseTo((1 + 1) / 2)
   })
 
-  it('measures displacement net of the main network shifting as a whole', () => {
+  it('measures displacement net of the centre of all ideas shifting', () => {
     const nodes = [node('a', 0, 0), node('b', 100, 0), node('alone', 500, 0)]
     const start = new Map<string, readonly [number, number]>([['a', [0, 0]], ['b', [100, 0]], ['alone', [500, 0]]])
     const moved = new Map<string, readonly [number, number]>([['a', [50, 0]], ['b', [150, 0]], ['alone', [500, 0]]])
     const metrics = measureLayout(nodes, [link('a', 'b')], moved, { start })
-    expect(metrics.displacementMean).toBeCloseTo(50 / 20 / 3) // only `alone`, relative to the shift
-    expect(metrics.displacementMax).toBeCloseTo(50 / 20)
+    // The centre moved 100 / 3: `a` and `b` 50 / 3 past it, `alone` 100 / 3 behind
+    expect(metrics.displacementMean).toBeCloseTo((2 * 50 / 3 + 100 / 3) / 3 / (2 * R))
+    expect(metrics.displacementMax).toBeCloseTo(100 / 3 / (2 * R))
   })
 
   it('checks whether the most similar ideas are the nearest on screen', () => {

@@ -94,28 +94,24 @@ const DEFAULT_WEIGHTS = {
   outward: 1.5, // a moving child goes to the half circle facing away from its grandparents
   // Per idea, connected or not, shared by its semantic pairs (its 12 most
   // similar ideas and those that count it among theirs); pulls toward
-  // clearance · (1 + 2 · distance) radius sums. Higher brings unconnected
-  // ideas closer to their similar ones but tangles the network: in the lab,
-  // 0.1 against 1 on ideas left them 18 instead of 6 radius sums from the
-  // closest similar idea, with 968 instead of 1537 crossings.
+  // clearance · (1 + 2 · distance) radius sums. Higher brings ideas closer
+  // to their similar ones but tangles connections.
   semantic: 0.1,
-  anchor: 0.05, // keeps every idea near where it was: the objective alone is translation invariant
   separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge; strongest when they touch, 1 / (1 + gap in radius sums)
   space: 5, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides). At 3, ideas sat almost touching in large graphs
   importance: 0.5 // connection strength = 1 − importance + importance · flow share: 0 all equal, 1 in proportion to the flow (weak connections then fly far out)
 }
-// What the Layout panel lets you tune (the anchor is a mechanic). Settings
+// What the Layout panel lets you tune. Settings
 // saved before a setting existed lack it: `withLayoutDefaults` fills it in.
-export const DEFAULT_LAYOUT_SETTINGS: Required<LayoutSettings> = (({ anchor: _anchor, ...weights }) => ({ spacing: DEFAULT_ROOM, ...weights }))(DEFAULT_WEIGHTS)
+export const DEFAULT_LAYOUT_SETTINGS: Required<LayoutSettings> = { spacing: DEFAULT_ROOM, ...DEFAULT_WEIGHTS }
 export const withLayoutDefaults = (settings: LayoutSettings | undefined): Required<LayoutSettings> => ({ ...DEFAULT_LAYOUT_SETTINGS, ...settings })
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
   (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => withLayoutDefaults(left)[key] === withLayoutDefaults(right)[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
 // The connections around an idea share this angle, each by its strength.
 const SPREAD_ANGLE = 2 * Math.PI
-// Cosine distance: a neighbour 0.1 closer weighs e times more. On a real graph
-// unconnected ideas then land nearer their closest neighbours (16 vs 21
-// radius sums) than with equal weights.
+// Cosine distance: a neighbour 0.1 closer weighs e times more, so an idea
+// lands near its closest neighbours rather than midway between all of them.
 const SEMANTIC_SHARPNESS = 0.1
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
 
@@ -144,7 +140,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, ANCHOR = 0, SEPARATION = 0, SPACE = 0, IMPORTANCE = 0
+  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, SEPARATION = 0, SPACE = 0, IMPORTANCE = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -191,20 +187,18 @@ export function createLayoutSolver(
     similarityTotal[a] = similarityTotal[a]! + similarity[index]!
     similarityTotal[b] = similarityTotal[b]! + similarity[index]!
   })
-  const networkSize = connectedNetworkSizes(count, edges)
-  const largestNetwork = Math.max(1, ...networkSize)
-  // Outward and spread push only children, so the terms add up to a net drift
-  // along the direction the tree grows; the anchor alone lets it build up
-  // while the live solver keeps running. Translation is free for every other
-  // term, so after each iteration the largest network's centre goes back
-  // where it started (smaller networks may still move toward it). Not when
-  // fixed ideas hold it in place anyway.
-  const main = networkSize.flatMap((size, index) => size === largestNetwork ? [index] : [])
-  const pinned = main.every(index => nodes[index]!.movable)
+  // Translation is free for every term, and outward and spread push only
+  // children, so they add up to a net drift along the direction the tree
+  // grows. After each iteration the centre of all ideas, weighted by area,
+  // goes back where it started: groups pulled toward each other meet, the
+  // heavier one moving less. Not when fixed ideas hold the layout in place.
+  const mass = Float64Array.from(radius, value => value * value)
+  const totalMass = mass.reduce((sum, value) => sum + value, 0)
+  const pinned = nodes.every(node => node.movable)
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, anchor: ANCHOR, separation: SEPARATION, space: SPACE, importance: IMPORTANCE } =
+    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, separation: SEPARATION, space: SPACE, importance: IMPORTANCE } =
       { ...DEFAULT_WEIGHTS, ...weights })
     edges.forEach(({ link }, edge) => {
       strength[edge] = link.flowShare === undefined ? link.strength : 1 - IMPORTANCE + IMPORTANCE * link.flowShare
@@ -266,13 +260,9 @@ export function createLayoutSolver(
   const step = (spreadShare: number, stepSize = FREE_STEP): number => {
     previousX.set(x)
     previousY.set(y)
-    for (let index = 0; index < count; index++) {
-      const drift = Math.hypot(x[index]! - startX[index]!, y[index]! - startY[index]!) / radius[index]!
-      sumX[index] = 0
-      sumY[index] = 0
-      sumWeight[index] = 0
-      pull(index, ANCHOR / Math.max(drift, SMOOTHING), startX[index]!, startY[index]!)
-    }
+    sumX.fill(0)
+    sumY.fill(0)
+    sumWeight.fill(0)
 
     for (const [edge, { child, parent, span, keepX, keepY }] of edges.entries()) {
       const vx = x[child]! - x[parent]!
@@ -389,6 +379,7 @@ export function createLayoutSolver(
 
     for (let index = 0; index < count; index++) {
       if (!nodes[index]!.movable) continue
+      if (sumWeight[index]! === 0) continue // nothing pulls it
       x[index] = x[index]! + stepSize * (sumX[index]! / sumWeight[index]! - x[index]!)
       y[index] = y[index]! + stepSize * (sumY[index]! / sumWeight[index]! - y[index]!)
     }
@@ -404,14 +395,13 @@ export function createLayoutSolver(
   const pinCentre = () => {
     let driftX = 0
     let driftY = 0
-    for (const index of main) {
-      driftX += x[index]! - startX[index]!
-      driftY += y[index]! - startY[index]!
-    }
-    driftX /= main.length
-    driftY /= main.length
     for (let index = 0; index < count; index++) {
-      if (!nodes[index]!.movable) continue
+      driftX += mass[index]! * (x[index]! - startX[index]!)
+      driftY += mass[index]! * (y[index]! - startY[index]!)
+    }
+    driftX /= totalMass
+    driftY /= totalMass
+    for (let index = 0; index < count; index++) {
       x[index] = x[index]! - driftX
       y[index] = y[index]! - driftY
     }
@@ -461,32 +451,6 @@ export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, 
     },
     iterations: () => iterations
   }
-}
-
-/** The ideas of the largest connected network: what pinning the layout's centre refers to. */
-export function largestNetworkIds(nodes: readonly LayoutNode[], links: readonly LayoutLink[]): Set<string> {
-  const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
-  const edges = links.flatMap(link => {
-    const child = indexOf.get(link.childId)
-    const parent = indexOf.get(link.parentId)
-    return child === undefined || parent === undefined ? [] : [{ child, parent }]
-  })
-  const sizes = connectedNetworkSizes(nodes.length, edges)
-  const largest = Math.max(0, ...sizes)
-  return new Set(nodes.flatMap((node, index) => sizes[index] === largest ? [node.id] : []))
-}
-
-// Ideas per connected network (connection direction ignored), for each idea.
-function connectedNetworkSizes(count: number, edges: readonly { child: number; parent: number }[]): number[] {
-  const root = Array.from({ length: count }, (_, index) => index)
-  const find = (index: number): number => {
-    while (root[index] !== index) index = root[index] = root[root[index]!]!
-    return index
-  }
-  for (const { child, parent } of edges) root[find(child)] = find(parent)
-  const size = new Map<number, number>()
-  for (let index = 0; index < count; index++) size.set(find(index), (size.get(find(index)) ?? 0) + 1)
-  return root.map((_, index) => size.get(find(index))!)
 }
 
 /** Where the stored offsets alone put each idea; what the simulation settles toward. */

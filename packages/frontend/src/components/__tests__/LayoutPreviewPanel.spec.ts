@@ -15,7 +15,7 @@ describe('LayoutPreviewPanel', () => {
       props: { ...base, changes: [change('p1', 'a'), change('p1', 'b'), change('p2', 'c')], placed: 4, count: 2 }
     })
     expect(wrapper.text()).toContain('Connections changed: 2 of 3 (1 idea files)')
-    expect(wrapper.text()).toContain('Unconnected ideas placed: 4')
+    expect(wrapper.text()).toContain('Ideas without parent placed: 4')
   })
 
   it('changes no connections when only absolute positions are updated', async () => {

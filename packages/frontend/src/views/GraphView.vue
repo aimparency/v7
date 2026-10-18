@@ -19,7 +19,7 @@ import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, largestNetworkIds, positionsFromStoredOffsets, sameLayoutSettings, withLayoutDefaults, type LayoutChange, type LayoutPlacement } from '../utils/autolayout'
+import { DEFAULT_LAYOUT_SETTINGS, positionsFromStoredOffsets, sameLayoutSettings, withLayoutDefaults, type LayoutChange, type LayoutPlacement } from '../utils/autolayout'
 import { endpointFlowShares } from '../utils/graph-forces'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
@@ -367,7 +367,6 @@ type LayoutPreview = {
   linkByKey: Map<string, GraphLink>
   stored: Map<GraphLink, GraphLink['relativePosition']>
   restBefore: Map<string, [number, number]>
-  mainNetwork: Set<string> // its centre stays put
 }
 const layoutPreview = shallowRef<LayoutPreview | null>(null)
 const layoutSettings = ref<Required<LayoutSettings>>({ ...DEFAULT_LAYOUT_SETTINGS })
@@ -418,8 +417,7 @@ async function startLayoutPreview() {
       placements: [],
       linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
       stored: new Map(links.value.map(link => [link, link.relativePosition])),
-      restBefore: positionsFromStoredOffsets(request.nodes, request.links),
-      mainNetwork: largestNetworkIds(request.nodes, request.links)
+      restBefore: positionsFromStoredOffsets(request.nodes, request.links)
     }
     layoutWorker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
     layoutWorker.onmessage = ({ data }: MessageEvent<LayoutResult>) => showLayoutResult(data)
@@ -507,20 +505,23 @@ watch(appliedLayoutChanges, applied => {
     preview.request.links.map(link => ({ ...link, relativePosition: offset.get(linkKey(link.parentId, link.childId)) ?? link.relativePosition }))
   )
   // Applied offsets carry the solver's lean in the direction the tree grows;
-  // the main network's centre stays where it is.
+  // the centre of all ideas, weighted by area, stays where it is (as in the solver).
   const shiftOf = new Map<string, [number, number]>()
   let centreX = 0
   let centreY = 0
-  for (const [id, from] of preview.restBefore) {
-    const to = rest.get(id)
-    if (!to) continue
-    shiftOf.set(id, [to[0] - from[0], to[1] - from[1]])
-    if (!preview.mainNetwork.has(id)) continue
-    centreX += to[0] - from[0]
-    centreY += to[1] - from[1]
+  let totalMass = 0
+  for (const node of preview.request.nodes) {
+    const from = preview.restBefore.get(node.id)
+    const to = rest.get(node.id)
+    if (!from || !to) continue
+    const mass = node.radius * node.radius
+    shiftOf.set(node.id, [to[0] - from[0], to[1] - from[1]])
+    centreX += mass * (to[0] - from[0])
+    centreY += mass * (to[1] - from[1])
+    totalMass += mass
   }
-  centreX /= Math.max(preview.mainNetwork.size, 1)
-  centreY /= Math.max(preview.mainNetwork.size, 1)
+  centreX /= Math.max(totalMass, 1)
+  centreY /= Math.max(totalMass, 1)
   for (const node of nodes.value) {
     const shift = shiftOf.get(node.id)
     if (!shift) continue
@@ -568,7 +569,7 @@ async function applyLayoutPreview() {
     dataStore.meta = await trpc.project.setLayoutSettings.mutate({ projectPath: projectStore.projectPath, layout: settings })
   }
   const files = new Set(applied.map(change => change.parentId)).size
-  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files and placed ${preview.placements.length} unconnected ideas.`)
+  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files and placed ${preview.placements.length} ideas without parent.`)
 }
 
 // Helper: split node text into lines for label rendering

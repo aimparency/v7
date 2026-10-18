@@ -165,19 +165,23 @@ describe('solveLayout', () => {
     expect(changes.map(change => change.childId)).toEqual(['big', 'small'])
   })
 
-  it('places an unconnected idea next to its semantic neighbours, without dragging the network along', () => {
+  it('draws similar ideas of separate groups together, the heavier group moving less', () => {
     const { nodes, links } = graph({ root: [['a', [3.75, 0]], ['b', [-3.75, 0]]], a: [['a1', [3.75, 0]]], b: [['b1', [-3.75, 0]]] })
     const loner: LayoutNode = { id: 'loner', position: [0, 40 * 2 * R], radius: R, movable: true }
     const { positions, placements } = solveLayout([...nodes, loner], links, {
       semanticPairs: [{ source: 'loner', target: 'a1', distance: 0.1 }, { source: 'loner', target: 'a', distance: 0.2 }]
     })
     const distance = (from: string, to: string) => Math.hypot(positions.get(from)![0] - positions.get(to)![0], positions.get(from)![1] - positions.get(to)![1]) / (2 * R)
+    const moved = (node: LayoutNode) => Math.hypot(positions.get(node.id)![0] - node.position[0], positions.get(node.id)![1] - node.position[1])
     expect(distance('loner', 'a1')).toBeLessThan(6)
-    expect(Math.hypot(...positions.get('root')!) / (2 * R)).toBeLessThan(0.5)
-    expect(placements.map(placement => placement.id)).toEqual(['loner'])
+    expect(moved(nodes.find(node => node.id === 'root')!)).toBeLessThan(moved(loner) / 2)
+    const all = [...nodes, loner]
+    const centre = (at: (node: LayoutNode) => readonly [number, number], axis: 0 | 1) => all.reduce((sum, node) => sum + at(node)[axis], 0) / all.length
+    expect(Math.hypot(centre(node => positions.get(node.id)!, 0) - centre(node => node.position, 0), centre(node => positions.get(node.id)!, 1) - centre(node => node.position, 1)) / (2 * R)).toBeLessThan(0.5)
+    expect(placements.map(placement => placement.id)).toContain('loner')
   })
 
-  it('puts an unconnected idea nearer its most similar neighbour, not midway', () => {
+  it('puts an idea nearer its most similar neighbour, not midway', () => {
     const { nodes, links } = graph({ root: [['left', [-6, 0]], ['right', [6, 0]]] })
     const loner: LayoutNode = { id: 'loner', position: [0, 30 * 2 * R], radius: R, movable: true }
     const { positions } = solveLayout([...nodes, loner], links, {

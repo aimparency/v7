@@ -8,7 +8,7 @@ import type { Snapshot } from './snapshot.ts'
 
 export interface Run {
   settings?: Partial<LayoutSettings> // what the panel tunes
-  weights?: LayoutOptions['weights'] // also the mechanics (anchor, separation)
+  weights?: LayoutOptions['weights']
   options?: Omit<LayoutOptions, 'room' | 'weights' | 'semanticPairs'>
   relax?: Parameters<typeof createRelaxation>[1]
 }
