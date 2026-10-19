@@ -39,6 +39,7 @@ import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
 import { getRuntimeConfig } from './utils/runtime-config'
+import { isModalOpen } from './stores/ui/modal-helpers'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
 import { Check, GitCommitHorizontal, Hourglass, Info, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
 
@@ -355,8 +356,8 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  // Ignore if user is typing in an input (except Escape which might be needed to close modals/search)
-  if (isInput) return
+  // Ignore if user is typing in an input or a modal is open; modals handle their own keys
+  if (isInput || isModalOpen()) return
 
   if (uiStore.isRestoringUIState) {
     uiStore.interruptUIStateRestore()

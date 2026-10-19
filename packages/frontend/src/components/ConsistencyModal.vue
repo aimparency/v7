@@ -48,7 +48,7 @@ const close = () => {
 </script>
 
 <template>
-  <div class="modal-overlay" @click.self="close">
+  <div class="modal-overlay" aria-modal="true" @click.self="close">
     <div class="modal-content">
       <h2>Data Inconsistencies</h2>
       

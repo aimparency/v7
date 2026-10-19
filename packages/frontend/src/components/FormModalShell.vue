@@ -42,6 +42,7 @@ const handleKeydown = (event: KeyboardEvent) => {
   <div
     v-if="show"
     class="modal-overlay"
+    aria-modal="true"
     tabindex="-1"
     @click.self="handleOverlayClick"
     @keydown="handleKeydown"

@@ -263,7 +263,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="search-overlay" @click.self="close" @keydown="handleKeydown">
+  <div class="search-overlay" aria-modal="true" @click.self="close" @keydown="handleKeydown">
     <div class="search-modal">
       <div class="modal-header">
         <h3>{{ pathSelectionMode ? 'Select Path' : modalStore.ideaSearchTitle }}</h3>

@@ -66,6 +66,20 @@ describe('keyboard actions', () => {
     expect(action === 'undo' ? redo : undo).not.toHaveBeenCalled()
   })
 
+  it('ignores shortcuts while a modal is open', async () => {
+    const undo = vi.spyOn(useHistoryStore(), 'undo').mockResolvedValue(undefined as any)
+    const modal = document.createElement('div')
+    modal.setAttribute('aria-modal', 'true')
+    document.body.appendChild(modal)
+    const event = new KeyboardEvent('keydown', { key: 'u', cancelable: true })
+
+    await handleGlobalKeydownAction(useUIStore(), event, useDataStore())
+    modal.remove()
+
+    expect(event.defaultPrevented).toBe(false)
+    expect(undo).not.toHaveBeenCalled()
+  })
+
   it('toggles the focused graph idea with Space in multi-select mode', async () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()

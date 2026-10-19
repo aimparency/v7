@@ -300,7 +300,7 @@ const save = async () => {
 </script>
 
 <template>
-  <div v-if="modalStore.showSettingsModal" class="modal-overlay">
+  <div v-if="modalStore.showSettingsModal" class="modal-overlay" aria-modal="true">
     <div class="modal">
       <div class="modal-header">
         <h3>Project Settings</h3>

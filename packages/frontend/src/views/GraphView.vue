@@ -4,6 +4,7 @@ import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
+import { isModalOpen } from '../stores/ui/modal-helpers'
 import { useProjectStore } from '../stores/project-store'
 import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
@@ -211,10 +212,10 @@ watch(trigger, () => {
 watch([width, height], () => updateVisibleLabels())
 
 const onKeydown = (e: KeyboardEvent) => {
-    // Ignore if user is typing in an input or textarea
+    // Ignore if user is typing in an input or textarea, or a modal is open
     const target = e.target as HTMLElement
     const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable
-    if (isInput) return
+    if (isInput || isModalOpen()) return
 
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
         const nextMode: Record<'status' | 'priority' | 'custom', 'status' | 'priority' | 'custom'> = {

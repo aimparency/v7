@@ -2,6 +2,7 @@ import { trpc } from '../../trpc'
 import { useDataStore } from '../data'
 import { useGraphUIStore } from './graph-store'
 import { useUIModalStore } from './modal-store'
+import { isModalOpen } from './modal-helpers'
 import { useProjectStore } from '../project-store'
 import { hasQueryFlag } from '../../utils/perf-log'
 import { useHistoryStore } from '../history'
@@ -589,19 +590,11 @@ export async function handleGlobalKeydownAction(uiStore: any, event: KeyboardEve
       alt: event.altKey,
       shift: event.shiftKey,
       view: projectStore.currentView,
-      modalOpen:
-        modalStore.showPhaseModal ||
-        modalStore.showIdeaModal ||
-        modalStore.showIdeaSearch ||
-        modalStore.showPhaseSearchPrompt ||
-        modalStore.showIdeaEditModal ||
-        modalStore.showSettingsModal
+      modalOpen: isModalOpen()
     })
   }
 
-  if (modalStore.showPhaseModal || modalStore.showIdeaModal || modalStore.showIdeaSearch || modalStore.showPhaseSearchPrompt || modalStore.showIdeaEditModal || modalStore.showSettingsModal) {
-    return
-  }
+  if (isModalOpen()) return
 
   const historyAction = historyActionFor(event)
   if (historyAction) {

@@ -204,7 +204,7 @@ const handleResultKeydown = (event: KeyboardEvent, index: number) => {
 </script>
 
 <template>
-  <div class="search-overlay" @click.self="$emit('close')">
+  <div class="search-overlay" aria-modal="true" @click.self="$emit('close')">
     <div class="search-modal">
       <div class="modal-header">
         <h3>{{ title }}</h3>

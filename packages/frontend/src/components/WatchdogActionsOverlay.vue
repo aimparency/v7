@@ -161,7 +161,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <div class="actions-overlay" @click.self="store.showActionsOverlay = false">
+  <div class="actions-overlay" aria-modal="true" @click.self="store.showActionsOverlay = false">
     <div class="actions-modal">
       <div class="modal-header">Supervisor Actions</div>
       <div class="actions-list">

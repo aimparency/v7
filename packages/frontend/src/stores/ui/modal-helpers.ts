@@ -126,3 +126,9 @@ export function clearTeleportBuffer(state: UIModalState): void {
   state.teleportCopySource = null
   state.movingIdeaId = null
 }
+
+// Every modal root carries aria-modal="true"; while one is open, global
+// keyboard shortcuts stay off.
+export function isModalOpen() {
+  return document.querySelector('[aria-modal="true"]') !== null
+}
