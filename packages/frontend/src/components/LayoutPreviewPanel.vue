@@ -103,8 +103,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
           >Reset positions</button>
         </fieldset>
       </section>
+      <span v-if="unsaved" class="hint">Differs from the saved settings; Apply saves them to meta.json.</span>
       <div v-if="unsaved || !isDefault" class="row">
-        <span v-if="unsaved" class="hint">Differs from the saved settings; Apply saves them to meta.json.</span>
         <button v-if="unsaved" class="btn-secondary" @click="settings = { ...saved }">Reset</button>
         <button v-if="!isDefault" class="btn-secondary" @click="settings = { ...DEFAULT_LAYOUT_SETTINGS }">Defaults</button>
       </div>
@@ -191,10 +191,6 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     justify-content: flex-end;
     align-items: center;
     gap: 0.5rem;
-
-    & .hint {
-      flex: 1;
-    }
   }
 }
 </style>
