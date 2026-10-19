@@ -7,12 +7,15 @@ import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 import { nodeRadius, normalizedFlowForceWeights, surfaceMovementShares } from '../utils/graph-forces'
 import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
-import { similarityPairs, type SemanticPair } from '../utils/autolayout'
+import { minimumGapPush, similarityPairs, type SemanticPair } from '../utils/autolayout'
 
 // Constants
 const OUTER_MARGIN_FACTOR = 2
 const FLOW_FORCE = 0.5
 const GLOBAL_FORCE = 0.14
+// The minimum distance's push per separation weight while the Layout panel is
+// open: at the default weight (4), about as strong as a connection's pull.
+const MINIMUM_GAP_FORCE = 0.1
 
 type Box = [number, number, number, number]
 
@@ -115,16 +118,16 @@ export function useGraphSimulation() {
     tickCallbacks.push(cb)
   }
 
-  // While the Layout panel is open, as in the layout solver: every two
-  // ideas keep its minimum distance (`space`, in radius sums, instead of the
-  // usual margin), and every idea is pulled toward its most similar ideas
-  // (same pairs and shares, `semantic` is its weight). Each similar pair
-  // pulls with the mean of its two shares, split by surface like a
-  // connection, so it cannot translate the graph as a whole.
-  let margin = OUTER_MARGIN_FACTOR
+  // While the Layout panel is open, as in the layout solver: every two ideas
+  // closer than its minimum distance (`space`, in radius sums) push apart
+  // (`separation` is its weight), and every idea is pulled toward its most
+  // similar ideas (same pairs and shares, `semantic` is its weight). Each
+  // pair moves split by surface like a connection, so neither can translate
+  // the graph as a whole; a similar pair pulls with the mean of its shares.
+  let minimumGap: { space: number; separation: number } | null = null
   let similarity: { from: GraphNode; into: GraphNode; length: number; weight: number }[] = []
-  const setLayoutForces = (forces: { semanticPairs: readonly SemanticPair[]; semantic: number; space: number } | null) => {
-    margin = forces?.space ?? OUTER_MARGIN_FACTOR
+  const setLayoutForces = (forces: { semanticPairs: readonly SemanticPair[]; semantic: number; space: number; separation: number } | null) => {
+    minimumGap = forces && forces.separation > 0 ? { space: forces.space, separation: forces.separation } : null
     if (!forces || forces.semantic <= 0) {
       similarity = []
       return
@@ -439,7 +442,7 @@ export function useGraphSimulation() {
             r[i] = n.r
             positions[i] = n.pos
             vec2.scale(n.shift, n.shift, 0)
-            const br = n.r * margin
+            const br = n.r * Math.max(OUTER_MARGIN_FACTOR, minimumGap?.space ?? 0)
             boxes[i] = [n.pos[0] - br, n.pos[1] - br, n.pos[0] + br, n.pos[1] + br]
         }
 
@@ -532,8 +535,19 @@ export function useGraphSimulation() {
             if (d < rSum) {
                 calcShiftAndApply(1, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
             }
-            if (d < rSum * margin) {
-                calcShiftAndApply(margin, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
+            if (d < rSum * OUTER_MARGIN_FACTOR) {
+                calcShiftAndApply(OUTER_MARGIN_FACTOR, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
+            }
+            if (minimumGap) {
+                const length = vec2.len(ab)
+                const push = minimumGapPush(d, rSum, minimumGap.space) * minimumGap.separation * MINIMUM_GAP_FORCE * rSum / length
+                if (push > 0) {
+                    const movement = surfaceMovementShares(nA.r, nB.r)
+                    vec2.scale(hShift, ab, -push * movement.from)
+                    vec2.add(nA.shift, nA.shift, hShift)
+                    vec2.scale(hShift, ab, push * movement.into)
+                    vec2.add(nB.shift, nB.shift, hShift)
+                }
             }
         }
 

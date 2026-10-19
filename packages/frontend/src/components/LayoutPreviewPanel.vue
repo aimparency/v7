@@ -33,8 +33,8 @@ const GROUPS: Group[] = [
     { key: 'memory', label: 'Amount', hint: 'How strongly connections keep their stored offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' }
   ] },
   { name: 'Minimum distance', sliders: [
-    { key: 'space', label: 'Minimum gap', hint: 'The gap every idea keeps from every other, connected or not, in radius sums; connected ideas at most the target gap', min: 3, max: 8, scale: 'linear', gap: true },
-    { key: 'separation', label: 'Amount', hint: 'How hard ideas closer than the minimum gap push apart: strongest when they touch, 1 / (1 + gap)', min: 0.5, max: 50, scale: 'log' }
+    { key: 'space', label: 'Minimum gap', hint: 'Every two ideas closer than this, connected or not, push apart; in radius sums. Connections settle where this push and their pull toward the target gap balance', min: 3, max: 8, scale: 'linear', gap: true },
+    { key: 'separation', label: 'Amount', hint: 'How hard ideas closer than the minimum gap push apart: 1 / (1 + gap), strongest when they touch, fading to 0 at the minimum gap', min: 0.5, max: 50, scale: 'log' }
   ] }
 ]
 const SECTIONS = [

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLayoutSolver, roundOffset, solveLayout, type LayoutLink, type LayoutNode } from '../autolayout'
+import { createLayoutSolver, minimumGapPush, roundOffset, solveLayout, type LayoutLink, type LayoutNode } from '../autolayout'
 import { measureLayout } from '../layout-metrics'
 
 const R = 10 // every idea has this radius, so one radius sum is 20
@@ -245,6 +245,14 @@ describe('solveLayout', () => {
     expect(crowded(positions)).toBe(false)
   })
 
+
+  it('pushes 1 / (1 + gap), faded to nothing at the minimum gap', () => {
+    const push = (gap: number) => minimumGapPush((1 + gap) * 2 * R, 2 * R, 5) // minimum gap 4
+    expect(push(0)).toBeCloseTo(0.8)
+    expect(push(1)).toBeCloseTo(0.3)
+    expect(push(4)).toBeCloseTo(0)
+    expect(push(6)).toBe(0)
+  })
 
   it('rounds offsets so unchanged layouts re-save without float noise', () => {
     expect(roundOffset([0.5782261044010013, -2.432211868277359])).toEqual([0.58, -2.43])

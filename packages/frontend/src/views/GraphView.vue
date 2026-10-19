@@ -412,7 +412,7 @@ async function startLayoutPreview() {
       linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
       stored: new Map(links.value.map(link => [link, link.relativePosition]))
     }
-    setLayoutForces({ semanticPairs, semantic: saved.semantic, space: saved.space })
+    setLayoutForces({ semanticPairs, semantic: saved.semantic, space: saved.space, separation: saved.separation })
     layoutWorker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
     layoutWorker.onmessage = ({ data }: MessageEvent<LayoutResult>) => showLayoutResult(data)
     layoutWorker.onerror = (event) => {
@@ -460,7 +460,7 @@ function resetLayoutPositions() {
 
 watch(layoutSettings, settings => {
   if (!layoutWorker || !layoutPreview.value) return
-  setLayoutForces({ semanticPairs: layoutPreview.value.request.semanticPairs, semantic: settings.semantic, space: settings.space })
+  setLayoutForces({ semanticPairs: layoutPreview.value.request.semanticPairs, semantic: settings.semantic, space: settings.space, separation: settings.separation })
   layoutSolving.value = true
   layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })

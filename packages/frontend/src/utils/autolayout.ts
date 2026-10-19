@@ -84,7 +84,7 @@ const DEFAULT_WEIGHTS = {
   // space · (1 + 2 · distance) radius sums, never inside the minimum distance. Higher brings ideas closer
   // to their similar ones but tangles connections.
   semantic: 0.1,
-  separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge; strongest when they touch, 1 / (1 + gap in radius sums)
+  separation: 4, // how hard ideas closer than `space` push apart (see minimumGapPush)
   space: 5, // radius sums every idea keeps from every other, connected or not. At 3, ideas sat almost touching in large graphs
   // How hard a connection pulls, per idea: 1 − importance + importance · n · width / total width
   // of the idea's n connections. 0 all alike, 1 in proportion to the width; on average 1 either way.
@@ -104,6 +104,15 @@ export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOp
 const SEMANTIC_SHARPNESS = 0.1
 // Minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest.
 const DEFAULT_CLEARANCE = 3
+
+// The minimum distance's push between two ideas `distance` apart, in radius
+// sums (`span`), for `space` radius sums between centres: 1 / (1 + gap) with
+// the gap in radius sums, strongest when they touch, less so the more room
+// they have, faded to 0 at the minimum gap so ideas don't jitter on its edge.
+// A push only, for every pair, connected or not; the solver and the live
+// graph scale it by the separation weight.
+export const minimumGapPush = (distance: number, span: number, space: number) =>
+  Math.max(0, 1 / (1 + Math.max(distance / span - 1, 0)) - 1 / space)
 
 // Similarity, the same in the solver and in the live graph: each idea shares
 // the `semantic` weight among its pairs, the closest ones getting most
@@ -311,17 +320,16 @@ export function createLayoutSolver(
       pull(a, SEMANTIC * shareA, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
-    // Ideas closer than the space: each pulled to where the pair would be
-    // just far enough apart. Pushing them apart outright after each
-    // iteration (as `separate` does at the end) fights the other terms, and
-    // the iterations cycle instead of coming to rest.
-    // Every pair alike, connected or not: a connection settles between the
-    // target gap and the minimum distance.
-    forEachOverlap(x, y, radius, SPACE, order, (a, b, deltaX, deltaY, distance, minimum) => {
+    // Every pair closer than the minimum distance pushes apart, connected or
+    // not: a connection settles where its pull and this push balance. As a
+    // target the minimum gap away, weighted by the push, so a weak push holds
+    // an idea back little (and touching ideas push about as hard as the
+    // weight says relative to the other terms).
+    forEachOverlap(x, y, radius, SPACE, order, (a, b, deltaX, deltaY, distance) => {
       const span = radius[a]! + radius[b]!
-      const push = (minimum - distance) / distance
-      // Strongest when they touch, half as strong one radius sum apart.
-      const weight = SEPARATION / (1 + Math.max(distance / span - 1, 0))
+      const weight = SEPARATION * minimumGapPush(distance, span, SPACE)
+      if (weight <= 0) return
+      const push = (SPACE - 1) * span / distance
       pull(a, weight, x[a]! - deltaX * push, y[a]! - deltaY * push)
       pull(b, weight, x[b]! + deltaX * push, y[b]! + deltaY * push)
     })
