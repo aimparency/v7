@@ -3,7 +3,7 @@ import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch, type Compon
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { useScrollIntoView } from '../composables/useScrollIntoView'
+import { contentRect, selectedIdeaRow, useColumnScroll, type FocusRect } from '../composables/useColumnScroll'
 import { useKeepSelectedIdeaVisible } from '../composables/useKeepSelectedIdeaVisible'
 import PhaseComponent from './Phase.vue'
 import type { PhaseLevelEntry } from '../stores/data'
@@ -22,15 +22,13 @@ const uiStore = useUIStore()
 const modalStore = useUIModalStore()
 
 const phaseListRef = ref<HTMLElement | null>(null)
+const virtualSpaceRef = ref<HTMLElement | null>(null)
 const entryElements = ref(new Map<string, HTMLElement>())
 const measuredHeightByKey = ref(new Map<string, number>())
 const scrollTop = ref(0)
 const viewportHeight = ref(0)
 const resizeObserver = ref<ResizeObserver | null>(null)
-const hasInitialAnchorPosition = ref(false)
-const pendingSelectionRealignTimeout = ref<number | null>(null)
 const revealedPlaceholderKey = ref<string | null>(null)
-const selectionTravelDirection = ref<'forward' | 'backward' | 'preserve'>('preserve')
 // Last selection the column acted on; transient gaps never overwrite it.
 let settledSelection: { index: number; key: string; isSelected: boolean } | null = null
 
@@ -61,9 +59,6 @@ const handleIdeaClicked = (columnIndex: number, phaseId: string | undefined, ide
 const ESTIMATED_PHASE_HEIGHT = 180
 const ESTIMATED_SEPARATOR_HEIGHT = 17
 const OVERSCAN_COUNT = 4
-const EDGE_PADDING_RATIO = 0.1
-const PAGE_STEP_RATIO = 0.5
-const SNAP_THRESHOLD_RATIO = 0.8
 
 const entries = computed(() => dataStore.getColumnEntries(props.columnIndex))
 const selectableEntries = computed(() => dataStore.getSelectableColumnEntries(props.columnIndex))
@@ -203,49 +198,31 @@ const getSelectedEntryIndexInColumn = () => {
   return entries.value.findIndex((entry) => entry.key === selectedEntry.key)
 }
 
-const updateViewportMetrics = (persistScroll: boolean = hasInitialAnchorPosition.value) => {
+const updateViewportMetrics = () => {
   const container = phaseListRef.value
   if (!container) return
   scrollTop.value = container.scrollTop
   viewportHeight.value = container.clientHeight
-  if (persistScroll) {
-    uiStore.setColumnScrollTop(props.columnIndex, container.scrollTop)
-  }
 }
 
-const handleColumnScroll = () => {
-  updateViewportMetrics(true)
-}
-
-const queueSelectionRealign = (
-  behavior: ScrollBehavior = 'smooth',
-  delayMs: number = 90,
-  direction: 'forward' | 'backward' | 'preserve' = selectionTravelDirection.value
-) => {
-  if (uiStore.isRestoringUIState) return
-  if (pendingSelectionRealignTimeout.value !== null) {
-    window.clearTimeout(pendingSelectionRealignTimeout.value)
-  }
-
-  pendingSelectionRealignTimeout.value = window.setTimeout(() => {
-    pendingSelectionRealignTimeout.value = null
-    void scrollSelectedEntryIntoView(behavior, direction, true)
-  }, delayMs)
-}
-
-const adjustScrollForHeightChange = (entryIndex: number, delta: number) => {
+// The column's focus: the selected idea's row while navigating ideas here,
+// otherwise the selected entry (from the layout model, so it works before the
+// entry is rendered).
+const getFocus = (): FocusRect | null => {
   const container = phaseListRef.value
-  if (!container || delta === 0) return
-  const selectedEntryIndex = getSelectedEntryIndexInColumn()
-  if (selectedEntryIndex < 0 || entryIndex >= selectedEntryIndex) return
-  // Compensate for the height delta of an entry above the selection so the
-  // selected entry stays pixel-stable. This is complete on its own — we do NOT
-  // re-center here, otherwise first-time entry measurements during a flick (or
-  // an Android address-bar viewport resize) would yank the view back to the
-  // selection and fight the user's scroll.
-  container.scrollTop += delta
-  updateViewportMetrics(true)
+  if (!container) return null
+  if (uiStore.navigatingIdeas && uiStore.activeColumn === props.columnIndex) {
+    const ideaRow = selectedIdeaRow(container)
+    if (ideaRow) return contentRect(container, ideaRow)
+  }
+  const entryIndex = getSelectedEntryIndexInColumn()
+  if (entryIndex < 0) return null
+  return { top: (virtualSpaceRef.value?.offsetTop ?? 0) + getRenderedTop(entryIndex), height: heights.value[entryIndex] ?? 0 }
 }
+
+const scroll = useColumnScroll(phaseListRef, getFocus, () => uiStore.isRestoringUIState)
+
+useKeepSelectedIdeaVisible(() => uiStore.activeColumn === props.columnIndex, scroll.reveal)
 
 const getOuterHeight = (element: HTMLElement) => {
   const style = window.getComputedStyle(element)
@@ -259,14 +236,16 @@ const measureEntryElement = (entryKey: string, element: HTMLElement) => {
   if (measuredHeight <= 0) return
 
   const entryIndex = entries.value.findIndex((entry) => entry.key === entryKey)
-  const entry = entryIndex >= 0 ? entries.value[entryIndex] : undefined
   const previousHeight = measuredHeightByKey.value.get(entryKey) ?? (entryIndex >= 0 ? getEstimatedHeight(entries.value[entryIndex]!) : measuredHeight)
   if (previousHeight === measuredHeight) return
 
   measuredHeightByKey.value.set(entryKey, measuredHeight)
-  if (entryIndex >= 0) {
-    adjustScrollForHeightChange(entryIndex, measuredHeight - previousHeight)
-  }
+  if (entryIndex < 0) return
+  // Keep the focus where it is: entries above it move the column with them,
+  // the focus itself may now need revealing.
+  const selectedIndex = getSelectedEntryIndexInColumn()
+  if (entryIndex < selectedIndex) scroll.shift(measuredHeight - previousHeight)
+  else if (entryIndex === selectedIndex) scroll.reveal()
 }
 
 const setEntryElement = (
@@ -293,179 +272,6 @@ const setEntryElement = (
   }
 }
 
-const setInitialAnchorScrollIfNeeded = async () => {
-  if (hasInitialAnchorPosition.value) return
-
-  await nextTick()
-  const container = phaseListRef.value
-  if (!container) return
-
-  const entryIndex = getSelectedEntryIndexInColumn()
-  if (entryIndex < 0) return
-
-  const targetTop = uiStore.isRestoringUIState
-    ? Math.max(0, getRenderedTop(entryIndex) - container.clientHeight * 0.25 + (heights.value[entryIndex] ?? 0) * 0.5)
-    : Math.max(
-        0,
-        getRenderedTop(entryIndex) - container.clientHeight * 0.25 + (heights.value[entryIndex] ?? 0) * 0.5
-      )
-
-  container.scrollTop = targetTop
-  hasInitialAnchorPosition.value = true
-  updateViewportMetrics(true)
-  if (!uiStore.isRestoringUIState) {
-    queueSelectionRealign('smooth', 120, selectionTravelDirection.value)
-  }
-}
-
-// Single point through which all programmatic scrolls pass so the competing
-// scroll-into-view mechanisms (phase-level here vs. the selected idea's own
-// scroll-request) can no longer fire two conflicting smooth animations — the
-// "scrolls up then down" jitter on column navigation, worst when a phase is
-// taller than the viewport. Within one frame a higher-priority target wins
-// (idea > phase) and only the last surviving target is applied once via rAF.
-const SCROLL_PRIORITY = { phase: 0, idea: 1 } as const
-// How long a just-applied idea scroll suppresses a late phase realign that would
-// otherwise yank the view off the selected idea (the realign runs ~120ms later).
-const IDEA_SCROLL_HOLD_MS = 300
-let lastIdeaScrollAt = 0
-let pendingScroll: { top: number; behavior: ScrollBehavior; priority: number } | null = null
-let pendingScrollFrame: number | null = null
-
-const requestScroll = (
-  top: number,
-  behavior: ScrollBehavior,
-  source: 'phase' | 'idea'
-) => {
-  const container = phaseListRef.value
-  if (!container) return
-  if (source === 'idea') lastIdeaScrollAt = performance.now()
-
-  const priority = SCROLL_PRIORITY[source]
-  // Keep an already-queued higher-priority target; otherwise the latest wins.
-  if (!pendingScroll || priority >= pendingScroll.priority) {
-    pendingScroll = { top, behavior, priority }
-  }
-
-  if (pendingScrollFrame !== null) return
-  pendingScrollFrame = requestAnimationFrame(() => {
-    pendingScrollFrame = null
-    const target = pendingScroll
-    pendingScroll = null
-    if (target && phaseListRef.value) {
-      phaseListRef.value.scrollTo({ top: target.top, behavior: target.behavior })
-    }
-  })
-}
-
-const scrollSelectedEntryIntoView = async (
-  behavior: ScrollBehavior = 'smooth',
-  direction: 'forward' | 'backward' | 'preserve' = selectionTravelDirection.value,
-  isRealign = false
-) => {
-  // The deferred realign runs ~120ms after navigation. By then the selected
-  // idea has positioned itself via scroll-request (kept-in-view is the chosen
-  // behavior for oversized phases); a phase-level realign would yank the view
-  // back off it. Skip the realign in that window. The immediate, same-frame
-  // call is NOT skipped here — the coalescer already lets the idea target win
-  // over the phase target within the frame, and idea-less placeholder entries
-  // (which never set lastIdeaScrollAt) keep realigning normally.
-  if (isRealign && performance.now() - lastIdeaScrollAt < IDEA_SCROLL_HOLD_MS) return
-
-  await nextTick()
-  const selectedEntry = getSelectedEntry()
-  if (!selectedEntry) return
-
-  const entryIndex = entries.value.findIndex((entry) => entry.key === selectedEntry.key)
-  if (entryIndex < 0 || !phaseListRef.value) return
-
-  const container = phaseListRef.value
-  const top = getRenderedTop(entryIndex)
-  const height = heights.value[entryIndex] ?? 0
-  const bottom = top + height
-  const viewTop = container.scrollTop
-  const viewport = container.clientHeight
-  const viewBottom = viewTop + viewport
-  const edgePadding = viewport * EDGE_PADDING_RATIO
-  const topAligned = Math.max(0, top - edgePadding)
-  const bottomAligned = Math.max(0, bottom - (viewport - edgePadding))
-  const pageStep = viewport * PAGE_STEP_RATIO
-  const snapThreshold = viewport * SNAP_THRESHOLD_RATIO
-
-  const scrollToClamped = (targetTop: number, scrollBehavior: ScrollBehavior) => {
-    const maxScrollTop = Math.max(0, container.scrollHeight - viewport)
-    requestScroll(Math.max(0, Math.min(targetTop, maxScrollTop)), scrollBehavior, 'phase')
-  }
-
-  if (direction === 'forward') {
-    if (top < viewTop + edgePadding || top >= viewBottom) {
-      scrollToClamped(topAligned, behavior)
-      return
-    }
-
-    if (bottom > viewBottom - edgePadding) {
-      const remainingToBottomAlign = bottomAligned - viewTop
-      const targetTop = remainingToBottomAlign <= snapThreshold
-        ? bottomAligned
-        : viewTop + pageStep
-      scrollToClamped(targetTop, behavior)
-      return
-    }
-
-    return
-  }
-
-  if (direction === 'backward') {
-    if (bottom > viewBottom - edgePadding || bottom <= viewTop) {
-      scrollToClamped(bottomAligned, behavior)
-      return
-    }
-
-    if (top < viewTop + edgePadding) {
-      const remainingToTopAlign = viewTop - topAligned
-      const targetTop = remainingToTopAlign <= snapThreshold
-        ? topAligned
-        : viewTop - pageStep
-      scrollToClamped(targetTop, behavior)
-      return
-    }
-
-    return
-  }
-
-  if (top < viewTop + edgePadding) {
-    scrollToClamped(topAligned, behavior)
-    return
-  }
-
-  if (bottom > viewBottom - edgePadding) {
-    scrollToClamped(bottomAligned, behavior)
-    return
-  }
-
-  if (top < viewTop || bottom > viewBottom) {
-    if (uiStore.isRestoringUIState) {
-      scrollToClamped(topAligned, 'auto')
-      return
-    }
-
-    const element = entryElements.value.get(selectedEntry.key)
-    if (element) {
-      handleScrollRequest(element)
-    }
-  }
-}
-
-// Handle scroll requests from child components (Phase/Idea emit 'scroll-request').
-// Route through the same coalescer at idea priority so it wins over — and
-// cancels — a competing phase-level scroll in the same frame.
-const { handleScrollRequest } = useScrollIntoView(
-  phaseListRef,
-  (top, behavior) => requestScroll(top, behavior, 'idea')
-)
-
-useKeepSelectedIdeaVisible(phaseListRef, () => uiStore.activeColumn === props.columnIndex, handleScrollRequest)
-
 const updateRevealedPlaceholder = async () => {
   const selectedEntry = getSelectedEntry()
   if (!selectedEntry || selectedEntry.type !== 'placeholder') {
@@ -479,14 +285,12 @@ const updateRevealedPlaceholder = async () => {
 }
 
 watch(() => uiStore.columnScrollIntent, (req) => {
-  if (req && req.col === props.columnIndex && phaseListRef.value) {
-    const behavior = 'smooth'
-    if (req.direction === 'bottom') {
-      phaseListRef.value.scrollTo({ top: phaseListRef.value.scrollHeight, behavior })
-    } else if (req.direction === 'top') {
-      phaseListRef.value.scrollTo({ top: 0, behavior })
-    }
-  }
+  if (req && req.col === props.columnIndex) scroll.scrollToEdge(req.direction)
+})
+
+// Restoring jumps without animation; once done, the restored focus is revealed.
+watch(() => uiStore.isRestoringUIState, (restoring) => {
+  if (!restoring) scroll.reveal()
 })
 
 watch(
@@ -519,42 +323,17 @@ watch(
     const previousRemoved = keyChanged && !selectableEntries.value.some((entry) => entry.key === settled!.key)
     const selectionChanged = !previousRemoved && (keyChanged || indexChanged || (isSelected && !settled?.isSelected))
 
-    if (!settled) {
-      selectionTravelDirection.value = 'preserve'
-    } else if (keyChanged || indexChanged) {
-      // Compare positions in the current entries: j/k change the key, J/K keep
-      // the key and move the entry, so both reduce to "where is it now vs. before".
-      const previousIndex = keyChanged
-        ? selectableEntries.value.findIndex((entry) => entry.key === settled.key)
-        : settled.index
-      const fromIndex = previousIndex >= 0 ? previousIndex : settled.index
-      selectionTravelDirection.value = selectedPhaseIndex === fromIndex
-        ? 'preserve'
-        : selectedPhaseIndex > fromIndex ? 'forward' : 'backward'
-    }
-
     void updateRevealedPlaceholder()
-    if (!hasInitialAnchorPosition.value) {
-      void setInitialAnchorScrollIfNeeded()
-      return
-    }
-    // Don't recenter when the watch only re-fired due to entries churning
+    // Don't reveal when the watch only re-fired due to entries churning
     // during a user scroll — that's what was fighting the flick.
-    if (!selectionChanged) return
-    void scrollSelectedEntryIntoView(
-      uiStore.isRestoringUIState ? 'auto' : 'smooth',
-      selectionTravelDirection.value
-    )
+    if (!settled || selectionChanged) scroll.reveal()
   },
   { flush: 'post' }
 )
 
 watch(() => entries.value.map((entry) => entry.key).join('|'), async () => {
-  if (entries.value.length === 0) {
-    hasInitialAnchorPosition.value = false
-  }
   await nextTick()
-  updateViewportMetrics(false)
+  updateViewportMetrics()
 }, { flush: 'post' })
 
 onMounted(() => {
@@ -564,7 +343,7 @@ onMounted(() => {
   if (initialKey) {
     settledSelection = { index: props.selectedPhaseIndex, key: initialKey, isSelected: props.isSelected }
   }
-  updateViewportMetrics(false)
+  updateViewportMetrics()
   resizeObserver.value = new ResizeObserver((observedEntries) => {
     for (const observedEntry of observedEntries) {
       const element = observedEntry.target
@@ -578,14 +357,10 @@ onMounted(() => {
     }
   })
   void updateRevealedPlaceholder()
-  void setInitialAnchorScrollIfNeeded()
+  scroll.reveal()
 })
 
 onBeforeUnmount(() => {
-  if (pendingSelectionRealignTimeout.value !== null) {
-    window.clearTimeout(pendingSelectionRealignTimeout.value)
-    pendingSelectionRealignTimeout.value = null
-  }
   resizeObserver.value?.disconnect()
   resizeObserver.value = null
 })
@@ -605,9 +380,9 @@ onBeforeUnmount(() => {
       v-else
       ref="phaseListRef"
       class="column-list"
-      @scroll="handleColumnScroll"
+      @scroll="updateViewportMetrics"
     >
-      <div class="virtual-column-space" :style="{ height: `${totalHeight}px` }">
+      <div ref="virtualSpaceRef" class="virtual-column-space" :style="{ height: `${totalHeight}px` }">
         <template v-for="entry in visibleEntries" :key="entry.key">
         <div
           :ref="(element) => setEntryElement(entry.key, element)"
@@ -648,7 +423,6 @@ onBeforeUnmount(() => {
             :is-active="getSelectableIndex(entry.key) === selectedPhaseIndex && uiStore.activeColumn === columnIndex"
             @phase-clicked="() => uiStore.selectPhase(columnIndex, getSelectableIndex(entry.key))"
             @idea-clicked="(ideaId, mods) => handleIdeaClicked(columnIndex, entry.phase.id, ideaId, mods)"
-            @scroll-request="handleScrollRequest"
           />
         </div>
       </template>

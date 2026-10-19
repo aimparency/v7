@@ -1,17 +1,11 @@
-import { nextTick, watch, type Ref } from 'vue'
+import { watch } from 'vue'
 import { useUIStore } from '../stores/ui'
 
-// Keeps the selected idea of a column in view while navigating ideas.
-//
-// Ideas used to request their own scroll when their `isThisIdeaSelected`/`isActive`
-// props flipped. Selection moves that don't flip those props on the newly
-// selected idea (returning to a parent with k/h, reordering with J/K) then
-// never scrolled. Watching the whole selection path from the column covers
-// every move with one mechanism.
+// Asks the column to reveal its focus whenever the selected idea changes,
+// including moves that keep the ids (J/K reorders) or return to a parent (h).
 export function useKeepSelectedIdeaVisible(
-  containerRef: Ref<HTMLElement | null>,
   isColumnActive: () => boolean,
-  scrollToElement: (element: HTMLElement) => void
+  reveal: () => void
 ) {
   const uiStore = useUIStore()
 
@@ -32,15 +26,6 @@ export function useKeepSelectedIdeaVisible(
     ].join('/')
   }
 
-  watch(selectionKey, async (key) => {
-    if (!key) return
-    await nextTick()
-    const container = containerRef.value
-    if (!container) return
-    // Every idea on the selection path carries `.active`; ancestors precede their
-    // descendants in document order, so the last match is the selected idea.
-    const activeIdeas = container.querySelectorAll<HTMLElement>('.idea-item.active')
-    const selected = activeIdeas[activeIdeas.length - 1]
-    if (selected) scrollToElement(selected)
-  }, { flush: 'post' })
+  // Leaving idea navigation ('') moves the focus back to the phase: reveal too.
+  watch(selectionKey, reveal, { flush: 'post' })
 }

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, useAttrs } from 'vue'
+import { computed, ref, watch, useAttrs } from 'vue'
 import type { Idea } from '../stores/data'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
@@ -35,11 +35,9 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'idea-clicked': [ideaId: string, modifiers?: { ctrl: boolean; shift: boolean }]
-  'scroll-request': [element: HTMLElement]
 }>()
 
 const attrs = useAttrs()
-const ideaContainerRef = ref<HTMLElement | null>(null)
 const dataStore = useDataStore()
 const uiStore = useUIStore()
 const projectStore = useProjectStore()
@@ -229,18 +227,10 @@ watch(isExpanded, (newVal) => {
     }
   }
 }, { immediate: true })
-
-// Scroll on mount if already selected (for cascade restoration)
-onMounted(() => {
-  if (props.isThisIdeaSelected && ideaContainerRef.value) {
-    emit('scroll-request', ideaContainerRef.value)
-  }
-})
 </script>
 
 <template>
   <div
-    ref="ideaContainerRef"
     class="idea-item"
     :class="[attrs.class, { 
       expanded: isExpanded,
@@ -349,7 +339,6 @@ onMounted(() => {
         :is-active="isActive && isThisIdeaSelected"
         :is-selected="isSelected && isThisIdeaSelected"
         :selected-idea-id="ideaUiState.selectedChildId"
-        @scroll-request="$emit('scroll-request', $event)"
         @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"
       />
     </div>

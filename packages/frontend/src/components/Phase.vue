@@ -18,7 +18,6 @@ interface Props {
 const props = defineProps<Props>()
 
 const emit = defineEmits<{
-  'scroll-request': [element: HTMLElement]
   'idea-clicked': [ideaId: string, modifiers?: { ctrl: boolean; shift: boolean }]
   'phase-clicked': []
 }>()
@@ -226,7 +225,6 @@ const phaseMenuItems = computed<ContextMenuItem[]>(() => {
         :is-selected="isSelected"
         :selected-idea-id="uiStore.getSelectedTopIdeaId(phase.id)"
         :idea-ui-states="uiStore.getPhaseIdeaUIStates(phase.id)"
-        @scroll-request="$emit('scroll-request', $event)"
         @idea-clicked="(id, mods) => $emit('idea-clicked', id, mods)"
       />
     </div>

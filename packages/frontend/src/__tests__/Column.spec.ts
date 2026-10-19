@@ -11,7 +11,7 @@ vi.mock('../components/Phase.vue', () => ({
   default: { props: ['phase', 'isSelected', 'isActive'], template: '<div class="mock-phase">{{ phase.name }}</div>' }
 }))
 
-// Lets queued rAF scrolls and deferred realigns run.
+// Lets the queued reveal frame run.
 const settle = async () => {
   await nextTick()
   await new Promise((resolve) => setTimeout(resolve, 150))
@@ -26,9 +26,16 @@ describe('Column.vue auto-scroll', () => {
     scrollTo = vi.fn()
     Element.prototype.scrollTo = scrollTo as any
     vi.stubGlobal('ResizeObserver', class { observe() {} unobserve() {} disconnect() {} })
+    // jsdom lays nothing out: a 400px column over 2000px of content, so a
+    // step to a neighbouring entry is a smooth scroll, not a far jump.
+    vi.spyOn(HTMLElement.prototype, 'clientHeight', 'get').mockReturnValue(400)
+    vi.spyOn(HTMLElement.prototype, 'scrollHeight', 'get').mockReturnValue(2000)
   })
 
-  afterEach(() => vi.unstubAllGlobals())
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.restoreAllMocks()
+  })
 
   const mountColumn = async () => {
     const dataStore = useDataStore()

@@ -29,7 +29,6 @@ const props = withDefaults(defineProps<Props>(), {
 
 const emit = defineEmits<{
   'idea-clicked': [ideaId: string, modifiers?: { ctrl: boolean; shift: boolean }]
-  'scroll-request': [element: HTMLElement]
 }>()
 
 const uiStore = useUIStore()
@@ -58,12 +57,6 @@ const handleChange = async (event: any) => {
       await dataStore.reorderPhaseIdea(projectStore.projectPath, props.phaseId, ideaId, newIndex)
     }
   }
-}
-
-// Handle scroll requests from child ideas
-const handleScrollRequest = (element: HTMLElement) => {
-  // Forward to parent (column) for scrolling
-  emit('scroll-request', element)
 }
 
 const handleIdeaClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
@@ -106,7 +99,6 @@ const handleIdeaClickedInList = (ideaId: string, mods?: { ctrl: boolean; shift: 
             'pending-delete': uiStore.ensureIdeaUIState(ideaUiStates, idea.id).pendingDelete,
             'moving': modalStore.movingIdeaId === idea.id
           }"
-          @scroll-request="handleScrollRequest"
           @idea-clicked="(id, mods) => handleIdeaClickedInList(id, mods)"
         />
       </template>

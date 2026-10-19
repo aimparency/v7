@@ -150,7 +150,6 @@ export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
       ui.floatingIdeaId = listViewState.floatingIdeaId ?? null
       ui.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
       ui.navigatingIdeas = listViewState.navigatingIdeas
-      ui.scrollTopByColumn = {}
 
       const shouldContinue = () => ui.isRestoringUIState && ui.restoreGeneration === restoreGeneration
       const restoreVisibleMax = Math.max(ui.activeColumn, ui.getVisibleMaxColumn())

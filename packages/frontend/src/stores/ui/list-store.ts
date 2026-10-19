@@ -140,7 +140,6 @@ export const useUIStore = defineStore('ui', {
 
     // Remember last selected sub-phase index per parent phase
     lastSelectedSubPhaseIndexByPhase: {} as Record<string, number>,
-    scrollTopByColumn: {} as Record<number, number>,
 
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
     isRestoringUIState: false,
@@ -222,10 +221,6 @@ export const useUIStore = defineStore('ui', {
 
     getPersistedUIStateKey(projectPath: string) {
       return persistedUIStateKey(projectPath)
-    },
-
-    setColumnScrollTop(columnIndex: number, top: number) {
-      this.scrollTopByColumn[columnIndex] = top
     },
 
     getListViewStateSnapshot(): PersistedListViewState {
@@ -1229,7 +1224,6 @@ export const useUIStore = defineStore('ui', {
       }
       this.selectedEntryKeyByColumn = {}
       this.lastSelectedSubPhaseIndexByPhase = {}
-      this.scrollTopByColumn = {}
       const graphStore = useGraphUIStore()
       graphStore.deselectLink()
       graphStore.clearGraphSelection()

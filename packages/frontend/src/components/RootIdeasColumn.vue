@@ -2,7 +2,7 @@
 import { computed, ref } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
-import { useScrollIntoView } from '../composables/useScrollIntoView'
+import { contentRect, selectedIdeaRow, useColumnScroll } from '../composables/useColumnScroll'
 import { useKeepSelectedIdeaVisible } from '../composables/useKeepSelectedIdeaVisible'
 import IdeasList from './IdeasList.vue'
 
@@ -14,9 +14,13 @@ const isActive = computed(() => uiStore.activeColumn === -1)
 
 const rootColumnRef = ref<HTMLElement | null>(null)
 
-// Handle scroll requests from child ideas
-const { handleScrollRequest } = useScrollIntoView(rootColumnRef)
-useKeepSelectedIdeaVisible(rootColumnRef, () => isActive.value, handleScrollRequest)
+// The focus is the selected floating idea, while navigating ideas here.
+const scroll = useColumnScroll(rootColumnRef, () => {
+  const container = rootColumnRef.value
+  const ideaRow = container && selectedIdeaRow(container)
+  return ideaRow ? contentRect(container, ideaRow) : null
+})
+useKeepSelectedIdeaVisible(() => isActive.value, scroll.reveal)
 
 const handleIdeaClicked = (columnIndex: number, phaseId: string | undefined, ideaId: string, mods?: { ctrl: boolean; shift: boolean }) => {
   const isCtrl = !!(mods && mods.ctrl)
@@ -51,7 +55,6 @@ const handleIdeaClicked = (columnIndex: number, phaseId: string | undefined, ide
         :selected-idea-id="uiStore.getSelectedTopIdeaId(undefined)"
         :idea-ui-states="uiStore.floatingIdeaUIStates"
         @idea-clicked="(ideaId, mods) => handleIdeaClicked(-1, undefined, ideaId, mods)"
-        @scroll-request="handleScrollRequest"
       />
     </div>
   </div>
