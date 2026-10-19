@@ -42,7 +42,7 @@ const showPhaseFilter = ref(false)
 
 // Composables
 const simulation = useGraphSimulation()
-const { nodes, links, trigger, randomizeLayout, setSimilarity } = simulation
+const { nodes, links, trigger, randomizeLayout, setLayoutForces } = simulation
 
 // WebGL renderer
 const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
@@ -359,7 +359,8 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
 // It keeps running while the panel is open; a settings change continues from
 // its current state. Its positions are never shown or saved: the graph takes
 // over the top share of offsets (the fader), and while the panel is open the
-// simulation pulls every idea toward its similar ideas, as the solver does.
+// simulation keeps the minimum distance between every two ideas and pulls
+// every idea toward its similar ideas, as the solver does.
 // Ideas stay where the simulation moves them; Apply saves the shown offsets.
 type LayoutPreview = {
   request: Omit<LayoutRequest, 'settings'> // where the ideas were when the panel opened
@@ -411,7 +412,7 @@ async function startLayoutPreview() {
       linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
       stored: new Map(links.value.map(link => [link, link.relativePosition]))
     }
-    setSimilarity(semanticPairs, saved.semantic)
+    setLayoutForces({ semanticPairs, semantic: saved.semantic, space: saved.space })
     layoutWorker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
     layoutWorker.onmessage = ({ data }: MessageEvent<LayoutResult>) => showLayoutResult(data)
     layoutWorker.onerror = (event) => {
@@ -459,7 +460,7 @@ function resetLayoutPositions() {
 
 watch(layoutSettings, settings => {
   if (!layoutWorker || !layoutPreview.value) return
-  setSimilarity(layoutPreview.value.request.semanticPairs, settings.semantic)
+  setLayoutForces({ semanticPairs: layoutPreview.value.request.semanticPairs, semantic: settings.semantic, space: settings.space })
   layoutSolving.value = true
   layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })
@@ -484,7 +485,7 @@ function closeLayoutPreview() {
   layoutWorker = null
   layoutSolving.value = false
   layoutPreview.value = null
-  setSimilarity([], 0)
+  setLayoutForces(null)
 }
 
 // New graph data rebuilds the links, which drops the preview.

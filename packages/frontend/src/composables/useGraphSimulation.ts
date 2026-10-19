@@ -115,18 +115,25 @@ export function useGraphSimulation() {
     tickCallbacks.push(cb)
   }
 
-  // Similarity, only while the Layout panel is open: every idea is pulled
-  // toward its most similar ideas, as in the layout solver (same pairs and
-  // shares, `amount` is its semantic weight). Each pair pulls with the mean
-  // of its two shares, split by surface like a connection, so it cannot
-  // translate the graph as a whole.
+  // While the Layout panel is open, as in the layout solver: every two
+  // ideas keep its minimum distance (`space`, in radius sums, instead of the
+  // usual margin), and every idea is pulled toward its most similar ideas
+  // (same pairs and shares, `semantic` is its weight). Each similar pair
+  // pulls with the mean of its two shares, split by surface like a
+  // connection, so it cannot translate the graph as a whole.
+  let margin = OUTER_MARGIN_FACTOR
   let similarity: { from: GraphNode; into: GraphNode; length: number; weight: number }[] = []
-  const setSimilarity = (semanticPairs: readonly SemanticPair[], amount: number) => {
+  const setLayoutForces = (forces: { semanticPairs: readonly SemanticPair[]; semantic: number; space: number } | null) => {
+    margin = forces?.space ?? OUTER_MARGIN_FACTOR
+    if (!forces || forces.semantic <= 0) {
+      similarity = []
+      return
+    }
     const current = nodes.value
     const indexOf = new Map(current.map((node, index) => [node.id, index]))
     const connected = new Set(links.value.flatMap(link => [`${link.source.id}>${link.target.id}`, `${link.target.id}>${link.source.id}`]))
-    similarity = amount <= 0 ? [] : similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(`${current[a]!.id}>${current[b]!.id}`))
-      .map(({ a, b, length, shareA, shareB }) => ({ from: current[a]!, into: current[b]!, length, weight: amount * (shareA + shareB) / 2 }))
+    similarity = similarityPairs(indexOf, forces.semanticPairs, (a, b) => connected.has(`${current[a]!.id}>${current[b]!.id}`))
+      .map(({ a, b, stretch, shareA, shareB }) => ({ from: current[a]!, into: current[b]!, length: forces.space * stretch, weight: forces.semantic * (shareA + shareB) / 2 }))
   }
 
   // --- Data Sync ---
@@ -432,7 +439,7 @@ export function useGraphSimulation() {
             r[i] = n.r
             positions[i] = n.pos
             vec2.scale(n.shift, n.shift, 0)
-            const br = n.r * OUTER_MARGIN_FACTOR
+            const br = n.r * margin
             boxes[i] = [n.pos[0] - br, n.pos[1] - br, n.pos[0] + br, n.pos[1] + br]
         }
 
@@ -525,8 +532,8 @@ export function useGraphSimulation() {
             if (d < rSum) {
                 calcShiftAndApply(1, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
             }
-            if (d < rSum * OUTER_MARGIN_FACTOR) {
-                calcShiftAndApply(OUTER_MARGIN_FACTOR, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
+            if (d < rSum * margin) {
+                calcShiftAndApply(margin, d, ab, nA.r, nB.r, rSum, nA.shift, nB.shift)
             }
         }
 
@@ -715,7 +722,7 @@ export function useGraphSimulation() {
     nodeMap,
     trigger,
     randomizeLayout,
-    setSimilarity,
+    setLayoutForces,
     init,
     cleanup,
     freezings, // Exported for interaction usage (e.g. setting freeze on drag end)

@@ -81,7 +81,7 @@ const DEFAULT_WEIGHTS = {
   length: 1.5, // pull each connection to its share of the circle around both its ideas, `room` long; was 3 times strengths of about 0.5
   // Per idea, connected or not, shared by its semantic pairs (its 12 most
   // similar ideas and those that count it among theirs); pulls toward
-  // clearance · (1 + 2 · distance) radius sums. Higher brings ideas closer
+  // space · (1 + 2 · distance) radius sums, never inside the minimum distance. Higher brings ideas closer
   // to their similar ones but tangles connections.
   semantic: 0.1,
   separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge; strongest when they touch, 1 / (1 + gap in radius sums)
@@ -103,26 +103,26 @@ export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOp
 // lands near its closest neighbours rather than midway between all of them.
 const SEMANTIC_SHARPNESS = 0.1
 // Minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest.
-export const DEFAULT_CLEARANCE = 3
+const DEFAULT_CLEARANCE = 3
 
 // Similarity, the same in the solver and in the live graph: each idea shares
 // the `semantic` weight among its pairs, the closest ones getting most
 // (softmax over distance): pulled toward the mean of all its neighbours, an
 // idea would settle between them, next to none. A pair pulls only while it is
-// farther apart than `length` radius sums. Connected ideas are left to their
-// connection.
+// farther apart than the minimum distance times `stretch` (1 for the same
+// meaning), so it never pulls inside the minimum distance. Connected ideas are
+// left to their connection.
 export interface SimilarityPair {
   a: number
   b: number
-  length: number
+  stretch: number
   shareA: number // of a's semantic weight
   shareB: number
 }
 export function similarityPairs(
   indexOf: ReadonlyMap<string, number>,
   semanticPairs: readonly SemanticPair[],
-  connected: (a: number, b: number) => boolean,
-  clearance = DEFAULT_CLEARANCE
+  connected: (a: number, b: number) => boolean
 ): SimilarityPair[] {
   const pairs = semanticPairs.flatMap(pair => {
     const a = indexOf.get(pair.source)
@@ -136,7 +136,7 @@ export function similarityPairs(
     total.set(b, (total.get(b) ?? 0) + similarity)
   }
   return pairs.map(({ a, b, distance, similarity }) => ({
-    a, b, length: clearance * (1 + 2 * distance), shareA: similarity / total.get(a)!, shareB: similarity / total.get(b)!
+    a, b, stretch: 1 + 2 * distance, shareA: similarity / total.get(a)!, shareB: similarity / total.get(b)!
   }))
 }
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
@@ -195,7 +195,7 @@ export function createLayoutSolver(
   })
   const width = Float64Array.from(edges, ({ link }) => link.width)
   const connected = new Set(edges.map(edge => edge.child * count + edge.parent))
-  const pairs = similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(a * count + b) || connected.has(b * count + a), clearance)
+  const pairs = similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(a * count + b) || connected.has(b * count + a))
   // Translation is free for every term. After each iteration the centre of all ideas, weighted by area,
   // goes back where it started: groups pulled toward each other meet, the
   // heavier one moving less. Not when fixed ideas hold the layout in place.
@@ -300,11 +300,11 @@ export function createLayoutSolver(
       }
     }
 
-    for (const { a, b, length, shareA, shareB } of pairs) {
+    for (const { a, b, stretch, shareA, shareB } of pairs) {
       const vx = x[b]! - x[a]!
       const vy = y[b]! - y[a]!
       const distance = Math.hypot(vx, vy)
-      const reach = length * (radius[a]! + radius[b]!)
+      const reach = SPACE * stretch * (radius[a]! + radius[b]!)
       if (distance <= reach) continue
       const scale = reach / distance
       pull(b, SEMANTIC * shareB, x[a]! + vx * scale, y[a]! + vy * scale)

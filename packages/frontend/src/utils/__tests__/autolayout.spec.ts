@@ -191,7 +191,7 @@ describe('solveLayout', () => {
     })
     const distance = (from: string, to: string) => Math.hypot(positions.get(from)![0] - positions.get(to)![0], positions.get(from)![1] - positions.get(to)![1]) / (2 * R)
     const moved = (node: LayoutNode) => Math.hypot(positions.get(node.id)![0] - node.position[0], positions.get(node.id)![1] - node.position[1])
-    expect(distance('loner', 'a1')).toBeLessThan(6)
+    expect(distance('loner', 'a1')).toBeLessThan(6.1) // pulled to the minimum distance × (1 + 2 · 0.1), not inside it
     expect(moved(nodes.find(node => node.id === 'root')!)).toBeLessThan(moved(loner) / 2)
     const all = [...nodes, loner]
     const centre = (at: (node: LayoutNode) => readonly [number, number], axis: 0 | 1) => all.reduce((sum, node) => sum + at(node)[axis], 0) / all.length
