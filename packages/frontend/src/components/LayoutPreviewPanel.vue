@@ -27,7 +27,7 @@ const GROUPS: Group[] = [
   { name: 'Connections', sliders: [
     { key: 'spacing', label: 'Target gap', hint: 'The gap between connected ideas that connections are pulled toward, in radius sums', min: 3, max: 5, scale: 'linear', gap: true },
     { key: 'length', label: 'Amount', hint: 'How strongly each connection is pulled to its share of the circle around both its ideas, at the target gap', min: 0.3, max: 10, scale: 'log' },
-    { key: 'importance', label: 'Weight by flow', hint: 'How much a connection\'s value flow decides how wide a share of the circle it gets and how hard it pulls: 0 every connection alike, 1 in proportion to its flow', min: 0, max: 1, scale: 'linear' }
+    { key: 'importance', label: 'Weight by width', hint: 'How much a connection\'s width decides how hard it pulls; on average the pull stays the same. 0 every connection alike, 1 in proportion to its width. Its share of the circle always follows its width.', min: 0, max: 1, scale: 'linear' }
   ] },
   { name: 'Keep original shape', sliders: [
     { key: 'memory', label: 'Amount', hint: 'How strongly connections keep their stored offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' }

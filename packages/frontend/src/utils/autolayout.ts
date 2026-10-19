@@ -36,8 +36,7 @@ export interface LayoutLink {
   childId: string
   relativePosition: readonly [number, number]
   editable: boolean
-  strength: number // the simulation's normalized connection force, 0.25 (thin sibling) to 0.75 (sole connection)
-  flowShare?: number // flow normalized at both ends (0–1, 0 without flow); when given, it sets the strength with the importance weight
+  width: number // the drawn arrow's width: its share of the circle around both its ideas
 }
 
 export interface SemanticPair {
@@ -79,15 +78,17 @@ export const roundOffset = (offset: readonly [number, number]): [number, number]
 const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
   memory: 1, // keep stored offsets: the original shape
-  length: 3, // times connection strength: pull each connection to its share of the circle around both its ideas, `room` long
+  length: 1.5, // pull each connection to its share of the circle around both its ideas, `room` long; was 3 times strengths of about 0.5
   // Per idea, connected or not, shared by its semantic pairs (its 12 most
   // similar ideas and those that count it among theirs); pulls toward
   // clearance · (1 + 2 · distance) radius sums. Higher brings ideas closer
   // to their similar ones but tangles connections.
   semantic: 0.1,
   separation: 4, // pushes ideas closer than `space` apart, as one pull among the others so the iterations converge; strongest when they touch, 1 / (1 + gap in radius sums)
-  space: 5, // radius sums every idea keeps from every other; connected ideas at most the spacing (their length term decides). At 3, ideas sat almost touching in large graphs
-  importance: 0.5 // connection strength = 1 − importance + importance · flow share: 0 all equal, 1 in proportion to the flow (weak connections then fly far out)
+  space: 5, // radius sums every idea keeps from every other, connected or not. At 3, ideas sat almost touching in large graphs
+  // How hard a connection pulls, per idea: 1 − importance + importance · n · width / total width
+  // of the idea's n connections. 0 all alike, 1 in proportion to the width; on average 1 either way.
+  importance: 0.5
 }
 // What the Layout panel lets you tune. Settings
 // saved before a setting existed lack it: `withLayoutDefaults` fills it in.
@@ -192,7 +193,7 @@ export function createLayoutSolver(
     around[parent]!.push({ other: child, edge })
     around[child]!.push({ other: parent, edge })
   })
-  const strength = new Float64Array(edges.length) // per edge, from the importance setting
+  const width = Float64Array.from(edges, ({ link }) => link.width)
   const connected = new Set(edges.map(edge => edge.child * count + edge.parent))
   const pairs = similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(a * count + b) || connected.has(b * count + a), clearance)
   // Translation is free for every term. After each iteration the centre of all ideas, weighted by area,
@@ -206,9 +207,6 @@ export function createLayoutSolver(
     room = newRoom
     ;({ memory: MEMORY, length: LENGTH, semantic: SEMANTIC, separation: SEPARATION, space: SPACE, importance: IMPORTANCE } =
       { ...DEFAULT_WEIGHTS, ...weights })
-    edges.forEach(({ link }, edge) => {
-      strength[edge] = link.flowShare === undefined ? link.strength : 1 - IMPORTANCE + IMPORTANCE * link.flowShare
-    })
   }
   setSettings({ room: initialRoom, weights: initialWeights })
 
@@ -266,24 +264,25 @@ export function createLayoutSolver(
     }
 
     // Around each idea, its connections share the full circle, each by its
-    // strength, in their current order, turned to fit their current
-    // directions best (the strength-weighted circular mean). Each pulls its
-    // other end to the target gap in the middle of its share, and the idea
-    // the opposite way: an idea settles amid its connections. When
-    // similarity or other connections pull two past each other, the order
-    // follows in the next iteration. A single connection keeps its direction.
-    // Every connection is seen from both its ideas, each at half the weight.
+    // width, in their current order, turned to fit their current directions
+    // best (the width-weighted circular mean). Each pulls its other end to
+    // the target gap in the middle of its share, and the idea the opposite
+    // way: an idea settles amid its connections. When similarity or other
+    // connections pull two past each other, the order follows in the next
+    // iteration. A single connection keeps its direction. Every connection is
+    // seen from both its ideas, each at half the weight. Crowded connections
+    // make room through the minimum distance.
     for (let center = 0; center < count; center++) {
       const connections = around[center]!
       if (connections.length === 0) continue
       const angles = connections.map(({ other }) => Math.atan2(y[other]! - y[center]!, x[other]! - x[center]!))
       const sorted = connections.map((_, index) => index).sort((left, right) => angles[left]! - angles[right]!)
-      const total = connections.reduce((sum, { edge }) => sum + strength[edge]!, 0)
+      const total = connections.reduce((sum, { edge }) => sum + width[edge]!, 0)
       let at = 0
       let turnX = 0
       let turnY = 0
       for (const index of sorted) {
-        const share = total > 0 ? strength[connections[index]!.edge]! / total : 1 / connections.length
+        const share = total > 0 ? width[connections[index]!.edge]! / total : 1 / connections.length
         slot[index] = at + Math.PI * share
         at += 2 * Math.PI * share
         turnX += share * Math.cos(angles[index]! - slot[index]!)
@@ -291,10 +290,11 @@ export function createLayoutSolver(
       }
       const turn = Math.atan2(turnY, turnX)
       for (const [index, { other, edge }] of connections.entries()) {
+        const share = total > 0 ? width[edge]! / total : 1 / connections.length
         const reach = room * edges[edge]!.span
         const targetX = Math.cos(slot[index]! + turn) * reach
         const targetY = Math.sin(slot[index]! + turn) * reach
-        const weight = LENGTH * strength[edge]! / 2
+        const weight = LENGTH * (1 - IMPORTANCE + IMPORTANCE * connections.length * share) / 2
         pull(other, weight, x[center]! + targetX, y[center]! + targetY)
         pull(center, weight, x[other]! - targetX, y[other]! - targetY)
       }
@@ -315,13 +315,10 @@ export function createLayoutSolver(
     // just far enough apart. Pushing them apart outright after each
     // iteration (as `separate` does at the end) fights the other terms, and
     // the iterations cycle instead of coming to rest.
-    const linkedSpace = Math.min(SPACE, room)
+    // Every pair alike, connected or not: a connection settles between the
+    // target gap and the minimum distance.
     forEachOverlap(x, y, radius, SPACE, order, (a, b, deltaX, deltaY, distance, minimum) => {
       const span = radius[a]! + radius[b]!
-      if (minimum > linkedSpace * span && (connected.has(a * count + b) || connected.has(b * count + a))) {
-        if (distance >= linkedSpace * span) return
-        minimum = linkedSpace * span
-      }
       const push = (minimum - distance) / distance
       // Strongest when they touch, half as strong one radius sum apart.
       const weight = SEPARATION / (1 + Math.max(distance / span - 1, 0))

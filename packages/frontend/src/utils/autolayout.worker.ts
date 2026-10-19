@@ -4,6 +4,7 @@
 // settings change continues from the current state, so small changes move
 // little.
 import type { LayoutSettings } from 'shared'
+import { hubSpreads } from './layout-metrics'
 import { createLayoutSolver, createRelaxation, layoutOptions, type LayoutLink, type LayoutNode, type LayoutProgress, type LayoutSolver, type SemanticPair } from './autolayout'
 
 export interface LayoutRequest {
@@ -52,6 +53,13 @@ const report = () => {
     'x before': axis(before, 0), 'x now': axis(now, 0),
     'y before': axis(before, 1), 'y now': axis(now, 1)
   })
+  // The biggest hubs, headless: compare with the graph's line ([autolayout] shown).
+  const startAt = new Map(start.nodes.map(node => [node.id, node.position]))
+  const nowAt = hubSpreads(start.links, id => positions.get(id))
+  console.table(Object.fromEntries(hubSpreads(start.links, id => startAt.get(id)).map((hub, index) => [hub.id.slice(0, 8), {
+    connections: hub.connections, 'largest gap before': hub.largestGap, 'largest gap now': nowAt[index]?.largestGap,
+    'imbalance before': hub.imbalance, 'imbalance now': nowAt[index]?.imbalance
+  }])))
 }
 
 // Min, max and standard deviation of one coordinate, in pixels.

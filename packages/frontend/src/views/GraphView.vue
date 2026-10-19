@@ -21,9 +21,9 @@ import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
 import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange } from '../utils/autolayout'
-import { endpointFlowShares } from '../utils/graph-forces'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
+import { hubSpreads } from '../utils/layout-metrics'
 import { trpc } from '../trpc'
 import { GitBranch, X } from 'lucide-vue-next'
 
@@ -393,16 +393,14 @@ async function startLayoutPreview() {
     const saved = withLayoutDefaults(dataStore.meta?.layout)
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
-    const flowShares = endpointFlowShares(links.value.map(link => ({ sourceId: link.source.id, targetId: link.target.id, flowValue: link.flowValue })))
     const request: LayoutPreview['request'] = {
       nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
-      links: links.value.map((link, index) => ({
+      links: links.value.map(link => ({
         parentId: link.target.id,
         childId: link.source.id,
         relativePosition: [link.relativePosition[0], link.relativePosition[1]],
         editable: isIdeaNode(link.source) && isIdeaNode(link.target),
-        strength: link.forceWeight,
-        flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!
+        width: connectionArrowWidth(link)
       })),
       semanticPairs
     }
@@ -433,7 +431,19 @@ function showLayoutResult({ changes, done }: LayoutResult) {
   const shown = new Set(appliedLayoutChanges.value.map(change => linkKey(change.parentId, change.childId)))
   const rank = (change: LayoutChange) => change.relevance * (shown.has(linkKey(change.parentId, change.childId)) ? LAYOUT_HYSTERESIS : 1)
   layoutPreview.value = { ...preview, changes: [...changes].sort((left, right) => rank(right) - rank(left)) }
+  if (done && layoutSolving.value) logShownHubs()
   layoutSolving.value = !done
+}
+
+// The biggest hubs as the graph shows them, when the solver calms down:
+// compare with the worker's headless table.
+function logShownHubs() {
+  const byId = new Map(nodes.value.map(node => [node.id, node]))
+  const connections = layoutPreview.value?.request.links ?? []
+  console.info('[autolayout] shown')
+  console.table(Object.fromEntries(hubSpreads(connections, id => byId.get(id)?.pos).map(hub => [hub.id.slice(0, 8), {
+    text: byId.get(hub.id)?.text.slice(0, 30), connections: hub.connections, 'largest gap': hub.largestGap, imbalance: hub.imbalance
+  }])))
 }
 
 // After a lot of tuning the solved layout can drift far: start again from

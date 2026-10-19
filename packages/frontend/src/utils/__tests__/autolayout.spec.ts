@@ -10,7 +10,7 @@ function graph(offsets: Record<string, [string, [number, number]][]>) {
   const links: LayoutLink[] = []
   const place = (parentId: string) => {
     for (const [childId, relativePosition] of offsets[parentId] ?? []) {
-      links.push({ parentId, childId, relativePosition, editable: true, strength: 0.5 })
+      links.push({ parentId, childId, relativePosition, editable: true, width: 10 })
       if (position.has(childId)) continue
       const [px, py] = position.get(parentId)!
       position.set(childId, [px + relativePosition[0] * 2 * R, py + relativePosition[1] * 2 * R])
@@ -40,13 +40,13 @@ describe('solveLayout', () => {
 
   it('moves a crowded subtree rigidly: only the connection into its root is rewritten', () => {
     const { nodes, links } = graph({
-      root: [['a', [3, 0]], ['b', [3, 0.2]], ['c', [-3, 0]]],
-      a: [['a1', [3, 0]]],
-      b: [['b1', [3, 0.5]]]
+      root: [['a', [5, 0]], ['b', [5, 0.3]], ['c', [-5, 0]]],
+      a: [['a1', [5, 0]]],
+      b: [['b1', [5, 0.5]]]
     })
-    // Target gap at the stored lengths and connections off (they would share
+    // Connections at the minimum distance and their pull off (they would share
     // the circle around the root evenly): only the crowding moves anything.
-    const { positions, changes } = solveLayout(nodes, links, { room: 3, weights: { length: 0 } })
+    const { positions, changes } = solveLayout(nodes, links, { weights: { length: 0 } })
     expect(crowded(positions)).toBe(false)
     expect(changes.map(change => `${change.parentId}>${change.childId}`).every(id => ['root>a', 'root>b'].includes(id))).toBe(true)
   })
@@ -95,7 +95,9 @@ describe('solveLayout', () => {
 
   it('makes room: a branch drawn to one side turns its neighbour on', () => {
     const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 3.75, Math.sin(degrees * Math.PI / 180) * 3.75] as [number, number]
-    const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(90)], ['c', at(180)], ['d', at(270)]] })
+    const { nodes: free, links } = graph({ root: [['a', at(0)], ['b', at(90)], ['c', at(180)], ['d', at(270)]] })
+    // The root held, or the whole tree would just slide over to the fixed similar idea.
+    const nodes = free.map(node => ({ ...node, movable: node.id !== 'root' }))
     const anchor: LayoutNode = { id: 'anchor', position: [Math.cos(1.4) * 300, Math.sin(1.4) * 300], radius: R, movable: false }
     const angle = (positions: Map<string, [number, number]>, id: string) =>
       (Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0]) + 2 * Math.PI) % (2 * Math.PI)
@@ -112,7 +114,7 @@ describe('solveLayout', () => {
       { id: 'b', position: [2 * R, 0], radius: R, movable: true },
       { id: 'c', position: [R, 1.74 * R], radius: R, movable: true }
     ]
-    const link = (parentId: string, childId: string, relativePosition: [number, number]): LayoutLink => ({ parentId, childId, relativePosition, editable: true, strength: 0.5 })
+    const link = (parentId: string, childId: string, relativePosition: [number, number]): LayoutLink => ({ parentId, childId, relativePosition, editable: true, width: 10 })
     const links = [link('a', 'b', [1, 0]), link('b', 'c', [-0.5, 0.87]), link('c', 'a', [-0.5, -0.87])]
     const { positions, changes } = solveLayout(nodes, links)
     expect(changes.length).toBeGreaterThan(0)
@@ -125,7 +127,8 @@ describe('solveLayout', () => {
 
   it('lets a branch pulled across pass its neighbour', () => {
     const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 4, Math.sin(degrees * Math.PI / 180) * 4] as [number, number]
-    const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(120)], ['c', at(240)]] })
+    const { nodes: free, links } = graph({ root: [['a', at(0)], ['b', at(120)], ['c', at(240)]] })
+    const nodes = free.map(node => ({ ...node, movable: node.id !== 'root' })) // held, as above
     // Something similar to `a` lies beyond `b`.
     const anchor: LayoutNode = { id: 'anchor', position: [Math.cos(2.6) * 300, Math.sin(2.6) * 300], radius: R, movable: false }
     const angle = (positions: Map<string, [number, number]>, id: string) =>
@@ -150,12 +153,31 @@ describe('solveLayout', () => {
     expect((angles[1]! - angles[0]! + 2 * Math.PI) % (2 * Math.PI)).toBeLessThan(Math.PI) // a, b, c still counter-clockwise
   })
 
+  it('settles a connection between its target gap and the minimum distance', () => {
+    const { nodes, links } = graph({ root: [['a', [3, 0]]] })
+    const { positions } = solveLayout(nodes, links, { room: 3, weights: { memory: 0.001, space: 5 } })
+    const length = Math.hypot(positions.get('a')![0] - positions.get('root')![0], positions.get('a')![1] - positions.get('root')![1]) / (2 * R)
+    expect(length).toBeGreaterThan(3.2)
+    expect(length).toBeLessThan(4.8)
+  })
+
+  it('gives a wider connection a wider share of the circle', () => {
+    const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 4, Math.sin(degrees * Math.PI / 180) * 4] as [number, number]
+    const { nodes, links } = graph({ root: [['wide', at(0)], ['left', at(120)], ['right', at(240)]] })
+    const widened = links.map(link => link.childId === 'wide' ? { ...link, width: 20 } : link)
+    const { positions } = solveLayout(nodes, widened, { weights: { memory: 0.001, space: 3 } })
+    const angle = (id: string) => Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0])
+    const between = (from: string, to: string) => Math.abs(((angle(to) - angle(from) + 3 * Math.PI) % (2 * Math.PI)) - Math.PI)
+    // Shares of 180°, 90° and 90°: the thin ones 90° apart, 135° from the wide one.
+    expect(between('left', 'right')).toBeLessThan(between('wide', 'left') - 0.3)
+  })
+
   it('lists the most relevant changes first: big ideas outrank equally misplaced small ones', () => {
     const node = (id: string, x: number, radius: number): LayoutNode => ({ id, position: [x, 0], radius, movable: true })
     const nodes = [node('root', 0, R), node('small', -12 * 2 * R, R), node('big', 12 * 4 * R, 3 * R)]
     const links: LayoutLink[] = [
-      { parentId: 'root', childId: 'small', relativePosition: [-12, 0], editable: true, strength: 0.5 },
-      { parentId: 'root', childId: 'big', relativePosition: [12, 0], editable: true, strength: 0.5 }
+      { parentId: 'root', childId: 'small', relativePosition: [-12, 0], editable: true, width: 10 },
+      { parentId: 'root', childId: 'big', relativePosition: [12, 0], editable: true, width: 10 }
     ]
     const { changes } = solveLayout(nodes, links)
     expect(changes.map(change => change.childId)).toEqual(['big', 'small'])

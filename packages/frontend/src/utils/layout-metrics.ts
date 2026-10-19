@@ -338,3 +338,29 @@ function distanceToSegment(point: Point, from: Point, to: Point) {
   const along = lengthSquared === 0 ? 0 : Math.max(0, Math.min(1, ((point[0] - from[0]) * dx + (point[1] - from[1]) * dy) / lengthSquared))
   return Math.hypot(point[0] - from[0] - along * dx, point[1] - from[1] - along * dy)
 }
+
+// The ideas with the most connections and how evenly their connections
+// spread around them, for the console: the largest empty angle in degrees,
+// and the imbalance, the length of the mean direction (0 even, 1 all to one side).
+export function hubSpreads(
+  links: readonly { parentId: string; childId: string }[],
+  positionOf: (id: string) => Point | undefined,
+  count = 3
+) {
+  const around = new Map<string, string[]>()
+  for (const { parentId, childId } of links) {
+    around.set(parentId, [...(around.get(parentId) ?? []), childId])
+    around.set(childId, [...(around.get(childId) ?? []), parentId])
+  }
+  return [...around].sort((left, right) => right[1].length - left[1].length).slice(0, count).flatMap(([id, others]) => {
+    const center = positionOf(id)
+    if (!center) return []
+    const angles = others.flatMap(other => {
+      const at = positionOf(other)
+      return at ? [Math.atan2(at[1] - center[1], at[0] - center[0])] : []
+    }).sort((left, right) => left - right)
+    const gaps = angles.map((angle, index) => index === angles.length - 1 ? angles[0]! + 2 * Math.PI - angle : angles[index + 1]! - angle)
+    const mean = [Math.cos, Math.sin].map(part => angles.reduce((sum, angle) => sum + part(angle), 0) / Math.max(angles.length, 1))
+    return [{ id, connections: others.length, largestGap: Math.round(Math.max(...gaps) * 180 / Math.PI), imbalance: Number(Math.hypot(mean[0]!, mean[1]!).toFixed(2)) }]
+  })
+}
