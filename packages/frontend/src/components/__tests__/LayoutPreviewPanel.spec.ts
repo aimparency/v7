@@ -43,7 +43,7 @@ describe('LayoutPreviewPanel', () => {
     const semantic = wrapper.find('.settings input[name=semantic]')
     expect(Number((semantic.element as HTMLInputElement).value)).toBe(0)
     await semantic.setValue(0.5)
-    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0.1 })
+    expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0.02 })
     await semantic.setValue(0)
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0 })
   })

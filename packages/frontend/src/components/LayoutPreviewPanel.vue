@@ -21,11 +21,11 @@ const emit = defineEmits<{ apply: []; cancel: []; resetPositions: [] }>()
 interface Slider { key: keyof LayoutSettings; label: string; hint: string; min: number; max: number; scale: 'linear' | 'log'; gap?: true }
 interface Group { name: string; sliders: Slider[] }
 const SIMILARITY: Group = { name: 'Similarity', sliders: [
-  { key: 'semantic', label: 'Amount', hint: 'How strongly every idea is pulled toward its 12 most similar ideas, in the graph and in the connection solver; higher tangles the network', min: 0, max: 1, scale: 'log' }
+  { key: 'semantic', label: 'Amount', hint: 'How strongly every idea is pulled toward its 12 most similar ideas, in the graph and in the connection solver; higher tangles the network', min: 0, max: 0.2, scale: 'log' }
 ] }
 const GROUPS: Group[] = [
   { name: 'Connections', sliders: [
-    { key: 'spacing', label: 'Target gap', hint: 'The gap between connected ideas that connections are pulled toward, in radius sums', min: 3, max: 5, scale: 'linear', gap: true },
+    { key: 'spacing', label: 'Target gap', hint: 'The gap between connected ideas that connections are pulled toward, in radius sums', min: 1, max: 5, scale: 'linear', gap: true },
     { key: 'length', label: 'Amount', hint: 'How strongly each connection is pulled to its share of the circle around both its ideas, at the target gap', min: 0.3, max: 10, scale: 'log' },
     { key: 'importance', label: 'Weight by width', hint: 'How much a connection\'s width decides how hard it pulls; on average the pull stays the same. 0 every connection alike, 1 in proportion to its width. Its share of the circle always follows its width.', min: 0, max: 1, scale: 'linear' }
   ] },
@@ -104,7 +104,7 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
         </fieldset>
       </section>
       <span v-if="unsaved" class="hint">Differs from the saved settings; Apply saves them to meta.json.</span>
-      <div v-if="unsaved || !isDefault" class="row">
+      <div v-if="unsaved || !isDefault" class="pair">
         <button v-if="unsaved" class="btn-secondary" @click="settings = { ...saved }">Reset</button>
         <button v-if="!isDefault" class="btn-secondary" @click="settings = { ...DEFAULT_LAYOUT_SETTINGS }">Defaults</button>
       </div>
@@ -184,6 +184,12 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
     &.disabled {
       opacity: 0.5;
     }
+  }
+
+  & .pair {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.3rem 0.75rem;
   }
 
   & .row {

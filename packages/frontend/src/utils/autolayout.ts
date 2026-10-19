@@ -56,7 +56,7 @@ export interface LayoutChange {
 export interface LayoutOptions {
   iterations?: number
   clearance?: number // minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest
-  room?: number // connection length, in radius sums, that connections are pulled toward; at least `clearance`
+  room?: number // connection length, in radius sums, that connections are pulled toward
   semanticPairs?: readonly SemanticPair[]
   minimumChange?: number // residual, in radius sums, below which a connection keeps its stored offset
   weights?: Partial<typeof DEFAULT_WEIGHTS>

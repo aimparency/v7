@@ -112,11 +112,12 @@ export const LinkedRepoRegistrySchema = z.object({
 export type LinkedRepoRegistry = z.infer<typeof LinkedRepoRegistrySchema>;
 
 // Graph autolayout parameters, kept with the project so a tuned layout can be
-// re-run as it was. spacing: connection length in radius sums that is never
-// shortened; the rest are solver weights (see frontend utils/autolayout.ts).
+// re-run as it was. spacing: connection length in radius sums that
+// connections are pulled toward (1: touching); the rest are solver weights
+// (see frontend utils/autolayout.ts).
 const layoutWeight = z.number().finite().nonnegative();
 export const LayoutSettingsSchema = z.object({
-  spacing: z.number().finite().min(3).max(5),
+  spacing: z.number().finite().min(1).max(5),
   memory: layoutWeight,
   length: layoutWeight,
   semantic: layoutWeight,
