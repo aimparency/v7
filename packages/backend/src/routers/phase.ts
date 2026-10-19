@@ -83,9 +83,7 @@ export const phaseRouter = t.router({
   list: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      parentPhaseId: z.string().uuid().nullable().optional(),
-      // Rank phases closer in the tree to this one (null: the root level) higher.
-      nearPhaseId: z.string().uuid().nullable().optional()
+      parentPhaseId: z.string().uuid().nullable().optional()
     }))
     .query(async ({ input }) => {
       return await listPhases(input.projectPath, input.parentPhaseId);
@@ -192,8 +190,8 @@ export const phaseRouter = t.router({
       projectPath: z.string(),
       query: z.string(),
       parentPhaseId: z.string().uuid().nullable().optional(),
-      // Rank phases closer in the tree to this one (null: the root level) higher.
-      nearPhaseId: z.string().uuid().nullable().optional()
+      // Rank phases closer in the tree to this one (the phase being placed) higher.
+      nearPhaseId: z.string().uuid().optional()
     }))
     .query(async ({ input }) => {
       await ensureSearchIndex(input.projectPath);

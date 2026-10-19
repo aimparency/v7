@@ -236,7 +236,7 @@ const treeDistancePenalty = (steps: number) =>
 export function searchPhases(
   query: string,
   candidates: Phase[],
-  near?: { fromPhaseId: string | null, phases: Phase[], rootPhaseIds: string[] }
+  near?: { fromPhaseId: string, phases: Phase[], rootPhaseIds: string[] }
 ): Phase[] {
   const scored = query.trim()
     ? new Fuse(candidates, {

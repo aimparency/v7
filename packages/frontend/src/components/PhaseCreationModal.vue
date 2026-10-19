@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, nextTick, watch } from 'vue'
+import { ref, nextTick, watch } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
@@ -28,12 +28,6 @@ const getSelectedLevelEntry = (columnIndex: number) => {
   const selectedIndex = uiStore.getSelectedPhase(columnIndex)
   return entries[selectedIndex] ?? entries[0]
 }
-
-// Parent candidates are sorted by tree distance from the phase (in create
-// mode: the parent the new phase is created under).
-const parentSearchOrigin = computed(() => modalStore.phaseModalMode === 'edit'
-  ? modalStore.phaseModalEditingPhaseId
-  : getSelectedLevelEntry(uiStore.activeColumn)?.parentPhaseId ?? null)
 
 const createPhase = async () => {
   if (!modalStore.newPhaseName.trim()) return
@@ -249,7 +243,7 @@ const handleSearchClose = () => {
   <PhaseSearchModal
     v-if="showPhaseSearch"
     :exclude-phase-id="modalStore.phaseModalEditingPhaseId"
-    :near-phase-id="parentSearchOrigin"
+    :near-phase-id="modalStore.phaseModalEditingPhaseId"
     @select="onParentSelected"
     @close="handleSearchClose"
   />

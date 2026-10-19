@@ -19,11 +19,6 @@ describe('phaseTreeDistances', () => {
     expect(['a1', 'a', 'a1x', 'a2', 'b'].map(distance)).toEqual([0, 1, 1, 2, 3])
   })
 
-  it('measures from the root level', () => {
-    const distance = phaseTreeDistances(null, phases)
-    expect(['a', 'b', 'a1', 'a1x'].map(distance)).toEqual([1, 1, 2, 3])
-  })
-
   it('of equally distant phases, ranks those beside the origin first', () => {
     // r ── [a1, a2, b] and r ── [b, a1, a2]: from b, a2 resp. a1 is the nearer sibling.
     const siblingsInOrder = (order: string[]) => tree(phase('r', null, order), ...order.map((id) => phase(id, 'r')))

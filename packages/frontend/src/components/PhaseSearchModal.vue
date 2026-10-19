@@ -15,7 +15,7 @@ const dataStore = useDataStore()
 const props = withDefaults(defineProps<{
   // Excluded with its subtree: none of them can become its parent.
   excludePhaseId?: string | null
-  // Rank matches closer in the phase tree to this phase higher (null: the root level).
+  // Rank matches closer in the phase tree to this phase (the one being placed) higher.
   nearPhaseId?: string | null
   title?: string
   placeholder?: string
@@ -54,7 +54,7 @@ const performSearch = async (query: string) => {
     let results = await trpc.phase.search.query({
       projectPath: projectStore.projectPath,
       query,
-      nearPhaseId: props.nearPhaseId
+      nearPhaseId: props.nearPhaseId ?? undefined
     })
 
     if (props.excludePhaseId) {

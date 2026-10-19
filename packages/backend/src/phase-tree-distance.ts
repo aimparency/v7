@@ -1,12 +1,12 @@
 import type { Phase } from 'shared'
 
-// Steps up and down the phase tree from `fromPhaseId` (null: the root level)
-// to each phase. Root phases hang under one virtual root (ordered by
-// `rootPhaseIds`), so two root phases are two steps apart. Where the path
-// turns at the common ancestor, the gap between the two branches in its child
-// order adds a fraction below one step: of equally distant phases, those next
-// to the origin's branch come first. Phases outside the tree are unreachable (Infinity).
-export function phaseTreeDistances(fromPhaseId: string | null, phases: Record<string, Phase>, rootPhaseIds: string[] = []) {
+// Steps up and down the phase tree from `fromPhaseId` to each phase. Root
+// phases hang under one virtual root (ordered by `rootPhaseIds`), so two root
+// phases are two steps apart. Where the path turns at the common ancestor, the
+// gap between the two branches in its child order adds a fraction below one
+// step: of equally distant phases, those next to the origin's branch come
+// first. Phases outside the tree are unreachable (Infinity).
+export function phaseTreeDistances(fromPhaseId: string, phases: Record<string, Phase>, rootPhaseIds: string[] = []) {
   const parentOf = (phaseId: string | null) => (phaseId === null ? undefined : phases[phaseId]?.parent)
   const childrenOf = (phaseId: string | null) => (phaseId === null ? rootPhaseIds : phases[phaseId]?.childPhaseIds ?? [])
 
