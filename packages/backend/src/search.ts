@@ -236,7 +236,7 @@ const treeDistancePenalty = (steps: number) =>
 export function searchPhases(
   query: string,
   candidates: Phase[],
-  near?: { fromPhaseId: string | null, phases: Phase[] }
+  near?: { fromPhaseId: string | null, phases: Phase[], rootPhaseIds: string[] }
 ): Phase[] {
   const scored = query.trim()
     ? new Fuse(candidates, {
@@ -251,7 +251,7 @@ export function searchPhases(
     : candidates.map((phase) => ({ phase, score: 0 }));
 
   if (near) {
-    const distance = phaseTreeDistances(near.fromPhaseId, Object.fromEntries(near.phases.map((phase) => [phase.id, phase])));
+    const distance = phaseTreeDistances(near.fromPhaseId, Object.fromEntries(near.phases.map((phase) => [phase.id, phase])), near.rootPhaseIds);
     for (const entry of scored) entry.score += treeDistancePenalty(distance(entry.phase.id));
     scored.sort((a, b) => a.score - b.score);
   }

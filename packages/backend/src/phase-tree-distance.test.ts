@@ -2,14 +2,16 @@ import { describe, expect, it } from 'vitest'
 import type { Phase } from 'shared'
 import { phaseTreeDistances } from './phase-tree-distance.js'
 
-const phase = (id: string, parent: string | null) => ({ id, parent, commitments: [], name: id }) as Phase
+const phase = (id: string, parent: string | null, childPhaseIds: string[] = []) =>
+  ({ id, parent, childPhaseIds, commitments: [], name: id }) as Phase
+const tree = (...list: Phase[]) => Object.fromEntries(list.map((p) => [p.id, p]))
 
 // root ─┬─ a ─┬─ a1 ── a1x
 //       │     └─ a2
 //       └─ b
-const phases = Object.fromEntries([
+const phases = tree(
   phase('a', null), phase('a1', 'a'), phase('a1x', 'a1'), phase('a2', 'a'), phase('b', null)
-].map((p) => [p.id, p]))
+)
 
 describe('phaseTreeDistances', () => {
   it('counts steps up to the common ancestor and down again', () => {
@@ -20,6 +22,25 @@ describe('phaseTreeDistances', () => {
   it('measures from the root level', () => {
     const distance = phaseTreeDistances(null, phases)
     expect(['a', 'b', 'a1', 'a1x'].map(distance)).toEqual([1, 1, 2, 3])
+  })
+
+  it('of equally distant phases, ranks those beside the origin first', () => {
+    // r ── [a1, a2, b] and r ── [b, a1, a2]: from b, a2 resp. a1 is the nearer sibling.
+    const siblingsInOrder = (order: string[]) => tree(phase('r', null, order), ...order.map((id) => phase(id, 'r')))
+    const rank = (order: string[]) => {
+      const distance = phaseTreeDistances('b', siblingsInOrder(order), ['r'])
+      return ['a1', 'a2'].sort((x, y) => distance(x) - distance(y))
+    }
+    expect(rank(['a1', 'a2', 'b'])).toEqual(['a2', 'a1'])
+    expect(rank(['b', 'a1', 'a2'])).toEqual(['a1', 'a2'])
+  })
+
+  it('never lets sibling order outweigh a step', () => {
+    const order = ['b', 'x', 'y', 'a']
+    const distance = phaseTreeDistances('b', tree(phase('r', null, order), ...order.map((id) => phase(id, 'r')), phase('b1', 'b')), ['r'])
+    expect(distance('a')).toBeLessThan(3)
+    expect(distance('a')).toBeGreaterThan(distance('x'))
+    expect(distance('r')).toBe(1)
   })
 
   it('cannot reach phases with a missing ancestor', () => {

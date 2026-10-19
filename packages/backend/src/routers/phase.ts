@@ -203,7 +203,7 @@ export const phaseRouter = t.router({
         : allPhases.filter((phase) => phase.parent === input.parentPhaseId);
       const results = searchPhases(input.query, phases, input.nearPhaseId === undefined
         ? undefined
-        : { fromPhaseId: input.nearPhaseId, phases: allPhases });
+        : { fromPhaseId: input.nearPhaseId, phases: allPhases, rootPhaseIds: (await readProjectMeta(input.projectPath)).rootPhaseIds ?? [] });
       const phasesById = new Map(allPhases.map((phase) => [phase.id, phase]));
       return results.map((phase) => ({
         ...phase,
