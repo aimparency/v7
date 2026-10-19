@@ -117,15 +117,15 @@
           "type": "number",
           "minimum": 0
         },
+        "semantic": {
+          "type": "number",
+          "minimum": 0
+        },
         "spread": {
           "type": "number",
           "minimum": 0
         },
         "outward": {
-          "type": "number",
-          "minimum": 0
-        },
-        "semantic": {
           "type": "number",
           "minimum": 0
         },
@@ -148,8 +148,6 @@
         "spacing",
         "memory",
         "length",
-        "spread",
-        "outward",
         "semantic"
       ],
       "additionalProperties": false

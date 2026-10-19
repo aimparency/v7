@@ -119,9 +119,10 @@ export const LayoutSettingsSchema = z.object({
   spacing: z.number().finite().min(3).max(5),
   memory: layoutWeight,
   length: layoutWeight,
-  spread: layoutWeight,
-  outward: layoutWeight,
   semantic: layoutWeight,
+  // No longer used (the connection rule took them over); older meta.json files still carry them.
+  spread: layoutWeight.optional(),
+  outward: layoutWeight.optional(),
   // Added later, so absent in older meta.json files (the defaults apply).
   space: z.number().finite().min(1).max(10).optional(), // radius sums every idea keeps from every other
   separation: layoutWeight.optional(), // how hard the space pushes
@@ -159,7 +160,7 @@ export type Idea = z.infer<typeof IdeaSchema>;
 export type Phase = z.infer<typeof PhaseSchema>;
 export type IdeaStatus = z.infer<typeof IdeaStatusSchema>;
 export type ProjectMeta = z.infer<typeof ProjectMetaSchema>;
-export type LayoutSettings = z.infer<typeof LayoutSettingsSchema>;
+export type LayoutSettings = Omit<z.infer<typeof LayoutSettingsSchema>, 'spread' | 'outward'>;
 export type SystemStatus = z.infer<typeof SystemStatusSchema>;
 export type SearchIdeaResult = Idea & {
   score?: number;

@@ -362,7 +362,7 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
 // simulation pulls every idea toward its similar ideas, as the solver does.
 // Ideas stay where the simulation moves them; Apply saves the shown offsets.
 type LayoutPreview = {
-  semanticPairs: LayoutRequest['semanticPairs']
+  request: Omit<LayoutRequest, 'settings'> // where the ideas were when the panel opened
   saved: Required<LayoutSettings> // as last applied, from meta.json, defaults filled in
   changes: LayoutChange[]
   linkByKey: Map<string, GraphLink>
@@ -385,24 +385,6 @@ const layoutPreviewCount = computed({
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 let layoutWorker: Worker | null = null
 
-// What the solver starts from: the graph as it is now.
-function layoutRequest(semanticPairs: LayoutRequest['semanticPairs']): LayoutRequest {
-  const flowShares = endpointFlowShares(links.value.map(link => ({ sourceId: link.source.id, targetId: link.target.id, flowValue: link.flowValue })))
-  return {
-    nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
-    links: links.value.map((link, index) => ({
-      parentId: link.target.id,
-      childId: link.source.id,
-      relativePosition: [...(layoutPreview.value?.stored.get(link) ?? link.relativePosition)],
-      editable: isIdeaNode(link.source) && isIdeaNode(link.target),
-      strength: link.forceWeight,
-      flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!
-    })),
-    semanticPairs,
-    settings: { ...layoutSettings.value }
-  }
-}
-
 async function startLayoutPreview() {
   if (layoutPreview.value || layoutSolving.value) return
   layoutSolving.value = true
@@ -411,8 +393,21 @@ async function startLayoutPreview() {
     const saved = withLayoutDefaults(dataStore.meta?.layout)
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
+    const flowShares = endpointFlowShares(links.value.map(link => ({ sourceId: link.source.id, targetId: link.target.id, flowValue: link.flowValue })))
+    const request: LayoutPreview['request'] = {
+      nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
+      links: links.value.map((link, index) => ({
+        parentId: link.target.id,
+        childId: link.source.id,
+        relativePosition: [link.relativePosition[0], link.relativePosition[1]],
+        editable: isIdeaNode(link.source) && isIdeaNode(link.target),
+        strength: link.forceWeight,
+        flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!
+      })),
+      semanticPairs
+    }
     layoutPreview.value = {
-      semanticPairs,
+      request,
       saved,
       changes: [],
       linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
@@ -425,7 +420,7 @@ async function startLayoutPreview() {
       useToastStore().error('Layout failed', new Error(event.message))
       cancelLayoutPreview()
     }
-    layoutWorker.postMessage({ start: layoutRequest(semanticPairs) } satisfies LayoutMessage)
+    layoutWorker.postMessage({ start: { ...request, settings: { ...layoutSettings.value } } } satisfies LayoutMessage)
   } catch (error) {
     useToastStore().error('Layout failed', error)
     layoutSolving.value = false
@@ -441,18 +436,20 @@ function showLayoutResult({ changes, done }: LayoutResult) {
   layoutSolving.value = !done
 }
 
-// After a lot of tuning the solved layout can drift far from the graph:
-// start again from the graph as it is now, keeping the settings.
+// After a lot of tuning the solved layout can drift far: start again from
+// where the ideas were when the panel opened, keeping the settings. The
+// graph keeps its ideas where they are; the offsets it shows follow the new
+// solution.
 function resetLayoutPositions() {
   const preview = layoutPreview.value
   if (!preview || !layoutWorker) return
   layoutSolving.value = true
-  layoutWorker.postMessage({ start: layoutRequest(preview.semanticPairs) } satisfies LayoutMessage)
+  layoutWorker.postMessage({ start: { ...preview.request, settings: { ...layoutSettings.value } } } satisfies LayoutMessage)
 }
 
 watch(layoutSettings, settings => {
   if (!layoutWorker || !layoutPreview.value) return
-  setSimilarity(layoutPreview.value.semanticPairs, settings.semantic)
+  setSimilarity(layoutPreview.value.request.semanticPairs, settings.semantic)
   layoutSolving.value = true
   layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })

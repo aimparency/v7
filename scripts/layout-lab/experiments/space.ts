@@ -12,6 +12,6 @@ export default {
     { name: 'space 5', weights: { space: 5 } },
     { name: 'space 5, importance 0', settings: { importance: 0 }, weights: { space: 5 } },
     { name: 'space 5, importance 1', settings: { importance: 1 }, weights: { space: 5 } },
-    { name: 'session 2 combination', settings: { length: 3, spacing: 3.5, outward: 0.5, spread: 1.5, memory: 0.5 }, weights: { space: 3 } }
+    { name: 'session 2 combination', settings: { length: 3, spacing: 3.5, memory: 0.5 }, weights: { space: 3 } }
   ]
 } satisfies Experiment

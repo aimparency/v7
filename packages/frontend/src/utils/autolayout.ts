@@ -2,20 +2,19 @@
 //
 // The stored layout is one offset per connection: the child's position
 // relative to its parent, in units of the two radii summed. The solver looks for
-// positions where connections are short (strong ones more so), ideas keep their
-// spacing, the connections around each idea spread over the circle, branches
-// keep pointing away from their parents and semantically close ideas sit near
-// each other, while as many stored offsets as possible stay EXACTLY as they
-// are. So a run rewrites few connections (small git diffs) and areas stay where
-// they were; the preview then applies only the most relevant changes.
+// positions where the connections around each idea share the circle evenly
+// at the target gap (strong ones more so), ideas keep their spacing and
+// semantically close ideas sit near each other, while as many stored offsets
+// as possible stay EXACTLY as they are. So a run rewrites few connections
+// (small git diffs) and the original shape is kept; the preview then applies
+// only the most relevant changes.
 //
 // Method: iteratively reweighted least squares. Each term proposes a target
 // position with a weight; every iteration moves each idea toward the weighted
-// mean, then separates overlaps. The memory term is an L1 norm per connection
-// (weight 1/|residual|): a satisfied connection is stiff and a violated one
-// cheap, so the needed movement concentrates on few connections, and whole
-// subtrees move rigidly with their root. The other terms are quadratic, so they
-// only win where they are large.
+// mean. The memory term is an L1 norm per connection (weight 1/|residual|):
+// a satisfied connection is stiff and a violated one cheap, so the needed
+// movement concentrates on few connections, and whole subtrees move rigidly.
+// The other terms are quadratic, so they only win where they are large.
 //
 // Scale: every target distance is measured in radius sums of the pair
 // involved, and every weight is dimensionless, independent of idea size. A
@@ -79,10 +78,8 @@ export const roundOffset = (offset: readonly [number, number]): [number, number]
 // Weights are dimensionless: residuals are measured in radius sums.
 const DEFAULT_ROOM = 4
 const DEFAULT_WEIGHTS = {
-  memory: 1, // keep stored offsets
-  length: 3, // times connection strength: pull connections toward `room` long; the layout lab's strongest lever against crossings
-  spread: 1, // rotate connections around an idea apart when they share too narrow an angle; ramps up over the run
-  outward: 1.5, // a moving child goes to the half circle facing away from its grandparents
+  memory: 1, // keep stored offsets: the original shape
+  length: 3, // times connection strength: pull each connection to its share of the circle around both its ideas, `room` long
   // Per idea, connected or not, shared by its semantic pairs (its 12 most
   // similar ideas and those that count it among theirs); pulls toward
   // clearance · (1 + 2 · distance) radius sums. Higher brings ideas closer
@@ -95,12 +92,12 @@ const DEFAULT_WEIGHTS = {
 // What the Layout panel lets you tune. Settings
 // saved before a setting existed lack it: `withLayoutDefaults` fills it in.
 export const DEFAULT_LAYOUT_SETTINGS: Required<LayoutSettings> = { spacing: DEFAULT_ROOM, ...DEFAULT_WEIGHTS }
-export const withLayoutDefaults = (settings: LayoutSettings | undefined): Required<LayoutSettings> => ({ ...DEFAULT_LAYOUT_SETTINGS, ...settings })
+// Only current settings: older files also carry ones no longer used.
+export const withLayoutDefaults = (settings: LayoutSettings | undefined): Required<LayoutSettings> =>
+  Object.fromEntries(Object.entries(DEFAULT_LAYOUT_SETTINGS).map(([key, value]) => [key, settings?.[key as keyof LayoutSettings] ?? value])) as Required<LayoutSettings>
 export const sameLayoutSettings = (left: LayoutSettings, right: LayoutSettings) =>
   (Object.keys(DEFAULT_LAYOUT_SETTINGS) as (keyof LayoutSettings)[]).every(key => withLayoutDefaults(left)[key] === withLayoutDefaults(right)[key])
 export const layoutOptions = ({ spacing, ...weights }: LayoutSettings): LayoutOptions => ({ room: spacing, weights })
-// The connections around an idea share this angle, each by its strength.
-const SPREAD_ANGLE = 2 * Math.PI
 // Cosine distance: a neighbour 0.1 closer weighs e times more, so an idea
 // lands near its closest neighbours rather than midway between all of them.
 const SEMANTIC_SHARPNESS = 0.1
@@ -151,8 +148,7 @@ export function solveLayout(
   const { iterations = 300, onProgress, progressEvery = 10 } = options
   const solver = createLayoutSolver(nodes, links, options)
   for (let iteration = 0; iteration < iterations; iteration++) {
-    // Spread is weak at first, so branches can still pass each other, firm at the end.
-    solver.step((iteration + 1) / iterations)
+    solver.step()
     if (onProgress && (iteration + 1) % progressEvery === 0 && iteration + 1 < iterations) onProgress(solver.result())
   }
   return { positions: solver.positions(), ...solver.result() }
@@ -168,7 +164,7 @@ export function createLayoutSolver(
   links: readonly LayoutLink[],
   { clearance = DEFAULT_CLEARANCE, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
-  let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, SEPARATION = 0, SPACE = 0, IMPORTANCE = 0
+  let MEMORY = 0, LENGTH = 0, SEMANTIC = 0, SEPARATION = 0, SPACE = 0, IMPORTANCE = 0
   let room = initialRoom
   const count = nodes.length
   const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
@@ -190,20 +186,16 @@ export function createLayoutSolver(
     const dy = link.relativePosition[1] * span
     return [{ link, child, parent, span, dx, dy, keepX: dx * keep, keepY: dy * keep }]
   })
-  const parentsOf = nodes.map(() => [] as number[])
   // Every connection of an idea, to parents and children alike.
-  const around = nodes.map(() => [] as { other: number; isChild: boolean; edge: number }[])
+  const around = nodes.map(() => [] as { other: number; edge: number }[])
   edges.forEach(({ child, parent }, edge) => {
-    parentsOf[child]!.push(parent)
-    around[parent]!.push({ other: child, isChild: true, edge })
-    around[child]!.push({ other: parent, isChild: false, edge })
+    around[parent]!.push({ other: child, edge })
+    around[child]!.push({ other: parent, edge })
   })
   const strength = new Float64Array(edges.length) // per edge, from the importance setting
   const connected = new Set(edges.map(edge => edge.child * count + edge.parent))
   const pairs = similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(a * count + b) || connected.has(b * count + a), clearance)
-  // Translation is free for every term, and outward and spread push only
-  // children, so they add up to a net drift along the direction the tree
-  // grows. After each iteration the centre of all ideas, weighted by area,
+  // Translation is free for every term. After each iteration the centre of all ideas, weighted by area,
   // goes back where it started: groups pulled toward each other meet, the
   // heavier one moving less. Not when fixed ideas hold the layout in place.
   const mass = Float64Array.from(radius, value => value * value)
@@ -212,7 +204,7 @@ export function createLayoutSolver(
 
   const setSettings = ({ room: newRoom = room, weights = {} }: Pick<LayoutOptions, 'room' | 'weights'>) => {
     room = newRoom
-    ;({ memory: MEMORY, length: LENGTH, spread: SPREAD, outward: OUTWARD, semantic: SEMANTIC, separation: SEPARATION, space: SPACE, importance: IMPORTANCE } =
+    ;({ memory: MEMORY, length: LENGTH, semantic: SEMANTIC, separation: SEPARATION, space: SPACE, importance: IMPORTANCE } =
       { ...DEFAULT_WEIGHTS, ...weights })
     edges.forEach(({ link }, edge) => {
       strength[edge] = link.flowShare === undefined ? link.strength : 1 - IMPORTANCE + IMPORTANCE * link.flowShare
@@ -232,14 +224,6 @@ export function createLayoutSolver(
     sumX[index] = sumX[index]! + weight * targetX
     sumY[index] = sumY[index]! + weight * targetY
     sumWeight[index] = sumWeight[index]! + weight
-  }
-  // Pulls `other` toward its position rotated by `angle` around `center`.
-  const rotate = (center: number, other: number, angle: number, weight: number) => {
-    const vx = x[other]! - x[center]!
-    const vy = y[other]! - y[center]!
-    const cos = Math.cos(angle)
-    const sin = Math.sin(angle)
-    pull(other, weight, x[center]! + vx * cos - vy * sin, y[center]! + vx * sin + vy * cos)
   }
   const order = Array.from({ length: count }, (_, index) => index)
 
@@ -262,98 +246,57 @@ export function createLayoutSolver(
 
   const previousX = new Float64Array(count)
   const previousY = new Float64Array(count)
-  // One iteration; spreadShare scales the spread term (0–1), stepSize is
-  // the share of the way each idea moves toward its target. Returns the
-  // largest move of an idea, in radius sums: near 0 once it has converged.
-  const step = (spreadShare: number, stepSize = FREE_STEP): number => {
+  // One iteration; stepSize is the share of the way each idea moves toward
+  // its target. Returns the largest move of an idea, in radius sums: near 0
+  // once it has converged.
+  const slot: number[] = []
+  const step = (stepSize = FREE_STEP): number => {
     previousX.set(x)
     previousY.set(y)
     sumX.fill(0)
     sumY.fill(0)
     sumWeight.fill(0)
 
-    for (const [edge, { child, parent, span, keepX, keepY }] of edges.entries()) {
+    for (const { child, parent, span, keepX, keepY } of edges) {
       const vx = x[child]! - x[parent]!
       const vy = y[child]! - y[parent]!
-
       const memory = MEMORY / Math.max(Math.hypot(vx - keepX, vy - keepY) / span, SMOOTHING)
       pull(child, memory, x[parent]! + keepX, y[parent]! + keepY)
       pull(parent, memory, x[child]! - keepX, y[child]! - keepY)
-
-      // Toward the spacing from both sides: longer connections shorten,
-      // shorter ones lengthen.
-      const length = Math.hypot(vx, vy)
-      if (length > 0) {
-        const scale = room * span / length
-        pull(child, LENGTH * strength[edge]!, x[parent]! + vx * scale, y[parent]! + vy * scale)
-        pull(parent, LENGTH * strength[edge]!, x[child]! - vx * scale, y[child]! - vy * scale)
-      }
-
-      // Seen from the grandparents, a child must not lie behind its parent:
-      // pulled to the edge of the half circle facing away, so subdivision
-      // keeps one direction without forcing children onto a single ray.
-      const grandparents = parentsOf[parent]!
-      if (grandparents.length > 0 && length > 0) {
-        let awayX = 0
-        let awayY = 0
-        for (const grandparent of grandparents) {
-          awayX += x[parent]! - x[grandparent]!
-          awayY += y[parent]! - y[grandparent]!
-        }
-        const awayLength = Math.hypot(awayX, awayY)
-        if (awayLength > 0) {
-          awayX /= awayLength
-          awayY /= awayLength
-          const ahead = vx * awayX + vy * awayY
-          if (ahead < 0) {
-            let sideX = vx - ahead * awayX
-            let sideY = vy - ahead * awayY
-            const sideLength = Math.hypot(sideX, sideY)
-            if (sideLength > 0) {
-              sideX /= sideLength
-              sideY /= sideLength
-            } else {
-              sideX = -awayY
-              sideY = awayX
-            }
-            pull(child, OUTWARD, x[parent]! + sideX * length, y[parent]! + sideY * length)
-          }
-        }
-      }
     }
 
-    // Around each idea, neighbouring connections need an angle of at least
-    // their strength share of SPREAD_ANGLE; tighter pairs rotate apart. Only
-    // children rotate, parents stay put. Rotations push on through the next
-    // neighbours, so a branch pulled to one side makes room on the other.
-    // The push is constant, whatever the overlap (weight 1/overlap, like
-    // memory): a pull stronger than it takes a branch past its neighbour,
-    // which then pushes the other way, so branches can swap places. A push
-    // growing with the overlap would be strongest exactly where they pass.
-    const spread = SPREAD * spreadShare
+    // Around each idea, its connections share the full circle, each by its
+    // strength, in their current order, turned to fit their current
+    // directions best (the strength-weighted circular mean). Each pulls its
+    // other end to the target gap in the middle of its share, and the idea
+    // the opposite way: an idea settles amid its connections. When
+    // similarity or other connections pull two past each other, the order
+    // follows in the next iteration. A single connection keeps its direction.
+    // Every connection is seen from both its ideas, each at half the weight.
     for (let center = 0; center < count; center++) {
       const connections = around[center]!
-      if (connections.length < 2) continue
-      let totalStrength = 0
-      const angles = connections.map(connection => {
-        totalStrength += strength[connection.edge]!
-        return Math.atan2(y[connection.other]! - y[center]!, x[connection.other]! - x[center]!)
-      })
-      if (totalStrength <= 0) continue
+      if (connections.length === 0) continue
+      const angles = connections.map(({ other }) => Math.atan2(y[other]! - y[center]!, x[other]! - x[center]!))
       const sorted = connections.map((_, index) => index).sort((left, right) => angles[left]! - angles[right]!)
-      for (let i = 0; i < sorted.length; i++) {
-        const first = sorted[i]!
-        const second = sorted[(i + 1) % sorted.length]!
-        const gap = angles[second]! - angles[first]! + (i === sorted.length - 1 ? 2 * Math.PI : 0)
-        const needed = SPREAD_ANGLE * (strength[connections[first]!.edge]! + strength[connections[second]!.edge]!) / 2 / totalStrength
-        if (gap >= needed) continue
-        const { other: firstOther, isChild: firstIsChild } = connections[first]!
-        const { other: secondOther, isChild: secondIsChild } = connections[second]!
-        if (!firstIsChild && !secondIsChild) continue
-        const firstShare = firstIsChild ? (secondIsChild ? 0.5 : 1) : 0
-        const push = spread / Math.max(needed - gap, SMOOTHING)
-        if (firstShare > 0) rotate(center, firstOther, -(needed - gap) * firstShare, push)
-        if (firstShare < 1) rotate(center, secondOther, (needed - gap) * (1 - firstShare), push)
+      const total = connections.reduce((sum, { edge }) => sum + strength[edge]!, 0)
+      let at = 0
+      let turnX = 0
+      let turnY = 0
+      for (const index of sorted) {
+        const share = total > 0 ? strength[connections[index]!.edge]! / total : 1 / connections.length
+        slot[index] = at + Math.PI * share
+        at += 2 * Math.PI * share
+        turnX += share * Math.cos(angles[index]! - slot[index]!)
+        turnY += share * Math.sin(angles[index]! - slot[index]!)
+      }
+      const turn = Math.atan2(turnY, turnX)
+      for (const [index, { other, edge }] of connections.entries()) {
+        const reach = room * edges[edge]!.span
+        const targetX = Math.cos(slot[index]! + turn) * reach
+        const targetY = Math.sin(slot[index]! + turn) * reach
+        const weight = LENGTH * strength[edge]! / 2
+        pull(other, weight, x[center]! + targetX, y[center]! + targetY)
+        pull(center, weight, x[other]! - targetX, y[other]! - targetY)
       }
     }
 
@@ -427,7 +370,6 @@ export function createLayoutSolver(
 const RELAX_BUDGET = 1200 // iterations at most, after the start and after every settings change
 const RELAX_DURATION = 5000 // ms instead, with a clock (the live panel): the same calm-down whatever the graph's size; it then goes on with settled steps
 const RELAX_CHUNK = 10 // iterations between results
-const SPREAD_RAMP = 300 // the first iterations, while branches can still pass each other
 // Each idea moves this share of the way to its target: the full step at
 // first, shrinking linearly to the settled one by the end of the budget, so
 // the solver calms down instead of oscillating until the budget cuts it off.
@@ -439,7 +381,7 @@ const CONVERGED = 0.2 // radius sums per full step: no idea's target was further
 // what the lab runs. With `now` (the live panel), the budget is
 // milliseconds of calming down, and chunks go on with settled steps after it;
 // `done` then only says it has calmed down.
-export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, spreadRamp = SPREAD_RAMP, now }: { budget?: number; spreadRamp?: number; now?: () => number } = {}) {
+export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, now }: { budget?: number; now?: () => number } = {}) {
   let iterations = 0
   let sinceResume = 0
   let resumedAt = now?.() ?? 0
@@ -454,9 +396,9 @@ export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, 
       let largestMove = 0
       for (let step = 0; step < RELAX_CHUNK && (now || progress() < 1); step++, sinceResume++, iterations++) {
         const stepSize = FREE_STEP + (SETTLED_STEP - FREE_STEP) * Math.min(progress(), 1)
-        largestMove = Math.max(largestMove, solver.step(Math.min(1, (iterations + 1) / spreadRamp), stepSize) / stepSize)
+        largestMove = Math.max(largestMove, solver.step(stepSize) / stepSize)
       }
-      return { done: progress() >= 1 || (iterations >= spreadRamp && largestMove < CONVERGED), largestMove }
+      return { done: progress() >= 1 || largestMove < CONVERGED, largestMove }
     },
     iterations: () => iterations
   }

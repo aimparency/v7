@@ -26,17 +26,11 @@ const SIMILARITY: Group = { name: 'Similarity', sliders: [
 const GROUPS: Group[] = [
   { name: 'Connections', sliders: [
     { key: 'spacing', label: 'Target gap', hint: 'The gap between connected ideas that connections are pulled toward, in radius sums', min: 3, max: 5, scale: 'linear', gap: true },
-    { key: 'length', label: 'Amount', hint: 'How strongly connections are pulled toward the target gap, longer ones in and shorter ones out', min: 0.3, max: 10, scale: 'log' },
-    { key: 'importance', label: 'Weight by flow', hint: 'How much a connection\'s value flow decides how hard it pulls toward the target gap and how wide an angle it gets around its ideas: 0 every connection alike, 1 in proportion to its flow (weak connections then fly far out)', min: 0, max: 1, scale: 'linear' }
+    { key: 'length', label: 'Amount', hint: 'How strongly each connection is pulled to its share of the circle around both its ideas, at the target gap', min: 0.3, max: 10, scale: 'log' },
+    { key: 'importance', label: 'Weight by flow', hint: 'How much a connection\'s value flow decides how wide a share of the circle it gets and how hard it pulls: 0 every connection alike, 1 in proportion to its flow', min: 0, max: 1, scale: 'linear' }
   ] },
-  { name: 'Keep as is', sliders: [
+  { name: 'Keep original shape', sliders: [
     { key: 'memory', label: 'Amount', hint: 'How strongly connections keep their stored offsets; higher means fewer, smaller changes', min: 0.3, max: 10, scale: 'log' }
-  ] },
-  { name: 'Even spread', sliders: [
-    { key: 'spread', label: 'Amount', hint: 'How strongly the connections around an idea turn apart when they share too narrow an angle', min: 0.1, max: 5, scale: 'log' }
-  ] },
-  { name: 'Outward', sliders: [
-    { key: 'outward', label: 'Amount', hint: 'How strongly children are kept out of the half circle behind their parent', min: 0.15, max: 15, scale: 'log' }
   ] },
   { name: 'Minimum distance', sliders: [
     { key: 'space', label: 'Minimum gap', hint: 'The gap every idea keeps from every other, connected or not, in radius sums; connected ideas at most the target gap', min: 3, max: 8, scale: 'linear', gap: true },
@@ -102,11 +96,11 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
             />
           </label>
           <button
-            v-if="group.name === 'Keep as is'"
+            v-if="group.name === 'Keep original shape'"
             class="btn-secondary"
-            title="Solve again from the graph as it is now, with these settings"
+            title="Solve again from where the ideas were when the panel opened, with these settings"
             @click="emit('resetPositions')"
-          >Restart from graph</button>
+          >Reset positions</button>
         </fieldset>
       </section>
       <div v-if="unsaved || !isDefault" class="row">

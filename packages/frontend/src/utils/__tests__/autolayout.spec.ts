@@ -44,9 +44,9 @@ describe('solveLayout', () => {
       a: [['a1', [3, 0]]],
       b: [['b1', [3, 0.5]]]
     })
-    // Spacing at the stored lengths and spread off (around a turned root, a
-    // chain wants to be straight again): only the crowding moves anything.
-    const { positions, changes } = solveLayout(nodes, links, { room: 3, weights: { spread: 0 } })
+    // Target gap at the stored lengths and connections off (they would share
+    // the circle around the root evenly): only the crowding moves anything.
+    const { positions, changes } = solveLayout(nodes, links, { room: 3, weights: { length: 0 } })
     expect(crowded(positions)).toBe(false)
     expect(changes.map(change => `${change.parentId}>${change.childId}`).every(id => ['root>a', 'root>b'].includes(id))).toBe(true)
   })
@@ -93,15 +93,16 @@ describe('solveLayout', () => {
     expect(Math.min(...gaps)).toBeGreaterThan(0.55 * (1.5 * Math.PI / 4)) // balanced against keeping the stored 15° (ideal: 90°)
   })
 
-  it('makes room: a branch drawn to one side pushes its neighbour on', () => {
+  it('makes room: a branch drawn to one side turns its neighbour on', () => {
     const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 3.75, Math.sin(degrees * Math.PI / 180) * 3.75] as [number, number]
     const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(90)], ['c', at(180)], ['d', at(270)]] })
     const anchor: LayoutNode = { id: 'anchor', position: [Math.cos(1.4) * 300, Math.sin(1.4) * 300], radius: R, movable: false }
     const angle = (positions: Map<string, [number, number]>, id: string) =>
       (Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0]) + 2 * Math.PI) % (2 * Math.PI)
     const { positions } = solveLayout([...nodes, anchor], links, { semanticPairs: [{ source: 'a', target: 'anchor', distance: 0 }], weights: { semantic: 2 } })
-    expect(angle(positions, 'a')).toBeGreaterThan(0.4)
-    expect(angle(positions, 'b')).toBeGreaterThan(Math.PI / 2 + 0.1)
+    // Its share of the circle holds it back; the shares turn along a little.
+    expect(angle(positions, 'a')).toBeGreaterThan(0.3)
+    expect(angle(positions, 'b')).toBeGreaterThan(Math.PI / 2 + 0.03)
   })
 
   it('reports offsets that agree with the positions, also around a cycle', () => {
@@ -129,25 +130,24 @@ describe('solveLayout', () => {
     const anchor: LayoutNode = { id: 'anchor', position: [Math.cos(2.6) * 300, Math.sin(2.6) * 300], radius: R, movable: false }
     const angle = (positions: Map<string, [number, number]>, id: string) =>
       (Math.atan2(positions.get(id)![1] - positions.get('root')![1], positions.get(id)![0] - positions.get('root')![0]) + 2 * Math.PI) % (2 * Math.PI)
-    // Spread at full strength from the start, as for a solver that keeps running.
     // A minimum space wider than the siblings' distance blocks the pass (space
-    // 5 here; on real graphs crossings fell on two projects and rose on one),
-    // so this tests the spread alone.
+    // 5 here), so this tests the connections' order alone.
     const solver = createLayoutSolver([...nodes, anchor], links, { semanticPairs: [{ source: 'a', target: 'anchor', distance: 0 }], weights: { semantic: 2, space: 3 } })
-    for (let iteration = 0; iteration < 300; iteration++) solver.step(1)
+    for (let iteration = 0; iteration < 300; iteration++) solver.step()
     expect(angle(solver.positions(), 'a')).toBeGreaterThan(angle(solver.positions(), 'b'))
   })
 
-  it('keeps children out of the half circle behind their parent', () => {
-    // Gentle: it decides where a connection goes once it moves anyway (here:
-    // no memory), it does not overrule a stored offset. Spread is off because
-    // alone it would also turn the child away from its parent.
-    const { nodes, links } = graph({ root: [['a', [6, 0]]], a: [['back', [-3.5, 1.4]]] })
-    const behind = (outward?: number) => {
-      const { positions } = solveLayout(nodes, links, { weights: { spread: 0, memory: 0.001, ...(outward === undefined ? {} : { outward }) } })
-      return positions.get('a')![0] - positions.get('back')![0]
-    }
-    expect(behind()).toBeLessThan(0.5 * behind(0))
+  it('puts an idea amid its connections instead of beside them', () => {
+    // Children all to one side: the root moves into their middle and they
+    // share the circle around it, keeping their order.
+    const at = (degrees: number) => [Math.cos(degrees * Math.PI / 180) * 4, Math.sin(degrees * Math.PI / 180) * 4] as [number, number]
+    const { nodes, links } = graph({ root: [['a', at(0)], ['b', at(20)], ['c', at(40)]] })
+    const { positions } = solveLayout(nodes, links, { weights: { memory: 0.001 } })
+    const [rootX, rootY] = positions.get('root')!
+    const angles = ['a', 'b', 'c'].map(id => Math.atan2(positions.get(id)![1] - rootY, positions.get(id)![0] - rootX))
+    const pull = [Math.cos, Math.sin].map(part => angles.reduce((sum, angle) => sum + part(angle), 0))
+    expect(Math.hypot(pull[0]!, pull[1]!)).toBeLessThan(0.3) // three equal shares: 0; all to one side: 3
+    expect((angles[1]! - angles[0]! + 2 * Math.PI) % (2 * Math.PI)).toBeLessThan(Math.PI) // a, b, c still counter-clockwise
   })
 
   it('lists the most relevant changes first: big ideas outrank equally misplaced small ones', () => {
@@ -183,7 +183,7 @@ describe('solveLayout', () => {
       semanticPairs: [{ source: 'loner', target: 'left', distance: 0.1 }, { source: 'loner', target: 'right', distance: 0.4 }]
     })
     const distance = (to: string) => Math.hypot(positions.get('loner')![0] - positions.get(to)![0], positions.get('loner')![1] - positions.get(to)![1])
-    expect(distance('left')).toBeLessThan(0.6 * distance('right'))
+    expect(distance('left')).toBeLessThan(0.7 * distance('right')) // midway: 1
   })
 
   it('reports the result so far while it solves', () => {
@@ -199,15 +199,15 @@ describe('solveLayout', () => {
     const { nodes, links } = graph({ root: [['a', [2, 0]], ['b', [2, 0.5]], ['c', [1.5, -1]], ['d', [-2, 0]]], a: [['a1', [1, 0]], ['a2', [1, 0.4]]], b: [['b1', [0.5, 1]]] })
     const solver = createLayoutSolver(nodes, links)
     let largestMove = Infinity
-    for (let iteration = 0; iteration < 300; iteration++) largestMove = solver.step(1)
+    for (let iteration = 0; iteration < 300; iteration++) largestMove = solver.step()
     expect(largestMove).toBeLessThan(0.01)
   })
 
   it('keeps the centre of the network in place while the solver keeps running', () => {
-    // A tree that grows to one side: outward and spread push its children on.
+    // A tree that grows to one side: its connections turn toward even shares.
     const { nodes, links } = graph({ root: [['a', [2, 1]], ['b', [1, 2]]], a: [['a1', [2, 1]], ['a2', [1.5, 1.5]]], b: [['b1', [1, 2]], ['b2', [1.5, 1.5]]] })
     const solver = createLayoutSolver(nodes, links)
-    for (let iteration = 0; iteration < 900; iteration++) solver.step(1)
+    for (let iteration = 0; iteration < 900; iteration++) solver.step()
     const centre = (positions: Map<string, readonly [number, number]>) =>
       [0, 1].map(axis => [...positions.values()].reduce((sum, position) => sum + position[axis]!, 0) / positions.size)
     const start = centre(new Map(nodes.map(node => [node.id, node.position])))

@@ -88,3 +88,13 @@ to its closest similar one, and crossings):
 | 0.3 | 10 | 2194 | 11 | 1537 |
 
 A softer hold on start positions (anchor) changed nothing.
+
+## Connections share the circle (2026-10-19)
+
+Judged in the app: the length term pulled only along each connection, and
+Even spread only turned children apart when too close, never the parent. So
+nothing kept an idea amid its connections: with its children on one side,
+the root slid toward them. One rule replaces length, Even spread and
+Outward: around each idea, its connections share the circle by strength, in
+their current order, turned to fit; each pulls its other end to the target
+gap in the middle of its share. The sessions above rated the old terms.

@@ -48,9 +48,9 @@ describe('LayoutPreviewPanel', () => {
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0 })
   })
 
-  it('asks to solve again from the graph', async () => {
+  it('asks to start again from the positions when the panel opened', async () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
-    await wrapper.findAll('button').find(button => button.text() === 'Restart from graph')!.trigger('click')
+    await wrapper.findAll('button').find(button => button.text() === 'Reset positions')!.trigger('click')
     expect(wrapper.emitted('resetPositions')).toHaveLength(1)
   })
 
