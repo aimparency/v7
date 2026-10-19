@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/project-store'
+import { useDataStore } from '../stores/data'
+import { collectDescendantPhaseIds } from '../utils/phase-priority'
+import { phaseTreeDistances } from '../utils/phase-tree-distance'
 import { trpc } from '../trpc'
 import type { Phase } from 'shared'
 import type { PhaseSearchAdditionalOption, PhaseSearchSelection } from '../stores/ui/phase-search-types'
@@ -8,14 +11,19 @@ import type { PhaseSearchAdditionalOption, PhaseSearchSelection } from '../store
 type PhaseSearchResult = Phase & { ancestorNames: string[] }
 
 const projectStore = useProjectStore()
+const dataStore = useDataStore()
 
 const props = withDefaults(defineProps<{
+  // Excluded with its subtree: none of them can become its parent.
   excludePhaseId?: string | null
+  // Sort matches by steps through the phase tree from this phase (null: the root level).
+  nearPhaseId?: string | null
   title?: string
   placeholder?: string
   additionalOptions?: PhaseSearchAdditionalOption[]
 }>(), {
   excludePhaseId: null,
+  nearPhaseId: undefined,
   title: 'Search Phases',
   placeholder: 'Search phases...',
   additionalOptions: () => []
@@ -50,7 +58,15 @@ const performSearch = async (query: string) => {
     })
 
     if (props.excludePhaseId) {
-      results = results.filter(phase => phase.id !== props.excludePhaseId)
+      const excluded = collectDescendantPhaseIds(props.excludePhaseId, dataStore.phases)
+      results = results.filter(phase => !excluded.has(phase.id))
+    }
+    if (props.nearPhaseId !== undefined) {
+      const distance = phaseTreeDistances(props.nearPhaseId, dataStore.phases)
+      results = results
+        .map(phase => ({ phase, steps: distance(phase.id) }))
+        .sort((a, b) => a.steps - b.steps)
+        .map(({ phase }) => phase)
     }
 
     searchResults.value = results
