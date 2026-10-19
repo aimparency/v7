@@ -1,4 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
+import { openProject } from './test-utils';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -32,13 +33,7 @@ async function createPhase(page: Page, name: string) {
 
 test('edit phase and search for parent phase', async ({ page }) => {
   // 1. Load project
-  await page.goto('/');
-  await page.getByPlaceholder('Enter project folder path...').fill(PROJECT_PATH);
-  await page.getByRole('button', { name: 'Open Project' }).click();
-  await expect(page.locator('.project-path:not(.bowman-path)')).toHaveText(PROJECT_PATH);
-  
-  // Wait for main UI
-  await page.waitForSelector('.main-split', { timeout: 10000 });
+  await openProject(page, PROJECT_PATH);
   await page.focus('.app');
 
   // 2. Create phases: "Parent Candidate" and "Child Phase"
@@ -74,17 +69,17 @@ test('edit phase and search for parent phase', async ({ page }) => {
   await searchInput.fill('Parent');
   await page.waitForTimeout(500); // Wait for debounce
 
-  // 8. Select "Parent Candidate" from results
-  const resultItem = page.locator('.result-item', { hasText: 'Parent Candidate' });
-  await expect(resultItem).toBeVisible();
-  await resultItem.click();
+  // 8. Pick "Parent Candidate" with Enter
+  await expect(page.locator('.result-item', { hasText: 'Parent Candidate' })).toBeVisible();
+  await searchInput.press('Enter');
 
-  // 9. Verify Modal closed and Parent Updated
+  // 9. Search closed, focus back on the parent picker
   await page.waitForSelector('.search-overlay', { state: 'hidden' });
   await expect(page.locator('.selected-parent')).toHaveText('Parent Candidate');
+  await expect(page.locator('.parent-selector')).toBeFocused();
 
-  // 10. Save changes
-  await page.getByRole('button', { name: 'Update' }).click();
+  // 10. Enter on the picker confirms the modal (Space would reopen the search)
+  await page.keyboard.press('Enter');
   await page.waitForSelector('.modal-panel', { state: 'hidden' });
 
   // 11. Verify in UI (This might be tricky as UI structure changes with hierarchy)

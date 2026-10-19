@@ -37,9 +37,9 @@ test.describe('Navigation Tests', () => {
           id: parentIdeaId, 
           text: 'Parent Idea', 
           committedIn: [phaseId],
-          incoming: [childIdeaId]
+          supportingIdeaIds: [childIdeaId]
         },
-        { id: childIdeaId, text: 'Child Idea', outgoing: [parentIdeaId] }
+        { id: childIdeaId, text: 'Child Idea', supportedIdeaIds: [parentIdeaId] }
       ]
     });
 

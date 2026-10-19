@@ -81,8 +81,8 @@ test.describe('Regression Tests', () => {
         { id: ideaMove3Id, text: 'Move 3', committedIn: [phase1Id] },
 
         // Nesting
-        { id: ideaParentId, text: 'Parent', committedIn: [phase1Id], incoming: [ideaChildId] },
-        { id: ideaChildId, text: 'Child', outgoing: [ideaParentId] }
+        { id: ideaParentId, text: 'Parent', committedIn: [phase1Id], supportingIdeaIds: [ideaChildId] },
+        { id: ideaChildId, text: 'Child', supportedIdeaIds: [ideaParentId] }
       ]
     });
 
@@ -169,8 +169,8 @@ test.describe('Regression Tests', () => {
     // 5. Verify removed from Floating List
     // Note: Floating list refreshes on scroll or init. Might need to check if it's gone.
     // Infinite scroll logic might keep it until refresh? 
-    // Store updates `floatingIdeas` getter which filters based on committedIn/outgoing.
-    // Creating link updates the idea's outgoing. So it should disappear reactively.
+    // `floatingIdeas` filters by committedIn/supportedIdeas; linking adds a
+    // supported idea, so it disappears reactively.
     await expect(page.locator('.root-ideas-column .idea-text', { hasText: 'Target Floating Idea' })).toBeHidden();
   });
 

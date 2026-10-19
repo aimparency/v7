@@ -1,5 +1,5 @@
 import { test, expect, Page } from '@playwright/test';
-import { finishIdeaCreation } from './test-utils';
+import { finishIdeaCreation, openProject } from './test-utils';
 import path from 'path';
 import fs from 'fs-extra';
 
@@ -41,13 +41,7 @@ async function indentIdea(page: Page) {
 
 test('search finds deep nested idea and expands path', async ({ page }) => {
   // 1. Load project
-  await page.goto('/');
-  await page.getByPlaceholder('Enter project folder path...').fill(PROJECT_PATH);
-  await page.getByRole('button', { name: 'Open Project' }).click();
-  await expect(page.locator('.project-path:not(.bowman-path)')).toHaveText(PROJECT_PATH);
-  
-  // Wait for main UI
-  await page.waitForSelector('.main-split', { timeout: 10000 });
+  await openProject(page, PROJECT_PATH);
   await page.focus('.app');
 
   // 2. Create Phase A and Phase B
@@ -122,11 +116,7 @@ test('search finds deep nested idea and expands path', async ({ page }) => {
 
 test('search finds deep nested idea after reload', async ({ page }) => {
   // 1. Setup Data
-  await page.goto('/');
-  await page.getByPlaceholder('Enter project folder path...').fill(PROJECT_PATH);
-  await page.getByRole('button', { name: 'Open Project' }).click();
-  
-  await page.waitForSelector('.main-split', { timeout: 10000 });
+  await openProject(page, PROJECT_PATH);
   await page.focus('.app');
 
   // Create Phases

@@ -67,18 +67,9 @@ test.describe('Project Settings Tests', () => {
 
     // Open Settings Again
     await page.click('button[title="Project Settings"]');
-    await page.waitForTimeout(2000); 
-    
-    // DEBUG: Print all input values in status rows
-    const inputs = await page.locator('.status-key-input').all();
-    console.log('Status keys found:', await Promise.all(inputs.map(i => i.inputValue())));
-    await page.screenshot({ path: 'settings-debug.png' });
+    await page.waitForSelector('.status-row');
 
-    // Verify key exists - use input value attribute for locator
-    const statusInput = page.locator('input.status-key-input').filter({ hasAttribute: ['value', 'test-status'] });
-    await expect(statusInput).toBeVisible();
-    
-    // Verify color
+    // The saved status is there, with its color
     const statusRows = await page.locator('.status-row').all();
     let found = false;
     for (const row of statusRows) {

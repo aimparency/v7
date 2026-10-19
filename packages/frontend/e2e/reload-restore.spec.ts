@@ -43,8 +43,7 @@ test.describe('Reload restore', () => {
 
     seedProject(tempDir, {
       meta: {
-        rootPhaseIds: [rootAId, rootBId],
-        dataModelVersion: 2
+        rootPhaseIds: [rootAId, rootBId]
       },
       phases: [
         {

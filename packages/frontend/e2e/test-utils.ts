@@ -1,15 +1,16 @@
 import { join } from 'path';
 import { writeFileSync, mkdirSync } from 'fs';
 import { randomUUID } from 'crypto';
-import { AIMPARENCY_DIR_NAME } from 'shared';
+import { AIMPARENCY_DIR_NAME, CURRENT_DATA_MODEL_VERSION, INITIAL_STATES } from 'shared';
 
 export interface MockIdea {
   id?: string;
   text: string;
   status?: string;
   tags?: string[];
-  incoming?: string[];
-  outgoing?: string[];
+  // Ideas supporting this one (its sub-ideas), and ideas it supports.
+  supportingIdeaIds?: string[];
+  supportedIdeaIds?: string[];
   committedIn?: string[];
 }
 
@@ -21,36 +22,34 @@ export interface MockPhase {
   childPhaseIds?: string[];
 }
 
+// Writes a project in the current data model. Phase order not given explicitly
+// follows the seed order: roots into meta.rootPhaseIds, children into their
+// parent's childPhaseIds.
 export function seedProject(projectPath: string, data: { phases?: MockPhase[], ideas?: MockIdea[], meta?: { name?: string, color?: string, statuses?: any[], rootPhaseIds?: string[], dataModelVersion?: number } }) {
   const bowmanPath = join(projectPath, AIMPARENCY_DIR_NAME);
   mkdirSync(join(bowmanPath, 'ideas'), { recursive: true });
   mkdirSync(join(bowmanPath, 'phases'), { recursive: true });
 
-  // Write Meta
+  const phases = (data.phases ?? []).map((p) => ({ ...p, id: p.id || randomUUID(), parent: p.parent || null }));
+  const childIdsOf = (parentId: string | null) => phases.filter((p) => p.parent === parentId).map((p) => p.id);
+
   writeFileSync(join(bowmanPath, 'meta.json'), JSON.stringify({
     name: data.meta?.name || 'Test Project',
     color: data.meta?.color || '#ff0000',
-    statuses: data.meta?.statuses || [],
-    rootPhaseIds: data.meta?.rootPhaseIds || [],
-    dataModelVersion: data.meta?.dataModelVersion ?? 2
+    statuses: data.meta?.statuses ?? INITIAL_STATES,
+    rootPhaseIds: data.meta?.rootPhaseIds || childIdsOf(null),
+    dataModelVersion: data.meta?.dataModelVersion ?? CURRENT_DATA_MODEL_VERSION
   }, null, 2));
 
-  // Write Phases
-  const phaseMap = new Map<string, string>(); // Name -> ID
-  
-  data.phases?.forEach(p => {
-    const id = p.id || randomUUID();
-    phaseMap.set(p.name, id);
-    
+  phases.forEach((p) => {
     const phase = {
-      id,
+      id: p.id,
       name: p.name,
-      parent: p.parent || null,
-      childPhaseIds: p.childPhaseIds || [],
+      parent: p.parent,
+      childPhaseIds: p.childPhaseIds || childIdsOf(p.id),
       commitments: p.commitments || []
     };
-    
-    writeFileSync(join(bowmanPath, 'phases', `${id}.json`), JSON.stringify(phase, null, 2));
+    writeFileSync(join(bowmanPath, 'phases', `${p.id}.json`), JSON.stringify(phase, null, 2));
   });
 
   // Write Ideas
@@ -66,17 +65,27 @@ export function seedProject(projectPath: string, data: { phases?: MockPhase[], i
         comment: '',
         date: Date.now()
       },
-      supportingConnections: (a.incoming || []).map(childId => ({ 
+      supportingConnections: (a.supportingIdeaIds || []).map(childId => ({ 
         ideaId: childId, 
         weight: 1, 
         relativePosition: [0, 0] 
       })),
-      supportedIdeas: a.outgoing || [],
+      supportedIdeas: a.supportedIdeaIds || [],
       committedIn: a.committedIn || []
     };
 
     writeFileSync(join(bowmanPath, 'ideas', `${id}.json`), JSON.stringify(idea, null, 2));
   });
+}
+
+// Opens a project from the project selection screen and waits for the main view.
+export async function openProject(page: import('@playwright/test').Page, projectPath: string) {
+  await page.goto('/');
+  const projectInput = page.locator('.project-input');
+  await projectInput.waitFor({ state: 'visible', timeout: 10000 });
+  await projectInput.fill(projectPath);
+  await projectInput.press('Enter');
+  await page.waitForSelector('.main-split', { timeout: 20000 });
 }
 
 // Creating an idea can open follow-up prompts: "Connect to Supported Idea" for
