@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import type { Phase } from '../stores/data'
-import { phaseTreeDistances } from './phase-tree-distance'
+import type { Phase } from 'shared'
+import { phaseTreeDistances } from './phase-tree-distance.js'
 
 const phase = (id: string, parent: string | null) => ({ id, parent, commitments: [], name: id }) as Phase
 

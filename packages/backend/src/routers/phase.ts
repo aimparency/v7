@@ -83,7 +83,9 @@ export const phaseRouter = t.router({
   list: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      parentPhaseId: z.string().uuid().nullable().optional()
+      parentPhaseId: z.string().uuid().nullable().optional(),
+      // Rank phases closer in the tree to this one (null: the root level) higher.
+      nearPhaseId: z.string().uuid().nullable().optional()
     }))
     .query(async ({ input }) => {
       return await listPhases(input.projectPath, input.parentPhaseId);
@@ -189,7 +191,9 @@ export const phaseRouter = t.router({
     .input(z.object({
       projectPath: z.string(),
       query: z.string(),
-      parentPhaseId: z.string().uuid().nullable().optional()
+      parentPhaseId: z.string().uuid().nullable().optional(),
+      // Rank phases closer in the tree to this one (null: the root level) higher.
+      nearPhaseId: z.string().uuid().nullable().optional()
     }))
     .query(async ({ input }) => {
       await ensureSearchIndex(input.projectPath);
@@ -197,7 +201,9 @@ export const phaseRouter = t.router({
       const phases = input.parentPhaseId === undefined
         ? allPhases
         : allPhases.filter((phase) => phase.parent === input.parentPhaseId);
-      const results = await searchPhases(input.projectPath, input.query, phases);
+      const results = searchPhases(input.query, phases, input.nearPhaseId === undefined
+        ? undefined
+        : { fromPhaseId: input.nearPhaseId, phases: allPhases });
       const phasesById = new Map(allPhases.map((phase) => [phase.id, phase]));
       return results.map((phase) => ({
         ...phase,

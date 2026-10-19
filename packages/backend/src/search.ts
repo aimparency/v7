@@ -2,6 +2,7 @@ import { Document } from 'flexsearch';
 import Fuse from 'fuse.js';
 import type { Idea, Phase, SearchIdeaResult } from 'shared';
 import { normalizeProjectPath } from './project-path.js';
+import { phaseTreeDistances } from './phase-tree-distance.js';
 
 // FlexSearch indices per project
 const ideaIndices = new Map<string, Document<Idea>>();
@@ -222,26 +223,39 @@ export async function searchIdeas(projectPath: string, query: string, allIdeas: 
 }
 
 // Search phases by name (Fuzzy search using Fuse.js)
-export async function searchPhases(projectPath: string, query: string, allPhases: Phase[]): Promise<Phase[]> {
-  if (!query.trim()) {
-    return allPhases;
+// Fuse scores run from 0 (exact) to the 0.4 threshold; a different word or
+// digit costs about 0.25, a longer name with the same start about 0.01.
+// Tree distance adds at most TREE_DISTANCE_WEIGHT: it decides between equally
+// good text matches without lifting a worse match over a better one.
+const TREE_DISTANCE_WEIGHT = 0.1;
+const treeDistancePenalty = (steps: number) =>
+  steps === Infinity ? TREE_DISTANCE_WEIGHT : TREE_DISTANCE_WEIGHT * steps / (steps + 3);
+
+// Phases matching `query` (all for an empty one), best first. With `near`,
+// phases closer in the tree to `near.fromPhaseId` rank higher.
+export function searchPhases(
+  query: string,
+  candidates: Phase[],
+  near?: { fromPhaseId: string | null, phases: Phase[] }
+): Phase[] {
+  const scored = query.trim()
+    ? new Fuse(candidates, {
+        keys: ['name'],
+        threshold: 0.4, // 0.0 = exact match, 1.0 = match anything
+        distance: 100,  // Maximum distance for fuzzy match
+        minMatchCharLength: 1,
+        includeScore: true,
+        ignoreLocation: true, // Don't prioritize matches at start
+        findAllMatches: true
+      }).search(query).map((result) => ({ phase: result.item, score: result.score ?? 0 }))
+    : candidates.map((phase) => ({ phase, score: 0 }));
+
+  if (near) {
+    const distance = phaseTreeDistances(near.fromPhaseId, Object.fromEntries(near.phases.map((phase) => [phase.id, phase])));
+    for (const entry of scored) entry.score += treeDistancePenalty(distance(entry.phase.id));
+    scored.sort((a, b) => a.score - b.score);
   }
-
-  // Configure Fuse.js for fuzzy matching
-  const fuse = new Fuse(allPhases, {
-    keys: ['name'],
-    threshold: 0.4, // 0.0 = exact match, 1.0 = match anything
-    distance: 100,  // Maximum distance for fuzzy match
-    minMatchCharLength: 1,
-    includeScore: true,
-    ignoreLocation: true, // Don't prioritize matches at start
-    findAllMatches: true
-  });
-
-  const results = fuse.search(query);
-
-  // Return phases sorted by relevance score
-  return results.map(result => result.item);
+  return scored.map((entry) => entry.phase);
 }
 
 // Clear indices for a project (e.g., when project is closed)

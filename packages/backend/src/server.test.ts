@@ -1417,3 +1417,31 @@ test('fixConsistency keeps links to archived ideas', async () => {
   const parentAfter = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
   assert.deepStrictEqual(parentAfter.supportingConnections.map((connection) => connection.ideaId), [child.id]);
 });
+
+test('phase search ranks text matches first and tree distance among equal matches', async () => {
+  const projectPath = testProjectPath;
+  const create = (name: string, parent: string | null) =>
+    caller.phase.create({ projectPath, phase: { name, parent, commitments: [] } });
+
+  // Januar ─┬─ Woche 1
+  //         ├─ Woche 2
+  //         └─ Edited
+  // Archiv ── 2025 ── Q1 ── Woche 1
+  const januar = await create('Januar', null);
+  const nearWeek1 = await create('Woche 1', januar.id);
+  const week2 = await create('Woche 2', januar.id);
+  const edited = await create('Edited', januar.id);
+  const archive = await create('Archiv', null);
+  const year = await create('2025', archive.id);
+  const quarter = await create('Q1', year.id);
+  const farWeek1 = await create('Woche 1', quarter.id);
+
+  const search = (query: string) =>
+    caller.phase.search({ projectPath, query, nearPhaseId: edited.id }).then((phases) => phases.map((phase) => phase.id));
+
+  const weekOne = await search('Woche 1');
+  assert.deepEqual(weekOne.slice(0, 3), [nearWeek1.id, farWeek1.id, week2.id]);
+  // Equal text matches: the nearer one first.
+  const woche = await search('Woche');
+  assert.ok(woche.indexOf(week2.id) < woche.indexOf(farWeek1.id));
+});

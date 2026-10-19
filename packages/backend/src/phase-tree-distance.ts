@@ -1,4 +1,4 @@
-import type { Phase } from '../stores/data'
+import type { Phase } from 'shared'
 
 // Steps up and down the phase tree from `fromPhaseId` (null: the root level)
 // to each phase. Root phases hang under one virtual root, so two root phases
