@@ -242,8 +242,7 @@ const handleSearchClose = () => {
 
   <PhaseSearchModal
     v-if="showPhaseSearch"
-    :exclude-phase-id="modalStore.phaseModalEditingPhaseId"
-    :near-phase-id="modalStore.phaseModalEditingPhaseId"
+    :placing-phase-id="modalStore.phaseModalEditingPhaseId"
     @select="onParentSelected"
     @close="handleSearchClose"
   />

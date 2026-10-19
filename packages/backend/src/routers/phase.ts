@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { v4 as uuidv4 } from 'uuid';
 import fs from 'fs-extra';
 import path from 'path';
-import { currentPhaseCursors, type Phase } from 'shared';
+import { currentPhaseCursors, isInPhaseSubtree, type Phase } from 'shared';
 import { assertWritableBowman, bowmanWriteBlocker } from 'shared/bowman-migration';
 import { t, delayedProcedure } from '../trpc.js';
 import { emitChange } from '../change-events.js';
@@ -109,6 +109,13 @@ export const phaseRouter = t.router({
       const oldParentId = (await readPhase(input.projectPath, input.phaseId)).parent ?? null;
       const newParentId = input.phase.parent;
 
+      if (newParentId && newParentId !== oldParentId) {
+        const parentById = new Map((await listPhases(input.projectPath)).map((phase) => [phase.id, phase.parent]));
+        if (isInPhaseSubtree(newParentId, input.phaseId, (phaseId) => parentById.get(phaseId))) {
+          throw new Error('A phase cannot move under itself or one of its sub-phases');
+        }
+      }
+
       if (newParentId !== undefined && newParentId !== oldParentId) {
         await updateSiblingIds(input.projectPath, oldParentId, (siblingIds) => siblingIds.filter((id) => id !== input.phaseId));
         await updateSiblingIds(input.projectPath, newParentId, (siblingIds) => {
@@ -190,19 +197,21 @@ export const phaseRouter = t.router({
       projectPath: z.string(),
       query: z.string(),
       parentPhaseId: z.string().uuid().nullable().optional(),
-      // Rank phases closer in the tree to this one (the phase being placed) higher.
-      nearPhaseId: z.string().uuid().optional()
+      // Searching a new parent for this phase: leaves out the phase and its
+      // sub-phases (they would form a cycle) and ranks closer phases higher.
+      placingPhaseId: z.string().uuid().optional()
     }))
     .query(async ({ input }) => {
       await ensureSearchIndex(input.projectPath);
       const allPhases = await listPhases(input.projectPath);
-      const phases = input.parentPhaseId === undefined
-        ? allPhases
-        : allPhases.filter((phase) => phase.parent === input.parentPhaseId);
-      const results = searchPhases(input.query, phases, input.nearPhaseId === undefined
-        ? undefined
-        : { fromPhaseId: input.nearPhaseId, phases: allPhases, rootPhaseIds: (await readProjectMeta(input.projectPath)).rootPhaseIds ?? [] });
       const phasesById = new Map(allPhases.map((phase) => [phase.id, phase]));
+      const { placingPhaseId } = input;
+      const phases = allPhases.filter((phase) =>
+        (input.parentPhaseId === undefined || phase.parent === input.parentPhaseId) &&
+        !(placingPhaseId && isInPhaseSubtree(phase.id, placingPhaseId, (phaseId) => phasesById.get(phaseId)?.parent)));
+      const results = searchPhases(input.query, phases, placingPhaseId === undefined
+        ? undefined
+        : { fromPhaseId: placingPhaseId, phases: allPhases, rootPhaseIds: (await readProjectMeta(input.projectPath)).rootPhaseIds ?? [] });
       return results.map((phase) => ({
         ...phase,
         ancestorNames: phaseAncestorNames(phase, phasesById)

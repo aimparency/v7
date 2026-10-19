@@ -1437,11 +1437,30 @@ test('phase search ranks text matches first and tree distance among equal matche
   const farWeek1 = await create('Woche 1', quarter.id);
 
   const search = (query: string) =>
-    caller.phase.search({ projectPath, query, nearPhaseId: edited.id }).then((phases) => phases.map((phase) => phase.id));
+    caller.phase.search({ projectPath, query, placingPhaseId: edited.id }).then((phases) => phases.map((phase) => phase.id));
 
   const weekOne = await search('Woche 1');
   assert.deepEqual(weekOne.slice(0, 3), [nearWeek1.id, farWeek1.id, week2.id]);
   // Equal text matches: the nearer one first.
   const woche = await search('Woche');
   assert.ok(woche.indexOf(week2.id) < woche.indexOf(farWeek1.id));
+});
+
+test('a phase cannot move under itself or its sub-phases; the parent search leaves them out', async () => {
+  const projectPath = testProjectPath;
+  const create = (name: string, parent: string | null) =>
+    caller.phase.create({ projectPath, phase: { name, parent, commitments: [] } });
+
+  const moving = await create('Moving', null);
+  const child = await create('Child', moving.id);
+  const grandchild = await create('Grandchild', child.id);
+  const other = await create('Other', null);
+
+  for (const parent of [moving.id, child.id, grandchild.id]) {
+    await assert.rejects(caller.phase.update({ projectPath, phaseId: moving.id, phase: { parent } }), /cannot move under itself/);
+  }
+  assert.equal((await caller.phase.update({ projectPath, phaseId: moving.id, phase: { parent: other.id } })).parent, other.id);
+
+  const candidates = await caller.phase.search({ projectPath, query: '', placingPhaseId: moving.id });
+  assert.deepEqual(candidates.map((phase) => phase.name), ['Other']);
 });

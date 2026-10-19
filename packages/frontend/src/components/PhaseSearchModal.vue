@@ -1,8 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from 'vue'
 import { useProjectStore } from '../stores/project-store'
-import { useDataStore } from '../stores/data'
-import { collectDescendantPhaseIds } from '../utils/phase-priority'
 import { trpc } from '../trpc'
 import type { Phase } from 'shared'
 import type { PhaseSearchAdditionalOption, PhaseSearchSelection } from '../stores/ui/phase-search-types'
@@ -10,19 +8,16 @@ import type { PhaseSearchAdditionalOption, PhaseSearchSelection } from '../store
 type PhaseSearchResult = Phase & { ancestorNames: string[] }
 
 const projectStore = useProjectStore()
-const dataStore = useDataStore()
 
 const props = withDefaults(defineProps<{
-  // Excluded with its subtree: none of them can become its parent.
-  excludePhaseId?: string | null
-  // Rank matches closer in the phase tree to this phase (the one being placed) higher.
-  nearPhaseId?: string | null
+  // Searching a new parent for this phase: the backend leaves out the phase
+  // and its sub-phases and ranks closer phases higher. null: a plain search.
+  placingPhaseId?: string | null
   title?: string
   placeholder?: string
   additionalOptions?: PhaseSearchAdditionalOption[]
 }>(), {
-  excludePhaseId: null,
-  nearPhaseId: undefined,
+  placingPhaseId: null,
   title: 'Search Phases',
   placeholder: 'Search phases...',
   additionalOptions: () => []
@@ -51,16 +46,11 @@ const items = computed(() => [
 const performSearch = async (query: string) => {
   loading.value = true
   try {
-    let results = await trpc.phase.search.query({
+    const results = await trpc.phase.search.query({
       projectPath: projectStore.projectPath,
       query,
-      nearPhaseId: props.nearPhaseId ?? undefined
+      placingPhaseId: props.placingPhaseId ?? undefined
     })
-
-    if (props.excludePhaseId) {
-      const excluded = collectDescendantPhaseIds(props.excludePhaseId, dataStore.phases)
-      results = results.filter(phase => !excluded.has(phase.id))
-    }
 
     searchResults.value = results
     selectedIndex.value = 0

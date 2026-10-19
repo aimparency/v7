@@ -11,3 +11,4 @@ export * from './mission-paths.js';
 export * from './work-selection.js';
 export * from './graph-consistency.js';
 export * from './git-url.js';
+export * from './phase-tree.js';
