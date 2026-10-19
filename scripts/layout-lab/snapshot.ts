@@ -12,7 +12,7 @@ import { calculateIdeaValues } from '../../packages/shared/src/value-calculation
 import { IdeaSchema, ProjectMetaSchema, type Idea } from '../../packages/shared/src/types.ts'
 import { INITIAL_STATES } from '../../packages/shared/src/constants.ts'
 import { endpointFlowShares, nodeRadius, normalizedFlowForceWeights } from '../../packages/frontend/src/utils/graph-forces.ts'
-import { positionsFromStoredOffsets, type LayoutLink, type LayoutNode, type SemanticPair } from '../../packages/frontend/src/utils/autolayout.ts'
+import type { LayoutLink, LayoutNode, SemanticPair } from '../../packages/frontend/src/utils/autolayout.ts'
 import { connectionArrowWidth } from '../../packages/frontend/src/webgl/utils/arrow-geometry.ts'
 
 const NEAREST_NEIGHBOURS = 12 // as packages/backend/src/semantic-neighbours.ts
@@ -113,6 +113,36 @@ function placeRoots(nodes: LayoutNode[], links: LayoutLink[], random: () => numb
   const seeded = nodes.map(node => ({ ...node, position: position.get(node.id) ?? node.position }))
   const start = positionsFromStoredOffsets(seeded, links)
   return seeded.map(node => ({ ...node, position: start.get(node.id)! }))
+}
+
+// The lab has no browser positions: each idea goes where the stored offsets
+// put it, walking from the given positions of parentless ideas (and, for a
+// network that is only a loop, of its first idea).
+function positionsFromStoredOffsets(nodes: readonly LayoutNode[], links: readonly LayoutLink[]): Map<string, [number, number]> {
+  const position = new Map(nodes.map(node => [node.id, [...node.position] as [number, number]]))
+  const radiusOf = new Map(nodes.map(node => [node.id, node.radius]))
+  const childLinks = new Map<string, LayoutLink[]>()
+  for (const link of links) childLinks.set(link.parentId, [...(childLinks.get(link.parentId) ?? []), link])
+  const hasParent = new Set(links.map(link => link.childId))
+  const placed = new Set<string>()
+  const walk = (start: string) => {
+    if (placed.has(start)) return
+    placed.add(start)
+    const queue = [start]
+    for (let parent = queue.shift(); parent !== undefined; parent = queue.shift()) {
+      for (const link of childLinks.get(parent) ?? []) {
+        if (placed.has(link.childId) || !position.has(link.childId)) continue
+        const span = radiusOf.get(link.childId)! + radiusOf.get(parent)!
+        const [x, y] = position.get(parent)!
+        position.set(link.childId, [x + link.relativePosition[0] * span, y + link.relativePosition[1] * span])
+        placed.add(link.childId)
+        queue.push(link.childId)
+      }
+    }
+  }
+  for (const node of nodes) if (!hasParent.has(node.id)) walk(node.id)
+  for (const node of nodes) walk(node.id)
+  return position
 }
 
 function semanticNeighbours(bowman: string, ids: Set<string>): SemanticPair[] {

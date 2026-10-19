@@ -3,7 +3,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import type { LayoutSettings } from '../../packages/shared/src/types.ts'
-import { createLayoutSolver, createRelaxation, DEFAULT_LAYOUT_SETTINGS, layoutOptions, positionsFromStoredOffsets, type LayoutChange, type LayoutOptions, type LayoutPlacement } from '../../packages/frontend/src/utils/autolayout.ts'
+import { createLayoutSolver, createRelaxation, DEFAULT_LAYOUT_SETTINGS, layoutOptions, type LayoutOptions } from '../../packages/frontend/src/utils/autolayout.ts'
 import type { Snapshot } from './snapshot.ts'
 
 export interface Run {
@@ -34,25 +34,13 @@ export function solve(snapshot: Snapshot, run: Run) {
   const relaxation = createRelaxation(solver, run.relax)
   let chunk = relaxation.chunk()
   while (!chunk.done) chunk = relaxation.chunk()
-  const { changes, placements } = solver.result()
+  const { changes } = solver.result()
   return {
     settings,
     changes,
-    placements,
-    positions: applied(snapshot, changes, placements),
+    positions: solver.positions(),
     iterations: relaxation.iterations(),
     lastMove: chunk.largestMove,
     milliseconds: Date.now() - started
   }
-}
-
-// Where the stored offsets put each idea once these changes are saved: what
-// the panel shows, and what the simulation settles toward after Apply.
-export function applied({ nodes, links }: Snapshot, changes: readonly LayoutChange[], placements: readonly LayoutPlacement[]) {
-  const offset = new Map(changes.map(change => [`${change.parentId}>${change.childId}`, change.relativePosition]))
-  const placement = new Map(placements.map(({ id, position }) => [id, position]))
-  return positionsFromStoredOffsets(
-    nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
-    links.map(link => ({ ...link, relativePosition: offset.get(`${link.parentId}>${link.childId}`) ?? link.relativePosition }))
-  )
 }

@@ -55,14 +55,6 @@ export interface LayoutChange {
   relevance: number // shift × √(span / mean span); changes are sorted by it, most relevant first
 }
 
-// A root's position is not a connection offset (nor that of the idea a
-// network that is only a cycle starts from): it is stored per browser only,
-// so moving it costs no file change.
-export interface LayoutPlacement {
-  id: string
-  position: [number, number]
-}
-
 export interface LayoutOptions {
   iterations?: number
   clearance?: number // minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest
@@ -76,7 +68,6 @@ export interface LayoutOptions {
 
 export interface LayoutProgress {
   changes: LayoutChange[]
-  placements: LayoutPlacement[]
 }
 
 // Stored offsets are rounded so a re-save of an unchanged layout is diff-free.
@@ -113,13 +104,50 @@ const SPREAD_ANGLE = 2 * Math.PI
 // Cosine distance: a neighbour 0.1 closer weighs e times more, so an idea
 // lands near its closest neighbours rather than midway between all of them.
 const SEMANTIC_SHARPNESS = 0.1
+// Minimum center distance in radius sums; above the simulation's margin (2), so it comes to rest.
+export const DEFAULT_CLEARANCE = 3
+
+// Similarity, the same in the solver and in the live graph: each idea shares
+// the `semantic` weight among its pairs, the closest ones getting most
+// (softmax over distance): pulled toward the mean of all its neighbours, an
+// idea would settle between them, next to none. A pair pulls only while it is
+// farther apart than `length` radius sums. Connected ideas are left to their
+// connection.
+export interface SimilarityPair {
+  a: number
+  b: number
+  length: number
+  shareA: number // of a's semantic weight
+  shareB: number
+}
+export function similarityPairs(
+  indexOf: ReadonlyMap<string, number>,
+  semanticPairs: readonly SemanticPair[],
+  connected: (a: number, b: number) => boolean,
+  clearance = DEFAULT_CLEARANCE
+): SimilarityPair[] {
+  const pairs = semanticPairs.flatMap(pair => {
+    const a = indexOf.get(pair.source)
+    const b = indexOf.get(pair.target)
+    if (a === undefined || b === undefined || a === b || connected(a, b)) return []
+    return [{ a, b, distance: pair.distance, similarity: Math.exp(-pair.distance / SEMANTIC_SHARPNESS) }]
+  })
+  const total = new Map<number, number>()
+  for (const { a, b, similarity } of pairs) {
+    total.set(a, (total.get(a) ?? 0) + similarity)
+    total.set(b, (total.get(b) ?? 0) + similarity)
+  }
+  return pairs.map(({ a, b, distance, similarity }) => ({
+    a, b, length: clearance * (1 + 2 * distance), shareA: similarity / total.get(a)!, shareB: similarity / total.get(b)!
+  }))
+}
 const SMOOTHING = 0.01 // keeps 1/|residual| finite
 
 export function solveLayout(
   nodes: readonly LayoutNode[],
   links: readonly LayoutLink[],
   options: LayoutOptions = {}
-): { positions: Map<string, [number, number]>; changes: LayoutChange[]; placements: LayoutPlacement[] } {
+): { positions: Map<string, [number, number]>; changes: LayoutChange[] } {
   const { iterations = 300, onProgress, progressEvery = 10 } = options
   const solver = createLayoutSolver(nodes, links, options)
   for (let iteration = 0; iteration < iterations; iteration++) {
@@ -138,7 +166,7 @@ export type LayoutSolver = ReturnType<typeof createLayoutSolver>
 export function createLayoutSolver(
   nodes: readonly LayoutNode[],
   links: readonly LayoutLink[],
-  { clearance = 3, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
+  { clearance = DEFAULT_CLEARANCE, room: initialRoom = DEFAULT_ROOM, semanticPairs = [], minimumChange = 0.05, weights: initialWeights = {} }: LayoutOptions = {}
 ) {
   let MEMORY = 0, LENGTH = 0, SPREAD = 0, OUTWARD = 0, SEMANTIC = 0, SEPARATION = 0, SPACE = 0, IMPORTANCE = 0
   let room = initialRoom
@@ -172,21 +200,7 @@ export function createLayoutSolver(
   })
   const strength = new Float64Array(edges.length) // per edge, from the importance setting
   const connected = new Set(edges.map(edge => edge.child * count + edge.parent))
-  const pairs = semanticPairs.flatMap(pair => {
-    const a = indexOf.get(pair.source)
-    const b = indexOf.get(pair.target)
-    if (a === undefined || b === undefined || a === b || connected.has(a * count + b) || connected.has(b * count + a)) return []
-    return [{ a, b, distance: pair.distance, span: radius[a]! + radius[b]!, length: clearance * (1 + 2 * pair.distance) }]
-  })
-  // Each idea shares its semantic weight among its pairs, the closest ones
-  // getting most (softmax over distance): pulled toward the mean of all its
-  // neighbours, an idea would settle between them, next to none.
-  const similarity = pairs.map(pair => Math.exp(-pair.distance / SEMANTIC_SHARPNESS))
-  const similarityTotal = new Float64Array(count)
-  pairs.forEach(({ a, b }, index) => {
-    similarityTotal[a] = similarityTotal[a]! + similarity[index]!
-    similarityTotal[b] = similarityTotal[b]! + similarity[index]!
-  })
+  const pairs = similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(a * count + b) || connected.has(b * count + a), clearance)
   // Translation is free for every term, and outward and spread push only
   // children, so they add up to a net drift along the direction the tree
   // grows. After each iteration the centre of all ideas, weighted by area,
@@ -206,7 +220,8 @@ export function createLayoutSolver(
   }
   setSettings({ room: initialRoom, weights: initialWeights })
 
-  const seeds = placeFromStoredOffsets(nodes, edges, x, y)
+  // Every idea starts where the graph shows it; connections pull both their
+  // ends, and their stored offsets are what `memory` keeps.
   const startX = x.slice()
   const startY = y.slice()
 
@@ -242,14 +257,7 @@ export function createLayoutSolver(
       if (shift <= minimumChange) return []
       return [{ parentId: link.parentId, childId: link.childId, relativePosition: roundOffset([offsetX / span, offsetY / span]), shift, relevance: shift * Math.sqrt(span / meanSpan) }]
     }).sort((left, right) => right.relevance - left.relevance)
-    // Seeds are placed by position, not by an offset: roots, and the idea a
-    // network that is only a cycle starts from.
-    const placements = nodes.flatMap((node, index) => {
-      if (!seeds[index] || !node.movable) return []
-      const moved = Math.hypot(x[index]! - node.position[0], y[index]! - node.position[1]) / radius[index]!
-      return moved > minimumChange ? [{ id: node.id, position: [x[index]!, y[index]!] as [number, number] }] : []
-    })
-    return { changes, placements }
+    return { changes }
   }
 
   const previousX = new Float64Array(count)
@@ -349,14 +357,15 @@ export function createLayoutSolver(
       }
     }
 
-    for (const [index, { a, b, span, length }] of pairs.entries()) {
+    for (const { a, b, length, shareA, shareB } of pairs) {
       const vx = x[b]! - x[a]!
       const vy = y[b]! - y[a]!
       const distance = Math.hypot(vx, vy)
-      if (distance <= length * span) continue
-      const scale = length * span / distance
-      pull(b, SEMANTIC * similarity[index]! / similarityTotal[b]!, x[a]! + vx * scale, y[a]! + vy * scale)
-      pull(a, SEMANTIC * similarity[index]! / similarityTotal[a]!, x[b]! - vx * scale, y[b]! - vy * scale)
+      const reach = length * (radius[a]! + radius[b]!)
+      if (distance <= reach) continue
+      const scale = reach / distance
+      pull(b, SEMANTIC * shareB, x[a]! + vx * scale, y[a]! + vy * scale)
+      pull(a, SEMANTIC * shareA, x[b]! - vx * scale, y[b]! - vy * scale)
     }
 
     // Ideas closer than the space: each pulled to where the pair would be
@@ -451,68 +460,6 @@ export function createRelaxation(solver: LayoutSolver, { budget = RELAX_BUDGET, 
     },
     iterations: () => iterations
   }
-}
-
-/** Where the stored offsets alone put each idea; what the simulation settles toward. */
-export function positionsFromStoredOffsets(nodes: readonly LayoutNode[], links: readonly LayoutLink[]): Map<string, [number, number]> {
-  const indexOf = new Map(nodes.map((node, index) => [node.id, index]))
-  const x = Float64Array.from(nodes, node => node.position[0])
-  const y = Float64Array.from(nodes, node => node.position[1])
-  const edges = links.flatMap(link => {
-    const child = indexOf.get(link.childId)
-    const parent = indexOf.get(link.parentId)
-    if (child === undefined || parent === undefined || child === parent) return []
-    const span = nodes[child]!.radius + nodes[parent]!.radius
-    return [{ child, parent, dx: link.relativePosition[0] * span, dy: link.relativePosition[1] * span }]
-  })
-  placeFromStoredOffsets(nodes, edges, x, y)
-  return new Map(nodes.map((node, index): [string, [number, number]] => [node.id, [x[index]!, y[index]!]]))
-}
-
-// The diff is measured against the stored offsets, not against what the
-// simulation currently shows, so start where the stored offsets put each idea:
-// roots (and fixed ideas) stay put, descendants follow their first placed parent.
-// Returns which ideas were seeds, kept where they were.
-function placeFromStoredOffsets(
-  nodes: readonly LayoutNode[],
-  edges: readonly { child: number; parent: number; dx: number; dy: number }[],
-  x: Float64Array,
-  y: Float64Array
-) {
-  const childEdges = nodes.map(() => [] as (typeof edges)[number][])
-  const hasParent = new Uint8Array(nodes.length)
-  for (const edge of edges) {
-    childEdges[edge.parent]!.push(edge)
-    hasParent[edge.child] = 1
-  }
-  const placed = new Uint8Array(nodes.length)
-  const seeds = new Uint8Array(nodes.length)
-  const queue: number[] = []
-  const place = (index: number) => {
-    placed[index] = 1
-    queue.push(index)
-  }
-  const seed = (index: number) => {
-    if (placed[index]) return
-    seeds[index] = 1
-    place(index)
-  }
-  const drain = () => {
-    while (queue.length > 0) {
-      const parent = queue.shift()!
-      for (const edge of childEdges[parent]!) {
-        if (placed[edge.child]) continue
-        x[edge.child] = x[parent]! + edge.dx
-        y[edge.child] = y[parent]! + edge.dy
-        place(edge.child)
-      }
-    }
-  }
-  nodes.forEach((node, index) => { if (!hasParent[index] || !node.movable) seed(index) })
-  drain()
-  // Ideas only reachable through a cycle keep their current position as a seed.
-  nodes.forEach((_, index) => { seed(index); drain() })
-  return seeds
 }
 
 // Sweep along x; pushes each overlapping pair apart, the smaller idea moving more.

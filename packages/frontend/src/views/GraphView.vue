@@ -13,13 +13,13 @@ import PhaseSearchModal from '../components/PhaseSearchModal.vue'
 import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
-import { isIdeaNode, useGraphSimulation, type GraphLink, type GraphNode } from '../composables/useGraphSimulation'
+import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, positionsFromStoredOffsets, sameLayoutSettings, withLayoutDefaults, type LayoutChange, type LayoutPlacement } from '../utils/autolayout'
+import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange } from '../utils/autolayout'
 import { endpointFlowShares } from '../utils/graph-forces'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
@@ -41,7 +41,7 @@ const showPhaseFilter = ref(false)
 
 // Composables
 const simulation = useGraphSimulation()
-const { nodes, links, trigger, randomizeLayout } = simulation
+const { nodes, links, trigger, randomizeLayout, setSimilarity } = simulation
 
 // WebGL renderer
 const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
@@ -352,21 +352,20 @@ const recenterGraph = () => mapStore.centerOnGraph(nodes.value, 1000, {
   zoomOut: 1.2,
 })
 
-// Layout: a live solver proposes new connection offsets (most relevant first)
-// and places parentless ideas, whose positions live in this browser only.
+// Layout: a headless solver moves every idea from where the graph shows it
+// (each idea's own position, kept in this browser) and proposes the
+// connection offsets that result (stored on the parent, most relevant first).
 // It keeps running while the panel is open; a settings change continues from
-// its current state. Links get the proposed offsets, and every idea glides by
-// how far its rest position (where the offsets put it) moves, so a subtree
-// moves along with its root. Nothing is saved until Apply; the fader picks
-// how many offsets.
+// its current state. Its positions are never shown or saved: the graph takes
+// over the top share of offsets (the fader), and while the panel is open the
+// simulation pulls every idea toward its similar ideas, as the solver does.
+// Ideas stay where the simulation moves them; Apply saves the shown offsets.
 type LayoutPreview = {
-  request: Omit<LayoutRequest, 'settings'>
+  semanticPairs: LayoutRequest['semanticPairs']
   saved: Required<LayoutSettings> // as last applied, from meta.json, defaults filled in
   changes: LayoutChange[]
-  placements: LayoutPlacement[]
   linkByKey: Map<string, GraphLink>
   stored: Map<GraphLink, GraphLink['relativePosition']>
-  restBefore: Map<string, [number, number]>
 }
 const layoutPreview = shallowRef<LayoutPreview | null>(null)
 const layoutSettings = ref<Required<LayoutSettings>>({ ...DEFAULT_LAYOUT_SETTINGS })
@@ -382,9 +381,26 @@ const layoutPreviewCount = computed({
   get: () => Math.round((layoutPreview.value?.changes.length ?? 0) * layoutShare.value),
   set: count => { layoutShare.value = count / Math.max(layoutPreview.value?.changes.length ?? 0, 1) }
 })
-const layoutPositionsOnly = ref(false)
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 let layoutWorker: Worker | null = null
+
+// What the solver starts from: the graph as it is now.
+function layoutRequest(semanticPairs: LayoutRequest['semanticPairs']): LayoutRequest {
+  const flowShares = endpointFlowShares(links.value.map(link => ({ sourceId: link.source.id, targetId: link.target.id, flowValue: link.flowValue })))
+  return {
+    nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
+    links: links.value.map((link, index) => ({
+      parentId: link.target.id,
+      childId: link.source.id,
+      relativePosition: [...(layoutPreview.value?.stored.get(link) ?? link.relativePosition)],
+      editable: isIdeaNode(link.source) && isIdeaNode(link.target),
+      strength: link.forceWeight,
+      flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!
+    })),
+    semanticPairs,
+    settings: { ...layoutSettings.value }
+  }
+}
 
 async function startLayoutPreview() {
   if (layoutPreview.value || layoutSolving.value) return
@@ -394,102 +410,57 @@ async function startLayoutPreview() {
     const saved = withLayoutDefaults(dataStore.meta?.layout)
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
-    layoutPositionsOnly.value = false
-    glideTarget.clear()
-    glideShown.clear()
-    const flowShares = endpointFlowShares(links.value.map(link => ({ sourceId: link.source.id, targetId: link.target.id, flowValue: link.flowValue })))
-    const request: LayoutPreview['request'] = {
-      nodes: nodes.value.map(node => ({ id: node.id, position: [node.pos[0], node.pos[1]], radius: node.r, movable: true })),
-      links: links.value.map((link, index) => ({
-        parentId: link.target.id,
-        childId: link.source.id,
-        relativePosition: [link.relativePosition[0], link.relativePosition[1]],
-        editable: isIdeaNode(link.source) && isIdeaNode(link.target),
-        strength: link.forceWeight,
-        flowShare: Number.isNaN(flowShares[index]!) ? 0 : flowShares[index]!
-      })),
-      semanticPairs
-    }
     layoutPreview.value = {
-      request,
+      semanticPairs,
       saved,
       changes: [],
-      placements: [],
       linkByKey: new Map(links.value.map(link => [linkKey(link.target.id, link.source.id), link])),
-      stored: new Map(links.value.map(link => [link, link.relativePosition])),
-      restBefore: positionsFromStoredOffsets(request.nodes, request.links)
+      stored: new Map(links.value.map(link => [link, link.relativePosition]))
     }
+    setSimilarity(semanticPairs, saved.semantic)
     layoutWorker = new Worker(new URL('../utils/autolayout.worker.ts', import.meta.url), { type: 'module' })
     layoutWorker.onmessage = ({ data }: MessageEvent<LayoutResult>) => showLayoutResult(data)
     layoutWorker.onerror = (event) => {
       useToastStore().error('Layout failed', new Error(event.message))
       cancelLayoutPreview()
     }
-    layoutWorker.postMessage({ start: { ...request, settings: { ...layoutSettings.value } } } satisfies LayoutMessage)
+    layoutWorker.postMessage({ start: layoutRequest(semanticPairs) } satisfies LayoutMessage)
   } catch (error) {
     useToastStore().error('Layout failed', error)
     layoutSolving.value = false
   }
 }
 
-function showLayoutResult({ changes, placements, done }: LayoutResult) {
+function showLayoutResult({ changes, done }: LayoutResult) {
   const preview = layoutPreview.value
   if (!preview) return
   const shown = new Set(appliedLayoutChanges.value.map(change => linkKey(change.parentId, change.childId)))
   const rank = (change: LayoutChange) => change.relevance * (shown.has(linkKey(change.parentId, change.childId)) ? LAYOUT_HYSTERESIS : 1)
-  layoutPreview.value = { ...preview, changes: [...changes].sort((left, right) => rank(right) - rank(left)), placements }
+  layoutPreview.value = { ...preview, changes: [...changes].sort((left, right) => rank(right) - rank(left)) }
   layoutSolving.value = !done
 }
 
-// After a lot of tuning the solved layout can drift far from the stored one:
-// start again from it, keeping the settings.
+// After a lot of tuning the solved layout can drift far from the graph:
+// start again from the graph as it is now, keeping the settings.
 function resetLayoutPositions() {
   const preview = layoutPreview.value
   if (!preview || !layoutWorker) return
   layoutSolving.value = true
-  layoutWorker.postMessage({ start: { ...preview.request, settings: { ...layoutSettings.value } } } satisfies LayoutMessage)
+  layoutWorker.postMessage({ start: layoutRequest(preview.semanticPairs) } satisfies LayoutMessage)
 }
 
 watch(layoutSettings, settings => {
-  if (!layoutWorker) return
+  if (!layoutWorker || !layoutPreview.value) return
+  setSimilarity(layoutPreview.value.semanticPairs, settings.semantic)
   layoutSolving.value = true
   layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })
 
-const appliedLayoutChanges = computed(() => {
-  const preview = layoutPreview.value
-  return !preview || layoutPositionsOnly.value ? [] : preview.changes.slice(0, layoutPreviewCount.value)
-})
+const appliedLayoutChanges = computed(() => layoutPreview.value?.changes.slice(0, layoutPreviewCount.value) ?? [])
 
-// Ideas glide toward the shift the preview wants for them: each frame covers
-// a share of the rest of the way, the simulation keeps working meanwhile.
-const LAYOUT_GLIDE = 0.15
-const glideTarget = new Map<GraphNode, [number, number]>()
-const glideShown = new Map<GraphNode, [number, number]>()
-let glideFrame = 0
-function glide() {
-  glideFrame = 0
-  for (const [node, [targetX, targetY]] of glideTarget) {
-    const [shownX, shownY] = glideShown.get(node) ?? [0, 0]
-    const restX = targetX - shownX
-    const restY = targetY - shownY
-    const share = Math.abs(restX) + Math.abs(restY) < 0.5 ? 1 : LAYOUT_GLIDE
-    node.pos = [node.pos[0] + restX * share, node.pos[1] + restY * share]
-    glideShown.set(node, [shownX + restX * share, shownY + restY * share])
-    if (share < 1) continue
-    glideTarget.delete(node)
-    if (targetX === 0 && targetY === 0) glideShown.delete(node)
-  }
-  if (glideTarget.size > 0) glideFrame = requestAnimationFrame(glide)
-}
-const startGlide = () => {
-  if (!glideFrame && glideTarget.size > 0) glideFrame = requestAnimationFrame(glide)
-}
-onUnmounted(() => cancelAnimationFrame(glideFrame))
-
-// Shows the current result: each link gets its proposed or its stored offset
+// Shows the current share: each link gets its proposed or its stored offset
 // (new arrays: the stored ones are shared with the data store and must stay
-// untouched), each idea glides to how far its rest position moved.
+// untouched); the simulation pulls the ideas there.
 watch(appliedLayoutChanges, applied => {
   const preview = layoutPreview.value
   if (!preview) return
@@ -498,38 +469,6 @@ watch(appliedLayoutChanges, applied => {
     const link = preview.linkByKey.get(linkKey(change.parentId, change.childId))
     if (link) link.relativePosition = [...change.relativePosition]
   }
-  const placement = new Map(preview.placements.map(({ id, position }) => [id, position]))
-  const offset = new Map(applied.map(change => [linkKey(change.parentId, change.childId), change.relativePosition]))
-  const rest = positionsFromStoredOffsets(
-    preview.request.nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
-    preview.request.links.map(link => ({ ...link, relativePosition: offset.get(linkKey(link.parentId, link.childId)) ?? link.relativePosition }))
-  )
-  // Applied offsets carry the solver's lean in the direction the tree grows;
-  // the centre of all ideas, weighted by area, stays where it is (as in the solver).
-  const shiftOf = new Map<string, [number, number]>()
-  let centreX = 0
-  let centreY = 0
-  let totalMass = 0
-  for (const node of preview.request.nodes) {
-    const from = preview.restBefore.get(node.id)
-    const to = rest.get(node.id)
-    if (!from || !to) continue
-    const mass = node.radius * node.radius
-    shiftOf.set(node.id, [to[0] - from[0], to[1] - from[1]])
-    centreX += mass * (to[0] - from[0])
-    centreY += mass * (to[1] - from[1])
-    totalMass += mass
-  }
-  centreX /= Math.max(totalMass, 1)
-  centreY /= Math.max(totalMass, 1)
-  for (const node of nodes.value) {
-    const shift = shiftOf.get(node.id)
-    if (!shift) continue
-    const target: [number, number] = [shift[0] - centreX, shift[1] - centreY]
-    const shown = glideShown.get(node) ?? [0, 0]
-    if (target[0] !== shown[0] || target[1] !== shown[1]) glideTarget.set(node, target)
-  }
-  startGlide()
 })
 
 function closeLayoutPreview() {
@@ -537,6 +476,7 @@ function closeLayoutPreview() {
   layoutWorker = null
   layoutSolving.value = false
   layoutPreview.value = null
+  setSimilarity([], 0)
 }
 
 // New graph data rebuilds the links, which drops the preview.
@@ -546,18 +486,16 @@ watch(links, () => {
   useToastStore().info('The graph changed, so the layout preview was closed.')
 })
 
-// Everything glides back.
+// Links get their stored offsets back; ideas stay where the simulation moved them.
 function cancelLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
   closeLayoutPreview()
   for (const [link, relativePosition] of preview.stored) link.relativePosition = relativePosition
-  for (const node of glideShown.keys()) glideTarget.set(node, [0, 0])
-  startGlide()
 }
 
-// Placed ideas keep their preview position; the simulation's periodic save
-// stores it in this browser. The settings go to meta.json when they changed.
+// Ideas keep their position; the simulation's periodic save stores it in
+// this browser. The settings go to meta.json when they changed.
 async function applyLayoutPreview() {
   const preview = layoutPreview.value
   if (!preview) return
@@ -692,7 +630,6 @@ function toggleSpinOffPreview() {
     <LayoutPreviewPanel
       v-if="layoutPreview"
       v-model:count="layoutPreviewCount"
-      v-model:positions-only="layoutPositionsOnly"
       v-model:settings="layoutSettings"
       :changes="layoutPreview.changes"
       :saved="layoutPreview.saved"

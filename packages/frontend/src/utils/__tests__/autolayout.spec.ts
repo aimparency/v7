@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createLayoutSolver, positionsFromStoredOffsets, roundOffset, solveLayout, type LayoutLink, type LayoutNode } from '../autolayout'
+import { createLayoutSolver, roundOffset, solveLayout, type LayoutLink, type LayoutNode } from '../autolayout'
 import { measureLayout } from '../layout-metrics'
 
 const R = 10 // every idea has this radius, so one radius sum is 20
@@ -104,25 +104,21 @@ describe('solveLayout', () => {
     expect(angle(positions, 'b')).toBeGreaterThan(Math.PI / 2 + 0.1)
   })
 
-  it('places a network that is only a cycle, so its changes rebuild where it was solved', () => {
+  it('reports offsets that agree with the positions, also around a cycle', () => {
+    // An equilateral triangle one radius sum wide: the space push has to move all three.
     const nodes: LayoutNode[] = [
       { id: 'a', position: [0, 0], radius: R, movable: true },
-      { id: 'b', position: [0, 0], radius: R, movable: true },
-      { id: 'c', position: [0, 0], radius: R, movable: true },
-      { id: 'loner', position: [500, 0], radius: R, movable: true }
+      { id: 'b', position: [2 * R, 0], radius: R, movable: true },
+      { id: 'c', position: [R, 1.74 * R], radius: R, movable: true }
     ]
-    // An equilateral triangle one radius sum wide: the separation has to move all three.
     const link = (parentId: string, childId: string, relativePosition: [number, number]): LayoutLink => ({ parentId, childId, relativePosition, editable: true, strength: 0.5 })
     const links = [link('a', 'b', [1, 0]), link('b', 'c', [-0.5, 0.87]), link('c', 'a', [-0.5, -0.87])]
-    const { positions, changes, placements } = solveLayout(nodes, links)
-    const offset = new Map(changes.map(change => [change.parentId + change.childId, change.relativePosition]))
-    const placement = new Map(placements.map(({ id, position }) => [id, position]))
-    const rebuilt = positionsFromStoredOffsets(
-      nodes.map(node => ({ ...node, position: placement.get(node.id) ?? node.position })),
-      links.map(each => ({ ...each, relativePosition: offset.get(each.parentId + each.childId) ?? each.relativePosition }))
-    )
-    for (const id of ['a', 'b', 'c']) {
-      expect(Math.hypot(rebuilt.get(id)![0] - positions.get(id)![0], rebuilt.get(id)![1] - positions.get(id)![1])).toBeLessThan(2)
+    const { positions, changes } = solveLayout(nodes, links)
+    expect(changes.length).toBeGreaterThan(0)
+    for (const { parentId, childId, relativePosition } of changes) {
+      const [px, py] = positions.get(parentId)!
+      const [cx, cy] = positions.get(childId)!
+      expect(Math.hypot(px + relativePosition[0] * 2 * R - cx, py + relativePosition[1] * 2 * R - cy)).toBeLessThan(0.1)
     }
   })
 
@@ -168,7 +164,7 @@ describe('solveLayout', () => {
   it('draws similar ideas of separate groups together, the heavier group moving less', () => {
     const { nodes, links } = graph({ root: [['a', [3.75, 0]], ['b', [-3.75, 0]]], a: [['a1', [3.75, 0]]], b: [['b1', [-3.75, 0]]] })
     const loner: LayoutNode = { id: 'loner', position: [0, 40 * 2 * R], radius: R, movable: true }
-    const { positions, placements } = solveLayout([...nodes, loner], links, {
+    const { positions } = solveLayout([...nodes, loner], links, {
       semanticPairs: [{ source: 'loner', target: 'a1', distance: 0.1 }, { source: 'loner', target: 'a', distance: 0.2 }]
     })
     const distance = (from: string, to: string) => Math.hypot(positions.get(from)![0] - positions.get(to)![0], positions.get(from)![1] - positions.get(to)![1]) / (2 * R)
@@ -178,7 +174,6 @@ describe('solveLayout', () => {
     const all = [...nodes, loner]
     const centre = (at: (node: LayoutNode) => readonly [number, number], axis: 0 | 1) => all.reduce((sum, node) => sum + at(node)[axis], 0) / all.length
     expect(Math.hypot(centre(node => positions.get(node.id)!, 0) - centre(node => node.position, 0), centre(node => positions.get(node.id)!, 1) - centre(node => node.position, 1)) / (2 * R)).toBeLessThan(0.5)
-    expect(placements.map(placement => placement.id)).toContain('loner')
   })
 
   it('puts an idea nearer its most similar neighbour, not midway', () => {
@@ -228,11 +223,6 @@ describe('solveLayout', () => {
     expect(crowded(positions)).toBe(false)
   })
 
-  it('places ideas where their stored offsets put them', () => {
-    const { nodes, links } = graph({ root: [['a', [3, 0]]], a: [['b', [0, 2]]] })
-    const moved: LayoutNode[] = nodes.map(node => node.id === 'root' ? node : { ...node, position: [99, 99] })
-    expect(positionsFromStoredOffsets(moved, links).get('b')).toEqual([60, 40])
-  })
 
   it('rounds offsets so unchanged layouts re-save without float noise', () => {
     expect(roundOffset([0.5782261044010013, -2.432211868277359])).toEqual([0.58, -2.43])

@@ -1,10 +1,10 @@
 // The lab's report: per project, a table of the metrics (mean ± spread over
 // seeds; green better, red worse than the first run beyond the noise) and a
-// picture of each run's layout (seed 0, all changes applied).
+// picture of each run's layout (seed 0).
 import fs from 'node:fs'
 import type { RunResult } from './run.ts'
 
-type View = 'full' | 'shown' | 'before'
+type View = 'full' | 'before'
 interface Column {
   label: string
   hint: string
@@ -33,7 +33,7 @@ export const COLUMNS: Column[] = [
   { label: 'similar near', hint: 'share of the 5 most similar among the 5 nearest', better: 'higher', digits: 3, value: (r, v) => r[v].semanticNeighbourhood },
   { label: 'behind', hint: 'share of children behind their parent', better: 'lower', digits: 3, value: (r, v) => r[v].outwardViolations },
   { label: 'iterations', hint: 'until rest (1200 = budget used up)', better: 'lower', digits: 0, value: r => r.iterations },
-  { label: 'files', hint: 'idea files changed: all / at the default share', better: 'lower', digits: 0, value: (r, v) => v === 'shown' ? r.shownFiles : r.files }
+  { label: 'files', hint: 'idea files changed', better: 'lower', digits: 0, value: r => r.files }
 ]
 
 const mean = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length
@@ -85,8 +85,7 @@ export function writeReport(file: string, name: string, description: string, res
     const graph = graphs.get(project)!
     const first = own[0]!
     return `<section><h2>${escape(project)} <small>${first.ideas} ideas, ${first.connections} connections</small></h2>
-<h3>All changes applied</h3>${table(project, own, 'full')}
-<h3>Default share (${'20%'}) applied, as the panel opens</h3>${table(project, own, 'shown')}
+<h3>Solved</h3>${table(project, own, 'full')}
 <h3>Stored layout</h3>${table(project, own.filter(result => result.run === first.run), 'before')}
 <div class="pictures">${own.filter(result => result.positions).map(result => picture(result, graph.links, graph.radius)).join('')}</div></section>`
   }).join('')

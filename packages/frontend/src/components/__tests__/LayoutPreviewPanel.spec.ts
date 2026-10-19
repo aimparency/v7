@@ -5,7 +5,7 @@ import LayoutPreviewPanel from '../LayoutPreviewPanel.vue'
 import { DEFAULT_LAYOUT_SETTINGS, type LayoutChange } from '../../utils/autolayout'
 
 const change = (parentId: string, childId: string): LayoutChange => ({ parentId, childId, relativePosition: [1, 0], shift: 1, relevance: 1 })
-const base = { count: 0, positionsOnly: false, settings: DEFAULT_LAYOUT_SETTINGS, saved: DEFAULT_LAYOUT_SETTINGS, solving: false }
+const base = { count: 0, settings: DEFAULT_LAYOUT_SETTINGS, saved: DEFAULT_LAYOUT_SETTINGS, solving: false }
 
 describe('LayoutPreviewPanel', () => {
   beforeEach(() => setActivePinia(createPinia()))
@@ -17,20 +17,17 @@ describe('LayoutPreviewPanel', () => {
     expect(wrapper.text()).toContain('Connections changed: 2 of 3 (1 idea files)')
   })
 
-  it('changes no connections when only absolute positions are updated', async () => {
-    const wrapper = mount(LayoutPreviewPanel, {
-      props: { ...base, changes: [change('p1', 'a')], count: 1, 'onUpdate:positionsOnly': (value: boolean) => wrapper.setProps({ positionsOnly: value }) }
-    })
-    await wrapper.find('input[type="checkbox"]').setValue(true)
-    expect(wrapper.text()).toContain('Connections changed: 0 of 1 (0 idea files)')
-    expect(wrapper.find('.fader input').attributes('disabled')).toBeDefined()
-  })
-
-  it('locks the fader and the option when no connection would change', () => {
+  it('locks the fader when no connection would change', () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
     expect(wrapper.find('.fader input').attributes('disabled')).toBeDefined()
-    expect(wrapper.find('input[type="checkbox"]').attributes('disabled')).toBeDefined()
-    expect((wrapper.find('input[type="checkbox"]').element as HTMLInputElement).checked).toBe(true)
+    expect(wrapper.text()).toContain('Connections changed: 0 of 0 (0 idea files)')
+  })
+
+  it('puts similarity first, apart from the connection solver', () => {
+    const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
+    const sections = wrapper.findAll('section')
+    expect(sections[0]!.find('input[name=semantic]').exists()).toBe(true)
+    expect(sections[1]!.find('input[name=semantic]').exists()).toBe(false)
   })
 
   it('slides a weight logarithmically over its range', async () => {
@@ -51,9 +48,9 @@ describe('LayoutPreviewPanel', () => {
     expect(wrapper.emitted('update:settings')!.pop()![0]).toMatchObject({ semantic: 0 })
   })
 
-  it('asks to start again from the stored layout', async () => {
+  it('asks to solve again from the graph', async () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
-    await wrapper.findAll('button').find(button => button.text() === 'Reset positions')!.trigger('click')
+    await wrapper.findAll('button').find(button => button.text() === 'Restart from graph')!.trigger('click')
     expect(wrapper.emitted('resetPositions')).toHaveLength(1)
   })
 

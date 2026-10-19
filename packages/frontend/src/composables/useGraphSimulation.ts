@@ -7,6 +7,7 @@ import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
 import { nodeRadius, normalizedFlowForceWeights, surfaceMovementShares } from '../utils/graph-forces'
 import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
+import { similarityPairs, type SemanticPair } from '../utils/autolayout'
 
 // Constants
 const OUTER_MARGIN_FACTOR = 2
@@ -112,6 +113,20 @@ export function useGraphSimulation() {
 
   const onTick = (cb: () => void) => {
     tickCallbacks.push(cb)
+  }
+
+  // Similarity, only while the Layout panel is open: every idea is pulled
+  // toward its most similar ideas, as in the layout solver (same pairs and
+  // shares, `amount` is its semantic weight). Each pair pulls with the mean
+  // of its two shares, split by surface like a connection, so it cannot
+  // translate the graph as a whole.
+  let similarity: { from: GraphNode; into: GraphNode; length: number; weight: number }[] = []
+  const setSimilarity = (semanticPairs: readonly SemanticPair[], amount: number) => {
+    const current = nodes.value
+    const indexOf = new Map(current.map((node, index) => [node.id, index]))
+    const connected = new Set(links.value.flatMap(link => [`${link.source.id}>${link.target.id}`, `${link.target.id}>${link.source.id}`]))
+    similarity = amount <= 0 ? [] : similarityPairs(indexOf, semanticPairs, (a, b) => connected.has(`${current[a]!.id}>${current[b]!.id}`))
+      .map(({ a, b, length, shareA, shareB }) => ({ from: current[a]!, into: current[b]!, length, weight: amount * (shareA + shareB) / 2 }))
   }
 
   // --- Data Sync ---
@@ -464,7 +479,19 @@ export function useGraphSimulation() {
             vec2.add(from.shift, from.shift, targetShift)
         }
 
-        // Capture flow force contribution (shift accumulated so far is from flow forces only)
+        for (const { from, into, length, weight } of similarity) {
+            vec2.sub(delta, into.pos, from.pos)
+            const distance = vec2.len(delta)
+            const reach = length * (from.r + into.r)
+            if (distance <= reach) continue
+            const movement = surfaceMovementShares(from.r, into.r)
+            vec2.scale(targetShift, delta, (1 - reach / distance) * weight * movement.from)
+            vec2.add(from.shift, from.shift, targetShift)
+            vec2.scale(targetShift, delta, -(1 - reach / distance) * weight * movement.into)
+            vec2.add(into.shift, into.shift, targetShift)
+        }
+
+        // Capture flow force contribution (shift accumulated so far is from flow and similarity forces only)
         if (shouldLog && debugNode) {
             forceContributions.flow[0] = debugNode.shift[0]
             forceContributions.flow[1] = debugNode.shift[1]
@@ -688,6 +715,7 @@ export function useGraphSimulation() {
     nodeMap,
     trigger,
     randomizeLayout,
+    setSimilarity,
     init,
     cleanup,
     freezings, // Exported for interaction usage (e.g. setting freeze on drag end)
