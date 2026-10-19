@@ -125,16 +125,6 @@ const close = () => {
   modalStore.closeSpinOffApplyModal()
 }
 
-const onKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    apply()
-  } else if (event.key === 'Escape') {
-    event.preventDefault()
-    close()
-  }
-}
-
 const pickCandidate = (candidatePath: string) => {
   pathInput.value = candidatePath + '/'
   refreshPathState()
@@ -162,6 +152,7 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
     :show="modalStore.showSpinOffApplyModal"
     title="Apply Spin-off"
     @request-close="close"
+    @confirm="apply"
   >
     <div class="form-group">
       <label>Target directory</label>
@@ -173,8 +164,6 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
         spellcheck="false"
         @input="refreshPathState"
         @keydown.tab.exact="onTab"
-        @keydown.enter="onKeydown"
-        @keydown.esc="onKeydown"
       />
       <p class="hint">Press Tab to autocomplete. Supports <code>~/</code> and absolute paths.</p>
 

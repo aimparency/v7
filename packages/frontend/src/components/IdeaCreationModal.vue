@@ -174,24 +174,11 @@ const handleInputKeydown = (event: KeyboardEvent) => {
   ) {
     event.preventDefault()
     ideaSearchPicker.value?.focusSelectedResult()
-    return
-  }
-
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    handleSubmit()
-  } else if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation() // Prevent escape from bubbling to global handler
-    modalStore.closeIdeaModal()
   }
 }
 
 const handleTextareaKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault()
-    handleSubmit()
-  } else if (event.key === 'Escape') {
+  if (event.key === 'Escape') {
     event.preventDefault()
     event.stopPropagation()
     handleDescriptionEscape()
@@ -226,31 +213,6 @@ const handleSelfWeightNext = (event: KeyboardEvent) => {
   if (event.key === 'Tab' && !event.shiftKey) {
     event.preventDefault()
     document.querySelector<HTMLElement>('.tag-input-container input')?.focus()
-  }
-}
-
-const handleModalKeydown = (event: KeyboardEvent) => {
-  if (event.key !== 'Enter') return
-
-  const target = event.target as HTMLElement | null
-  if (!target) return
-
-  // Do not submit on multiline fields or tag entry.
-  if (
-    target instanceof HTMLTextAreaElement ||
-    target.closest('.tag-input-container')
-  ) {
-    return
-  }
-
-  // Submit from standard edit fields.
-  if (
-    target instanceof HTMLInputElement ||
-    target instanceof HTMLSelectElement
-  ) {
-    event.preventDefault()
-    event.stopPropagation()
-    handleSubmit()
   }
 }
 
@@ -306,6 +268,7 @@ onMounted(async () => {
     title="Add Idea"
     :header-style="headerStyle"
     @request-close="modalStore.closeIdeaModal()"
+    @confirm="handleSubmit"
   >
     <template #header-right>
       <div class="color-picker-wrapper">
@@ -319,6 +282,7 @@ onMounted(async () => {
         <button
           type="button"
           class="color-picker-trigger"
+          data-picker
           :style="{ backgroundColor: activeColor }"
           @click="triggerColorPicker"
           title="Select custom color"
@@ -343,181 +307,179 @@ onMounted(async () => {
       </div>
     </template>
 
-    <div @keydown.capture="handleModalKeydown">
-        <div class="form-group">
-          <label>Idea Text</label>
-          <input
-            ref="ideaTextInput"
-            v-model="ideaText"
-            type="text"
-            placeholder="Enter idea text"
-            @keydown="handleInputKeydown"
-            @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
-          />
+    <div class="form-group">
+      <label>Idea Text</label>
+      <input
+        ref="ideaTextInput"
+        v-model="ideaText"
+        type="text"
+        placeholder="Enter idea text"
+        @keydown="handleInputKeydown"
+        @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
+      />
+    </div>
+
+    <!-- Search Results (create mode only) -->
+    <div
+      v-if="hasSearchText"
+      class="search-results"
+      @keydown.shift.tab.exact.prevent="focusIdeaTextInput"
+    >
+      <IdeaSearchPicker
+        ref="ideaSearchPicker"
+        :query="ideaText"
+        :show-input="false"
+        :show-filters="false"
+        :additional-options="createNewOption"
+        selection-behavior="unique-near-exact-idea"
+        :activate-on-click="true"
+        :activate-on-enter="true"
+        :select-on-hover="false"
+        :result-limit="5"
+        @activate="handleSearchActivate"
+        @escape="focusIdeaTextInput"
+        @selection-change="searchSelection = $event"
+      />
+
+      <div class="search-help">
+        Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Enter</kbd> to submit
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Description (optional)</label>
+      <textarea
+        ref="descriptionInput"
+        v-model="ideaDescription"
+        placeholder="Enter idea description"
+        rows="3"
+        @keydown.capture="handleTextareaKeydown"
+      ></textarea>
+    </div>
+
+    <div class="form-group">
+      <label>Status</label>
+      <select
+        v-model="selectedStatus"
+        class="status-select"
+        @keydown="handleInputKeydown"
+      >
+        <option v-for="status in statuses" :key="status.key" :value="status.key">
+          {{ status.key }}
+        </option>
+      </select>
+    </div>
+
+    <div class="form-group">
+      <label>Status Comment</label>
+      <input
+        v-model="statusComment"
+        type="text"
+        placeholder="Optional comment about status..."
+        class="text-input"
+        @keydown="handleInputKeydown"
+      />
+    </div>
+
+    <div class="form-group">
+        <div class="label-row">
+            <label>Supports (Parents)</label>
+            <button ref="addParentBtn" data-picker @click="openParentSearch" class="btn-small" title="Add Parent">+</button>
         </div>
-
-        <!-- Search Results (create mode only) -->
-        <div
-          v-if="hasSearchText"
-          class="search-results"
-          @keydown.shift.tab.exact.prevent="focusIdeaTextInput"
-        >
-          <IdeaSearchPicker
-            ref="ideaSearchPicker"
-            :query="ideaText"
-            :show-input="false"
-            :show-filters="false"
-            :additional-options="createNewOption"
-            selection-behavior="unique-near-exact-idea"
-            :activate-on-click="true"
-            :activate-on-enter="true"
-            :select-on-hover="false"
-            :result-limit="5"
-            @activate="handleSearchActivate"
-            @escape="focusIdeaTextInput"
-            @selection-change="searchSelection = $event"
-          />
-
-          <div class="search-help">
-            Use <kbd>J</kbd>/<kbd>K</kbd> to navigate, <kbd>Enter</kbd> to submit
-          </div>
-        </div>
-
-        <div class="form-group">
-          <label>Description (optional)</label>
-          <textarea
-            ref="descriptionInput"
-            v-model="ideaDescription"
-            placeholder="Enter idea description"
-            rows="3"
-            @keydown.capture="handleTextareaKeydown"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Status</label>
-          <select
-            v-model="selectedStatus"
-            class="status-select"
-            @keydown="handleInputKeydown"
-          >
-            <option v-for="status in statuses" :key="status.key" :value="status.key">
-              {{ status.key }}
-            </option>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Status Comment</label>
-          <input
-            v-model="statusComment"
-            type="text"
-            placeholder="Optional comment about status..."
-            class="text-input"
-            @keydown="handleInputKeydown"
-          />
-        </div>
-
-        <div class="form-group">
-            <div class="label-row">
-                <label>Supports (Parents)</label>
-                <button ref="addParentBtn" @click="openParentSearch" class="btn-small" title="Add Parent">+</button>
+        <div v-for="(parent, index) in supportedIdeasList" :key="parent.id" class="supported-idea-row">
+            <span class="parent-text">{{ parent.text }}</span>
+            <div class="weight-input">
+                <span class="weight-label">Weight:</span>
+                <NumericTextInput v-model="parent.weight" class="weight-field" @keydown="handleInputKeydown" />
             </div>
-            <div v-for="(parent, index) in supportedIdeasList" :key="parent.id" class="supported-idea-row">
-                <span class="parent-text">{{ parent.text }}</span>
-                <div class="weight-input">
-                    <span class="weight-label">Weight:</span>
-                    <NumericTextInput v-model="parent.weight" class="weight-field" @keydown="handleInputKeydown" />
-                </div>
-                <button @click="removeParent(index)" class="btn-remove" title="Remove Connection"><X /></button>
+            <button @click="removeParent(index)" class="btn-remove" title="Remove Connection"><X /></button>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <div class="label-row">
+            <label>Supporting (Children)</label>
+            <button data-picker @click="openChildSearch" class="btn-small" title="Add Child">+</button>
+        </div>
+        <div v-for="(child, index) in supportingConnectionsList" :key="child.id" class="supported-idea-row">
+            <span class="parent-text">{{ child.text }}</span>
+            <div class="weight-input">
+                <span class="weight-label">Weight:</span>
+                <NumericTextInput v-model="child.weight" class="weight-field" @keydown="handleInputKeydown" />
             </div>
+            <button @click="removeChild(index)" class="btn-remove" title="Remove Connection"><X /></button>
         </div>
+    </div>
 
-        <div class="form-group">
-            <div class="label-row">
-                <label>Supporting (Children)</label>
-                <button @click="openChildSearch" class="btn-small" title="Add Child">+</button>
-            </div>
-            <div v-for="(child, index) in supportingConnectionsList" :key="child.id" class="supported-idea-row">
-                <span class="parent-text">{{ child.text }}</span>
-                <div class="weight-input">
-                    <span class="weight-label">Weight:</span>
-                    <NumericTextInput v-model="child.weight" class="weight-field" @keydown="handleInputKeydown" />
-                </div>
-                <button @click="removeChild(index)" class="btn-remove" title="Remove Connection"><X /></button>
-            </div>
-        </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label>Intrinsic Value</label>
+        <input
+          ref="intrinsicValueInput"
+          v-model.number="ideaIntrinsicValue"
+          type="number"
+          placeholder="0"
+          @keydown="handleInputKeydown"
+        />
+      </div>
 
-        <div class="form-row">
-          <div class="form-group">
-            <label>Intrinsic Value</label>
-            <input
-              ref="intrinsicValueInput"
-              v-model.number="ideaIntrinsicValue"
-              type="number"
-              placeholder="0"
-              @keydown="handleInputKeydown"
-            />
-          </div>
+      <div class="form-group">
+        <label>Estimated direct cost<template v-if="dataStore.costUnit"> ({{ dataStore.costUnit }})</template></label>
+        <input
+          ref="costInput"
+          v-model.number="ideaCost"
+          type="number"
+          min="0.000000001"
+          step="any"
+          placeholder="1"
+          @keydown="handleInputKeydown"
+        />
+      </div>
 
-          <div class="form-group">
-            <label>Estimated direct cost<template v-if="dataStore.costUnit"> ({{ dataStore.costUnit }})</template></label>
-            <input
-              ref="costInput"
-              v-model.number="ideaCost"
-              type="number"
-              min="0.000000001"
-              step="any"
-              placeholder="1"
-              @keydown="handleInputKeydown"
-            />
-          </div>
+      <div class="form-group">
+        <label>Estimated days until return</label>
+        <input
+          v-model.number="ideaDuration"
+          type="number"
+          min="0"
+          step="any"
+          placeholder="1"
+          @keydown="handleInputKeydown"
+        />
+      </div>
 
-          <div class="form-group">
-            <label>Estimated days until return</label>
-            <input
-              v-model.number="ideaDuration"
-              type="number"
-              min="0"
-              step="any"
-              placeholder="1"
-              @keydown="handleInputKeydown"
-            />
-          </div>
+      <div class="form-group">
+        <label>Self Weight</label>
+        <input
+          ref="selfWeightInput"
+          v-model.number="ideaSelfWeight"
+          type="number"
+          placeholder="0"
+          @keydown="handleInputKeydown"
+          @keydown.tab.exact="handleSelfWeightNext"
+        />
+      </div>
+    </div>
 
-          <div class="form-group">
-            <label>Self Weight</label>
-            <input
-              ref="selfWeightInput"
-              v-model.number="ideaSelfWeight"
-              type="number"
-              placeholder="0"
-              @keydown="handleInputKeydown"
-              @keydown.tab.exact="handleSelfWeightNext"
-            />
-          </div>
-        </div>
+    <p v-if="validationError" class="validation-error" role="alert">{{ validationError }}</p>
 
-        <p v-if="validationError" class="validation-error" role="alert">{{ validationError }}</p>
+    <div class="form-group">
+      <label>Why is this value reasonable?</label>
+      <textarea
+        v-model="ideaValueRationale"
+        rows="2"
+        placeholder="Explain the evidence, assumptions, or human judgment behind the estimated value"
+        @keydown="handleTextareaKeydown"
+      />
+    </div>
 
-        <div class="form-group">
-          <label>Why is this value reasonable?</label>
-          <textarea
-            v-model="ideaValueRationale"
-            rows="2"
-            placeholder="Explain the evidence, assumptions, or human judgment behind the estimated value"
-            @keydown="handleTextareaKeydown"
-          />
-        </div>
-
-        <div class="form-group">
-          <TagInput 
-            v-model="ideaTags" 
-            label="Tags" 
-            @next-field="handleTagNext"
-            @prev-field="handleTagPrev"
-          />
-        </div>
+    <div class="form-group">
+      <TagInput 
+        v-model="ideaTags" 
+        label="Tags" 
+        @next-field="handleTagNext"
+        @prev-field="handleTagPrev"
+      />
     </div>
       
     <template #footer>

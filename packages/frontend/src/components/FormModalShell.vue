@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import CopyableMetaId from './CopyableMetaId.vue'
+import { isModalConfirmKey } from '../stores/ui/modal-helpers'
 
 const props = withDefaults(defineProps<{
   show: boolean
@@ -10,6 +11,9 @@ const props = withDefaults(defineProps<{
   closeOnOverlay?: boolean
   closeOnEscape?: boolean
   headerStyle?: string | Record<string, string>
+  // Enter confirms the modal (see isModalConfirmKey); declared as a prop so
+  // modals without @confirm keep Enter's default behaviour.
+  onConfirm?: () => void
 }>(), {
   entityId: null,
   entityIdLabel: 'ID',
@@ -30,6 +34,12 @@ const handleOverlayClick = () => {
 }
 
 const handleKeydown = (event: KeyboardEvent) => {
+  if (props.onConfirm && isModalConfirmKey(event)) {
+    event.preventDefault()
+    event.stopPropagation()
+    props.onConfirm()
+    return
+  }
   if (props.closeOnEscape && event.key === 'Escape' && !event.defaultPrevented) {
     event.preventDefault()
     event.stopPropagation()

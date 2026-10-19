@@ -132,3 +132,16 @@ export function clearTeleportBuffer(state: UIModalState): void {
 export function isModalOpen() {
   return document.querySelector('[aria-modal="true"]') !== null
 }
+
+// Modal keyboard rule: Space edits the focused control (opens a picker,
+// toggles a checkbox), Enter confirms the modal. Exceptions: multiline text
+// (only Ctrl/Cmd+Enter confirms), buttons and links (Enter activates them,
+// unless marked data-picker), text being composed, and fields that handled
+// Enter themselves (preventDefault, e.g. adding a tag).
+export function isModalConfirmKey(event: KeyboardEvent) {
+  if (event.key !== 'Enter' || event.isComposing || event.defaultPrevented) return false
+  const target = event.target as HTMLElement
+  if (target.tagName === 'TEXTAREA' || target.isContentEditable) return event.ctrlKey || event.metaKey
+  if ((target.tagName === 'BUTTON' || target.tagName === 'A') && !target.hasAttribute('data-picker')) return false
+  return true
+}

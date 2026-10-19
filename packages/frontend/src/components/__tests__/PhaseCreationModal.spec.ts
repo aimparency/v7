@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import PhaseCreationModal from '../PhaseCreationModal.vue'
 import { useUIModalStore } from '../../stores/ui/modal-store'
+import { trpc } from '../../trpc'
 
 vi.mock('../../trpc', () => ({
   trpc: {
@@ -65,22 +66,12 @@ describe('PhaseCreationModal Escape behavior', () => {
     expect(modalStore.closePhaseModal).toHaveBeenCalled()
   })
 
-  it('closes from the phase name input on Escape without bubbling to the shell', async () => {
+  it('closes from the phase name input on Escape', async () => {
     const { wrapper, modalStore } = mountPhaseModal()
-    const input = wrapper.find('input[placeholder="Enter phase name"]')
-    const overlay = wrapper.find('.modal-overlay')
-    const bubbled = vi.fn()
-    overlay.element.addEventListener('keydown', bubbled)
 
-    input.element.dispatchEvent(new KeyboardEvent('keydown', {
-      key: 'Escape',
-      bubbles: true,
-      cancelable: true
-    }))
-    await wrapper.vm.$nextTick()
+    await wrapper.find('input[placeholder="Enter phase name"]').trigger('keydown', { key: 'Escape' })
 
     expect(modalStore.closePhaseModal).toHaveBeenCalledTimes(1)
-    expect(bubbled).not.toHaveBeenCalled()
   })
 
   it('closes edit mode on Escape handled by the modal shell', async () => {
@@ -93,5 +84,40 @@ describe('PhaseCreationModal Escape behavior', () => {
     await wrapper.find('.modal-overlay').trigger('keydown', { key: 'Escape' })
 
     expect(modalStore.closePhaseModal).toHaveBeenCalled()
+  })
+})
+
+describe('PhaseCreationModal keys: Space edits, Enter confirms', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+  })
+
+  const mountEditModal = async () => {
+    const mounted = mountPhaseModal()
+    mounted.modalStore.phaseModalMode = 'edit'
+    mounted.modalStore.phaseModalEditingPhaseId = 'phase-1'
+    mounted.modalStore.phaseModalEditingParentId = 'parent-1'
+    await mounted.wrapper.vm.$nextTick()
+    return mounted
+  }
+
+  it('updates the phase on Enter in the name input', async () => {
+    const { wrapper } = await mountEditModal()
+
+    await wrapper.find('input[placeholder="Enter phase name"]').trigger('keydown', { key: 'Enter' })
+
+    expect(trpc.phase.update.mutate).toHaveBeenCalledOnce()
+  })
+
+  it('confirms on Enter on the parent picker, opens the search on Space', async () => {
+    const { wrapper } = await mountEditModal()
+    const picker = wrapper.find('.parent-selector')
+
+    await picker.trigger('keydown', { key: 'Enter' })
+    expect(trpc.phase.update.mutate).toHaveBeenCalledOnce()
+    expect(wrapper.findComponent({ name: 'PhaseSearchModal' }).exists()).toBe(false)
+
+    await picker.trigger('keydown', { key: ' ' })
+    expect(wrapper.findComponent({ name: 'PhaseSearchModal' }).exists()).toBe(true)
   })
 })

@@ -411,50 +411,9 @@ watch(() => modalStore.showIdeaSearch, async (isOpen, wasOpen) => {
   }
 })
 
-const handleModalKeydown = (event: KeyboardEvent) => {
-  event.stopPropagation()
-
-  if (event.key === 'Escape') {
-    event.preventDefault()
-    handleCancel()
-    return
-  }
-
-  if (confirmingDiscard.value) {
-    return
-  }
-
-  if (event.key === 'Enter') {
-    const target = event.target as HTMLElement | null
-    const tagName = target?.tagName
-
-    if (tagName === 'TEXTAREA' && !event.ctrlKey && !event.metaKey) {
-      return
-    }
-
-    if (tagName === 'BUTTON') {
-      return
-    }
-
-    event.preventDefault()
-    handleSave()
-  }
-}
-
-const handleInputKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    event.stopPropagation()
-    handleSave()
-  }
-}
-
-const handleTextareaKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-    event.preventDefault()
-    event.stopPropagation()
-    handleSave()
-  }
+// While the discard question is open, Enter belongs to its buttons.
+const handleConfirm = () => {
+  if (!confirmingDiscard.value) handleSave()
 }
 
 const handleSelfWeightNext = (event: KeyboardEvent) => {
@@ -607,6 +566,7 @@ const discardChanges = () => {
     :entity-id="ideaId"
     :header-style="headerStyle"
     @request-close="handleCancel"
+    @confirm="handleConfirm"
   >
     <template #header-right>
       <div class="color-picker-wrapper" :class="{ 'mixed-field': isMixed('color') }">
@@ -614,6 +574,7 @@ const discardChanges = () => {
           v-if="isMixed('color')"
           type="button"
           class="mixed-color-activate"
+          data-picker
           title="Multiple colors - click to override all"
           @click="activateOverride('color')"
         >
@@ -630,6 +591,7 @@ const discardChanges = () => {
           v-if="!isMixed('color')"
           type="button"
           class="color-picker-trigger"
+          data-picker
           :style="{ backgroundColor: activeColor }"
           @click="triggerColorPicker"
           title="Select custom color"
@@ -654,7 +616,7 @@ const discardChanges = () => {
       </div>
     </template>
 
-    <div class="modal-content-root" tabindex="-1" @keydown.capture="handleModalKeydown">
+    <div class="modal-content-root" tabindex="-1">
       <template v-if="isBulk">
         <p class="bulk-notice">
           Editing {{ editingIdeas.length }} ideas. Mixed fields are unchanged unless you click them to override all.
@@ -671,7 +633,6 @@ const discardChanges = () => {
           type="text"
           placeholder="Idea title..."
           class="text-input"
-          @keydown="handleInputKeydown"
           @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
         />
       </div>
@@ -684,7 +645,6 @@ const discardChanges = () => {
           placeholder="Optional description..."
           class="textarea-input"
           :rows="descriptionRows"
-          @keydown="handleTextareaKeydown"
         />
       </div>
 
@@ -694,6 +654,7 @@ const discardChanges = () => {
           v-if="isMixed('status')"
           type="button"
           class="mixed-activate"
+          data-picker
           @click="activateOverride('status')"
         >
           Multiple values - click to override all
@@ -702,7 +663,6 @@ const discardChanges = () => {
           <select
             v-model="selectedStatus"
             class="status-select"
-            @keydown="handleInputKeydown"
           >
             <option v-for="status in statuses" :key="status.key" :value="status.key">
               {{ status.key }}
@@ -729,7 +689,6 @@ const discardChanges = () => {
           :readonly="isMixed('statusComment')"
           class="textarea-input"
           rows="3"
-          @keydown="handleTextareaKeydown"
         />
       </div>
 
@@ -738,6 +697,7 @@ const discardChanges = () => {
           v-if="isMixed('archived')"
           type="button"
           class="mixed-activate"
+          data-picker
           @click="activateOverride('archived')"
         >
           Multiple archive values - click to override all
@@ -747,7 +707,6 @@ const discardChanges = () => {
             v-if="!isMixed('archived')"
             type="checkbox"
             v-model="archived"
-            @keydown="handleInputKeydown"
           />
           <span>Archive this idea</span>
         </label>
@@ -773,6 +732,7 @@ const discardChanges = () => {
           </div>
           <button
             ref="addParentBtn"
+            data-picker
             @click="openParentSearch"
             class="entry-placeholder"
             type="button"
@@ -800,6 +760,7 @@ const discardChanges = () => {
           </div>
           <button
             ref="addRepoBtn"
+            data-picker
             @click="openRepoSearch"
             class="entry-placeholder"
             type="button"
@@ -828,6 +789,7 @@ const discardChanges = () => {
           </div>
           <button
             ref="addPhaseBtn"
+            data-picker
             @click="openPhaseSearch"
             class="entry-placeholder"
             type="button"
@@ -862,7 +824,6 @@ const discardChanges = () => {
             class="text-input"
             :placeholder="mixedPlaceholder('intrinsicValue', '0')"
             :readonly="isMixed('intrinsicValue')"
-            @keydown="handleInputKeydown"
           />
         </div>
 
@@ -875,7 +836,6 @@ const discardChanges = () => {
             :placeholder="mixedPlaceholder('cost', '0')"
             :readonly="isMixed('cost')"
             min="0.000000001"
-            @keydown="handleInputKeydown"
           />
         </div>
 
@@ -889,7 +849,6 @@ const discardChanges = () => {
             step="any"
             :placeholder="mixedPlaceholder('duration', '1')"
             :readonly="isMixed('duration')"
-            @keydown="handleInputKeydown"
           />
         </div>
 
@@ -902,7 +861,6 @@ const discardChanges = () => {
             class="text-input"
             :placeholder="mixedPlaceholder('selfWeight', '0')"
             :readonly="isMixed('selfWeight')"
-            @keydown="handleInputKeydown"
             @keydown.tab.exact="handleSelfWeightNext"
           />
         </div>
@@ -920,7 +878,7 @@ const discardChanges = () => {
       </div>
 
       <div class="form-section" :class="{ 'mixed-field': isMixed('tags') }" @click="activateOverride('tags')">
-        <button v-if="isMixed('tags')" type="button" class="mixed-activate">
+        <button v-if="isMixed('tags')" type="button" class="mixed-activate" data-picker>
           Multiple tag values - click to override all
         </button>
         <TagInput

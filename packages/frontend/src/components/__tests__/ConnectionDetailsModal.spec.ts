@@ -83,7 +83,7 @@ describe('ConnectionDetailsModal', () => {
     div.remove()
   })
 
-  it('saves and closes when pressing Enter key on window (if not in textarea)', async () => {
+  it('saves and closes on Enter in the weight input', async () => {
     const wrapper = mount(ConnectionDetailsModal, {
       global: {
         plugins: [pinia]
@@ -91,12 +91,7 @@ describe('ConnectionDetailsModal', () => {
     })
 
     await nextTick()
-
-    // Trigger Enter on window
-    const event = new KeyboardEvent('keydown', { key: 'Enter', bubbles: true })
-    window.dispatchEvent(event)
-
-    await nextTick()
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' })
 
     expect(dataStore.updateConnectionDetails).toHaveBeenCalledWith(
       expect.any(String),
@@ -106,6 +101,16 @@ describe('ConnectionDetailsModal', () => {
     )
     expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
 
+    wrapper.unmount()
+  })
+
+  it('saves on Ctrl+Enter in the hypothesis textarea', async () => {
+    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] } })
+    await nextTick()
+
+    await wrapper.find('textarea').trigger('keydown', { key: 'Enter', ctrlKey: true })
+
+    expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
     wrapper.unmount()
   })
 
@@ -135,8 +140,8 @@ describe('ConnectionDetailsModal', () => {
 
     await nextTick()
 
-    // It should NOT have called replaceIdea or closeConnectionDetailsModal
-    expect(dataStore.replaceIdea).not.toHaveBeenCalled()
+    // It should NOT have saved or closed
+    expect(dataStore.updateConnectionDetails).not.toHaveBeenCalled()
     expect(modalStore.closeConnectionDetailsModal).not.toHaveBeenCalled()
 
     wrapper.unmount()

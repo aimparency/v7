@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import FormModalShell from './FormModalShell.vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
@@ -112,19 +112,7 @@ const confirm = async () => {
 const pctInput = ref<HTMLInputElement>()
 const reflectionInput = ref<HTMLTextAreaElement>()
 
-const handleWindowKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter') {
-    const activeElement = document.activeElement
-    if (activeElement && activeElement.tagName.toLowerCase() === 'textarea') {
-      return
-    }
-    event.preventDefault()
-    confirm()
-  }
-}
-
 onMounted(async () => {
-  window.addEventListener('keydown', handleWindowKeydown)
   await nextTick()
   if (reflecting.value && reflectionInput.value) {
     reflectionInput.value.focus()
@@ -134,9 +122,6 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-  window.removeEventListener('keydown', handleWindowKeydown)
-})
 
 // Cancel keeps the already-persisted default-weight connection.
 const cancel = () => modalStore.closeConnectionDetailsModal()
@@ -148,6 +133,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
     :title="reflecting ? 'Reflect on the hypothesis' : 'Connection details'"
     width="min(90vw, 32rem)"
     @request-close="cancel"
+    @confirm="confirm"
   >
     <div class="connection-details">
       <p class="relation">

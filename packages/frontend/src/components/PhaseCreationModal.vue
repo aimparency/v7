@@ -112,17 +112,6 @@ const handleSubmit = () => {
   }
 }
 
-const handleKeydown = (event: KeyboardEvent) => {
-  if (event.key === 'Enter') {
-    event.preventDefault()
-    event.stopPropagation()
-    handleSubmit()
-  } else if (event.key === 'Escape') {
-    event.preventDefault()
-    event.stopPropagation()
-    modalStore.closePhaseModal()
-  }
-}
 
 watch(() => modalStore.showPhaseModal, async (newVal) => {
   if (newVal) {
@@ -191,6 +180,7 @@ const handleSearchClose = () => {
     :title="modalStore.phaseModalMode === 'edit' ? 'Edit Phase' : 'Create New Phase'"
     :entity-id="modalStore.phaseModalMode === 'edit' ? modalStore.phaseModalEditingPhaseId : null"
     @request-close="modalStore.closePhaseModal()"
+    @confirm="handleSubmit"
   >
     <div class="form-group">
       <label>Phase Name</label>
@@ -199,8 +189,6 @@ const handleSearchClose = () => {
         v-model="modalStore.newPhaseName"
         type="text"
         placeholder="Enter phase name"
-        @keydown.enter="handleKeydown"
-        @keydown.esc="handleKeydown"
         @keydown.shift.tab.exact.prevent="submitBtn?.focus()"
       />
     </div>
@@ -212,9 +200,8 @@ const handleSearchClose = () => {
         v-if="!modalStore.phaseModalEditingParentId"
         ref="parentSelectorBtn"
         class="btn-select-parent"
+        data-picker
         @click="showPhaseSearch = true"
-        @keydown.space.prevent="showPhaseSearch = true"
-        @keydown.esc="handleKeydown"
       >
         + Add Parent Phase
       </button>
@@ -223,11 +210,10 @@ const handleSearchClose = () => {
         v-else
         ref="parentSelectorDisplay"
         class="parent-selector"
-        @click="showPhaseSearch = true"
+        data-picker
         tabindex="0"
-        @keydown.enter="showPhaseSearch = true"
-        @keydown.space.prevent="showPhaseSearch = true"
-        @keydown.esc="handleKeydown"
+        @click="showPhaseSearch = true"
+        @keydown.space.self.prevent="showPhaseSearch = true"
       >
         <div class="selected-parent">{{ selectedParentName }}</div>
         <div class="parent-actions">

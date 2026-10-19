@@ -9,6 +9,7 @@ import {
   openIdeaSearchModal,
   openPhaseCreateModal,
   openSettingsModal,
+  isModalConfirmKey,
   type UIModalState
 } from './modal-helpers'
 
@@ -85,5 +86,34 @@ describe('modal helpers', () => {
     expect(state.teleportCopyIdeaId).toBe(null)
     expect(state.teleportCopySource).toBe(null)
     expect(state.movingIdeaId).toBe(null)
+  })
+})
+
+describe('isModalConfirmKey', () => {
+  const enterOn = (html: string, init: KeyboardEventInit = {}) => {
+    const host = document.createElement('div')
+    host.innerHTML = html
+    const target = host.firstElementChild!
+    let confirms = false
+    target.addEventListener('keydown', (event) => { confirms = isModalConfirmKey(event as KeyboardEvent) })
+    target.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true, cancelable: true, ...init }))
+    return confirms
+  }
+
+  it('confirms from inputs, selects and pickers', () => {
+    expect(enterOn('<input>')).toBe(true)
+    expect(enterOn('<select></select>')).toBe(true)
+    expect(enterOn('<button data-picker></button>')).toBe(true)
+  })
+
+  it('leaves Enter to buttons and to newlines in textareas', () => {
+    expect(enterOn('<button></button>')).toBe(false)
+    expect(enterOn('<textarea></textarea>')).toBe(false)
+    expect(enterOn('<textarea></textarea>', { ctrlKey: true })).toBe(true)
+  })
+
+  it('ignores other keys and text being composed', () => {
+    expect(enterOn('<input>', { key: ' ' })).toBe(false)
+    expect(enterOn('<input>', { isComposing: true })).toBe(false)
   })
 })

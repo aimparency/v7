@@ -52,7 +52,8 @@ function ensureMaxLength() {
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter') {
+  // An empty field leaves Enter to the surrounding modal (confirm).
+  if (e.key === 'Enter' && input.value) {
     e.preventDefault()
     addTag()
     return
