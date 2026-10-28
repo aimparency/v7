@@ -19,6 +19,8 @@ const dataStore = useDataStore()
 const phaseNameInput = ref<HTMLInputElement>()
 const submitBtn = ref<HTMLButtonElement>()
 const showPhaseSearch = ref(false)
+// A second Enter while the request is in flight must not create the phase twice.
+const submitting = ref(false)
 const selectedParentName = ref<string>('Root (No Parent)')
 const parentSelectorBtn = ref<HTMLButtonElement>()
 const parentSelectorDisplay = ref<HTMLDivElement>()
@@ -98,11 +100,13 @@ const updatePhase = async () => {
   }
 }
 
-const handleSubmit = () => {
-  if (modalStore.phaseModalMode === 'edit') {
-    updatePhase()
-  } else {
-    createPhase()
+const handleSubmit = async () => {
+  if (submitting.value) return
+  submitting.value = true
+  try {
+    await (modalStore.phaseModalMode === 'edit' ? updatePhase() : createPhase())
+  } finally {
+    submitting.value = false
   }
 }
 
@@ -232,10 +236,10 @@ const handleSearchClose = () => {
         ref="submitBtn"
         @click="handleSubmit"
         class="btn-primary"
-        :disabled="!modalStore.newPhaseName.trim()"
+        :disabled="!modalStore.newPhaseName.trim() || submitting"
         @keydown.tab.exact.prevent="phaseNameInput?.focus()"
       >
-        {{ modalStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
+        {{ submitting ? 'Saving…' : modalStore.phaseModalMode === 'edit' ? 'Update' : 'Create' }}
       </button>
     </template>
   </FormModalShell>

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, nextTick, onUnmounted, ref, watch } from 'vue'
+import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
 import { trpc } from '../trpc'
 import { loadProjectThumbnails } from '../utils/db'
@@ -115,6 +115,7 @@ const perfectMatchIndex = computed(() => {
 
 const listRef = ref<HTMLElement>()
 const inputRef = ref<HTMLInputElement>()
+onMounted(() => inputRef.value?.focus())
 const selectedIndex = ref(-1)
 watch(perfectMatchIndex, (index) => { selectedIndex.value = index }, { immediate: true })
 

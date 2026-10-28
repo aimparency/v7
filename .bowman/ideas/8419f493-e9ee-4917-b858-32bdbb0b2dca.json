@@ -1,8 +1,19 @@
 {
   "id": "8419f493-e9ee-4917-b858-32bdbb0b2dca",
   "text": "Fix real-time synchronization for floating ideas so they appear automatically in the web client",
+  "archived": false,
   "tags": [],
-  "incoming": [],
+  "supportingConnections": [
+    {
+      "ideaId": "a857ae19-b7eb-48f8-a3bf-7faa69f5dd3a",
+      "relativePosition": [
+        -16.57,
+        6.54
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [],
   "committedIn": [
     "ab939925-1be6-43fc-b7a9-958b49b2c66a"
   ],
@@ -11,15 +22,10 @@
     "comment": "Modified packages/frontend/src/stores/data.ts to update floatingIdeasIds when a new idea event is received via WebSocket. Also fixed a missing type import in packages/backend/src/server.ts. Verified with type-check.",
     "date": 1765316000000
   },
-  "supportingConnections": [
-    {
-      "ideaId": "a857ae19-b7eb-48f8-a3bf-7faa69f5dd3a",
-      "relativePosition": [
-        4.365279705617022,
-        -2.9828799723045676
-      ],
-      "weight": 1
-    }
-  ],
-  "supportedIdeas": []
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

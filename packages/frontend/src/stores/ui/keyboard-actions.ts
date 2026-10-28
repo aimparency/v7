@@ -310,11 +310,8 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       const selectedPhaseId = uiStore.getSelectedPhaseId(currentCol)
       if (!selectedPhaseId) break
 
-      const selectedPhase = await trpc.phase.get.query({
-        projectPath: projectStore.projectPath,
-        phaseId: selectedPhaseId
-      })
-
+      // The store mirrors the phase live; no round trip before marking or deleting.
+      const selectedPhase = dataStore.phases[selectedPhaseId]
       if (!selectedPhase) break
 
       if (uiStore.pendingDeletePhaseId === selectedPhase.id) {

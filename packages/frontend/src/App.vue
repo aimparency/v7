@@ -283,9 +283,6 @@ const openProjectSelection = () => {
   projectSelectionReturnPath.value = projectStore.projectPath
   projectStore.setProjectPath('')
   projectPathInput.value = '' // the input filters the lists, so start with all of them
-  nextTick(() => {
-    document.querySelector<HTMLInputElement>('.project-input')?.focus()
-  })
 }
 
 const cancelProjectSelection = () => {
