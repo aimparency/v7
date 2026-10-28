@@ -59,5 +59,6 @@
   ],
   "dataModelVersion": 6,
   "linkedRepos": [],
-  "repoId": "8afbd724-7470-402c-96bd-a5be038a1d03"
+  "repoId": "8afbd724-7470-402c-96bd-a5be038a1d03",
+  "costUnit": "satoshi"
 }
