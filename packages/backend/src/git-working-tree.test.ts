@@ -21,33 +21,37 @@ describe('git working tree', () => {
     expect(await readWorkingTreeStatus(fs.mkdtempSync(path.join(os.tmpdir(), 'no-git-')))).toEqual({ isRepository: false });
   });
 
-  it('commits exactly the chosen paths, including new and deleted files, and leaves the rest alone', async () => {
+  it('sees and commits only .bowman changes, including new and deleted files, and leaves the rest of the repository alone', async () => {
     const repo = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), 'working-tree-')));
     git(repo, 'init', '-q');
     git(repo, 'config', 'user.name', 'Test');
     git(repo, 'config', 'user.email', 'test@example.com');
-    for (const name of ['keep.ts', 'gone.ts', 'staged.ts']) fs.writeFileSync(path.join(repo, name), 'one\n');
+    const bowman = path.join(repo, '.bowman');
+    fs.mkdirSync(bowman);
+    for (const name of ['.bowman/keep.json', '.bowman/gone.json', 'code.ts', 'staged.ts']) fs.writeFileSync(path.join(repo, name), 'one\n');
     git(repo, 'add', '-A');
     git(repo, 'commit', '-q', '-m', 'start');
 
-    fs.writeFileSync(path.join(repo, 'keep.ts'), 'two\n');
-    fs.rmSync(path.join(repo, 'gone.ts'));
-    fs.mkdirSync(path.join(repo, '.bowman'));
-    fs.writeFileSync(path.join(repo, '.bowman', 'new.json'), '{}\n');
+    fs.writeFileSync(path.join(bowman, 'keep.json'), 'two\n');
+    fs.rmSync(path.join(bowman, 'gone.json'));
+    fs.writeFileSync(path.join(bowman, 'new.json'), '{}\n');
+    fs.writeFileSync(path.join(repo, 'code.ts'), 'two\n');
+    fs.writeFileSync(path.join(repo, 'notes.txt'), 'untracked on purpose\n');
     fs.writeFileSync(path.join(repo, 'staged.ts'), 'someone else\n');
     git(repo, 'add', 'staged.ts');
 
-    const before = await readWorkingTreeStatus(path.join(repo, '.bowman'));
+    const before = await readWorkingTreeStatus(bowman);
     if (!before.isRepository) throw new Error('expected a repository');
     expect(before.repositoryPath).toBe(repo);
     expect(before.lastCommitAt).toBeGreaterThan(0);
-    expect(before.changes.map(change => change.path).sort()).toEqual(['.bowman/new.json', 'gone.ts', 'keep.ts', 'staged.ts']);
+    expect(before.changes.map(change => change.path).sort()).toEqual(['.bowman/gone.json', '.bowman/keep.json', '.bowman/new.json']);
 
-    await commitPaths(repo, ['.bowman/new.json', 'gone.ts'], 'graph: new idea');
+    await commitPaths(bowman, ['.bowman/new.json', '.bowman/gone.json'], 'graph: new idea');
 
-    expect(git(repo, 'show', '--name-only', '--format=%s', 'HEAD').trim().split('\n')).toEqual(['graph: new idea', '', '.bowman/new.json', 'gone.ts']);
-    expect(git(repo, 'status', '--porcelain').split('\n').filter(Boolean).sort()).toEqual([' M keep.ts', 'M  staged.ts']);
-    await expect(commitPaths(repo, ['untouched.ts'], 'x')).rejects.toThrow(/Not changed/);
-    await expect(commitPaths(repo, ['keep.ts'], '  ')).rejects.toThrow(/message/);
+    expect(git(repo, 'show', '--name-only', '--format=%s', 'HEAD').trim().split('\n')).toEqual(['graph: new idea', '', '.bowman/gone.json', '.bowman/new.json']);
+    expect(git(repo, 'status', '--porcelain').split('\n').filter(Boolean).sort()).toEqual([' M .bowman/keep.json', ' M code.ts', '?? notes.txt', 'M  staged.ts']);
+    await expect(commitPaths(bowman, ['code.ts'], 'x')).rejects.toThrow(/Not changed/);
+    await expect(commitPaths(bowman, ['notes.txt'], 'x')).rejects.toThrow(/Not changed/);
+    await expect(commitPaths(bowman, ['.bowman/keep.json'], '  ')).rejects.toThrow(/message/);
   });
 });

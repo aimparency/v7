@@ -30,6 +30,9 @@ export function parsePorcelainStatus(stdout: string): WorkingTreeChange[] {
   return changes;
 }
 
+// Only changes inside `directory` (the .bowman) count: the rest of the
+// repository is someone else's work, untracked files there may be untracked
+// on purpose. Porcelain paths stay repository-relative.
 export async function readWorkingTreeStatus(directory: string): Promise<WorkingTreeStatus> {
   let repositoryPath: string;
   try {
@@ -38,15 +41,15 @@ export async function readWorkingTreeStatus(directory: string): Promise<WorkingT
     return { isRepository: false };
   }
   const [status, lastCommit] = await Promise.all([
-    git(repositoryPath, ['status', '--porcelain', '-z', '--untracked-files=all']),
-    git(repositoryPath, ['log', '-1', '--format=%ct']).catch(() => '') // no commit yet
+    git(directory, ['status', '--porcelain', '-z', '--untracked-files=all', '--', '.']),
+    git(directory, ['log', '-1', '--format=%ct', '--', '.']).catch(() => '') // no commit yet
   ]);
   const seconds = Number(lastCommit.trim());
   return { isRepository: true, repositoryPath, lastCommitAt: seconds ? seconds * 1000 : null, changes: parsePorcelainStatus(status) };
 }
 
-// Commits exactly the given changed paths. Agents share the working tree, so
-// nothing else is staged, and what someone else had staged stays staged.
+// Commits exactly the given changed paths inside `directory`. Agents share the
+// working tree, so nothing else is staged, and what someone else had staged stays staged.
 export async function commitPaths(directory: string, paths: string[], message: string): Promise<string> {
   const status = await readWorkingTreeStatus(directory);
   if (!status.isRepository) throw new Error('Not a git repository');
