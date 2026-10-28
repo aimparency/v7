@@ -231,14 +231,6 @@ onUnmounted(revokeThumbnails)
             <span v-else class="thumbnail"></span>
             <button
               type="button"
-              class="edit-button"
-              tabindex="-1"
-              title="Edit path before opening"
-              aria-label="Edit path before opening"
-              @click.stop="loadPathIntoInput(project.path)"
-            ><Pencil /></button>
-            <button
-              type="button"
               class="history-open-button"
               @click="emit('open-project-from-history', project.path)"
               @focus="selectedIndex = index"
@@ -248,6 +240,14 @@ onUnmounted(revokeThumbnails)
                 <div class="history-time">{{ formatRelativeTime(project.lastOpened) }}</div>
               </div>
             </button>
+            <button
+              type="button"
+              class="edit-button"
+              tabindex="-1"
+              title="Edit path before opening"
+              aria-label="Edit path before opening"
+              @click.stop="loadPathIntoInput(project.path)"
+            ><Pencil /></button>
             <button
               class="remove-button"
               tabindex="-1"
@@ -285,14 +285,6 @@ onUnmounted(revokeThumbnails)
             <span v-else class="thumbnail"></span>
             <button
               type="button"
-              class="edit-button"
-              tabindex="-1"
-              title="Edit path before opening"
-              aria-label="Edit path before opening"
-              @click.stop="loadPathIntoInput(project.path)"
-            ><Pencil /></button>
-            <button
-              type="button"
               class="history-open-button"
               @click="emit('open-discovered-project', project.path)"
               @focus="selectedIndex = recentResults.length + index"
@@ -305,6 +297,14 @@ onUnmounted(revokeThumbnails)
                 <div class="history-time">from {{ project.sourceRoot }}</div>
               </div>
             </button>
+            <button
+              type="button"
+              class="edit-button"
+              tabindex="-1"
+              title="Edit path before opening"
+              aria-label="Edit path before opening"
+              @click.stop="loadPathIntoInput(project.path)"
+            ><Pencil /></button>
           </div>
         </div>
         <p v-else class="empty-state">{{ query ? 'No other matching projects.' : 'No nearby projects found yet.' }}</p>
@@ -537,7 +537,7 @@ onUnmounted(revokeThumbnails)
   min-width: 0;
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem 0.75rem 0.25rem;
+  padding: 0.75rem 1rem;
   background: transparent;
   border: none;
   color: inherit;
@@ -590,7 +590,7 @@ onUnmounted(revokeThumbnails)
   width: 2.5rem;
   background: transparent;
   border: none;
-  border-right: 1px solid #3b3b3b;
+  border-left: 1px solid #3b3b3b;
   color: #8ea9c4;
   font-size: 0.95rem;
   cursor: pointer;
