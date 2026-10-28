@@ -58,7 +58,7 @@ const isConfirmingDelete = ref(false)
 const editingConnectionRef = ref<{ parentId: string, childId: string } | null>(null)
 
 const editedIntrinsicValue = ref(0)
-const editedCost = ref(0)
+const editedCost = ref<number | undefined>(undefined) // undefined: not estimated
 const editedSelfWeight = ref(0)
 
 // String versions for k-notation input
@@ -88,12 +88,12 @@ watch(selectedLink, (newVal) => {
 watch(selectedIdea, (newVal) => {
     if (newVal) {
         editedIntrinsicValue.value = newVal.intrinsicValue || 0
-        editedCost.value = newVal.cost ?? 0
+        editedCost.value = newVal.cost
         editedSelfWeight.value = newVal.selfWeight ?? 0
 
         // Update string versions with formatting
         editedIntrinsicValueStr.value = editedIntrinsicValue.value.toString()
-        editedCostStr.value = editedCost.value.toString()
+        editedCostStr.value = editedCost.value?.toString() ?? ''
         editedSelfWeightStr.value = editedSelfWeight.value.toString()
     }
 }, { immediate: true })
@@ -115,7 +115,7 @@ const onIntrinsicValueInput = (event: Event) => {
 
 const onCostInput = (event: Event) => {
     const input = (event.target as HTMLInputElement).value
-    editedCost.value = parseK(input)
+    editedCost.value = input.trim() ? parseK(input) : undefined
 }
 
 const onSelfWeightInput = (event: Event) => {
@@ -128,7 +128,7 @@ const updateIdeaAttributes = async () => {
     const ideaId = selectedIdea.value.id
     const updates = {
         intrinsicValue: editedIntrinsicValue.value,
-        cost: editedCost.value,
+        ...(editedCost.value !== undefined && editedCost.value > 0 ? { cost: editedCost.value } : {}),
         selfWeight: editedSelfWeight.value
     }
 
@@ -407,7 +407,7 @@ const isOpaque = computed(() => !hasInteracted.value)
                             @input="onCostInput"
                             @change="updateIdeaAttributes"
                             class="value-input"
-                            placeholder="e.g. 2k, 500"
+                            :placeholder="`not estimated (${dataStore.defaultCost})`"
                         />
                     </div>
                     <div class="metric">

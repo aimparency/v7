@@ -1323,7 +1323,7 @@ test('a project from a newer Aimparency can be read but not changed', async () =
   assert.deepStrictEqual(await fs.readJson(path.join(testProjectPath, 'meta.json')), newer, 'meta.json is untouched');
 });
 
-test('ideas created without a cost get the project default cost', async () => {
+test('ideas created without a cost stay unestimated: no default is written, graph_hygiene lists them', async () => {
   await caller.project.getMeta({ projectPath: testProjectPath });
   const meta = await caller.project.updateMeta({ projectPath: testProjectPath, meta: { name: 'Costs', color: '#007acc', costUnit: 'hours', defaultCost: 3 } });
   assert.equal(meta.costUnit, 'hours');
@@ -1332,8 +1332,14 @@ test('ideas created without a cost get the project default cost', async () => {
   const status = { state: 'open', comment: '', date: Date.now() };
   const implicit = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'No estimate yet', status } });
   const explicit = await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: 'Estimated', status, cost: 0.5 } });
-  assert.equal((await caller.idea.get({ projectPath: testProjectPath, ideaId: implicit.id })).cost, 3);
+  assert.equal((await caller.idea.get({ projectPath: testProjectPath, ideaId: implicit.id })).cost, undefined);
   assert.equal((await caller.idea.get({ projectPath: testProjectPath, ideaId: explicit.id })).cost, 0.5);
+  // Editing other fields does not write the default in either.
+  await caller.idea.update({ projectPath: testProjectPath, ideaId: implicit.id, idea: { text: 'Still no estimate' } });
+  assert.equal('cost' in await fs.readJson(path.join(testProjectPath, 'ideas', `${implicit.id}.json`)), false);
+
+  const report = await caller.graphHealth.graphHygiene({ projectPath: testProjectPath });
+  assert.deepEqual(report.unestimatedCost.items.map((item) => item.id), [implicit.id]);
 
   await assert.rejects(
     caller.project.updateMeta({ projectPath: testProjectPath, meta: { name: 'Costs', color: '#007acc', defaultCost: 0 } }),

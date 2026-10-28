@@ -166,7 +166,7 @@ const intrinsicValue = computed(() => {
 })
 
 const intrinsicCost = computed(() => {
-  return Math.round(props.idea.cost || 0)
+  return Math.round(props.idea.cost ?? dataStore.defaultCost)
 })
 
 const hasStats = computed(() =>

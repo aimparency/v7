@@ -517,7 +517,7 @@ export const useDataStore = defineStore('data', {
         
         this.recalculateTimeout = setTimeout(() => {
             const allIdeas = Object.values(this.ideas) as Idea[];
-            const result = calculateIdeaValues(allIdeas);
+            const result = calculateIdeaValues(allIdeas, this.defaultCost);
             this.calculatedValues = result.values;
             this.calculatedCosts = result.costs;
             this.calculatedDoneCosts = result.doneCosts;

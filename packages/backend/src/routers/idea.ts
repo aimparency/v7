@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
-import { IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
+import { DEFAULT_IDEA_COST, IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
@@ -91,7 +91,7 @@ async function storeNewIdea(
     },
     intrinsicValue: input.intrinsicValue ?? options.defaultIntrinsicValue ?? 0,
     valueRationale: input.valueRationale,
-    cost: input.cost ?? await projectDefaultCost(projectPath),
+    cost: input.cost,
     selfWeight: input.selfWeight ?? 1,
     duration: input.duration ?? 1,
     costVariance: 0,
@@ -114,10 +114,6 @@ async function connectNewIdea(projectPath: string, ideaId: string, input: NewIde
     await connectIdeasInternal(projectPath, ideaId, conn.ideaId, undefined, undefined, conn.relativePosition, conn.weight, conn.hypothesis);
   }
 }
-
-// Ideas created without a cost estimate get the project's default (meta.json defaultCost).
-const projectDefaultCost = async (projectPath: string): Promise<number> =>
-  defaultIdeaCost(await fs.readJson(path.join(normalizeProjectPath(projectPath), 'meta.json')).catch(() => null));
 
 const resolveCreationColor = async (
   projectPath: string,
@@ -258,6 +254,9 @@ export const ideaRouter = t.router({
 
       // Sorting
       if (input.sortBy) {
+        const defaultCost = input.sortBy === 'priority'
+          ? defaultIdeaCost(await readProjectMeta(input.projectPath).catch(() => null))
+          : DEFAULT_IDEA_COST;
         ideas.sort((a: Idea, b: Idea) => {
           let valA: any, valB: any;
 
@@ -275,8 +274,8 @@ export const ideaRouter = t.router({
               valB = b.text.toLowerCase();
               break;
             case 'priority':
-              valA = (a.intrinsicValue || 0) / a.cost;
-              valB = (b.intrinsicValue || 0) / b.cost;
+              valA = (a.intrinsicValue || 0) / (a.cost ?? defaultCost);
+              valB = (b.intrinsicValue || 0) / (b.cost ?? defaultCost);
               break;
           }
 
@@ -411,7 +410,6 @@ export const ideaRouter = t.router({
         await fs.writeJson(journalPath, journal, { spaces: 2 });
       }
 
-      const defaultCost = await projectDefaultCost(input.projectPath);
       const connectionByParent = new Map<string, typeof flat.connections>();
       for (const connection of flat.connections) {
         const connections = connectionByParent.get(connection.parentProposalId) ?? [];
@@ -453,7 +451,7 @@ export const ideaRouter = t.router({
           },
           intrinsicValue: proposed.intrinsicValue ?? 0,
           valueRationale: proposed.valueRationale,
-          cost: proposed.cost ?? defaultCost,
+          cost: proposed.cost,
           selfWeight: 1,
           duration: 1,
           costVariance: 0,

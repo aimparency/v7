@@ -54,7 +54,7 @@ const ideaDescription = ref('')
 const descriptionRows = ref(3)
 const ideaIntrinsicValue = ref(0)
 const ideaValueRationale = ref('')
-const ideaCost = ref(0)
+const ideaCost = ref<number | ''>('') // empty: not estimated
 const ideaDuration = ref(1)
 const ideaSelfWeight = ref(0)
 const validationError = ref('')
@@ -299,7 +299,7 @@ watch(() => props.show, async (show) => {
     const fieldValues: Record<BulkField, unknown[]> = {
       intrinsicValue: targets.map((entry) => entry.intrinsicValue ?? 0),
       valueRationale: targets.map((entry) => entry.valueRationale ?? ''),
-      cost: targets.map((entry) => entry.cost ?? 1),
+      cost: targets.map((entry) => entry.cost ?? ''),
       duration: targets.map((entry) => entry.duration ?? 1),
       selfWeight: targets.map((entry) => entry.selfWeight ?? 0),
       tags: targets.map((entry) => entry.tags || []),
@@ -321,7 +321,7 @@ watch(() => props.show, async (show) => {
     descriptionRows.value = getInitialDescriptionRows(ideaDescription.value)
     ideaIntrinsicValue.value = isMixed('intrinsicValue') ? 0 : (idea.value.intrinsicValue ?? 0)
     ideaValueRationale.value = isMixed('valueRationale') ? '' : (idea.value.valueRationale ?? '')
-    ideaCost.value = isMixed('cost') ? 1 : (idea.value.cost ?? 1)
+    ideaCost.value = isMixed('cost') ? '' : (idea.value.cost ?? '')
     ideaDuration.value = isMixed('duration') ? 1 : (idea.value.duration ?? 1)
     ideaSelfWeight.value = isMixed('selfWeight') ? 0 : (idea.value.selfWeight ?? 0)
     ideaTags.value = isMixed('tags') ? [] : [...(idea.value.tags || [])]
@@ -453,7 +453,7 @@ const promptReflections = async (settledIdeas: Array<{ ideaId: string; parentIds
 const handleSave = async () => {
   if (!idea.value || !projectStore.projectPath) return
   if ((!isMixed('cost') || overriddenFields.value.has('cost')) &&
-      (!Number.isFinite(ideaCost.value) || ideaCost.value <= 0)) {
+      ideaCost.value !== '' && !(ideaCost.value > 0)) {
     validationError.value = 'Estimated direct cost must be greater than 0.'
     return
   }
@@ -472,7 +472,7 @@ const handleSave = async () => {
     if (!isBulk.value) updates.description = ideaDescription.value
     if (shouldWrite('intrinsicValue')) updates.intrinsicValue = ideaIntrinsicValue.value
     if (shouldWrite('valueRationale')) updates.valueRationale = ideaValueRationale.value.trim() || undefined
-    if (shouldWrite('cost')) updates.cost = ideaCost.value
+    if (shouldWrite('cost') && ideaCost.value !== '') updates.cost = ideaCost.value
     if (shouldWrite('duration')) updates.duration = ideaDuration.value
     if (shouldWrite('selfWeight')) updates.selfWeight = ideaSelfWeight.value
     if (shouldWrite('tags')) updates.tags = ideaTags.value
@@ -833,7 +833,7 @@ const discardChanges = () => {
             v-model.number="ideaCost"
             type="text"
             class="text-input"
-            :placeholder="mixedPlaceholder('cost', '0')"
+            :placeholder="mixedPlaceholder('cost', `not estimated (counts as ${dataStore.defaultCost})`)"
             :readonly="isMixed('cost')"
             min="0.000000001"
           />

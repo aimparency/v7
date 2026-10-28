@@ -1,6 +1,6 @@
 import { createTRPCClient, createWSClient, wsLink } from "@trpc/client";
 import { WebSocket } from "ws";
-import { calculateIdeaValues } from "shared";
+import { calculateIdeaValues, defaultIdeaCost } from "shared";
 import type { Idea, Phase } from "shared";
 import type { AppRouter } from "backend";
 
@@ -60,8 +60,11 @@ export async function getTopIdeas(
   }
   if (!targetPhase) throw new Error("No active phase with commitments found.");
 
-  const allIdeas = (await trpc.idea.list.query({ projectPath })) as Idea[];
-  const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas);
+  const [allIdeas, meta] = await Promise.all([
+    trpc.idea.list.query({ projectPath }) as Promise<Idea[]>,
+    trpc.project.getMeta.query({ projectPath }).catch(() => null),
+  ]);
+  const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas, defaultIdeaCost(meta));
 
   const committed = new Set(targetPhase.commitments ?? []);
   const open = allIdeas.filter(

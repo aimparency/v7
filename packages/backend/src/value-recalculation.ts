@@ -1,7 +1,8 @@
-import { calculateIdeaValues } from 'shared';
+import { calculateIdeaValues, defaultIdeaCost } from 'shared';
 import { onChange } from './change-events.js';
 import { saveIdeaValues } from './db.js';
 import { listIdeas } from './storage/ideas.js';
+import { readProjectMeta } from './storage/project.js';
 
 // Recalculation Queue
 const recalculateTimers = new Map<string, NodeJS.Timeout>();
@@ -12,8 +13,8 @@ function triggerRecalculation(projectPath: string) {
   }
   recalculateTimers.set(projectPath, setTimeout(async () => {
     try {
-        const ideas = await listIdeas(projectPath);
-        const result = calculateIdeaValues(ideas);
+        const [ideas, meta] = await Promise.all([listIdeas(projectPath), readProjectMeta(projectPath).catch(() => null)]);
+        const result = calculateIdeaValues(ideas, defaultIdeaCost(meta));
         
         const map = new Map();
         for (const [id, value] of result.values.entries()) {

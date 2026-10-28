@@ -2,6 +2,7 @@ import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'backend';
 import {
   calculateIdeaValues,
+  defaultIdeaCost,
   missionPathsToRoot,
   resolveWorkPhase,
   selectWorkCandidates,
@@ -35,13 +36,17 @@ export function connectGraph(projectPath: string) {
 
   // Same selection and ranking as MCP get_prioritized_ideas.
   async function getPrioritizedIdeas(limit = 10, phaseId?: string | null): Promise<PrioritizedIdea[]> {
-    const [ideas, phases] = await Promise.all([listIdeas(), listPhases()]);
+    const [ideas, phases, meta] = await Promise.all([
+      listIdeas(),
+      listPhases(),
+      backend.project.getMeta.query({ projectPath }).catch(() => null)
+    ]);
     const phase = resolveWorkPhase(phases, phaseId);
     if (!phase) return [];
     const { scope, candidates } = selectWorkCandidates(ideas, phase);
     // Exploration candidates are containers to decompose, not work to execute.
     if (scope === 'mission-containers-exploration') return [];
-    const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(ideas);
+    const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(ideas, defaultIdeaCost(meta));
     return candidates
       .map((idea) => ({
         idea,

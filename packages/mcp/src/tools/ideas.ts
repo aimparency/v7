@@ -1,4 +1,4 @@
-import { calculateIdeaValues, INITIAL_STATES, missionPathsToRoot } from "shared";
+import { calculateIdeaValues, defaultIdeaCost, INITIAL_STATES, missionPathsToRoot } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
@@ -218,7 +218,7 @@ export const ideaTools: ToolDefinition[] = [
   },
   {
     name: "create_idea",
-    description: "Two-step creation: first call returns related active/cancelled ideas and a confirmationToken without writing. Review that context, then repeat the call with confirmationToken to create; the token binds the idea text, so other fields may change in between. Similarity informs judgment; it does not forbid a genuinely distinct idea. Connect the idea to the mission it serves.",
+    description: "Two-step creation: first call returns related active/cancelled ideas and a confirmationToken without writing. Review that context, then repeat the call with confirmationToken to create; the token binds the idea text, so other fields may change in between. Similarity informs judgment; it does not forbid a genuinely distinct idea. Connect the idea to the mission it serves, and estimate its cost.",
     inputSchema: {
       type: "object",
       properties: {
@@ -238,7 +238,7 @@ export const ideaTools: ToolDefinition[] = [
         supportedIdeas: connectionInputSchema("Parent ideas this one serves: UUIDs or { ideaId, weight, hypothesis } for the parent→new-idea edge."),
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
-        cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
+        cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit, compared against the related ideas' costs from the review call. Optional but expected: without it the idea is ranked at the project's default cost and graph_hygiene lists it as unestimated" },
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
         phaseId: { type: "string" },
         confirmationToken: { type: "string", description: "Token returned by the review-only first call. Changing the text requires a fresh review; other fields may change." },
@@ -254,11 +254,14 @@ export const ideaTools: ToolDefinition[] = [
       }
       const expectedToken = ideaCreationConfirmationToken(args);
       if (args.confirmationToken === undefined) {
-        const related = await trpcClient.idea.search.query({
-          projectPath: args.projectPath as string,
-          query: args.text as string,
-          limit: 8,
-        });
+        const [related, projectMeta] = await Promise.all([
+          trpcClient.idea.search.query({
+            projectPath: args.projectPath as string,
+            query: args.text as string,
+            limit: 8,
+          }),
+          trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null),
+        ]);
         return {
           content: [{
             type: "text",
@@ -270,11 +273,17 @@ export const ideaTools: ToolDefinition[] = [
                 "Review the related ideas, especially cancelled ones and their reasons. " +
                 "Reuse, update, connect, or merge when appropriate. If this proposal is still distinct and useful, " +
                 "repeat the create_idea call with confirmationToken (same text; other fields may change).",
+              costEstimate: args.cost === undefined
+                ? `No cost given. Estimate the idea's direct cost in ${projectMeta?.costUnit || "the project's abstract cost units"} ` +
+                  "(its own work, not its children's) relative to the related ideas' costs, and pass it as cost. " +
+                  `Without it the idea is ranked at the default cost ${defaultIdeaCost(projectMeta)} and graph_hygiene lists it as unestimated.`
+                : undefined,
               relatedIdeas: related.map((idea) => ({
                 id: idea.id,
                 text: idea.text,
                 description: idea.description,
                 status: idea.status,
+                cost: idea.cost,
                 score: idea.score,
               })),
             }, null, 2),
@@ -346,7 +355,8 @@ export const ideaTools: ToolDefinition[] = [
         content: [
           {
             type: "text",
-            text: `Created idea with ID: ${result.id}${args.phaseId ? ` and committed to phase ${args.phaseId}` : ''}`,
+            text: `Created idea with ID: ${result.id}${args.phaseId ? ` and committed to phase ${args.phaseId}` : ''}` +
+              (args.cost === undefined ? ". It has no cost estimate yet: set one via update_idea." : ""),
           },
         ],
       };
@@ -377,7 +387,7 @@ export const ideaTools: ToolDefinition[] = [
         removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink." },
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
-        cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics); omitted = project default" },
+        cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics)" },
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
       },
       required: ["projectPath", "ideaId"],

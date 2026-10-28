@@ -2,7 +2,7 @@ import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { calculateIdeaValues, selectWorkCandidates } from 'shared';
+import { calculateIdeaValues, defaultIdeaCost, selectWorkCandidates } from 'shared';
 import { nodeEntryArgs, packageRoot, withProcessFileLock } from 'shared/node-entry';
 import { spawn, type ChildProcess } from 'child_process';
 import { emitChange } from './change-events.js';
@@ -80,7 +80,7 @@ export const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPha
 
   // Same actionable leaves the loop-worker and MCP rank; containers are no target.
   const { scope, candidates } = selectWorkCandidates(ideas, phase);
-  const { priorities } = calculateIdeaValues(ideas);
+  const { priorities } = calculateIdeaValues(ideas, defaultIdeaCost(meta));
   const targetIdea = scope === 'mission-containers-exploration'
     ? null
     : candidates.sort((left, right) => (priorities.get(right.id) ?? 0) - (priorities.get(left.id) ?? 0))[0] ?? null;

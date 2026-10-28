@@ -1,5 +1,5 @@
 import type { Idea } from './types.js';
-import { ANNUAL_DISCOUNT_RATE } from './constants.js';
+import { ANNUAL_DISCOUNT_RATE, DEFAULT_IDEA_COST } from './constants.js';
 
 export function discountValue(
   estimatedValue: number,
@@ -33,7 +33,7 @@ export function calculateProfitabilityIndex(
 
 function validateEconomicInputs(ideas: Idea[]): void {
   for (const idea of ideas) {
-    if (!Number.isFinite(idea.cost) || idea.cost <= 0) {
+    if (idea.cost !== undefined && (!Number.isFinite(idea.cost) || idea.cost <= 0)) {
       throw new Error(`Idea "${idea.id}" has invalid cost: estimated direct cost must be a finite number greater than 0`);
     }
     const duration = idea.duration ?? 1;
@@ -142,7 +142,7 @@ function makeRepoSinkNode(repoId: string): Idea {
  * distribution, and acts as a single leaf. Ideas no value reaches get their
  * costs from the same calculation with value poured into their topmost ideas.
  */
-export function calculateIdeaValues(inputIdeas: Idea[]): {
+export function calculateIdeaValues(inputIdeas: Idea[], defaultCost = DEFAULT_IDEA_COST): {
   values: Map<string, number>,
   realizedValues: Map<string, number>,
   totalIntrinsic: number,
@@ -160,7 +160,7 @@ export function calculateIdeaValues(inputIdeas: Idea[]): {
   const graph = buildFlowGraph(ideas);
   const intrinsic = ideas.map(idea => idea.intrinsicValue ?? 0);
   const totalIntrinsic = intrinsic.reduce((sum, value) => sum + value, 0);
-  const cost = ideas.map(idea => idea.cost ?? 0);
+  const cost = ideas.map(idea => idea.cost ?? defaultCost);
   const implemented = ideas.map(idea => idea.status.state === 'implemented');
 
   const flow = solveValueFlow(graph, intrinsic);

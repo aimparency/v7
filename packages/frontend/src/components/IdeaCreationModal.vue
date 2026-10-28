@@ -21,7 +21,7 @@ const ideaText = ref(IDEA_DEFAULTS.text)
 const ideaDescription = ref(IDEA_DEFAULTS.description)
 const ideaIntrinsicValue = ref(IDEA_DEFAULTS.intrinsicValue)
 const ideaValueRationale = ref(IDEA_DEFAULTS.valueRationale)
-const ideaCost = ref(dataStore.defaultCost)
+const ideaCost = ref<number | ''>('') // empty: not estimated, ranked at dataStore.defaultCost
 const ideaDuration = ref(IDEA_DEFAULTS.duration)
 const ideaSelfWeight = ref(IDEA_DEFAULTS.selfWeight)
 const ideaTags = ref<string[]>([...IDEA_DEFAULTS.tags])
@@ -119,7 +119,7 @@ const isSubmitting = ref(false)
 const createIdea = async () => {
   if (isSubmitting.value) return
   if (!ideaText.value.trim() && !selectedSearchResult.value) return
-  if (!Number.isFinite(ideaCost.value) || ideaCost.value <= 0) {
+  if (ideaCost.value !== '' && !(ideaCost.value > 0)) {
     validationError.value = 'Estimated direct cost must be greater than 0.'
     return
   }
@@ -142,7 +142,7 @@ const createIdea = async () => {
         tags: ideaTags.value,
         intrinsicValue: ideaIntrinsicValue.value,
         selfWeight: ideaSelfWeight.value,
-        cost: ideaCost.value,
+        cost: ideaCost.value === '' ? undefined : ideaCost.value,
         supportedIdeas: supportedIdeasList.value.map(a => a.id),
         supportingConnections: supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
         color: ideaColor.value || null,
@@ -248,7 +248,7 @@ onMounted(async () => {
   ideaTags.value = [...IDEA_DEFAULTS.tags]
   ideaIntrinsicValue.value = IDEA_DEFAULTS.intrinsicValue
   ideaValueRationale.value = IDEA_DEFAULTS.valueRationale
-  ideaCost.value = dataStore.defaultCost
+  ideaCost.value = ''
   ideaDuration.value = IDEA_DEFAULTS.duration
   validationError.value = ''
   ideaSelfWeight.value = IDEA_DEFAULTS.selfWeight
@@ -431,7 +431,7 @@ onMounted(async () => {
           type="number"
           min="0.000000001"
           step="any"
-          placeholder="1"
+          :placeholder="`not estimated (counts as ${dataStore.defaultCost})`"
           @keydown="handleInputKeydown"
         />
       </div>

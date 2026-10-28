@@ -381,7 +381,7 @@ export const useUIStore = defineStore('ui', {
         intrinsicValue: idea.intrinsicValue ?? IDEA_DEFAULTS.intrinsicValue,
         valueRationale: (idea.valueRationale ?? IDEA_DEFAULTS.valueRationale).trim() || undefined,
         selfWeight: idea.selfWeight ?? IDEA_DEFAULTS.selfWeight,
-        cost: idea.cost ?? useDataStore().defaultCost,
+        cost: idea.cost,
         duration: idea.duration ?? IDEA_DEFAULTS.duration,
         costVariance: 0,
         valueVariance: 0,

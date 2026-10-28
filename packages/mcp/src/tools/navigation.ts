@@ -42,7 +42,7 @@ export const navigationTools: ToolDefinition[] = [
       const allIdeas = await trpcClient.idea.list.query({
         projectPath: args.projectPath as string,
       });
-      const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas);
+      const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas, defaultIdeaCost(projectMeta));
       const {
         scope: selectionScope,
         candidates: rankedOpenIdeas,
@@ -79,10 +79,10 @@ export const navigationTools: ToolDefinition[] = [
       const commitMessages = getRepoCommitMessages(args.projectPath as string);
       const realized = countIdeaReferences(commitMessages, rankedOpenIdeas.map((a) => a.id));
       const realizedSignalAvailable = commitMessages.length > 0;
-      // High-priority ideas with a real cost but zero realized output are the
-      // ones the loop keeps ranking yet never actually advances — surface them.
+      // High-priority ideas with zero realized output are the ones the loop
+      // keeps ranking yet never actually advances — surface them.
       const noRealizedOutput = realizedSignalAvailable
-        ? rankedOpenIdeas.filter((a) => (a.cost ?? 0) > 0 && !(realized.get(a.id) ?? 0)).length
+        ? rankedOpenIdeas.filter((a) => !(realized.get(a.id) ?? 0)).length
         : 0;
 
       const prioritized = rankedOpenIdeas

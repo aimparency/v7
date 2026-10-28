@@ -490,7 +490,14 @@ export const graphHealthRouter = t.router({
         .filter((x) => x.total > 0 && x.done === x.total)
         .map((x) => ({ id: x.a.id, text: x.a.text, doneChildren: x.done, totalChildren: x.total }));
 
-      // 5. Duplicate clusters: all-pairs cosine above threshold, grouped via
+      // 5. Unestimated: work still ahead without a cost estimate (no cost field).
+      // The calculation values them at the project's defaultCost, which ranks
+      // them by a guess. Settled ideas are left out: estimating them gains nothing.
+      const unestimatedCost = active
+        .filter((a: Idea) => workableStates.has(a.status.state) && a.cost === undefined)
+        .map((a: Idea) => ({ id: a.id, text: a.text, status: a.status.state }));
+
+      // 6. Duplicate clusters: all-pairs cosine above threshold, grouped via
       // union-find (parent-child pairs excluded — see duplicate-detection.ts).
       const indexedIds = active
         .map((a: Idea) => a.id)
@@ -512,6 +519,7 @@ export const graphHealthRouter = t.router({
         megaParents: section(megaParents),
         unarchivedCancelledOrFailed: section(unarchivedCancelledOrFailed),
         collapseCandidates: section(collapseCandidates),
+        unestimatedCost: section(unestimatedCost),
         duplicateClusters: section(duplicateClusters),
       };
     })

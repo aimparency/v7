@@ -178,8 +178,7 @@
     },
     "cost": {
       "type": "number",
-      "exclusiveMinimum": 0,
-      "default": 1
+      "exclusiveMinimum": 0
     },
     "selfWeight": {
       "type": "number",

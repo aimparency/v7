@@ -140,6 +140,13 @@ test('repo-link edge exports flow into a leaf sink, leaving totalIntrinsic uncha
   assert.ok(result.flowValues.get(`A->${REPO_ID}`)! > 0, 'a parent→repo flow edge should exist');
 });
 
+test('an idea without a cost estimate is valued at the given default cost', () => {
+  const { cost: _, ...unestimated } = createMockIdea('A', 10, 1);
+  assert.strictEqual(calculateIdeaValues([unestimated]).costs.get('A'), 1);
+  assert.strictEqual(calculateIdeaValues([unestimated], 4).costs.get('A'), 4);
+  assert.strictEqual(calculateIdeaValues([createMockIdea('B', 10, 2)], 4).costs.get('B'), 2);
+});
+
 test('economic helpers use annual discounting and a positive ratio', () => {
   assert.strictEqual(discountValue(110, 0), 110);
   assert.ok(Math.abs(discountValue(110, 365) - 100) < 1e-10);

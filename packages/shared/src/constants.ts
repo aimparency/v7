@@ -9,8 +9,10 @@ const processEnv =
 // Bump it together with a new entry in bowman-migration.ts (Node-only).
 export const CURRENT_DATA_MODEL_VERSION = 6;
 
-// Cost of an idea created without an explicit estimate, unless the project
-// sets meta.defaultCost. Cost is always positive: everything costs something.
+// Cost the calculation assumes for an idea without an estimate (no cost field),
+// unless the project sets meta.defaultCost. Cost is always positive: everything
+// costs something. The default is never written into ideas, so a missing
+// estimate stays visible (graph_hygiene lists them).
 export const DEFAULT_IDEA_COST = 1;
 
 export function defaultIdeaCost(meta?: { defaultCost?: unknown } | null): number {
