@@ -179,4 +179,38 @@ describe('ConnectionDetailsModal', () => {
     wrapper.unmount()
     div.remove()
   })
+
+  it('asks before Escape in the reflection textarea drops the written reflection', async () => {
+    modalStore.connectionDetailsReflect = true
+    const div = document.createElement('div')
+    document.body.appendChild(div)
+    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] }, attachTo: div })
+    await nextTick()
+
+    const reflection = wrapper.findAll('textarea')[1]!
+    await reflection.setValue('it held')
+    await reflection.trigger('keydown', { key: 'Escape' })
+
+    expect(modalStore.closeConnectionDetailsModal).not.toHaveBeenCalled()
+    expect(document.activeElement).toBe(wrapper.find('.btn-discard').element)
+
+    // A second Escape returns to the reflection with the text intact.
+    await wrapper.find('.btn-discard').trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('.btn-discard').exists()).toBe(false)
+    expect((reflection.element as HTMLTextAreaElement).value).toBe('it held')
+
+    await reflection.trigger('keydown', { key: 'Escape' })
+    await wrapper.find('.btn-discard').trigger('click')
+    expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
+    expect(dataStore.updateConnectionDetails).not.toHaveBeenCalled()
+    wrapper.unmount()
+    div.remove()
+  })
+
+  it('closes on Escape without asking when nothing was edited', async () => {
+    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] } })
+    await wrapper.find('textarea').trigger('keydown', { key: 'Escape' })
+    expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
+    wrapper.unmount()
+  })
 })

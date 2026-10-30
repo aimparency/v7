@@ -7,6 +7,7 @@ import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
 import IdeaHistoryModal from './IdeaHistoryModal.vue'
 import TagInput from './TagInput.vue'
+import DiscardPrompt from './DiscardPrompt.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import { X } from 'lucide-vue-next'
@@ -163,8 +164,6 @@ watch(() => [props.show, props.ideaId] as const, ([show]) => {
 // them to confirm rather than silently discarding their changes.
 const dirtySnapshot = ref('')
 const confirmingDiscard = ref(false)
-const keepEditingBtn = ref<HTMLButtonElement>()
-const discardBtn = ref<HTMLButtonElement>()
 
 const serializeFormState = () => JSON.stringify({
   text: ideaText.value,
@@ -537,7 +536,6 @@ const handleCancel = () => {
   if (isDirty.value) {
     if (!confirmingDiscard.value) {
       confirmingDiscard.value = true
-      nextTick(() => discardBtn.value?.focus())
       return
     } else {
       keepEditing()
@@ -891,16 +889,7 @@ const discardChanges = () => {
       </div>
     </div>
 
-    <div v-if="confirmingDiscard" class="discard-overlay">
-      <div class="discard-prompt">
-        <p class="discard-title">Discard unsaved changes?</p>
-        <p class="discard-hint">You have edits that haven't been saved.</p>
-        <div class="discard-actions">
-          <button ref="keepEditingBtn" type="button" class="btn-cancel" @click="keepEditing">Keep editing</button>
-          <button ref="discardBtn" type="button" class="btn-discard" @click="discardChanges">Discard</button>
-        </div>
-      </div>
-    </div>
+    <DiscardPrompt v-if="confirmingDiscard" @keep="keepEditing" @discard="discardChanges" />
 
     <template #footer>
       <button @click="handleCancel" class="btn-cancel">Cancel</button>
@@ -1232,61 +1221,6 @@ label {
 
 .btn-save:hover {
   background: #005a99;
-}
-
-.discard-overlay {
-  position: fixed;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 210;
-}
-
-.discard-prompt {
-  background: #2d2d2d;
-  border: 1px solid #555;
-  border-radius: 0.3125rem;
-  padding: 1.25rem;
-  max-width: min(90vw, 24rem);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
-}
-
-.discard-title {
-  margin: 0 0 0.5rem;
-  color: #e0e0e0;
-  font-size: 1.05rem;
-  font-weight: 700;
-}
-
-.discard-hint {
-  margin: 0 0 1rem;
-  color: #aaa;
-  font-size: 0.9rem;
-}
-
-.discard-actions {
-  display: flex;
-  gap: 0.375rem;
-  justify-content: flex-end;
-}
-
-.btn-discard {
-  appearance: none;
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.1875rem;
-  font-size: 0.9rem;
-  font-family: inherit;
-  line-height: 1.2;
-  cursor: pointer;
-  background: #6a3a3a;
-  color: #fff;
-}
-
-.btn-discard:hover {
-  background: #7a4545;
 }
 
 .form-row {

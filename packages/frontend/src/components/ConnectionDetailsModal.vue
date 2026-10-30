@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, ref, watch, onMounted, nextTick } from 'vue'
 import FormModalShell from './FormModalShell.vue'
+import DiscardPrompt from './DiscardPrompt.vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
@@ -44,6 +45,12 @@ const capHintVisible = ref(false)
 
 const maxPct = Math.round(MAX_SHARE * 100)
 
+// Escape in a textarea must not silently drop a written hypothesis or reflection.
+const serializeState = () => JSON.stringify([sharePct.value, hypothesis.value, reflection.value])
+const initialState = ref('')
+const isDirty = computed(() => serializeState() !== initialState.value)
+const confirmingDiscard = ref(false)
+
 // (Re)initialise inputs whenever the target connection resolves.
 watch(
   thisConn,
@@ -55,6 +62,7 @@ watch(
       ? 100
       : Math.round(weightToShare(conn.weight ?? 1, siblingWeightSum.value, selfWeight.value) * 100)
     capHintVisible.value = false
+    initialState.value = serializeState()
   },
   { immediate: true }
 )
@@ -124,7 +132,23 @@ onMounted(async () => {
 
 
 // Cancel keeps the already-persisted default-weight connection.
-const cancel = () => modalStore.closeConnectionDetailsModal()
+const cancel = () => {
+  if (confirmingDiscard.value) keepEditing()
+  else if (isDirty.value) confirmingDiscard.value = true
+  else modalStore.closeConnectionDetailsModal()
+}
+
+const keepEditing = () => {
+  confirmingDiscard.value = false
+  nextTick(() => (reflecting.value ? reflectionInput.value : pctInput.value)?.focus())
+}
+
+const discard = () => modalStore.closeConnectionDetailsModal()
+
+// While the discard question is open, Enter belongs to its buttons.
+const handleConfirm = () => {
+  if (!confirmingDiscard.value) void confirm()
+}
 </script>
 
 <template>
@@ -133,7 +157,7 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
     :title="reflecting ? 'Reflect on the hypothesis' : 'Connection details'"
     width="min(90vw, 32rem)"
     @request-close="cancel"
-    @confirm="confirm"
+    @confirm="handleConfirm"
   >
     <div class="connection-details">
       <p class="relation">
@@ -192,6 +216,8 @@ const cancel = () => modalStore.closeConnectionDetailsModal()
         ></textarea>
       </div>
     </div>
+
+    <DiscardPrompt v-if="confirmingDiscard" @keep="keepEditing" @discard="discard" />
 
     <template #footer>
       <button class="btn" @click="cancel">{{ reflecting ? 'Skip' : 'Cancel' }}</button>
