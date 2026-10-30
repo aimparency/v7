@@ -84,11 +84,17 @@ const items = computed(() => {
     return props.externalResults.map(toIdeaItem)
   }
 
+  const query = currentQuery.value
+  const createOptions = navigationMode.value || !query ? [] : props.additionalOptions
+    .filter(option => option.createFromQuery)
+    .map(option => ({ type: 'option' as const, data: { ...option, label: `Create new: "${query}"`, query } }))
+
   return [
     ...props.additionalOptions
-      .filter(option => !option.showWhenQueryEmptyOnly || currentQuery.value.length === 0)
+      .filter(option => !option.createFromQuery && (!option.showWhenQueryEmptyOnly || query.length === 0))
       .map(option => ({ type: 'option' as const, data: option })),
-    ...searchResults.value.map(toIdeaItem)
+    ...searchResults.value.map(toIdeaItem),
+    ...createOptions
   ]
 })
 
@@ -321,22 +327,22 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  if (key === 'h' && (!isInput || currentQuery.value.length === 0)) {
-    event.preventDefault()
+  // h/l walk the graph from a focused result. In the empty input they do so only
+  // when the selection can move; otherwise they are typed like any letter.
+  if (key === 'h' || key === 'l') {
     const item = selectedItem.value
-    if (item?.type === 'idea' && item.data.supportedIdeas?.length) {
-      void navigateToParents(item.data, true)
+    const idea = item?.type === 'idea' ? item.data : null
+    const canMove = key === 'h'
+      ? !!idea?.supportedIdeas?.length || (navigationMode.value && !isInput)
+      : !!idea?.supportingConnections?.length
+    if (isInput && (currentQuery.value.length > 0 || !canMove)) return
+    event.preventDefault()
+    if (key === 'l') {
+      if (idea && canMove) void navigateToChildren(idea, true)
+    } else if (idea?.supportedIdeas?.length) {
+      void navigateToParents(idea, true)
     } else if (navigationMode.value) {
       navigateBack(true)
-    }
-    return
-  }
-
-  if (key === 'l' && (!isInput || currentQuery.value.length === 0)) {
-    event.preventDefault()
-    const item = selectedItem.value
-    if (item?.type === 'idea' && item.data.supportingConnections?.length) {
-      void navigateToChildren(item.data, true)
     }
     return
   }

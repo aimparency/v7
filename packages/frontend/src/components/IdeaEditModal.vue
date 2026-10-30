@@ -9,6 +9,7 @@ import IdeaHistoryModal from './IdeaHistoryModal.vue'
 import TagInput from './TagInput.vue'
 import DiscardPrompt from './DiscardPrompt.vue'
 import NumericTextInput from './NumericTextInput.vue'
+import { pickSupportedIdea } from '../stores/ui/idea-creation'
 import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import { X } from 'lucide-vue-next'
 
@@ -204,15 +205,10 @@ const getInitialDescriptionRows = (description: string) => {
 
 const openParentSearch = () => {
   pendingFocusRestore.value = 'parent'
-  modalStore.openIdeaSearch('pick', (payload) => {
-    if (payload.type !== 'idea') return
-    const selectedIdea = payload.data
+  pickSupportedIdea({ title: 'Select Supported Idea', placeholder: 'Search for a parent idea...' }, (selectedIdea) => {
     if (!supportedIdeasList.value.some((entry) => entry.id === selectedIdea.id)) {
       supportedIdeasList.value.push({ id: selectedIdea.id, text: selectedIdea.text, weight: 1 })
     }
-  }, undefined, {
-    title: 'Select Supported Idea',
-    placeholder: 'Search for a parent idea...'
   })
 }
 

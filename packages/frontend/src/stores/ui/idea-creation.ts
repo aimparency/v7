@@ -4,6 +4,7 @@ import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
 import { insertsAsFirstChild } from './idea-ui-state'
 import type { useUIStore } from './list-store'
+import { IDEA_DEFAULTS } from '../../constants/ideaDefaults'
 
 type UIStore = ReturnType<typeof useUIStore>
 
@@ -233,27 +234,10 @@ export async function placeIdea(
   }
 
   if (shouldPromptForSupportedIdea && newIdeaId) {
-    modalStore.openIdeaSearch('pick', async (payload) => {
-      if (payload.type !== 'idea') return
-
-      await trpc.idea.connectIdeas.mutate({
-        projectPath: projectStore.projectPath,
-        parentIdeaId: payload.data.id,
-        childIdeaId: newIdeaId
-      })
-
-      await dataStore.loadIdeas(projectStore.projectPath, [payload.data.id, newIdeaId])
-    }, undefined, {
-      title: 'Connect to Supported Idea',
-      placeholder: 'Optional: search for a parent idea...',
-      additionalOptions: [{
-        id: 'skip-parent',
-        label: 'Skip (no supported idea)',
-        description: 'Leave this new idea without a supported idea connection.',
-        showWhenQueryEmptyOnly: true,
-        actsAsEscape: true
-      }]
-    })
+    pickSupportedIdea(
+      { title: 'Connect to Supported Idea', placeholder: 'Optional: search for a parent idea...', skippable: true },
+      (parent) => connectToParent(parent.id, newIdeaId)
+    )
   } else if (shouldPromptForPhaseCommitment && newIdeaId) {
     modalStore.openPhaseSearchPrompt(async (payload) => {
       if (payload.type !== 'phase') return
@@ -270,4 +254,57 @@ export async function placeIdea(
       }]
     })
   }
+}
+
+const connectToParent = async (parentId: string, childId: string) => {
+  const projectPath = useProjectStore().projectPath
+  await trpc.idea.connectIdeas.mutate({ projectPath, parentIdeaId: parentId, childIdeaId: childId })
+  await useDataStore().loadIdeas(projectPath, [parentId, childId])
+}
+
+// Asks which idea something supports. The right parent often does not exist
+// yet: "Create new" makes it from the query, links it, and asks the same for
+// it, so a chain of aims grows until an existing idea is picked or skipped.
+export function pickSupportedIdea(
+  { skippable = false, ...prompt }: { title: string; placeholder: string; skippable?: boolean },
+  link: (parent: { id: string; text: string }) => Promise<void> | void
+): void {
+  useUIModalStore().openIdeaSearch('pick', async (payload) => {
+    if (payload.type === 'idea') {
+      await link(payload.data)
+      return
+    }
+    const text = payload.data.createFromQuery ? payload.data.query?.trim() : undefined
+    if (!text) return
+    const parent = await useDataStore().createFloatingIdea(useProjectStore().projectPath, {
+      text,
+      description: '',
+      tags: [],
+      supportedIdeas: [],
+      status: { state: 'open', comment: '', date: Date.now() },
+      intrinsicValue: IDEA_DEFAULTS.intrinsicValue,
+      selfWeight: IDEA_DEFAULTS.selfWeight,
+      duration: IDEA_DEFAULTS.duration,
+      costVariance: 0,
+      valueVariance: 0,
+      archived: false
+    })
+    await link({ id: parent.id, text })
+    pickSupportedIdea(
+      { title: `What does "${text}" support?`, placeholder: 'Optional: search for a parent idea...', skippable: true },
+      (grandparent) => connectToParent(grandparent.id, parent.id)
+    )
+  }, undefined, {
+    ...prompt,
+    additionalOptions: [
+      ...(skippable ? [{
+        id: 'skip-parent',
+        label: 'Skip (no supported idea)',
+        description: 'Leave this idea without a supported idea connection.',
+        showWhenQueryEmptyOnly: true,
+        actsAsEscape: true
+      }] : []),
+      { id: 'create-parent', label: 'Create new', createFromQuery: true }
+    ]
+  })
 }

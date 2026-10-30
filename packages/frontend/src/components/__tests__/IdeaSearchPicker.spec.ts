@@ -98,6 +98,19 @@ describe('IdeaSearchPicker h/l navigation', () => {
     expect(wrapper.text()).toContain('Parent idea')
   })
 
+  it('lets h and l be typed into the empty input when there is nothing to walk to', async () => {
+    const wrapper = mount(IdeaSearchPicker, {
+      props: { showInput: true },
+      global: { plugins: [pluginConfig()] }
+    })
+
+    for (const key of ['h', 'l']) {
+      const event = new KeyboardEvent('keydown', { key, bubbles: true, cancelable: true })
+      wrapper.find('input').element.dispatchEvent(event)
+      expect(event.defaultPrevented).toBe(false)
+    }
+  })
+
   it('h from input does not navigate when query is non-empty', async () => {
     const wrapper = mount(IdeaSearchPicker, {
       props: { showInput: true },
@@ -201,5 +214,35 @@ describe('IdeaSearchPicker h/l navigation', () => {
     expect(items[0]!.text()).toContain('→ L')
     expect(items[1]!.text()).not.toContain('H ←')
     expect(items[1]!.text()).not.toContain('→ L')
+  })
+})
+
+describe('IdeaSearchPicker create-from-query option', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.clearAllMocks()
+    vi.mocked(trpc.idea.search.query).mockResolvedValue([parentIdea] as any)
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('lists "Create new" after the results only while a query is typed, carrying the query', async () => {
+    const wrapper = mount(IdeaSearchPicker, {
+      props: { showInput: true, additionalOptions: [{ id: 'create-parent', label: 'Create new', createFromQuery: true }] },
+      global: { plugins: [pluginConfig()] }
+    })
+    expect(wrapper.findAll('.result-item')).toHaveLength(0)
+
+    await wrapper.find('input').setValue('new aim')
+    await vi.advanceTimersByTimeAsync(200)
+    await flushPromises()
+
+    const items = wrapper.findAll('.result-item')
+    expect(items.map((item) => item.text())).toEqual([expect.stringContaining('Parent idea'), 'Create new: "new aim"'])
+
+    await items[1]!.trigger('click')
+    expect(wrapper.emitted('activate')?.[0]?.[0]).toMatchObject({ type: 'option', data: { id: 'create-parent', query: 'new aim' } })
   })
 })

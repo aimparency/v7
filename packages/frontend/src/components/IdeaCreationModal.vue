@@ -11,6 +11,7 @@ import IdeaSearchPicker from './IdeaSearchPicker.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { IdeaSearchAdditionalOption } from '../stores/ui/idea-search-types'
 import { insertsAsFirstChild } from '../stores/ui/idea-ui-state'
+import { pickSupportedIdea } from '../stores/ui/idea-creation'
 import { X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
@@ -71,15 +72,10 @@ const addParentBtn = ref<HTMLButtonElement>()
 const submitBtn = ref<HTMLButtonElement>()
 
 const openParentSearch = () => {
-  modalStore.openIdeaSearch('pick', (payload) => {
-    if (payload.type !== 'idea') return
-    const idea = payload.data
+  pickSupportedIdea({ title: 'Select Supported Idea', placeholder: 'Search for a parent idea...' }, (idea) => {
     if (!supportedIdeasList.value.some(a => a.id === idea.id)) {
       supportedIdeasList.value.push({ id: idea.id, text: idea.text, weight: 1 })
     }
-  }, undefined, {
-    title: 'Select Supported Idea',
-    placeholder: 'Search for a parent idea...'
   })
 }
 
