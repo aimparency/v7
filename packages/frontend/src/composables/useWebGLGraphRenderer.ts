@@ -11,7 +11,8 @@ import { SelectionSpinnerRenderer } from '../webgl/SelectionSpinnerRenderer'
 import { TAAPass } from '../webgl/TAAPass'
 import { calculateArrowGeometry, connectionArrowWidth } from '../webgl/utils/arrow-geometry'
 import { applyBrightness, cssColorToRgb, statusToColor, type StatusColorEntry } from '../webgl/status-colors'
-import { planSpinOff } from 'shared'
+import { ideaActivity } from '../utils/idea-activity-feed'
+import { ideaActivityColor, planSpinOff } from 'shared'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
@@ -89,6 +90,8 @@ export function useWebGLGraphRenderer(
       return m
     })()
 
+    const now = Date.now()
+
     return graphNodes.map(node => {
       const x = node.renderPos[0]
       const y = node.renderPos[1]
@@ -134,6 +137,8 @@ export function useWebGLGraphRenderer(
         const bucket = spinOffBuckets?.get(node.id)
         const hex = bucket === 'red' ? '#f85149' : bucket === 'orange' ? '#f0883e' : '#3fb950'
         color = applyBrightness(cssColorToRgb(hex))
+      } else if (colorMode === 'activity') {
+        color = ideaActivityColor(ideaActivity.get(node.id), now)
       } else if (colorMode === 'custom') {
         if (node.customColor) {
           color = applyBrightness(cssColorToRgb(node.customColor))

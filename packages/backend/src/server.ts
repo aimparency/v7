@@ -23,6 +23,7 @@ import { spinOffRouter } from './routers/spin-off.js';
 import { linkedRepoRouter } from './routers/linked-repo.js';
 import { gitRouter } from './routers/git.js';
 import { authRouter } from './routers/auth.js';
+import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
 import { hostedProject } from './auth/access.js';
 
@@ -41,6 +42,7 @@ const appRouter = t.router({
   linkedRepo: linkedRepoRouter,
   history: historyRouter,
   git: gitRouter,
+  activity: activityRouter,
   auth: authRouter,
 });
 

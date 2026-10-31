@@ -7,6 +7,10 @@ import { useProjectStore } from '../stores/project-store'
 const { mockTrpc } = vi.hoisted(() => {
   return {
     mockTrpc: {
+      activity: {
+        onAccess: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) },
+        snapshot: { query: vi.fn().mockResolvedValue({}) },
+      },
       graphHealth: {
         checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
       },

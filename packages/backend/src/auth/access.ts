@@ -20,7 +20,7 @@ const LOCAL_ONLY = new Set([
 ]);
 // Derived state, nothing checked in; or a viewer's own login.
 const READ_MUTATIONS = new Set([
-  'project.buildSearchIndex', 'phase.setCursor', 'auth.login', 'auth.logout', 'auth.issueToken', 'auth.changeOwnPassword'
+  'project.buildSearchIndex', 'phase.setCursor', 'activity.record', 'auth.login', 'auth.logout', 'auth.issueToken', 'auth.changeOwnPassword'
 ]);
 const WRITE_ROUTERS = new Set(['idea', 'phase']);
 const WRITE_MUTATIONS = new Set(['history.restore', 'graphHealth.fixConsistency', 'project.setLayoutSettings']);

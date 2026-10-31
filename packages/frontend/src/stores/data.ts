@@ -4,6 +4,7 @@ import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
 import { calculateIdeaValues, defaultIdeaCost, INITIAL_STATES, toProjectRoot } from 'shared'
 import { trpc } from '../trpc'
+import { followIdeaActivity } from '../utils/idea-activity-feed'
 import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
@@ -1014,6 +1015,7 @@ export const useDataStore = defineStore('data', {
 
         // Start subscription
         this.subscribeToUpdates(projectPath);
+        followIdeaActivity(projectPath);
 
         // The whole project is small enough to load at once (~100ms for 750
         // ideas); the subscription keeps it live afterwards.

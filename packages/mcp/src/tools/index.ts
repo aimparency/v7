@@ -2,6 +2,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type { BackendClient } from "../client.js";
 import { TOOLS, toolsByName } from "./catalog.js";
+import { reportToolActivity } from "../activity.js";
 
 export { verificationHintForIdea, ideaCreationConfirmationToken } from "./ideas.js";
 export { resolvePhasePlacement } from "./phases.js";
@@ -18,7 +19,9 @@ export function registerTools(server: Server, trpcClient: BackendClient) {
       const tool = toolsByName.get(name);
       if (!tool) throw new Error(`Unknown tool: ${name}`);
       if (!args) throw new Error("Arguments are required for tool calls");
-      return await tool.handler(args, trpcClient);
+      const result = await tool.handler(args, trpcClient);
+      reportToolActivity(trpcClient, name, args, result);
+      return result;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
       return {

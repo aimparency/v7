@@ -12,3 +12,4 @@ export * from './work-selection.js';
 export * from './graph-consistency.js';
 export * from './git-url.js';
 export * from './phase-tree.js';
+export * from './idea-activity.js';

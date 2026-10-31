@@ -3,6 +3,7 @@ import { ref, shallowRef, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
+import type { GraphColorMode } from '../stores/ui/view-helpers'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { isModalOpen } from '../stores/ui/modal-helpers'
 import { useProjectStore } from '../stores/project-store'
@@ -196,10 +197,11 @@ const onKeydown = (e: KeyboardEvent) => {
     if (isInput || isModalOpen()) return
 
     if ((e.key === 'c' || e.key === 'C') && !e.ctrlKey && !e.metaKey) {
-        const nextMode: Record<'status' | 'priority' | 'custom', 'status' | 'priority' | 'custom'> = {
+        const nextMode: Record<Exclude<GraphColorMode, 'spin-off'>, GraphColorMode> = {
             'status': 'priority',
             'priority': 'custom',
-            'custom': 'status'
+            'custom': 'activity',
+            'activity': 'status'
         }
         // In spin-off preview, the cycle key exits the preview rather than
         // landing on an undefined mode.
@@ -704,6 +706,12 @@ function toggleSpinOffPreview() {
             :class="{ active: graphUIStore.graphColorMode === 'custom' }"
             @click="graphUIStore.setGraphColorMode('custom')"
         >Custom</button>
+        <button
+            class="segment-btn"
+            :class="{ active: graphUIStore.graphColorMode === 'activity' }"
+            title="Recent access, fading: blue read or found by an agent, amber changed by an agent, green status set by an agent, pink edited by hand"
+            @click="graphUIStore.setGraphColorMode('activity')"
+        >Activity</button>
       </div>
 
       <div v-else class="segmented-control spinoff-legend">
