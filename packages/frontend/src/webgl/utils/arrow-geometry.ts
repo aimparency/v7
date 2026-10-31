@@ -365,3 +365,30 @@ export function hitTestArrow(geom: ArrowGeometry, point: Vec2, debug = false): b
 
   return distFromCenterline <= taperFactor * geom.normalizedHalfWidth
 }
+
+type HitTestLink = {
+  source: { renderPos: [number, number] | number[]; r: number }
+  target: { renderPos: [number, number] | number[]; r: number }
+  attributionShare: number
+}
+
+/**
+ * The link under a point. Where arrows overlap the narrowest one wins, so thin
+ * connections under thick ones stay clickable; ties go to the one rendered on
+ * top (last in the list).
+ */
+export function narrowestHitLink<L extends HitTestLink>(links: readonly L[], point: Vec2): L | undefined {
+  let narrowest: { link: L; width: number } | undefined
+  for (let i = links.length - 1; i >= 0; i--) {
+    const link = links[i]!
+    const width = connectionArrowWidth(link)
+    if (narrowest && width >= narrowest.width) continue
+    const geom = calculateArrowGeometry(
+      { x: link.source.renderPos[0]!, y: link.source.renderPos[1]!, r: link.source.r },
+      { x: link.target.renderPos[0]!, y: link.target.renderPos[1]!, r: link.target.r },
+      width
+    )
+    if (hitTestArrow(geom, point)) narrowest = { link, width }
+  }
+  return narrowest?.link
+}

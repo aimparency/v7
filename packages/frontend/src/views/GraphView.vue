@@ -18,7 +18,7 @@ import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/u
 import { useGraphInteraction } from '../composables/useGraphInteraction'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
-import { calculateArrowGeometry, connectionArrowWidth, hitTestArrow } from '../webgl/utils/arrow-geometry'
+import { connectionArrowWidth, narrowestHitLink } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
 import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange } from '../utils/autolayout'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
@@ -62,32 +62,10 @@ function hitTestNode(physX: number, physY: number) {
   })
 }
 
-// Hit test helper - find link at physical position (reverse order for front-to-back)
+// Hit test helper - find link at physical position
 function hitTestLink(physX: number, physY: number) {
-  const logicalPos = mapStore.physicalToLogicalCoord([physX, physY])
-  const point = { x: logicalPos[0], y: logicalPos[1] }
-
-  // Iterate in reverse (last rendered = on top)
-  for (let i = links.value.length - 1; i >= 0; i--) {
-    const link = links.value[i]!
-    const sourceNode = {
-      x: link.source.renderPos[0],
-      y: link.source.renderPos[1],
-      r: link.source.r
-    }
-    const targetNode = {
-      x: link.target.renderPos[0],
-      y: link.target.renderPos[1],
-      r: link.target.r
-    }
-
-    const geom = calculateArrowGeometry(sourceNode, targetNode, connectionArrowWidth(link))
-
-    if (hitTestArrow(geom, point, i === links.value.length - 1)) {
-      return link
-    }
-  }
-  return undefined
+  const [x, y] = mapStore.physicalToLogicalCoord([physX, physY])
+  return narrowestHitLink(links.value, { x, y })
 }
 
 // Track node hit on mousedown for drag handling

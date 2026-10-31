@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { calculateArrowGeometry, connectionArrowWidth } from './arrow-geometry'
+import { calculateArrowGeometry, connectionArrowWidth, narrowestHitLink } from './arrow-geometry'
 
 const source = { x: 0, y: 0, r: 1 }
 const target = { x: 100, y: 0, r: 20 }
@@ -32,5 +32,33 @@ describe('connectionArrowWidth', () => {
 
   it('stays visible for tiny contributions', () => {
     expect(connectionArrowWidth(link(0))).toBe(1)
+  })
+})
+
+describe('narrowestHitLink', () => {
+  // Two arrows between the same nodes overlap along the whole arc, which
+  // bulges through (50, 20.7).
+  const link = (attributionShare: number) => ({
+    source: { renderPos: [0, 0], r: 10 },
+    target: { renderPos: [100, 0], r: 10 },
+    attributionShare
+  })
+  const onPath = { x: 50, y: 20.7 }
+
+  it('picks the narrowest of overlapping arrows, wherever it is drawn', () => {
+    const thin = link(0.05)
+    const thick = link(1)
+    expect(narrowestHitLink([thin, thick], onPath)).toBe(thin)
+    expect(narrowestHitLink([thick, thin], onPath)).toBe(thin)
+  })
+
+  it('breaks ties in favour of the arrow drawn on top', () => {
+    const below = link(0.5)
+    const onTop = link(0.5)
+    expect(narrowestHitLink([below, onTop], onPath)).toBe(onTop)
+  })
+
+  it('misses when no arrow is under the point', () => {
+    expect(narrowestHitLink([link(1)], { x: 50, y: 500 })).toBeUndefined()
   })
 })
