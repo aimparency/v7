@@ -12,6 +12,7 @@ vi.mock('../../trpc', () => ({
     idea: {
       list: { query: vi.fn().mockResolvedValue([]) },
       commitEvidence: { query: vi.fn().mockResolvedValue([]) },
+      contributors: { query: vi.fn().mockResolvedValue([]) },
       linkRepo: { mutate: vi.fn().mockResolvedValue({}) },
       unlinkRepo: { mutate: vi.fn().mockResolvedValue({}) }
     },
@@ -155,6 +156,20 @@ describe('IdeaEditModal keyboard save behavior', () => {
     await vi.waitFor(() => expect(wrapper.text()).toContain('feat: realize idea idea-1'))
 
     expect(wrapper.text()).toContain('01234567')
+  })
+
+  it('lists who worked on the idea per git', async () => {
+    const { trpc } = await import('../../trpc')
+    vi.mocked(trpc.idea.contributors.query).mockResolvedValueOnce([
+      { name: 'Claude Opus 5.5', commits: 3, lastAt: '2026-10-30T10:00:00Z' }
+    ])
+    const { wrapper } = mountEditModal()
+
+    await wrapper.setProps({ show: true })
+    await vi.waitFor(() => expect(wrapper.text()).toContain('Worked on by'))
+
+    expect(wrapper.text()).toContain('Claude Opus 5.5')
+    expect(wrapper.text()).toContain('3 commits')
   })
 
   it('does not persist bulk mixed fields until Save and only overrides activated fields', async () => {

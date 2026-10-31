@@ -136,19 +136,22 @@ type CommitEvidence = { hash: string, shortHash: string, subject: string, author
 const commitEvidence = ref<CommitEvidence[]>([])
 const commitEvidenceLoading = ref(false)
 const commitEvidenceError = ref('')
+type Contributor = { name: string, commits: number, lastAt: string }
+const contributors = ref<Contributor[]>([])
 
 const loadCommitEvidence = async () => {
   if (!props.ideaId || isBulk.value || !projectStore.projectPath) return
   commitEvidenceLoading.value = true
   commitEvidenceError.value = ''
+  const query = { projectPath: projectStore.projectPath, ideaId: props.ideaId }
   try {
-    commitEvidence.value = await trpc.idea.commitEvidence.query({
-      projectPath: projectStore.projectPath,
-      ideaId: props.ideaId,
-      limit: 20
-    })
+    ;[commitEvidence.value, contributors.value] = await Promise.all([
+      trpc.idea.commitEvidence.query({ ...query, limit: 20 }),
+      trpc.idea.contributors.query(query)
+    ])
   } catch (error) {
     commitEvidence.value = []
+    contributors.value = []
     commitEvidenceError.value = error instanceof Error ? error.message : 'Could not read Git history'
   } finally {
     commitEvidenceLoading.value = false
@@ -157,7 +160,7 @@ const loadCommitEvidence = async () => {
 
 watch(() => [props.show, props.ideaId] as const, ([show]) => {
   if (show) void loadCommitEvidence()
-  else commitEvidence.value = []
+  else commitEvidence.value = contributors.value = []
 }, { immediate: true })
 
 // Snapshot of the form taken once it is fully populated, so we can detect
@@ -803,6 +806,16 @@ const discardChanges = () => {
           <div v-for="commit in commitEvidence" v-else :key="commit.hash" class="entry-row">
             <span class="entry-name">{{ commit.subject }}</span>
             <span class="entry-meta entry-badge" :title="`${commit.author} · ${commit.authoredAt}`">{{ commit.shortHash }}</span>
+          </div>
+        </div>
+      </div>
+
+      <div v-if="!isBulk && contributors.length" class="form-section">
+        <label>Worked on by</label>
+        <div class="entry-list">
+          <div v-for="contributor in contributors" :key="contributor.name" class="entry-row">
+            <span class="entry-name">{{ contributor.name }}</span>
+            <span class="entry-meta entry-badge" :title="`last ${contributor.lastAt}`">{{ contributor.commits }} commits</span>
           </div>
         </div>
       </div>

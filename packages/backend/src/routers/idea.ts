@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { DEFAULT_IDEA_COST, IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
-import { getIdeaCommitEvidence, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
+import { getIdeaCommitEvidence, getIdeaContributors, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
 import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, updateIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
 import { fetchOpenGithubIssues, parseGithubRepository } from '../github-issues.js';
@@ -169,6 +169,17 @@ export const ideaRouter = t.router({
     }))
     .query(async ({ input }) => {
       return getIdeaStatusHistory(normalizeProjectPath(input.projectPath), input.ideaId);
+    }),
+
+  // Who worked on the idea per git: authors and co-authors of commits that
+  // change its file or name it.
+  contributors: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      ideaId: z.string().uuid()
+    }))
+    .query(async ({ input }) => {
+      return getIdeaContributors(normalizeProjectPath(input.projectPath), input.ideaId);
     }),
 
   // Per-file patches of one commit in the project's repository.

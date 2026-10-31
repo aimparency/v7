@@ -3,7 +3,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import { getIdeaStatusHistory, getCommitDiff, parseIdeaCommitEvidence } from './git-evidence.js';
+import { getIdeaStatusHistory, getCommitDiff, parseIdeaCommitEvidence, parseIdeaContributorLog } from './git-evidence.js';
 
 describe('parseIdeaCommitEvidence', () => {
   it('parses Git log records used by the idea evidence query', () => {
@@ -78,5 +78,31 @@ describe('idea status history and commit diffs', () => {
 
   it('rejects anything that is not a commit hash', async () => {
     await expect(getCommitDiff(os.tmpdir(), '--output=/tmp/x')).rejects.toThrow('Invalid commit hash');
+  });
+});
+
+describe('parseIdeaContributorLog', () => {
+  const ideaId = 'abcdef12-2222-3333-4444-555555555555';
+  const record = (author: string, at: string, message: string, files: string[]) =>
+    `\x1e${author}\x1f${at}\x1f${message}\x1f\n\n${files.join('\n')}\n`;
+
+  it('counts authors and co-authors of commits that change the idea file or name the idea', () => {
+    const log = [
+      record('Felix', '2026-10-30T10:00:00Z', 'feat: thing (abcdef12)\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n', ['src/a.ts']),
+      record('Felix', '2026-10-29T10:00:00Z', 'graph edits\n', [`.bowman/ideas/${ideaId}.json`]),
+      record('Felix', '2026-10-28T10:00:00Z', 'unrelated\n', ['.bowman/ideas/99999999-2222-3333-4444-555555555555.json', 'other/ideas/x.json'])
+    ].join('');
+
+    const contributors = parseIdeaContributorLog(log, '.bowman').get('abcdef12');
+
+    expect(contributors).toEqual([
+      { name: 'Felix', commits: 2, lastAt: '2026-10-30T10:00:00Z' },
+      { name: 'Claude Opus 5.5', commits: 1, lastAt: '2026-10-30T10:00:00Z' }
+    ]);
+  });
+
+  it('only reads idea files inside the given .bowman directory', () => {
+    const log = record('Felix', '2026-10-30T10:00:00Z', 'x\n', [`elsewhere/ideas/${ideaId}.json`]);
+    expect(parseIdeaContributorLog(log, '.bowman').has('abcdef12')).toBe(false);
   });
 });

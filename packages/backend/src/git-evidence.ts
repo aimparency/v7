@@ -137,3 +137,67 @@ export async function getCommitDiff(anyPathInRepository: string, hash: string): 
   // First-parent diff; for the root commit git show diffs against the empty tree.
   return parseCommitPatch(await gitStdout(repositoryPath, ['show', '--format=', '--patch', '-M', hash]));
 }
+
+export type IdeaContributor = {
+  name: string;
+  commits: number;
+  lastAt: string;
+};
+
+const IDEA_FILE_DIRS = 'ideas|archived-ideas|aims|archived-aims';
+const CO_AUTHOR_PATTERN = /^Co-Authored-By:\s*(.+?)\s*<[^>]*>\s*$/gim;
+const ID_PREFIX_PATTERN = /\b[0-9a-f]{8}\b/g;
+
+// Who worked on which idea, keyed by the 8-character id prefix: a commit counts
+// for an idea when it changes the idea's file or names the idea in its message.
+// Authors and Co-Authored-By trailers both count, so agent co-authors show up.
+export function parseIdeaContributorLog(stdout: string, bowmanRelative: string): Map<string, IdeaContributor[]> {
+  const prefix = bowmanRelative ? `${bowmanRelative}/` : '';
+  const ideaFile = new RegExp(`^${prefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}(?:${IDEA_FILE_DIRS})/([0-9a-f]{8})-[0-9a-f-]{27}\\.json$`);
+  const byIdea = new Map<string, Map<string, IdeaContributor>>();
+
+  for (const record of stdout.split('\x1e')) {
+    const fields = record.split('\x1f');
+    if (fields.length !== 4) continue;
+    const [author, authoredAt, message, files] = fields as [string, string, string, string];
+    const names = new Set([author.trim(), ...[...message.matchAll(CO_AUTHOR_PATTERN)].map((match) => match[1]!)]);
+    const ideaPrefixes = new Set(message.match(ID_PREFIX_PATTERN) ?? []);
+    for (const file of files.split('\n')) {
+      const ideaPrefix = ideaFile.exec(file.trim())?.[1];
+      if (ideaPrefix) ideaPrefixes.add(ideaPrefix);
+    }
+
+    for (const ideaPrefix of ideaPrefixes) {
+      const contributors = byIdea.get(ideaPrefix) ?? new Map<string, IdeaContributor>();
+      byIdea.set(ideaPrefix, contributors);
+      for (const name of names) {
+        const contributor = contributors.get(name);
+        // git log lists newest first, so the first sighting is the latest.
+        if (contributor) contributor.commits++;
+        else contributors.set(name, { name, commits: 1, lastAt: authoredAt.trim() });
+      }
+    }
+  }
+
+  return new Map([...byIdea].map(([ideaPrefix, contributors]) =>
+    [ideaPrefix, [...contributors.values()].sort((a, b) => b.commits - a.commits)]));
+}
+
+// One git log pass per HEAD, shared by every idea of the repository.
+const contributorCache = new Map<string, { head: string; contributors: Promise<Map<string, IdeaContributor[]>> }>();
+
+export async function getIdeaContributors(bowmanPath: string, ideaId: string): Promise<IdeaContributor[]> {
+  const repositoryPath = await getRepositoryRoot(bowmanPath);
+  const head = (await gitStdout(repositoryPath, ['rev-parse', 'HEAD'])).trim();
+  const cacheKey = `${repositoryPath}\0${bowmanPath}`;
+  let cached = contributorCache.get(cacheKey);
+  if (cached?.head !== head) {
+    const bowmanRelative = path.relative(repositoryPath, bowmanPath).split(path.sep).join('/');
+    const contributors = gitStdout(repositoryPath, ['log', '--format=%x1e%an%x1f%aI%x1f%B%x1f', '--name-only'])
+      .then((stdout) => parseIdeaContributorLog(stdout, bowmanRelative));
+    cached = { head, contributors };
+    contributorCache.set(cacheKey, cached);
+    contributors.catch(() => contributorCache.delete(cacheKey));
+  }
+  return (await cached.contributors).get(ideaId.slice(0, 8)) ?? [];
+}
