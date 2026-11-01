@@ -62,3 +62,18 @@ const MIN_NODE_RADIUS = 40
 export function nodeRadius(value: number, averageValue: number) {
   return Math.max(Math.sqrt(value / (averageValue || 1)) * 150, MIN_NODE_RADIUS)
 }
+
+// Mean position of the given ideas that have a stored position ((0, 0) for none).
+export function positionCentroid(positions: ReadonlyMap<string, { x: number, y: number }>, ideaIds: readonly string[]) {
+  let x = 0
+  let y = 0
+  let count = 0
+  for (const id of ideaIds) {
+    const pos = positions.get(id)
+    if (!pos) continue
+    x += pos.x
+    y += pos.y
+    count++
+  }
+  return count ? { x: x / count, y: y / count } : { x: 0, y: 0 }
+}

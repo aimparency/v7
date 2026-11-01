@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizedFlowForceWeights, surfaceMovementShares } from './graph-forces'
+import { normalizedFlowForceWeights, positionCentroid, surfaceMovementShares } from './graph-forces'
 
 describe('surfaceMovementShares', () => {
   it('moves equal-size ideas equally', () => {
@@ -75,5 +75,13 @@ describe('normalizedFlowForceWeights', () => {
     const forward = weights[0]!
     const reverse = weights[1]!
     expect(forward).toBe(reverse)
+  })
+})
+
+describe('positionCentroid', () => {
+  it('averages the stored positions of the given ideas only', () => {
+    const positions = new Map([['a', { x: 0, y: 0 }], ['b', { x: 10, y: 20 }], ['other-project', { x: 1000, y: 1000 }]])
+    expect(positionCentroid(positions, ['a', 'b', 'not-placed'])).toEqual({ x: 5, y: 10 })
+    expect(positionCentroid(positions, [])).toEqual({ x: 0, y: 0 })
   })
 })

@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/project-store'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../utils/db'
-import { nodeRadius, normalizedFlowForceWeights, surfaceMovementShares } from '../utils/graph-forces'
+import { nodeRadius, normalizedFlowForceWeights, positionCentroid, surfaceMovementShares } from '../utils/graph-forces'
 import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
 import { minimumGapPush, similarityPairs, type SemanticPair } from '../utils/autolayout'
 
@@ -701,6 +701,12 @@ export function useGraphSimulation() {
     let restoredCamera = false
     try {
       const positions = await loadAllPositions()
+      // The graph's mass point sits at (0, 0): the physics keeps it where it
+      // is (see the drift correction), so put it there once on load.
+      const centroid = positionCentroid(positions, Object.keys(dataStore.ideas))
+      for (const [id, pos] of positions) {
+        if (dataStore.ideas[id]) positions.set(id, { x: pos.x - centroid.x, y: pos.y - centroid.y })
+      }
       positions.forEach((v, k) => loadedPositions.set(k, v))
       for (const [id, pos] of positions) {
         const node = nodeMap.get(id)
@@ -710,7 +716,8 @@ export function useGraphSimulation() {
       const camera = await loadCamera(projectStore.projectPath)
       restoredCamera = !!camera
       if (camera) {
-        mapStore.offset = vec2.fromValues(camera.x, camera.y)
+        // Moved with the ideas, so the view shows what it showed before.
+        mapStore.offset = vec2.fromValues(camera.x + centroid.x, camera.y + centroid.y)
         mapStore.scale = camera.scale
         cameraTarget[0] = mapStore.offset[0]
         cameraTarget[1] = mapStore.offset[1]
