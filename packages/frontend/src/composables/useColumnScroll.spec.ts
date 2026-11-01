@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { revealScrollTop } from './useColumnScroll'
+import { centerScrollTop, revealScrollTop } from './useColumnScroll'
 
 // Column of 1000px; the band is 150..850 of the viewport.
 const viewport = 1000
@@ -42,5 +42,13 @@ describe('revealScrollTop', () => {
     const first = reveal(2800, 100, 3000)
     expect(first).toBe(2650)
     expect(reveal(2500, 100, first)).toBe(2350)
+  })
+})
+
+describe('centerScrollTop', () => {
+  it('puts the focus in the middle of the column, within the scroll range', () => {
+    expect(centerScrollTop({ top: 900, height: 100 }, 400, 2000)).toBe(750)
+    expect(centerScrollTop({ top: 50, height: 100 }, 400, 2000)).toBe(0)
+    expect(centerScrollTop({ top: 1950, height: 50 }, 400, 1000)).toBe(1000)
   })
 })

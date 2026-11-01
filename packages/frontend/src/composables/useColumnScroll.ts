@@ -37,6 +37,13 @@ export function revealScrollTop(focus: FocusRect, scrollTop: number, viewport: n
   return Math.max(0, Math.min(target, maxScrollTop))
 }
 
+// The scroll position that puts `focus` in the middle of the column: where a
+// column opens (project open, UI-state restore), it has no previous position
+// to keep.
+export function centerScrollTop(focus: FocusRect, viewport: number, maxScrollTop: number) {
+  return Math.max(0, Math.min(focus.top + focus.height / 2 - viewport / 2, maxScrollTop))
+}
+
 // The selected idea's own row, without its expanded sub-ideas. Every idea on
 // the selection path carries `.active`, ancestors first: the last is the selected one.
 export function selectedIdeaRow(container: HTMLElement) {
@@ -86,7 +93,10 @@ export function useColumnScroll(
     const focus = container && getFocus()
     if (!container || !focus) return
     const from = destination ?? container.scrollTop
-    const target = revealScrollTop(focus, from, container.clientHeight, container.scrollHeight - container.clientHeight)
+    const maxScrollTop = container.scrollHeight - container.clientHeight
+    const target = !revealed || isInstant()
+      ? centerScrollTop(focus, container.clientHeight, maxScrollTop)
+      : revealScrollTop(focus, from, container.clientHeight, maxScrollTop)
     const jumped = target !== from && scrollTo(container, target)
     revealed = true
     if (jumped && settle) schedule(false)
