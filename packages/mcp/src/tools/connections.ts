@@ -17,7 +17,7 @@ export function connectionInputSchema(description: string) {
           properties: {
             ideaId: { type: "string" },
             weight: { type: "number" },
-            hypothesis: { type: "string", description: "Why the child is expected to contribute to the parent" },
+            hypothesis: { type: "string", description: "A claim that could fail: the effect the child should have on the parent. Omit it for mere grouping or a restatement of the child" },
             reflection: { type: "string", description: "Whether the hypothesis held: how the child actually contributed, once it is settled" },
           },
           required: ["ideaId"],

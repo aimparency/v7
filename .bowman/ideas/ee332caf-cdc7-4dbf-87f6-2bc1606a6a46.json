@@ -13,7 +13,8 @@
         -2.17
       ],
       "weight": 1,
-      "hypothesis": "Reflections only teach when the hypothesis could have failed; filtering out classifications raises the share of edges that actually get tested."
+      "hypothesis": "Reflections only teach when the hypothesis could have failed; filtering out classifications raises the share of edges that actually get tested.",
+      "reflection": "First half held: ~70% of existing hypotheses (170 of 241) could never fail, so there was nothing to reflect on. Second half (the share of tested edges rises) is not observed yet; the guidance only took effect 2026-11-01."
     }
   ],
   "supportedIdeas": [

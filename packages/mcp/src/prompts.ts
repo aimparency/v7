@@ -30,7 +30,7 @@ The human leads this session: they give feedback and ideas, you record them in t
 For every idea the human brings up:
 1. Search before adding: search_ideas (and search_ideas_semantic when the index exists) for the idea and its key terms.
 2. Show the human the relevant existing ideas: possible duplicates, overlaps and conflicts, with short ids. Ask whether to connect it, revise an existing idea, consolidate, or add it as a distinct idea. Add without asking only when nothing relevant exists.
-3. Place a new idea under the parent it serves, with a connection hypothesis saying why it should contribute.
+3. Place a new idea under the parent it serves. Give the connection a hypothesis only when it claims an effect on the parent that could fail; leave it empty for mere grouping.
 
 For feedback on an existing idea, refresh its status against that feedback and the current evidence, with the reason in the status comment:
 - open: the intended behavior is still missing;

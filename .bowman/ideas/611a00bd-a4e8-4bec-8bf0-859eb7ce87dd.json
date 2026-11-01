@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1793550689262
+    "state": "implemented",
+    "comment": "Experiment run 2026-11-01 (read-only over .bowman): 324 connection hypotheses, 1 reflected; 241 sit on settled children without reflection. By reading them, ~70 (29%) claim an effect that could fail (e.g. 'a report finds near-duplicates before the value flow splits'); ~170 are groupings or restatements of the child ('Grouped under the structural watchdog area', 'Uses the verified adapter', 'is keyboard navigation behavior'). Rule now lives where hypotheses are written: connection hypothesis field description (mcp tools/connections.ts, shared types.ts) and the idea-session prompt say to write one only when it could fail and leave it empty for mere grouping. Verified: mcp prompts + ideas tests 28/28, tsc clean. Disconfirming check still open: whether the reflection rate rises above ~2% over the next weeks of loop work.",
+    "date": 1793551460299
   },
   "intrinsicValue": 0,
   "cost": 1,

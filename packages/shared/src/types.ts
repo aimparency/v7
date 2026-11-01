@@ -13,7 +13,7 @@ export const ConnectionSchema = z.object({
   ideaId: z.string().uuid(),
   relativePosition: z.tuple([z.number(), z.number()]).default([0, 0]),
   weight: z.number().default(1),
-  hypothesis: z.string().optional(), // Why the child is expected to contribute to the parent
+  hypothesis: z.string().optional(), // A falsifiable claim: the effect the child should have on the parent (absent for mere grouping)
   reflection: z.string().optional() // How that turned out, once the child is settled
 });
 
