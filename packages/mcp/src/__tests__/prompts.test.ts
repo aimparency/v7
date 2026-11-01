@@ -97,3 +97,22 @@ test("idea-session starts from what the graph holds about a given topic", async 
   assert.match(text, /Project: \/p\/\.bowman\nTopic: list view/);
   assert.match(text, /Start by showing the human what the graph already holds about the topic/);
 });
+
+test("consolidate proposes by default and never merges on its own", async () => {
+  const result = await setup().getPrompt("consolidate", {});
+  const text = result.messages[0].content.text;
+  assert.equal(result.description, "Consolidate the idea graph");
+  assert.match(text, /Scope: the whole graph/);
+  assert.match(text, /megaParentThreshold = 8/);
+  assert.match(text, /Never merge on your own/);
+  assert.match(text, /merging or deleting ideas, cancelling ideas, setting implemented/);
+  assert.match(text, /Do not mutate the graph/);
+});
+
+test("consolidate can apply the safe reorganization within a subtree", async () => {
+  const result = await setup().getPrompt("consolidate", { projectPath: "/p/.bowman", focus: "22dd4138", writeBack: "true" });
+  const text = result.messages[0].content.text;
+  assert.equal(result.description, "Consolidate the subtree of 22dd4138 (write back)");
+  assert.match(text, /Scope: the subtree of 22dd4138/);
+  assert.match(text, /Apply everything else .* and report every mutation/);
+});

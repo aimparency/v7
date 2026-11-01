@@ -48,6 +48,49 @@ After each change, report in one or two lines what you recorded (idea, short id,
   };
 }
 
+// Tidy the graph: health checks, duplicates, structure and stale statuses. Merges stay human decisions.
+function consolidatePrompt(args: Record<string, string> | undefined) {
+  const target = args?.projectPath?.trim() || DEFAULT_PROJECT_PATH;
+  const focus = args?.focus?.trim();
+  const writeBack = args?.writeBack?.trim().toLowerCase() === "true";
+  const text = `Consolidate the Aimparency idea graph.
+
+Project: ${target}
+Scope: ${focus ? `the subtree of ${focus}` : "the whole graph"}
+Write back: ${writeBack}
+
+Goal: a graph a human can navigate, where every idea appears once, sits under the parent it serves, and has a status that matches the evidence.
+
+1. HEALTH
+   - check_consistency; repair broken references with fix_consistency${writeBack ? "" : " (propose it)"}.
+   - build_search_index if the semantic tools return nothing, then graph_hygiene with megaParentThreshold = 8.
+
+2. DUPLICATES
+   - find_duplicate_ideas, plus your own reading of ideas in the scope. High similarity is often an intended parent-child split or two sides of one feature: check text, description and connections before calling a pair a duplicate.
+   - For a real duplicate, propose which idea survives and what the other contributes. Never merge on your own.
+
+3. STRUCTURE
+   - Parents with more than about 8 direct children: group the children by common topic under new or existing intermediate ideas. Keep each moved child's connection hypothesis. Do not create a group for one or two children.
+   - Catch-all parents: suggest_reparents. Ideas without parent or phase: find the parent they serve.
+   - An idea under several parents is fine when it really serves each of them; do not remove such links to tidy up.
+
+4. STATUS
+   - reconcile_status: open ideas cited by commits. Check each against the code; done work goes to review (or partially, naming the gaps), never straight to implemented.
+   - Collapse candidates: finish the parent, or add the child idea it still needs.
+   - Cancelled or failed ideas that are not archived: archive them.
+   - Settled children whose connection hypothesis has no reflection: write the reflection when the evidence is clear.
+
+Always a human decision, never done by you: merging or deleting ideas, cancelling ideas, setting implemented, and resolving conflicting ideas. ${writeBack
+    ? "Apply everything else (grouping, reparenting, archiving, consistency repairs, status updates with evidence, reflections) with the Aimparency tools, and report every mutation."
+    : "Do not mutate the graph. Return a precise proposed change set for the human to accept."}
+
+Report compactly, by section: what you found, what you ${writeBack ? "changed" : "propose"} (idea text with short id), and the decisions that are left to the human.`;
+  return {
+    description: `Consolidate ${focus ? `the subtree of ${focus}` : "the idea graph"}${writeBack ? " (write back)" : ""}`,
+    messages: [{ role: "user", content: { type: "text", text } }],
+  };
+}
+
 export function registerPrompts(server: Server, caller: BackendClient) {
   server.setRequestHandler(ListPromptsRequestSchema, async () => ({
     prompts: [
@@ -71,6 +114,15 @@ export function registerPrompts(server: Server, caller: BackendClient) {
             description: "Set to true to write accepted dream artifacts to the graph; otherwise only propose changes (default: false)",
             required: false,
           },
+        ],
+      },
+      {
+        name: "consolidate",
+        description: "Check and organize the idea graph: consistency, duplicates, crowded parents, stale statuses; merges and deletions stay human decisions",
+        arguments: [
+          PROJECT_PATH_PROMPT_ARGUMENT,
+          { name: "focus", description: "Optional idea UUID whose subtree to consolidate (default: the whole graph)", required: false },
+          { name: "writeBack", description: "Set to true to apply the safe reorganization; otherwise only propose changes (default: false)", required: false },
         ],
       },
       {
@@ -103,6 +155,7 @@ export function registerPrompts(server: Server, caller: BackendClient) {
     const { name, arguments: args } = request.params;
     if (name === "enable-hook" || name === "disable-hook") return hookTogglePrompt(name, args);
     if (name === "idea-session") return ideaSessionPrompt(args);
+    if (name === "consolidate") return consolidatePrompt(args);
     if (name !== "dream") throw new Error(`Unknown prompt: ${name}`);
 
     const projectPath = (args?.projectPath as string | undefined)?.trim();
