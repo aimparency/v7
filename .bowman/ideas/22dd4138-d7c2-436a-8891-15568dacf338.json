@@ -48,7 +48,8 @@
         -2.98
       ],
       "weight": 1,
-      "hypothesis": "The human stays the final authority only if checking agent work in the UI is quick."
+      "hypothesis": "The human stays the final authority only if checking agent work in the UI is quick.",
+      "reflection": "Unclear so far. The review queue did shrink (197 to 1 on 2026-11-01, commit 708a52af), but through a policy change (verified work goes straight to implemented), not because the inbox made checking quicker. The inbox's own effect on review latency was never measured."
     }
   ],
   "supportedIdeas": [

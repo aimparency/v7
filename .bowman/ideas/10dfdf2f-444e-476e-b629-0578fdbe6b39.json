@@ -39,9 +39,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Container (grouped from UI's direct children, 2026-11-01).",
-    "date": 1793519157133
+    "state": "implemented",
+    "comment": "Container settled 2026-11-01: all three children are implemented: review inbox (90cf0309, 57bba1a), git diff history per idea (8b5632eb), contributors per idea from git (db47e131, f831e6c3). New oversight needs get a new child.",
+    "date": 1793551481470
   },
   "intrinsicValue": 0,
   "cost": 1,
