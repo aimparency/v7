@@ -24,7 +24,6 @@ vi.mock('../../trpc', () => ({
 import { useDataStore } from '../data'
 import { useUIStore } from './list-store'
 import { useProjectStore } from '../project-store'
-import { forgetProjectOpenInTab, markProjectOpenInTab } from './ui-persistence'
 
 describe('list store phase selection', () => {
   beforeEach(() => {
@@ -415,38 +414,6 @@ describe('list store phase selection', () => {
     expect(uiStore.activeColumn).toBe(1)
     expect(uiStore.navigatingIdeas).toBe(true)
     expect(uiStore.getCurrentIdea()?.id).toBe('sub')
-  })
-
-  it('opening a project follows the current phase over this browser\'s saved selection, keeping its layout', async () => {
-    seedCursorProject()
-    const uiStore = useUIStore()
-    localStorage.setItem(uiStore.getPersistedUIStateKey('/tmp/project'), JSON.stringify({
-      currentView: 'columns',
-      listViewState: {
-        ...uiStore.getListViewStateSnapshot(),
-        windowSize: 2,
-        windowStart: 0,
-        activeColumn: 0,
-        selection: { activeColumn: 0, maxColumn: 0, entryKeyByColumn: { 0: 'phase:root-a' }, navigatingIdeas: false, ideaPath: [] }
-      }
-    }))
-
-    await uiStore.restoreProjectUIState({ followCurrentPhase: true })
-
-    expect(uiStore.selectedPhaseIdByColumn).toMatchObject({ 0: 'root-b', 1: 'child-b', 2: 'grandchild-b' })
-    expect(uiStore.activeColumn).toBe(2)
-    expect(uiStore.windowSize).toBe(2)
-    // The current phase's column is the rightmost visible one.
-    expect(uiStore.windowStart).toBe(1)
-  })
-
-  it('tells opening a project in this tab apart from reloading it', () => {
-    forgetProjectOpenInTab()
-    expect(markProjectOpenInTab('/tmp/project')).toBe(true)
-    expect(markProjectOpenInTab('/tmp/project')).toBe(false)
-    expect(markProjectOpenInTab('/tmp/other')).toBe(true)
-    forgetProjectOpenInTab()
-    expect(markProjectOpenInTab('/tmp/other')).toBe(true)
   })
 
   it('keeps the current visible child selection when moving right into an already visible column', async () => {
