@@ -588,11 +588,37 @@ export function useGraphSimulation() {
             ? maxMove / largestShiftComponent
             : 1
 
+        // Pair forces cancel out, but freezing and dragging don't: without a
+        // correction the whole graph slowly drifts away. Remove the mean shift
+        // of the freely moving ideas so the layout stays where it is.
+        const isPinned = (n: GraphNode) =>
+            (n.id === mapStore.dragCandidate?.id && mapStore.dragBeginning) ||
+            (mapStore.layouting && mapStore.layoutCandidate?.frozenIdeaId === n.id)
+        const drift: vec2.T = [0, 0]
+        let freeCount = 0
         for (let i = 0; i < count; i++) {
             const n = currentNodes[i]!
             if (sharedMovementScale < 1) {
                 vec2.scale(n.shift, n.shift, sharedMovementScale)
             }
+            const releaseTime = freezings.get(n.id)
+            if (releaseTime !== undefined) {
+                const elapsed = now - releaseTime
+                if (elapsed < FREEZE_DURATION) {
+                    vec2.scale(n.shift, n.shift, elapsed / FREEZE_DURATION)
+                } else {
+                    freezings.delete(n.id)
+                }
+            }
+            if (!isPinned(n)) {
+                vec2.add(drift, drift, n.shift)
+                freeCount++
+            }
+        }
+        if (freeCount > 0) vec2.scale(drift, drift, 1 / freeCount)
+
+        for (let i = 0; i < count; i++) {
+            const n = currentNodes[i]!
 
             // Debug logging for selected node
             if (shouldLog && n.id === debugId && shiftBeforeGlobal) {
@@ -610,18 +636,6 @@ export function useGraphSimulation() {
                     Position: { x: n.pos[0].toFixed(2), y: n.pos[1].toFixed(2) }
                 })
                 console.groupEnd()
-            }
-            
-            const releaseTime = freezings.get(n.id)
-            if (releaseTime !== undefined) {
-                const elapsed = now - releaseTime
-                if (elapsed < FREEZE_DURATION) {
-                    const currentFreeze = 1 - (elapsed / FREEZE_DURATION)
-                    const moveFactor = 1 - currentFreeze
-                    vec2.scale(n.shift, n.shift, moveFactor)
-                } else {
-                    freezings.delete(n.id)
-                }
             }
             
             // Check dragging
@@ -642,6 +656,7 @@ export function useGraphSimulation() {
                 // Internal vs render position split handles performance optimization.
 
                 // Physics Update: Always apply shift to resolve tensions
+                vec2.sub(n.shift, n.shift, drift)
                 vec2.add(n.pos, n.pos, n.shift)
 
                 // Visual Update Logic: Manhattan distance > 0.5px screen space
@@ -683,6 +698,7 @@ export function useGraphSimulation() {
     }
     
     // Load positions
+    let restoredCamera = false
     try {
       const positions = await loadAllPositions()
       positions.forEach((v, k) => loadedPositions.set(k, v))
@@ -691,7 +707,8 @@ export function useGraphSimulation() {
         if (node) node.pos = [pos.x, pos.y]
       }
       
-      const camera = await loadCamera()
+      const camera = await loadCamera(projectStore.projectPath)
+      restoredCamera = !!camera
       if (camera) {
         mapStore.offset = vec2.fromValues(camera.x, camera.y)
         mapStore.scale = camera.scale
@@ -704,13 +721,15 @@ export function useGraphSimulation() {
 
     updateGraphData()
     trigger.value++ // Force initial render to pick up calculated sizes/positions
+    // Without a saved pan and zoom for this project, start with the whole graph in view.
+    if (!restoredCamera) mapStore.centerOnGraph(nodes.value, 1, { percentile: 0.9, zoomOut: 1.2 })
     layout()
     
     saveIntervalId = setInterval(async () => {
         if (nodes.value.length > 0) {
             const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
             await savePositions(toSave)
-            await saveCamera({ x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
+            await saveCamera(projectStore.projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
         }
     }, 2000) as any
     
@@ -726,7 +745,7 @@ export function useGraphSimulation() {
     if (nodes.value.length > 0) {
         const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
         savePositions(toSave)
-        saveCamera({ x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
+        saveCamera(projectStore.projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
     }
   }
 

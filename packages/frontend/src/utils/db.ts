@@ -112,26 +112,28 @@ export async function savePositions(positions: Position[]) {
   });
 }
 
-export async function saveCamera(offset: {x: number, y: number}, scale: number) {
+// One camera per project: a shared one restored another project's pan and zoom.
+const cameraId = (projectPath: string) => `__CAMERA__:${projectPath}`
+
+export async function saveCamera(projectPath: string, offset: {x: number, y: number}, scale: number) {
   const db = await getDB();
   return new Promise<void>((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readwrite');
     const store = transaction.objectStore(STORE_NAME);
     
-    // Store camera with special ID
-    store.put({ id: '__CAMERA__', x: offset.x, y: offset.y, scale });
+    store.put({ id: cameraId(projectPath), x: offset.x, y: offset.y, scale });
 
     transaction.oncomplete = () => resolve();
     transaction.onerror = () => reject(transaction.error);
   });
 }
 
-export async function loadCamera(): Promise<{x: number, y: number, scale: number} | null> {
+export async function loadCamera(projectPath: string): Promise<{x: number, y: number, scale: number} | null> {
   const db = await getDB();
   return new Promise((resolve, reject) => {
     const transaction = db.transaction(STORE_NAME, 'readonly');
     const store = transaction.objectStore(STORE_NAME);
-    const request = store.get('__CAMERA__');
+    const request = store.get(cameraId(projectPath));
 
     request.onsuccess = () => {
       const result = request.result;
@@ -157,7 +159,7 @@ export async function loadAllPositions(): Promise<Map<string, { x: number; y: nu
       const positions = request.result as any[];
       const map = new Map<string, { x: number, y: number }>();
       positions.forEach(p => {
-        if (p.id !== '__CAMERA__') {
+        if (!String(p.id).startsWith('__CAMERA__')) {
             map.set(p.id, { x: p.x, y: p.y });
         }
       });
