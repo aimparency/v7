@@ -321,8 +321,8 @@ export const useUIStore = defineStore('ui', {
       return deepestLevel
     },
 
-    async restoreProjectUIState(): Promise<boolean> {
-      return restoreProjectUIState(this)
+    async restoreProjectUIState(options?: { followCurrentPhase?: boolean }): Promise<boolean> {
+      return restoreProjectUIState(this, options)
     },
 
     requestColumnScroll(col: number, direction: 'bottom' | 'top') {

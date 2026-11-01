@@ -9,6 +9,7 @@ import { useDataStore, type Idea } from './stores/data'
 import { useMapStore } from './stores/map'
 import { useHistoryStore } from './stores/history'
 import { captureSelectionAnchor } from './stores/ui/selection-anchor'
+import { forgetProjectOpenInTab, markProjectOpenInTab } from './stores/ui/ui-persistence'
 import { trpc } from './trpc'
 import LoginControl from './components/LoginControl.vue'
 import type { IdeaSearchAdditionalOption, IdeaSearchPickPayload } from './stores/ui/idea-search-types'
@@ -280,6 +281,7 @@ const closeProject = () => {
 }
 
 const openProjectSelection = () => {
+  forgetProjectOpenInTab()
   projectSelectionReturnPath.value = projectStore.projectPath
   projectStore.setProjectPath('')
   projectPathInput.value = '' // the input filters the lists, so start with all of them
@@ -295,7 +297,7 @@ const cancelProjectSelection = () => {
 const runProjectRestore = async (path: string) => {
   uiStore.beginUIStateRestore()
   await dataStore.loadProject(path)
-  const restored = await uiStore.restoreProjectUIState()
+  const restored = await uiStore.restoreProjectUIState({ followCurrentPhase: markProjectOpenInTab(path) })
   if (!restored && !Object.keys(uiStore.selectedEntryKeyByColumn).length) {
     uiStore.beginUIStateRestore()
     await uiStore.selectPhase(0, 0)

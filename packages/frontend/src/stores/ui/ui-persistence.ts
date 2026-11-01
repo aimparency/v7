@@ -103,7 +103,29 @@ export async function restoreCursorFromMeta(ui: UIStore): Promise<boolean> {
   }
 }
 
-export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
+// The project this tab has open, kept across reloads of the tab (sessionStorage)
+// but not into a new tab: tells opening a project apart from reloading it.
+const OPEN_PROJECT_KEY = 'aimparency:open-project'
+
+// Marks `projectPath` as open in this tab; true when it was not already, i.e.
+// the project is being opened rather than reloaded.
+export function markProjectOpenInTab(projectPath: string): boolean {
+  try {
+    const opening = sessionStorage.getItem(OPEN_PROJECT_KEY) !== projectPath
+    sessionStorage.setItem(OPEN_PROJECT_KEY, projectPath)
+    return opening
+  } catch {
+    return true
+  }
+}
+
+export function forgetProjectOpenInTab(): void {
+  try { sessionStorage.removeItem(OPEN_PROJECT_KEY) } catch { /* storage unavailable */ }
+}
+
+// Opening a project starts at its current phase (the cursor chain in meta);
+// a reload of the same tab reopens exactly where this browser left off.
+export async function restoreProjectUIState(ui: UIStore, { followCurrentPhase = false } = {}): Promise<boolean> {
   const restoreStartedAt = performance.now()
   perfLog('ui.restoreProjectUIState:start', { projectPath: useProjectStore().projectPath })
   const projectStore = useProjectStore()
@@ -127,9 +149,14 @@ export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
     return await restoreCursorFromMeta(ui)
   }
 
-  // This browser's own saved selection wins: reopen exactly where it left
-  // off. The shared phase cursors only seed a browser without saved state.
-  if (!parsed.listViewState) {
+  // Opening follows the current phase, keeping this browser's layout. On a
+  // reload, or without a current phase, the browser's own selection wins.
+  const followCursors = followCurrentPhase && Object.keys(ui.currentPhaseIdByLevel).length > 0
+  if (!parsed.listViewState || followCursors) {
+    if (parsed.listViewState) {
+      ui.windowSize = parsed.listViewState.windowSize
+      ui.phaseIdeaUIStatesByPhaseId = parsed.listViewState.phaseIdeaUIStatesByPhaseId ?? ui.phaseIdeaUIStatesByPhaseId
+    }
     if (parsed.currentView) projectStore.setCurrentView(parsed.currentView)
     graphStore.applyPersistedGraphViewState(parsed.graphViewState)
     return await restoreCursorFromMeta(ui)
