@@ -21,9 +21,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792512412463
+    "state": "implemented",
+    "comment": "Container settled 2026-11-01: its only child, focusing the project path input on load (1bbf67a3), is implemented. New load behaviors get a new child.",
+    "date": 1793551631344
   },
   "intrinsicValue": 0,
   "cost": 1,

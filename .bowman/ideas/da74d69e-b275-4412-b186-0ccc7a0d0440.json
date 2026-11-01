@@ -38,9 +38,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Container: the creation flow keeps getting refined (Felix 2026-10-17: containers can always be filled with ideas).",
-    "date": 1792218787871
+    "state": "implemented",
+    "comment": "Container settled 2026-11-01: all three children implemented (Enter through follow-up dialogs 87a9f3b2, 'leave uncommitted' wording b0ca7191, idea-session prompt b96825eb). New idea-adding needs get a new child.",
+    "date": 1793551631465
   },
   "intrinsicValue": 0,
   "cost": 1,

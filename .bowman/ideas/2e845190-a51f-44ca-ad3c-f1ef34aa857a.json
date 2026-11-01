@@ -74,9 +74,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Container: keyboard shortcuts keep growing with the UI (Felix 2026-10-17: containers can always be filled with ideas).",
-    "date": 1792218787707
+    "state": "implemented",
+    "comment": "Container settled 2026-11-01: all seven shortcut children implemented ('a' agent area, l/h entering, k across phases, boundary scrolling, no shortcuts in text inputs, 'p' project page, Escape ownership). New shortcuts get a new child.",
+    "date": 1793551631590
   },
   "intrinsicValue": 0,
   "cost": 1,
