@@ -17,14 +17,14 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The modular semantic/heuristic code-intelligence capability and idea-history retrieval are implemented and verified. LSP/AST and coverage signals remain optional future refinements; awaiting acceptance of the delivered capability.\n\nRelevance check on 2026-07-30 found the defined core capability shipped. The previous partial status retained only optional, benchmark-driven refinements without a concrete failing use case, so the finite delivered slice moved to review rather than inviting speculative expansion.",
-    "date": 1785399223908
+    "date": 1793550901338
   },
   "intrinsicValue": 0,
   "cost": 6,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

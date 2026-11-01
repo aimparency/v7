@@ -10,14 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Association integration improved and verified; awaiting user acceptance.\n\nReconciled the existing association system and fixed its key relevance defect: the active idea is now excluded, so stochastic association injects lateral context rather than echoing current work. Extracted deterministic selection logic and added four tests covering ranking, probability rejection, disabled behavior, and active-idea exclusion. Agent-tools and loop-worker typechecks pass.",
-    "date": 1784660284246
+    "date": 1793550897041
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

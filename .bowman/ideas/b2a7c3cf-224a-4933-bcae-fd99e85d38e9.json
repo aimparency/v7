@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Economic priority refactor implemented and internally verified in commit 18d9bbb. Awaiting explicit user acceptance before done; empirical real-delivery calibration remains future work.\n\nImplemented the economic priority refactor in commit 18d9bbb. Priority is now discounted estimated value / estimated present attributed cost (1.00x break-even); discounting is expressed at 10% effective annual rate and preserves duration 0; cost must be finite and >0 and duration finite and >=0 across shared/backend/MCP/UI boundaries; variance no longer applies an implicit risk penalty; cyclic cost attribution uses deterministic SCC condensation; graph colors use a robust symmetric log scale around break-even. Verified shared 29/29, backend 66/66, frontend 207/207, core/frontend/MCP builds. Four existing local cost:0 ideas were detected and deliberately left unchanged so validation surfaces remediation instead of silently rewriting user data. Full MCP suite retains two unrelated pre-existing failures for explicitly removed system tools.",
-    "date": 1785308441200
+    "state": "partially",
+    "comment": "Economic priority refactor (18d9bbb) and the value-calculation rewrite (bb8150a8) are done. Gap: empirical calibration against real deliveries (estimated vs actual duration, cost, outcomes).",
+    "date": 1793550911626
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

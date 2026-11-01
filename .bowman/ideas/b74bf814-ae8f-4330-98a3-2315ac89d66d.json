@@ -13,14 +13,14 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented an opt-in round source cap for the WebGL temporary connection arrow; ready to show the user.\n\nAdded roundSourceCap geometry metadata and source-side triangle extension, carried cap attributes through ArrowRenderer, and unioned an anti-aliased circular source cap in the fragment shader. Enabled it only for temp-connector-* arrows, preserving regular arrows. Added arrow-geometry.spec.ts. Verification: 29 focused tests pass, production frontend build passes, git diff --check passes. Runtime visual inspection was not performed because no dev server was running and project instructions prohibit starting one.",
-    "date": 1784540709349
+    "date": 1793550896189
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -13,14 +13,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Test covers in-order apply and stop-at-failure; mcp 48/48, pnpm check 25/25. Visible to agents after /mcp reconnect.",
-    "date": 1792122745599
+    "date": 1793550909478
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -1,0 +1,27 @@
+{
+  "id": "e1734671-9f93-4e01-9c66-aaa6ce7da4a1",
+  "text": "Dream memory",
+  "description": "Holds the last /dream's memory in its status comment; status.reviewedAt marks where the next dream's window starts. Git keeps earlier dreams.",
+  "archived": false,
+  "color": "#662d51",
+  "tags": [
+    "dream-memory"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Dream: the whole project (2026-11-01; first dream, window = 14 days of .bowman history, 2026-10-18 → 2026-11-01, 50 commits).\n\nLessons\n1. The human is the bottleneck, and the queue is growing: 166 in review on 10-15, 197 now, against 18 open. The review inbox and /dream themselves wait in review.\n2. The routes to money closed (grants failed or were cancelled 10-16; Economic Autonomy is unclear), yet the economic model got a unit: satoshi (10-28). The model has a currency but no income.\n3. The work turned toward making AI work visible to the human: activity coloring, who-works-on-what, agent activity, the idea-session, consolidate and dream prompts, and the 'Human oversight in the UI' container.\n4. Hypotheses are mostly classifications, not predictions: 333 untested and 7 reflected; 80 sit on implemented children and could be reflected now. Example: the cache-cleanup hypothesis held (824 of 824 indexed, 0 orphans).\n5. Value is concentrated in one idea: since 10-16 only 'achieve ASI' carries intrinsic value (1000). The description of the cooperation engine still claims 'the bulk of intrinsic value', which is stale.\n\nUntouched: the watchdog branch (halted, not in use); the corrigibility and autonomy benchmarks (in review since 08-01); keyboard and multi-select items (in review since 07-19). Duplicate scan: one pair (multi-select in the list view vs the graph view), a deliberate split.\n\nResidues to test next time:\n(a) Sampled acceptance: review a random sample, then accept the batch with one human click.\n(b) Warm review: sort the inbox by activity warmth, and measure review latency.\n(c) Falsifiable-only hypotheses: write a hypothesis only when it can fail.\n\nLast dream's residues: none (first dream).",
+    "date": 1793547179929,
+    "reviewedAt": 1793547170000
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

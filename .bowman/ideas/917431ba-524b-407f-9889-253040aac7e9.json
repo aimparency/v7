@@ -14,14 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Backend procedure, MCP tool import_github_issues and a project-settings field; verified live. Awaiting acceptance.\n\nUI entry added: Project settings → 'GitHub Issues' field (owner/repo or github.com URL) → reports 'Imported N issues, M already there'; errors as toast. Verified in the running app on the scratch project (sindresorhus/slugify: 'Imported 0 issues, 1 already there.'). README documents the import.",
-    "date": 1792073406241
+    "date": 1793550909044
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

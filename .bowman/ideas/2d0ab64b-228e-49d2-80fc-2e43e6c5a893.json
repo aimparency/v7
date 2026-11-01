@@ -22,9 +22,9 @@
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The value-rationale design and implementation are complete and freshly verified across layers; awaiting user acceptance.\n\nThe design questions were resolved by the implemented child using the recommended legitimacy-preserving choice: valueRationale is optional free text available on every idea, documentation-only, and never auto-derives intrinsicValue. It is implemented across shared schema, backend create/update/proposal persistence, MCP create_idea/update_idea, frontend creation/editing, and idea display. Fresh verification on 2026-07-29: focused frontend creation/edit suites passed 37/37; MCP idea tools suite passed; backend valueRationale persistence coverage is included in the freshly green 68/68 backend suite.",
-    "date": 1785325394465
+    "date": 1793550900719
   },
   "intrinsicValue": 0,
   "cost": 3,

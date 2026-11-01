@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "CommitModal from the header button: changed files with checkboxes (all on, code first, idea/phase files named by their text), message field, 'Commit N files'. Backend git.commit stages only the chosen paths and commits with --only, so others' staged changes stay staged (backend test on a temp repo, 3/3). Component spec 1/1, pnpm check 25/25; opened live, no commit made in the real repo.",
-    "date": 1792137641801
+    "date": 1793550909709
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

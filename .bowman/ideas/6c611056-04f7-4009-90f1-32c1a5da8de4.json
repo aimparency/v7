@@ -25,14 +25,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "The integration boundary and staged activation criteria are now specified against official A2A 1.0. Awaiting Felix's architectural acceptance; implementation remains deliberately gated on a real interoperability case.\n\nResearched the official A2A 1.0 specification and repositories and created meta/a2a-strategy-agent-boundary.md. Defined Aimparency's role as the human-intent/strategy agent, separated A2A peer collaboration from MCP graph tooling, mapped three candidate skills, specified bounded delegation and verification rules, and limited the first possible implementation to a generated Agent Card plus one authenticated read-only skill. The document explicitly keeps customer validation ahead of protocol completeness.",
-    "date": 1784793828484
+    "state": "human-dependent",
+    "comment": "A2A boundary specified (meta/a2a-strategy-agent-boundary.md). Implementation waits on a real interoperability case: a customer workflow or deployer agreeing to a concrete exchange.",
+    "date": 1793550911438
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

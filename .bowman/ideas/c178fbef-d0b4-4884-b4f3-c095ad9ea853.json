@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Header button '± N' (uncommitted files, refreshed every 30 s and on hover) turns into '± N · commit' in the unclear color when there are more than 10 changes or changes left 2+ days; the title says when the last commit was. Hidden for read-only or non-git projects. utils/git-status needsCommit tested; seen live: '± 17 · commit'.",
-    "date": 1792137641714
+    "date": 1793550909648
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

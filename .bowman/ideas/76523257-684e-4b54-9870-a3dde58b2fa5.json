@@ -16,14 +16,14 @@
     "b16cdc29-a215-4b07-a262-49efd6171b2f"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The published Devpost submission includes https://youtu.be/91JPjLPlXUM as its demo video; awaiting Felix's acceptance before done.\n\nLive authenticated Devpost verification on 22 July 2026 shows project 1359213 published with video_url=https://youtu.be/91JPjLPlXUM and submitted to OpenAI Build Week. The prior human-dependent recording/upload blocker has therefore been satisfied externally.\n\nOutcome: Created a timed 2:35 English demo script, exact screen/voice sequence, and privacy/capture checklist in meta/applications/openai-build-week-2026/demo-script.md. Effectiveness: The script stays focused on the judge-visible intent → context → Codex → Git evidence loop and explicitly separates human decisions from GPT-5.6/Codex work. Lesson: Keep the recorded walkthrough narrower than the overall product; the provenance proof is understandable within three minutes.\n\nOutcome: Added a 214-word narration-only teleprompter and six-cue SRT subtitle file synchronized from 00:00 to 02:35. Updated the submission checklist. Effectiveness: The human recording step now needs only screen capture and reading; captions can be imported directly rather than recreated in the editor. Lesson: For institutionally human deliverables, reduce the handoff to the smallest possible mechanical action and preserve exact timing.",
-    "date": 1784745261363
+    "date": 1793550897950
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

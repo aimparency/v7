@@ -31,14 +31,14 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Decision and shared mutation refactor complete; ready to show the user.\n\nKept panel and modal as separate presentation/state surfaces. Added typed data-store actions for connection detail updates and removal, including optimistic local updates and rollback on failure. Routed GraphSidePanel and ConnectionDetailsModal through the shared connection API; side-panel metrics already route through dataStore.updateIdea. Updated focused tests for the store contract. Verification: 34 focused tests pass, production frontend build passes, git diff --check passes.",
-    "date": 1784540973732
+    "date": 1793550896276
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

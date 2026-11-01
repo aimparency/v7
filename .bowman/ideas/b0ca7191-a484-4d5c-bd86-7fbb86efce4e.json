@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting UI wording acceptance.\n\nRenamed both graph-creation phase-skip options from “leave floating” to “leave uncommitted.” Their existing descriptions already correctly state that no phase commitment is created. “No supported idea” remains the separate root/parent relation choice. Verification: list-store tests 4/4, frontend production build/type-check, repository search confirms no remaining “leave floating” labels, and git diff --check passed.",
-    "date": 1784893476159
+    "date": 1793550899412
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -14,20 +14,21 @@
   "supportedIdeas": [
     "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
     "fcb77ff3-0bb5-416c-8f70-ad6a5ac2e60e",
-    "a5735564-9b26-48cd-9c40-af9a05c6b95a"
+    "a5735564-9b26-48cd-9c40-af9a05c6b95a",
+    "5bd2c07e-babe-479e-a68d-ae3cfafe32ab"
   ],
   "committedIn": [
     "111d2965-0ca2-4b07-ab5c-eef1571a820a"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Client-ready German proposal drafted and internally checked; price and legal terms require founder/client validation.\n\nCreated meta/ai-transformation-diagnostic-offer.de.md: a concise two-week, one-workflow diagnostic proposal with €2,500 net first-price hypothesis, 50/50 payment, explicit client inputs and deliverables, no credentials/production automation during diagnosis, data minimization, exclusions, acceptance procedure, and separately authorized pilot. Price is labeled a hypothesis and legal terms require review. Verification: git diff --check passed and all required commercial/boundary clauses are present.",
-    "date": 1784741415799
+    "date": 1793551360131
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

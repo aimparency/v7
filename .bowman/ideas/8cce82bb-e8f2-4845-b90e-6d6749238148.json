@@ -27,14 +27,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Symmetric per-idea connection normalization implemented and internally verified; awaiting visual acceptance in the existing graph runtime.\n\nRevisited after Felix's force-normalization observation on 29 July 2026. The previous implementation normalized flow against the median of all visible connections, so unrelated graph edges influenced a node's force scale. Replaced it with symmetric endpoint normalization: edgeStrength = flow/sqrt(totalIncidentFlow(source)*totalIncidentFlow(target)), square-root compressed into 0.25–0.75 with a sole edge at 0.75 and a 0.5 fallback for absent flow. Thick sibling edges remain stronger; multiplying every flow by the same constant changes nothing; source and target share one coefficient, so the existing radius² inverse-mass movement remains equal-and-opposite and conserves the surface-weighted graph center. Explicitly subtracting aggregate force is unnecessary and would hide asymmetric-force bugs. Verification: focused graph-force tests 9/9, frontend vue-tsc, staged/unstaged diff checks.",
-    "date": 1784881877278
+    "date": 1793551410662
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

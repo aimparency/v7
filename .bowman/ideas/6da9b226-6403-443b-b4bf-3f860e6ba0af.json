@@ -14,14 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "scripts/hooks/codex-continue-on-stop.sh + packages/mcp/src/tools/hooks.ts; hook contract test PASS, mcp 47/47. Felix to confirm the wording.\n\nOutcome: Not reproduced: get_idea_context and get_prioritized_ideas against this repo changed no file under .bowman (find -newer) and left git status identical. Effectiveness: Rules out the read path for these tools; the agent's modified files were most likely edits by another client (UI, another agent) sharing the working tree. Lesson: With shared working trees, unexplained .bowman changes usually come from a parallel writer; same-commit staging of only one's own files keeps that noise out of commits.",
-    "date": 1792122084169
+    "date": 1793550909348
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

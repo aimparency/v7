@@ -28,9 +28,9 @@
     "d3c486d6-60a9-4843-a16f-b545c086fcc2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Funding package drafted and internally checked; ready to show the user before final completion.\n\nCreated meta/applications/funding-15k-2026 with a two-pager, deck outline, 3-minute demo script, EUR 15k use-of-funds plan, outreach templates, and qualified funding routes. Positioning is Git-native intent and dependency infrastructure for AI-assisted development. Ask is EUR 15k minimum by 2026-08-31, toward a EUR 50k bridge, with 3 x EUR 5k paid design partnerships as a parallel route. Live checks on 2026-07-20 confirm Prototype Fund applications open 2026-10-01 and EXIST is conditional on founder/institution eligibility. git diff --check passes. Human confirmation remains for Robin Maier's role/permission, contact details, legal instrument, and externally supportable evidence/screenshots.",
-    "date": 1784534535784
+    "date": 1793550896046
   },
   "intrinsicValue": 0,
   "cost": 2,

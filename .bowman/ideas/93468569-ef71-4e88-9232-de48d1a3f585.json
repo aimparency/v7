@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Commit 41afa461: narrowestHitLink (arrow-geometry.ts), used by GraphView hitTestLink. Unit tests cover: narrowest wins regardless of draw order, ties go to the topmost, miss returns nothing. Not yet tried in the browser.",
-    "date": 1793435909256
+    "date": 1793551409270
   },
   "intrinsicValue": 0,
   "cost": 1,

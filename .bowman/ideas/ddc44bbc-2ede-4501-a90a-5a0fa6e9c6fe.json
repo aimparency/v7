@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Verified: dry-run prints project/repo links, missing dir exits 1; ?project= on an empty folder created .bowman in the running app; validate:local-runtime PASS with live config checksum unchanged; pnpm check 25/25.",
-    "date": 1792083971493
+    "date": 1793550909143
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

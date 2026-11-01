@@ -17,14 +17,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Two-step contextual creation gate is implemented and internally verified; awaiting Felix's acceptance. The running MCP client must be restarted later to expose the new schema/behavior.\n\nImplemented an enforced MCP-only two-call creation gate. First create_idea call performs existing combined text+semantic search, returns up to eight related active/cancelled ideas with status rationale and a deterministic token, and writes nothing. Second identical call with the token creates; changing any proposal field invalidates it. Similarity remains contextual rather than an automatic veto. This is intentionally separate from the richer human-facing subtree proposal system. Verification: focused MCP ideas+phases tests 16/16 pass, including no-write preview, cancelled rationale visibility, mismatch rejection, and confirmed creation; MCP TypeScript build passes.\n\nOutcome: Kept two calls. The token now binds only project + normalized text, so description, status, parents or estimates can change after the review; a changed text still needs a fresh review (test added, mcp 47/47). Effectiveness: Measured whether a score threshold could skip the review when nothing is close: the text part of idea.search is rank-based (top hit always 1.0), and semantic cosine put a paraphrased duplicate at 0.81, the proposal's own parent at 0.79 and an unrelated sibling at 0.78. No threshold separates duplicates from family. Lesson: Similarity scores can inform a reviewer but cannot decide on their own; reduce friction around the gate (what the token binds) rather than skipping it on a score. Pattern: bge cosine is a weak duplicate separator (see find_duplicate_ideas calibration).",
-    "date": 1784886658805
+    "date": 1793550898700
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

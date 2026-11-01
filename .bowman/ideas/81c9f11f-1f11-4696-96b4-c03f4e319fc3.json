@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Specs + pnpm check 25/25. Live: filter, perfect-match highlight, Tab/j/Escape verified in the running UI. Thumbnail capture not verifiable headless (no requestAnimationFrame); Felix to see thumbnails appear after opening a project's graph.\n\nOutcome: Project discovery now skips .test-tmp directories (DISCOVERY_IGNORED_DIRS); the discovery test plants a leftover test project and asserts it is not found. Effectiveness: Backend discovery test passes; pnpm check 25/25. Lesson: Test fixtures that outlive their run leak into user-facing lists; ignore their directory at the scanner.",
-    "date": 1792120326416
+    "date": 1793551361818
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -17,14 +17,14 @@
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implementation and internal verification complete; awaiting user acceptance per repository workflow.\n\nImplemented lazy, incremental migration to canonical phase ownership arrays. Project metadata reads now derive/reconcile rootPhaseIds from legacy parent backlinks and order/from/to fields, and phase reads do the same for childPhaseIds. Existing canonical order is preserved, stale/duplicate IDs are removed, and missing siblings are appended deterministically. Project and phase routers share the canonical metadata reader so mutations cannot bypass migration; phase creation migrates its owner before writing the new phase to avoid duplicate insertion. Verification: 68/68 backend tests pass, backend TypeScript build passes, full build:core passed, and git diff check passes. Added fixtures covering legacy temporal/order migration, disk persistence, partial canonical repair, canonical-order preservation, and create-on-legacy behavior.\n\nOutcome: The removal was complete across all layers except server.ts:normalizePhase, which still asserted `typeof parsed.from !== 'number'` causing newly created phases (without from/to) to fail validation on read. Fixed by removing those two type checks. All 30 backend tests pass. Phase creation works end-to-end without date fields. Effectiveness: Fix was a one-line removal. The root cause was that the schema change (making from/to optional) was not propagated to the validation guard in normalizePhase. TypeScript didn't catch it because the guard used runtime typeof checks, not schema inference. Lesson: When making schema fields optional, grep for runtime typeof guards on those same fields — they won't be caught by tsc but will silently break reads of new data. Pattern: Schema/type change that compiles clean but breaks at runtime due to a disconnected runtime validation path. The compiler only sees the type layer, not invariant checks written as if conditions.",
-    "date": 1785309837776
+    "date": 1793550899944
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

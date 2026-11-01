@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Scoped down with Felix 2026-10-17 to selection by id; merging the three fields into one cursor was dropped. Done: the phase selection is uiStore.selectedIdeaIdByPhaseId (moved off the Phase entities), the floating selection is floatingIdeaId, and the child selection is IdeaUIState.selectedChildId. The index repair in replacePhase/replaceIdea is gone. keepIdeaSelection now runs for every pushed change and only steps in when the selected idea leaves its list: it then selects the successor, or the new last entry, as dd does. Move actions lost most of their index bookkeeping (Shift+J/K up/down merged into one function). Saved view state stores ids; a saved state from before restores without the remembered per-phase ideas once. Tests: new idea-moves.spec (Shift+J/K in a phase, across phases, inside a parent) and selection-anchor.spec (insert above, removal, child removal); frontend 316 tests, pnpm check 25/25. Needs Felix's live check of j/k, Shift+J/K, h/l, dd, x/p and reload.",
-    "date": 1792225506755
+    "date": 1793550910518
   },
   "intrinsicValue": 0,
   "cost": 3,

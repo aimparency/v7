@@ -17,14 +17,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "All internal pair-force families now conserve the same surface-weighted center and shared clamping preserves cancellation; internally verified, awaiting Felix's visual runtime acceptance.\n\nMathematical audit: hierarchy links already split opposite endpoint movement by radius² surface mass, conserving mA·ΔA+mB·ΔB. Collision forces instead used radius weighting, and semantic forces used equal displacement, so the simulation mixed mass models and could translate the surface-weighted graph center. Updated collision and semantic interactions to use the same radius² invariant while preserving their equal-size relative correction. Replaced independent per-node movement clamping—which could break cancellation—with one shared scale across the whole frame. Normalized transported-flow strength remains unchanged. Only global centering and deliberate user/freeze constraints are external forces. Verification: graph-force tests 8/8 pass including unequal-surface conservation; frontend vue-tsc passes. Runtime visual acceptance remains required.",
-    "date": 1784887127061
+    "date": 1793551410779
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

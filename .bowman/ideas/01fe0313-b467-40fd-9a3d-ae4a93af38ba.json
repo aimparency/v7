@@ -12,7 +12,8 @@
         1.657380833241332
       ],
       "weight": 1,
-      "hypothesis": "Deleted ideas left in the cache and the vectors come back in search and duplicate reports; removing them keeps both trustworthy."
+      "hypothesis": "Deleted ideas left in the cache and the vectors come back in search and duplicate reports; removing them keeps both trustworthy.",
+      "reflection": "Held: on 2026-11-01 find_duplicate_ideas reported 824 indexed of 824 ideas, 0 unindexed, and no pairs involving deleted ideas."
     },
     {
       "ideaId": "624f8d49-3a71-4b76-942b-d01be87bbfb9",

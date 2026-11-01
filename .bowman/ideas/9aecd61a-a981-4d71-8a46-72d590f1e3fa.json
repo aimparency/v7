@@ -10,14 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; needs visual/keyboard acceptance because no frontend runtime is currently running.\n\nExtracted shared backend path completion/home expansion/.bowman detection utilities and reused them from both project selection and spin-off. Project selection now renders the untyped common directory prefix as subdued inline text and accepts it with Tab; ambiguous candidates complete only their common prefix. The debounced inspection remains revision-guarded. Verification: selector tests 3/3, backend tests 62/62 and build, frontend tests 197/197 and production build/type-check, git diff --check passed.",
-    "date": 1784893309481
+    "date": 1793551361509
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

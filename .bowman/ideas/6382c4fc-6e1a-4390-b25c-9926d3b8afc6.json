@@ -16,14 +16,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Recenter control and robust 90%-fit camera framing are implemented and internally verified; awaiting visual interaction acceptance in the existing runtime.",
-    "date": 1785393038152
+    "date": 1793551409685
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -16,14 +16,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The ordinary-text → editable proposal → explicit approval path is implemented and internally verified; awaiting Felix's UI acceptance.\n\nAdded a toolbar “New goal” entry point and AimProposalEntry. Ordinary text becomes a transient one-root proposal (no graph write), then opens the recursive editor/review surface. Cancelling review returns to text entry; successful approval reloads all ideas, switches to graph view, and selects the durable root. This is a usable no-model baseline and preserves the same contract for later model/voice input. Verification: entry+review tests 5/5, full frontend tests 204/204, frontend type-check, production build, and git diff check.",
-    "date": 1784894549981
+    "date": 1793551410482
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

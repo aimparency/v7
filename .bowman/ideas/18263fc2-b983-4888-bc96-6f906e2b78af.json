@@ -29,9 +29,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Top-level UI taxonomy and the mixed UI-improvements bucket are cleaned and internally checked; awaiting Felix's graph review before done.\n\nApplied the agreed structural taxonomy without adding new relation types. Cleaned the top-level UI catch-all so it now contains only graph view, list view, watchdog enhancements, project loading, and mobile support. Reparented seven direct concrete ideas with edge explanations. Then emptied the mixed UI improvements bucket by moving all 27 children into list, graph, or watchdog areas (one cross-surface connection idea supports both list and graph) and merged the redundant empty UI improvements container into list view. Cancelled four vague strategy/goal-setting abstractions during the same relevance pass. Graph consistency is checked separately before handoff.",
-    "date": 1784886890091
+    "date": 1793550898864
   },
   "intrinsicValue": 0,
   "cost": 1,

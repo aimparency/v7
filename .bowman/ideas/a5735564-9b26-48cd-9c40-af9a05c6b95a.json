@@ -24,9 +24,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Staged, outcome-aligned commercial model drafted and internally checked; price bands remain explicit hypotheses for owner validation.\n\nCreated meta/ai-transformation-commercial-model.md. Defined diagnostic, pilot, rollout, stewardship, and optional capped outcome components; conservative delivery-margin acceptance rules; outcome-attribution safeguards; ownership/responsibility boundaries; anti-consultancy-drift metrics; client qualification; and a five-owner first commercial test. Price bands are labeled unvalidated hypotheses. Synthetic activity and mock revenue are explicitly excluded. Verification: git diff --check passed and all required commercial/economic safeguards are present.",
-    "date": 1784738478496
+    "date": 1793551359719
   },
   "intrinsicValue": 0,
   "cost": 3,

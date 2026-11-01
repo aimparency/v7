@@ -14,14 +14,14 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "review",
-    "comment": "Implemented in 7d73c932. pnpm start asks once for the repository, hosting, port, listen address and first admin; hosted mode serves the UI, /trpc and /mcp/sse on one port. Roles read (anyone), write, admin; one backend access middleware for UI and MCP; local-only tools are off when hosted. Tests: backend auth and hosted-server tests, validate-local-runtime, pnpm check 25/25. Waiting for Felix's trial on the Commons Hub server.",
-    "date": 1792182016358
+    "state": "human-dependent",
+    "comment": "Implemented in 7d73c932 with tests (auth, hosted server, validate-local-runtime, pnpm check). Waits on Felix's trial on the Commons Hub server.",
+    "date": 1793550911500
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

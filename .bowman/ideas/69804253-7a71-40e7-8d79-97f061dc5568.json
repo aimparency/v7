@@ -15,14 +15,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Frontend vue-tsc build restored and strictness failures repaired; awaiting user acceptance.\n\nAdded the narrow TypeScript 6 deprecation compatibility setting, then fixed every real strictness error it exposed across color conversion, Git evidence parsing, watchdog Socket/touch handling, linked-repo normalization, list range selection, and modal test typing. Verified: frontend type-check passes; backend focused tests 4/4; frontend focused tests 30/30.",
-    "date": 1784752617438
+    "date": 1793550898505
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

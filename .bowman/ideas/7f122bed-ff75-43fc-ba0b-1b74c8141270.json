@@ -45,9 +45,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The project loading page's concrete children are implemented: URL restoration is done, and path-entry/open-vs-new behavior awaits UI acceptance.\n\nReconciled this container after inspecting its children. Project URL persistence/restoration is done; path entry now has shared folder completion and accurate Open Project/New Project detection, internally verified and in review. No additional unimplemented child remains under this broad container.",
-    "date": 1784893984360
+    "date": 1793551361742
   },
   "intrinsicValue": 0,
   "cost": 1,

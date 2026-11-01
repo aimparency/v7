@@ -20,14 +20,14 @@
     "4cd9b6ad-ac7e-4c51-b9c8-53c9982bdad5"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The three-minute walkthrough, one-sentence category, truth labels, audience-specific asks, and evidence checklist are drafted and internally checked; awaiting Felix's narrative/visual acceptance.\n\nCreated meta/three-minute-moonshot-walkthrough.md as the detail artifact for this graph idea. It provides a timed survival→graph→bounded delegation→external evidence→moonshot arc, explicitly labels what works now versus what is being tested versus the A2A direction, and avoids claiming customers, revenue, or deployed interoperability. Following Felix's correction, the one-month schedule itself is now represented as four Aimparency phases with existing ideas committed to each; Markdown remains only for the timed script detail.",
-    "date": 1784818134627
+    "date": 1793551360250
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

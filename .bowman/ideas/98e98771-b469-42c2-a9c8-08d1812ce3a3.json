@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "New server tests: hygiene sections by parent status, legacy file returning through git still readable, unknown id names 'not found'. pnpm check 25/25. MCP needs /mcp reconnect to load it (the running MCP server predates today's fixes).",
-    "date": 1792085736732
+    "date": 1793550909265
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

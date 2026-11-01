@@ -16,9 +16,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting user acceptance of the phase-header interaction and ranked subtree presentation.\n\nImplemented in packages/frontend/src/components/Phase.vue with pure recursive ranking helpers in packages/frontend/src/utils/phase-priority.ts and focused tests. The control defaults to human-dependent, supports every configured state, recursively loads descendant phases, excludes archived ideas, ranks by calculated priority, labels the owning phase, and opens the editor on selection. Verification: focused Vitest 3/3, frontend vue-tsc, production Vite build, and git diff --check all passed. Development server was not touched.",
-    "date": 1785399418060
+    "date": 1793550901667
   },
   "intrinsicValue": 0,
   "cost": 2,

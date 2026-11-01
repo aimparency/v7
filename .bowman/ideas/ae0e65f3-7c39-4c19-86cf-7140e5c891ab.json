@@ -56,9 +56,9 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Pre-registered paired-run benchmark contract and analyzer are implemented and internally verified; awaiting user acceptance.\n\nImplemented autonomy benchmark protocol 2026-08-01.v1 with four frozen task classes, paired graph-grounded/stateless run evidence, exact model/tool/token/time matching, evidence requirements, aggregate metrics, and positive/null/negative/invalid outcomes. A test exposed and drove correction of a rule that could have rewarded lower intervention despite worse completion; the final rule requires non-worse completion and non-worse safety. Verification: wrapped-agents common 77/77 tests passed, TypeScript type-check passed, git diff check passed. No actual model runs were performed, so the parent hypothesis remains unproven.\n\nOutcome: Created a frozen paired-run contract and analyzer; corrected an initially permissive intervention-saving rule after a failing test. Effectiveness: Strong pre-registration and validation foundation, but no empirical agent result yet. Lesson: Efficiency gains must never compensate for worse verified completion or safety. Pattern: Capability comparisons need matched budgets, authoritative evidence, and explicit null/negative outcomes.",
-    "date": 1785594206796
+    "date": 1793550902156
   },
   "intrinsicValue": 0,
   "valueRationale": "A paired, budget-matched protocol is necessary to attribute any observed gain to Aimparency rather than model, task, or resource differences.",

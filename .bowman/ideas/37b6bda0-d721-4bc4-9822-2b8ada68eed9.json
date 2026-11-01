@@ -19,7 +19,7 @@
   "committedIn": [],
   "status": {
     "state": "review",
-    "comment": "2026-11-01 trace: modal → createAndSelectPhase → phase.create (writePhase + updateSiblingIds + search index) costs a few ms on this project; the backend is not the cause. Likely cause: the dev backend restarts under tsx watch on every backend/shared source change (agents edit those often). tRPC's default reconnect backoff (0, 2, 4, 8, 16 s) left the mutation queued for seconds, and the phase.create change event fell into the gap, so the new phase didn't show and a second Enter created another. 9c478c93: reconnect at 0/250/500 ms…2 s, the connection label shows 'connecting' while down, and a reconnect resyncs meta, phases and ideas (removing deleted ones). Not reproduced live; plausible match for 'nothing for seconds, then two phases'.",
+    "comment": "Question for Felix: since 9c478c93 (2026-11-01), has creating a phase ever hung for seconds or produced two phases? If not after a few days, accept.\n\nCause found: the dev backend restarts under tsx watch on backend/shared source changes; tRPC's reconnect backoff (up to 16 s) left the mutation queued and the change event fell into the gap. 9c478c93: reconnect at 0/250/500 ms…2 s, a 'connecting' label while down, and a full resync on reconnect. Phase create itself costs a few ms.",
     "date": 1793517453079
   },
   "intrinsicValue": 0,

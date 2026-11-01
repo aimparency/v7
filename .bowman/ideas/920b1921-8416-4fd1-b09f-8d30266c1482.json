@@ -13,14 +13,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Touch equivalents exist for every listed action: long-press menus on ideas and phases (create, edit, move, reparent, cut/copy/paste, delete), tap-to-create on empty slots, swipe between columns, Search and Columns/Graph header buttons. Last gap closed in 3822f62: the graph side panel has Edit and Delete (second tap confirms) for the selected idea. Felix still has to try it on a phone (pnpm dev:mobile).\n\nStatus reconciliation on 2026-07-30 followed the existing explicit design question rather than guessing a complex touch-editing interaction.",
-    "date": 1792147332961
+    "date": 1793550909761
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -17,9 +17,9 @@
     "ce8516bc-df20-44d3-9fea-6784401e8276"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "5aec0b2a reverts e6df8faf: the pre-existing behavior (browser state wins, cursor chain only without it) is what Felix asked for on 2026-11-01. Covered by list-store.spec ('restores this browser's own selection…', 'follows the cursor chain … without saved state').",
-    "date": 1793516720722
+    "date": 1793550910655
   },
   "intrinsicValue": 0,
   "cost": 1,

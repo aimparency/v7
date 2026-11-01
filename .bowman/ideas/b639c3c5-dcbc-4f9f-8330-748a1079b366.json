@@ -19,15 +19,15 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Cycle implemented and internally verified; awaiting user acceptance.",
-    "date": 1785594255641
+    "date": 1793550902317
   },
   "intrinsicValue": 0,
   "valueRationale": "This is direct evidence that a test-driven reflection loop can detect and correct an over-optimistic capability claim.",
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

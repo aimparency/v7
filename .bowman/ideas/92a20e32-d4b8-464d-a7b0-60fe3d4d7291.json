@@ -17,13 +17,14 @@
     }
   ],
   "supportedIdeas": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+    "6bbb740c-2281-4dbb-83c8-a391e626312a",
+    "90cf0309-023f-486c-b7a0-322ee2910d46"
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "3fc03890: graph color mode 'Activity' (also via c). Backend keeps per idea a vector of last-access times by kind, in memory: found & contextRead (5 min half-life, weight 0.3, blue), read (15 min, 0.8, light blue), agent write (1 h, amber), agent status change (6 h, green), manual edit in the UI (1 h, pink). MCP read tools report what they showed; writes come from backend change events (no client id = agent). Needs: backend + MCP reconnect, then a look in the browser.",
-    "date": 1793474149846
+    "date": 1793551410198
   },
   "intrinsicValue": 0,
   "cost": 1,

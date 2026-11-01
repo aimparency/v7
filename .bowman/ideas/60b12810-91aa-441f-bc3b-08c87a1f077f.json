@@ -10,14 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting user demonstration and acceptance before marking done.\n\nCtrl+Space now opens a functional loop actions overlay with direct keys, J/K navigation, Enter, and Escape. The overlay exposes create/duplicate/start/stop/restart/fullscreen/hide actions. Verified by three passing LoopActionsOverlay unit tests and a successful production Vite build.",
-    "date": 1784471514964
+    "date": 1793550895172
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

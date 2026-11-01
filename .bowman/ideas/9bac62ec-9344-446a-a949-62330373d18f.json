@@ -16,14 +16,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Text and voice entry are connected to model-backed proposal generation with manual fallback; internally verified and awaiting live configured-model/UI acceptance.\n\nText entry now offers “Propose with model” and “Start manually,” shows generation progress/errors, and opens the shared review UI for either result. Browser speech calls the same proposeIdeaSubtree endpoint; if model configuration/inference fails it opens a manual draft and explains the fallback. No generation path calls approval or graph writes. Verification: focused proposal tests 8/8, full frontend tests 207/207, frontend type-check, production build, and git diff check.",
-    "date": 1784895125626
+    "date": 1793551411369
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

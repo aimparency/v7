@@ -17,14 +17,14 @@
     "b16cdc29-a215-4b07-a262-49efd6171b2f"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implementation and internal verification complete; awaiting human review per repository policy.\n\nImplemented visible idea-to-commit provenance: backend Git log query keyed by exact idea UUID, Implementation evidence in AimEditModal beside dependency/repo context, and focused tests. Verified: backend test 1/1, AimEditModal tests 23/23, backend TypeScript build, frontend Vite production build, git diff --check. Full frontend type-check remains blocked by pre-existing TypeScript 6 baseUrl deprecation in tsconfig.\n\nOutcome: Aligned the Git evidence query with MCP reconciliation by searching the stable 8-character prefix. Verified against idea 0733cb72-c746-478c-b06e-ae4faa2af712: the query returned real commit 93fdf3e with author, timestamp, and subject. Effectiveness: The feature now works with established project history and remains compatible with full UUID references because those include the prefix. Backend tests pass 2/2 and TypeScript build passes. Lesson: End-to-end evidence must be tested against repository conventions, not only synthetic parser fixtures.\n\nOutcome: Created commit 9e22fac referencing idea d4e8cdcf. Verified the built Git evidence query immediately resolves that same commit, completing the recursive intent → Codex work → commit → visible evidence proof. Local-only .grok configuration remains excluded. Effectiveness: The commit contains the working provenance feature, tests, idea records, Build Week docs, Devpost copy, demo script, and original project artwork. The public submission can point to one dated, idea-linked implementation commit. Lesson: A self-demonstrating provenance feature becomes materially stronger once its own implementation commit is discoverable through the exact mechanism it adds.",
-    "date": 1784653635655
+    "date": 1793550896519
   },
   "intrinsicValue": 0,
   "cost": 3,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

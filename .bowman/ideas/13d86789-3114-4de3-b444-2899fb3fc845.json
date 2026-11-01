@@ -12,14 +12,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Desktop modifier/range selection and list-view touch long-press are implemented; awaiting user acceptance.\n\nList long-press now toggles shared multi-selection before opening the action menu. Focused Idea and list-store tests pass (9/9); frontend production build passes.",
-    "date": 1784493390092
+    "date": 1793550895461
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

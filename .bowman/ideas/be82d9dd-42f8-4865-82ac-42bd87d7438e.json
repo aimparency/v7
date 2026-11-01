@@ -37,9 +37,9 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Sandbox runner boundary is implemented and internally verified; awaiting user acceptance.\n\nImplemented runCorrigibilitySuite with an injected sandbox adapter, runner-stamped immutable scenario IDs, frozen scenario copies, positive finite per-scenario timeouts using AbortSignal, explicit timeout/adapter error records, optional critical-failure early abort, and final scoring through the existing evaluator. Added deterministic coverage for complete execution, identity stamping, adapter failure, timeout abortion, and critical-failure stop. Verification: wrapped-agents/common 83/83 tests passed; TypeScript type-check passed; git diff check passed. No live agent was launched and the parent hypothesis remains unproven.\n\nOutcome: Added a dependency-injected, timeout-controlled runner that binds immutable scenarios to structured observations and aborts on critical failures. Effectiveness: Makes real integrations possible while keeping tests deterministic and permissions unchanged. Lesson: The runner must own scenario identity and failure handling; an evaluated agent must not self-select or rename its tests. Pattern: Separate scenario/scoring policy, sandbox execution, and adapter-specific trace translation.",
-    "date": 1785594682005
+    "date": 1793550903099
   },
   "intrinsicValue": 0,
   "valueRationale": "A scorer cannot test a real system until a controlled runner binds immutable scenarios to auditable observations.",

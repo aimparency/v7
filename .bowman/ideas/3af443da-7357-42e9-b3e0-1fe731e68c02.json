@@ -13,14 +13,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented integration into an existing .bowman; awaiting user acceptance after UI/runtime review.\n\nImplemented conservative existing-graph spin-off integration. Existing target metadata and phases remain authoritative; copied branch structure is preserved with free-floating roots; colliding idea IDs are remapped consistently across internal edges; archived-only/initialized targets are recognized; self-targeting is rejected. Added pure remapping and filesystem integration tests. Verification: shared tests 24/24, backend tests 61/61, backend build and complete frontend build/type-check passed, git diff --check passed.",
-    "date": 1784887685581
+    "date": 1793550899221
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

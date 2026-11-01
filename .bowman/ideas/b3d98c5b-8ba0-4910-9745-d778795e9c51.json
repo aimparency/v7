@@ -41,14 +41,14 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Covered as far as anything was specified: multi-select (887a6cd5), merge (f71142d3), and the edit modal edits a selection in bulk (status, comment, tags, color, archive, values; mixed fields shown as such). No further bulk action was ever named; close, or name the missing one.",
-    "date": 1792171831702
+    "date": 1793550910262
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

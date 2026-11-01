@@ -29,9 +29,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Folder-only path autocomplete and existing/new project detection are implemented and internally verified; awaiting UI acceptance.\n\nThe two concrete children now cover this outcome: the button distinguishes existing .bowman graphs from new projects, and folder paths expose subdued common-prefix completion accepted with Tab. Both share backend path inspection/completion utilities. Full backend/frontend tests and builds passed in their implementation commits; visual/keyboard acceptance remains.",
-    "date": 1784893977236
+    "date": 1793551361612
   },
   "intrinsicValue": 0,
   "cost": 1,

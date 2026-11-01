@@ -19,14 +19,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Header shows 'Hook on/off' when the hook is installed; click toggles the per-clone git flag via system.setContinueHook. continue-hook moved to shared (used by MCP and backend). Verified live: off -> on round trip, shared tests 3/3, pnpm check 25/25. Left ON for Felix to switch off.",
-    "date": 1792136848649
+    "date": 1793550909536
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -17,14 +17,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Already implemented and freshly verified; stale open status corrected to review pending user acceptance.\n\nRelevance audit found the requested behavior already implemented (introduced in commit 4c495b4): AimStatusSchema makes reviewedAt optional for legacy compatibility; backend idea.update preserves status.date for comment/same-state review changes and advances it only on state transition; MCP create/update schemas expose reviewedAt; and the focused MCP test verifies explicit review on creation, same-state review preserving transition time, and later transitions preserving reviewedAt. Fresh verification on 2026-07-29: packages/mcp/src/__tests__/tools-ideas.test.ts passed 13/13, including 'status date changes only on state transition; reviewedAt is independent'.",
-    "date": 1785319928451
+    "date": 1793550900119
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

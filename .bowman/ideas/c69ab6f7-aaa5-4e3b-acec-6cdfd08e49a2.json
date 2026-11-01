@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Structural-parent convention has been applied to the UI and UI-improvements catch-alls; awaiting Felix's acceptance.\n\nApplied the structural-parent convention: UI now contains only structural product surfaces; concrete work was moved to list/graph/watchdog/project-loading parents with contribution explanations. The redundant UI improvements catch-all was emptied and merged into list view.",
-    "date": 1784886895352
+    "date": 1793550899029
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

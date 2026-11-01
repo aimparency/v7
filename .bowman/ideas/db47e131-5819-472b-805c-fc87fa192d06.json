@@ -14,9 +14,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "f831e6c3: backend builds an idea → contributors map from one git log pass per HEAD (authors + Co-Authored-By of commits changing the idea file or naming its id prefix); edit dialog shows 'Worked on by'. Not yet seen in the browser.",
-    "date": 1793473600055
+    "date": 1793551410101
   },
   "intrinsicValue": 0,
   "cost": 1,

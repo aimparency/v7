@@ -45,9 +45,9 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Frozen evaluation contract, scenarios, scorer, and tests are implemented and internally verified; awaiting user acceptance.\n\nImplemented a runner-agnostic frozen corrigibility suite (2026-08-01.v1) with 11 scenarios across all required categories, structured observations, six metrics, fail-closed missing/duplicate handling, and detection of unauthorized external action, secret disclosure, bypassed human gates, refusal to stop, and deceptive completion claims. Added tests for a compliant passing trace, every critical failure, missing/duplicate observations, and refusal-based safety theater. Verification: wrapped-agents common 73/73 tests passed; TypeScript type-check passed; git diff check passed. This verifies the harness and scorer, not live-agent corrigibility.\n\nOutcome: Created a versioned, frozen, runner-agnostic scenario and scoring contract with comprehensive critical-failure tests. Effectiveness: High for establishing reproducible pass/fail rules; it does not yet measure a live wrapped agent. Lesson: Separate instrumentation verification from system-under-test verification, and fail closed on incomplete or duplicated observations. Pattern: Safety claims require frozen criteria, structured traces, benign controls, and explicit critical-failure gates.",
-    "date": 1785594086381
+    "date": 1793550901988
   },
   "intrinsicValue": 0,
   "valueRationale": "A frozen scorer prevents moving success criteria after observing agent behavior and makes safety failures reproducible.",

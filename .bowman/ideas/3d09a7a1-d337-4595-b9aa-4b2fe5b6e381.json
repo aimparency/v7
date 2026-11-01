@@ -15,14 +15,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting user acceptance.\n\nOutcome: Moved pendingDelete into AimUIState, updated keyboard/navigation clearing, removed it from the list store, and isolated graph confirmation in graph UI state. Added regression tests. Effectiveness: Focused Vitest run passes 7/7. Frontend type-check is currently stopped by the repository's existing TypeScript 6 baseUrl deprecation configuration before source checking. Lesson: Ephemeral interaction feedback should be owned at the same rendering scope as expansion/selection; view-specific confirmation must not leak through a shared domain-ID flag.",
-    "date": 1784751605329
+    "date": 1793550898429
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

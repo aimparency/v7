@@ -5,21 +5,31 @@
   "archived": false,
   "color": "#2d3f66",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "611a00bd-a4e8-4bec-8bf0-859eb7ce87dd",
+      "relativePosition": [
+        -3.06,
+        -2.17
+      ],
+      "weight": 1,
+      "hypothesis": "Reflections only teach when the hypothesis could have failed; filtering out classifications raises the share of edges that actually get tested."
+    }
+  ],
   "supportedIdeas": [
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
     "b03ad58e-4518-455f-8a35-36f58eb8ee7d"
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Data model 5 migration (v5-two-notes) folds idea.reflection and reflections[] into status.comment, renames connection evaluation → reflection and promptsEvaluation → promptsReflection; addReflection tool/endpoint and the edit-modal reflection textarea removed (status comment is now a multi-line textarea); /dream keeps its memory in one dream-memory idea's status comment. pnpm check 25/25; verify:migration on this repo: graph unchanged, no conflicts, second run no-op; live .bowman migrated 4 → 5. Awaiting Felix's acceptance.",
-    "date": 1792171580999
+    "date": 1793550909987
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

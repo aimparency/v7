@@ -30,15 +30,15 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Validated authority-audit restart restoration implemented and internally verified; awaiting explicit user acceptance before done.\n\nOutcome: Added restoreAuthorityAudit(unknown), which validates record shape and timestamp, recomputes the authoritative decision from canonical action type, requires exact disposition/reason agreement, reconstructs payload-free records, and keeps only the newest 50. Session startup restores this audit before enablement and state emission. Effectiveness: Full wrapped-agents/common verification passes: 161/161 tests, TypeScript tsc --noEmit, and git diff --check. Tests prove valid continuity, rejection of a forged execute claim for choice, malformed-record rejection, extra-payload stripping, and 50-entry retention. No server was started or restarted. Lesson: Persisted audit data is evidence, not authority. On restoration, recompute policy outcomes rather than deserializing prior permission claims as trusted state. Pattern: Restore untrusted operational state through a validating reconstruction boundary, never by assigning parsed JSON directly to safety-critical structures.",
-    "date": 1785601835561
+    "date": 1793550906349
   },
   "intrinsicValue": 0,
   "valueRationale": "A safety audit that disappears or trusts tampered claims on process replacement cannot support reliable autonomous operation.",
   "cost": 3,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

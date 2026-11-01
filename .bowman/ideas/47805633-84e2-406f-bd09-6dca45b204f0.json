@@ -14,14 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Test asserts topIdeaContext idea and parents; mcp 47/47, hook contract PASS, pnpm check 25/25. Needs /mcp reconnect to be visible to agents.",
-    "date": 1792122442252
+    "date": 1793550909415
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

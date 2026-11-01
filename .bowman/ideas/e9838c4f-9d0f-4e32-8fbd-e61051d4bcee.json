@@ -30,15 +30,15 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Supervisor semantic payload canonicalization implemented and internally verified; awaiting explicit user acceptance before done.\n\nOutcome: Added canonicalizeSupervisorAction and applied it before state transitions, direct legacy actions, and state-machine side effects. Semantic payload fields are removed; wait duration is clamped to 1–60 seconds; send-prompt retains only the boolean trusted-context flag and uses a local canonical prompt. Compact reflection fields can no longer persist model/terminal injection into session memory. Effectiveness: The full wrapped-agents/common suite passes 158/158 tests, TypeScript tsc --noEmit passes, and git diff --check passes. New tests prove injected text is absent from state transition history and worker prompts, canonical orchestration continues, semantic compact payloads are erased, and bounded controls are retained. No development server was touched. Lesson: An allowlisted verb is not a bounded capability if it carries arbitrary semantic arguments. Treat model output as control selection only; executable language must come from trusted local templates. Pattern: Canonicalize before authorization and state mutation, retain only explicitly typed non-semantic controls, and independently test both transient delivery and durable-memory channels.",
-    "date": 1785601599553
+    "date": 1793550906186
   },
   "intrinsicValue": 0,
   "valueRationale": "An action-type allowlist is insufficient if attacker-controlled terminal text can ride inside allowed fields and instruct the capable worker.",
   "cost": 4,
+  "selfWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

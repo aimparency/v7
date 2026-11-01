@@ -14,14 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Reusable company-autonomy operating model drafted and internally checked; awaiting user acceptance.\n\nCreated meta/company-autonomy-operating-model.md. Defined owner constitution, strategic graph, bounded loops, source-system adapters, human/institutional gates, real evidence/economics, audit/recovery, engagement lifecycle, core/domain/connector/config/bespoke boundaries, reuse promotion gate, per-client compounding telemetry, portfolio feedback, and portable client handoff. Verification: git diff --check passed; reuse, founder intervention, deployment/support cost, client concentration, authoritative systems, and rollback are all explicit.",
-    "date": 1784738525845
+    "date": 1793551359821
   },
   "intrinsicValue": 0,
   "cost": 5,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

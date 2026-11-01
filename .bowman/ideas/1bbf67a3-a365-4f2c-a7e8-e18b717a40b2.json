@@ -17,9 +17,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "2c0b75d8: ProjectSelectionView focuses its input on mount (covers opening without a project and Switch Project). Verified in the rebuilt bundle: activeElement is .project-input on http://localhost:4000/. Awaiting Felix's acceptance.",
-    "date": 1793184690348
+    "date": 1793550910606
   },
   "intrinsicValue": 0,
   "cost": 1,

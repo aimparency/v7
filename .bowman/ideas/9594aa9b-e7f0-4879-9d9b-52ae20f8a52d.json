@@ -97,14 +97,14 @@
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "All ten children are done; the last one, the runtime gitignore policy (300f5452), was decided by Felix 2026-10-16: runtime/ stays machine-local. Awaiting acceptance.",
-    "date": 1792172541738
+    "date": 1793550910361
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "335a09f locked commitIdeaToPhase/removeIdeaFromPhase. c6ab941 generalizes: updatePhase/updateProjectMeta/updateIdea (storage/) do read-change-write under a per-file lock; phase create/update/reorder/delete, setCursor, commitments and idea-removal use them. Tests in packages/backend/src/commitments.test.ts: concurrent creates in a phase, commit+remove, concurrent phase creates under a parent and at the root, rename+commit (all failed before, pass after); backend 100/100, npm run check 25/25. Still in-process only; other writeProjectMeta callers (8, e.g. linked repos) and idea connect paths are not yet locked.",
-    "date": 1791492162038
+    "date": 1793550907846
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

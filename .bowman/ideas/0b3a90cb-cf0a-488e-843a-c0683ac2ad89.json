@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Done 2026-10-17 as data model 6 (v6-self-weight migration, frozen fixture data-model-v5, pending check for a loopWeight that comes back through git). Renamed in types, backend, frontend labels (\"Self Weight\"; the connection modal shows \"self weight (its own work)\"), protocol schemas and math/. pnpm verify:migration on this repo: 809 ideas, graph unchanged; pnpm check 25/25. The live project migrated on the backend's reload. The value math is unchanged; whether self weight stays in the model is still the open question above.",
-    "date": 1792218823888
+    "date": 1793550910455
   },
   "intrinsicValue": 0,
   "cost": 1,

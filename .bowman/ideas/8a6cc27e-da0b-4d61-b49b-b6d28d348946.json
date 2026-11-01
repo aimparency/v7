@@ -1,0 +1,27 @@
+{
+  "id": "8a6cc27e-da0b-4d61-b49b-b6d28d348946",
+  "text": "Dream: reviewing while activity is warm cuts review latency",
+  "description": "Order the review inbox by activity warmth, so the human reviews work while the agent's trace is fresh. Smallest experiment: first measure the current review → implemented latency from git history (read-only). Disconfirming: no latency change after ordering by warmth; risk: old items get buried.",
+  "archived": false,
+  "color": "#304b63",
+  "tags": [
+    "dream",
+    "hypothesis"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "90cf0309-023f-486c-b7a0-322ee2910d46"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1793550689054
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

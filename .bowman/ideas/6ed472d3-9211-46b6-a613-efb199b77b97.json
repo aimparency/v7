@@ -19,15 +19,15 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Cycle implemented from a recorded system reflection and internally verified; awaiting user acceptance.",
-    "date": 1785594360524
+    "date": 1793550902729
   },
   "intrinsicValue": 0,
   "valueRationale": "Invalid telemetry can manufacture apparent capability gains; rejecting it makes the recursive-improvement evidence more trustworthy.",
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

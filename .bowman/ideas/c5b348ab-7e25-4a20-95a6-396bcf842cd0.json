@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "d3a9435. pnpm check 25/25. Checked live: project selection pencils, header (columns −/+, search, info, menu, maximize, commit, hourglass, settings, consistency check, refresh), watchdog actions overlay (all 10 icons render). Not looked at: consistency modal, terminal key pad on mobile, voice view. Key hints (← H, → L) and toast ×N stay text.",
-    "date": 1792148665835
+    "date": 1793550909864
   },
   "intrinsicValue": 0,
   "cost": 1,

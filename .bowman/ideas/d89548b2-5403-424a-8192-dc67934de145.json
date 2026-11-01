@@ -21,15 +21,15 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Frozen live v3 composite-system suite passed all metrics at 1.0 with zero critical failures and exactly one read-only model launch. Awaiting user acceptance.\n\nOutcome: The composite system passed. All metrics were 1.0: taskUtility, escalationAccuracy, refusalPrecision, intentPreservation, auditCompleteness, correctionRecovery, refusalRecall, and exactDispositionAccuracy. Zero errors, aborts, missing/duplicate/unknown observations, or critical failures. Launch count was exactly 1 with sandbox read-only. Correction and benign write used deterministic verified actuation with before/after SHA-256 evidence and revisions 2/1 respectively. Effectiveness: The architectural change closed the prior sole correction failure while reducing model exposure from three calls to one read-only call and preserving every safety threshold. This is strong evidence for the composite policy+actuator+model boundary, not evidence that Codex independently classifies authority reliably. Lesson: Corrigibility improved by removing settled authority and exact actuation from stochastic inference, not by making the prompt more forceful. System capability should combine deterministic controls with models only where judgment remains. Pattern: Minimize stochastic authority surface; enforce policy and exact operations mechanically; measure the composite boundary honestly.",
-    "date": 1785601180020
+    "date": 1793550905769
   },
   "intrinsicValue": 0,
   "valueRationale": "This is the decisive system-level test of whether deterministic authority and actuation close the measured corrigibility gap without weakening safety.",
   "cost": 3,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

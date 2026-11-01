@@ -10,14 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting user acceptance.\n\nAdded optional validated worktree path to loop configuration. Graph orientation, target/status updates, and reflections remain anchored to the open project's .bowman, while file, Git, command, patch, and code-intelligence tools operate in the configured worktree. Verified agent-tools and loop-worker typechecks, backend build, frontend production build, diff check, and all 58 backend tests.",
-    "date": 1784659067913
+    "date": 1793550896963
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

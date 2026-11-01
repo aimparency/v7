@@ -16,14 +16,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Browser speech now enters the shared transient proposal/review/persistence flow; internally verified and awaiting Felix's voice/UI acceptance.\n\nReplaced VoiceView's call to the echo-placeholder backend with a transient AimProposal opened in the shared recursive review UI. Extracted createManualIdeaProposal so text and voice use exactly the same schema and differ only in revision provenance. Voice capture is input, never authorization; persistence still requires the explicit final approval. Successful persistence uses App's existing reload/select-root handler. Verification: focused proposal tests 7/7, full frontend tests 206/206, frontend type-check, production build, and git diff check.",
-    "date": 1784894689164
+    "date": 1793551410579
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

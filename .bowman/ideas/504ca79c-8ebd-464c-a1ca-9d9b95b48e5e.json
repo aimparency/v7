@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Authorized by Felix 2026-10-16. Zeroed intrinsicValue on 115 ideas (including this one and the Cooperation Engine 3d868d5b) through the backend; only the root 895ec1c1 keeps intrinsic value. Costs stay positive by definition.",
-    "date": 1792172541956
+    "date": 1793550910411
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

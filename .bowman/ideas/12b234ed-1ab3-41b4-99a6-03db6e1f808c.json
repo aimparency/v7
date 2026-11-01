@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Committed; vitest 234/234, backend 70/70, e2e 19/19, type checks clean. Awaiting Felix's check that the list view feels right (values correct without opening the graph, edits from agents appear live).",
-    "date": 1790627594892
+    "date": 1793551360805
   },
   "intrinsicValue": 0,
   "cost": 5,

@@ -14,14 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "All synchronization-refactor clauses are implemented and internally verified; awaiting user acceptance.\n\nCompleted the client/server synchronization refactor across all four requested areas. (1) Monotonic per-resource revisions prevent delayed idea and phase mutation/fetch responses from overwriting fresher subscription state, with explicit race regressions. (2) Central idea/phase writes now emit optional full entity payloads; the frontend applies payloads directly without query round-trips while ID-only deletion/compatibility events retain the fetch fallback, and redundant post-write notifications were removed. (3) Active/archive idea listing, phase enumeration, and loop-target discovery read independent JSON files concurrently while preserving deterministic order and malformed-file isolation. (4) The revision atoms provide the requested out-of-order protection. Verification: focused MultiClient 5/5, full frontend 215/215, backend 68/68, frontend vue-tsc, backend tsc, and git diff checks all pass.",
-    "date": 1785320325024
+    "date": 1793550900249
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

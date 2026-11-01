@@ -61,14 +61,14 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The self-rebuild/relaunch chain and rebuilding UI are implemented and internally verified; the optional halted rollback child does not leave open implementation work. Awaiting integrated user acceptance.\n\nRelevance check on 2026-07-30 found the prior partial-status comment stale: the formerly open UI child a7fd4651 is now in review with broker/frontend implementation and test evidence. The other core children are done; the remaining verify/rollback child is halted and the broker already has a verification gate. Reconciled the finite parent to review instead of rebuilding completed behavior.",
-    "date": 1785399191440
+    "date": 1793550901234
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

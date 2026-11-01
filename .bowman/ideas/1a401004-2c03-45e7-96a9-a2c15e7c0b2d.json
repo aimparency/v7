@@ -16,14 +16,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Client-dependence resilience policy drafted and internally checked; thresholds are explicit initial hypotheses for review.\n\nCreated meta/client-dependence-policy.md with concentration, runway, margin, founder-intervention, reuse, custom-work, provider, and payment measures; initial 40%/60% concentration flags; response ladder; productization test; survival scenarios; and evidence-to-graph rules. Verification: git diff --check passed and all requested dependency/resilience dimensions are explicit.",
-    "date": 1784738558402
+    "date": 1793551359907
   },
   "intrinsicValue": 0,
   "cost": 5,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

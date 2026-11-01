@@ -15,14 +15,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting Felix's acceptance.\n\nOutcome: Added packages/shared/src/idea-proposal.ts with recursive schemas, limits, draft-ID safeguards, allowed proposal statuses, and deterministic flattening; exported it and added focused tests. Effectiveness: All 23 shared tests pass, including two new proposal tests; shared TypeScript build and git diff check pass. Lesson: Keep transient proposal identity structurally distinct from durable idea UUIDs, and make proposal size/depth/weight constraints shared so model, UI, and persistence boundaries cannot drift.",
-    "date": 1784751367391
+    "date": 1793550898340
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -10,14 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; needs graph interaction acceptance because no frontend runtime is currently running.\n\nShift-clicking a second idea now selects the existing contribution connection between it and the currently selected idea, resolving the stored parent/child direction regardless of click order. It does not create an edge. If the ideas are unrelated, existing shift-add multi-selection behavior remains unchanged. Verification: focused connection resolver tests 2/2, full frontend suite 194/194, frontend production build/type-check, and git diff --check passed.",
-    "date": 1784892984916
+    "date": 1793551409389
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

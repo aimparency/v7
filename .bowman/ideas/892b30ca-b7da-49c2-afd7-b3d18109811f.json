@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Desktop modifiers and touch long-press now select graph ideas; awaiting user acceptance.\n\nGraph touch now starts a 450ms hold timer, cancels it on drag, toggles shared multi-selection on hold, and suppresses the following synthetic click. Focused frontend tests pass (11/11); production build passes.",
-    "date": 1784493484193
+    "date": 1793550895593
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

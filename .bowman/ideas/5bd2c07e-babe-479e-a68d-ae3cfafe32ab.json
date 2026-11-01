@@ -1,7 +1,7 @@
 {
   "id": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
-  "text": "Explore a mutually useful AI-automation collaboration with Robin through one real Leipzig delivery",
-  "description": "On the scheduled weekend call (1–2 August 2026), Felix begins from appreciation for Robin's existing real-economy AI-automation work in Leipzig and asks whether Robin would like Aimparency/Felix connected to it. Do not treat Robin as a source of contracts or access. Explore whether there is excess demand, bounded subcontractable work, or a delivery where collaboration would genuinely help Robin and the client. Start with automation customers already value; introduce greater agent autonomy only where the client authorizes it and economics justify it. If a concrete opportunity exists, clarify the client problem, scope, decision-maker, budget, deadline, data/credential boundaries, Robin/Felix roles, commercial arrangement, and reusable learning. Success is a mutually welcomed paid or explicitly budgeted next step—not extraction from the relationship or general encouragement.",
+  "text": "Ask Robin whether he'd forward AI-transformation jobs he can't take",
+  "description": "Robin now does AI-transformation work himself (Felix 2026-11-01). Start from appreciation for his work: ask whether he sometimes turns clients away (too much demand, or work that fits an agent loop better) and whether he'd like to forward such jobs, so his clients still get served and Felix/Aimparency gets real deliveries. Material ready to share once he's interested: the client-ready diagnostic offer (acb5797b) and the diagnostic/roadmap (fcb77ff3). Do not treat Robin as a source of contracts; the arrangement has to be useful to him and his clients.",
   "archived": false,
   "color": "#666666",
   "tags": [
@@ -13,7 +13,26 @@
     "collaboration",
     "human-action"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "acb5797b-f4a9-494d-9751-8740d7d111e0",
+      "relativePosition": [
+        -2.41,
+        2.87
+      ],
+      "weight": 1,
+      "hypothesis": "A ready one-workflow offer lets a forwarded client say yes quickly. Uncertain: the price and terms were never tested with a real owner."
+    },
+    {
+      "ideaId": "fcb77ff3-0bb5-416c-8f70-ad6a5ac2e60e",
+      "relativePosition": [
+        -2.04,
+        3.15
+      ],
+      "weight": 1,
+      "hypothesis": "The diagnostic gives Robin a concrete picture of what a forwarded job would look like."
+    }
+  ],
   "supportedIdeas": [
     "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
     "032b8a47-d3d2-4974-bdcd-559a377164ef",
@@ -23,14 +42,14 @@
     "111d2965-0ca2-4b07-ab5c-eef1571a820a"
   ],
   "status": {
-    "state": "cancelled",
-    "comment": "Felix 2026-10-16: the August call with Robin did not happen.",
-    "date": 1792172312093
+    "state": "human-dependent",
+    "comment": "Revived 2026-11-01 (cancelled before because the August call didn't happen). Next step for Felix: one message or call to Robin with the question above.",
+    "date": 1793551361948
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

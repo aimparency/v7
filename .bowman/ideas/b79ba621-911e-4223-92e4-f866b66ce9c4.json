@@ -16,14 +16,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting Felix's acceptance. The already-running MCP process must be reconnected naturally before live behavior reflects the rebuilt code.\n\nOutcome: get_prioritized_ideas now detects whether the selected phase has an open committed leaf. If not, it ranks connected uncommitted open ideas, labels selectionScope=connected-uncommitted-fallback, and reports openLeafIdeas and uncommittedFallbackIdeas diagnostics. Added an end-to-end MCP regression test. Effectiveness: The new regression subtest passed and the MCP TypeScript build plus git diff check pass. The node test runner retains a known open handle after reporting success and was terminated manually; no dev server was touched. Lesson: Making hidden work queryable is insufficient for autonomy: the primary selection primitive itself needs a safe fallback when a phase contains only strategic containers.",
-    "date": 1784749765946
+    "date": 1793550898110
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

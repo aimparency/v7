@@ -1,0 +1,27 @@
+{
+  "id": "3ebec4b7-5812-4d70-ab91-847fc8a30a87",
+  "text": "Dream: sampled batch acceptance keeps human authority while draining the review queue",
+  "description": "The human reviews a random sample of k ideas from a batch in review. If every sample passes, one explicit click accepts the whole batch; if any fails, the batch goes back. The per-agent acceptance rate becomes a reliability estimate that sets k. Smallest experiment: Felix samples 10 of the review queue by hand and records how many pass. Disconfirming: sampled failure rate above ~10%.",
+  "archived": false,
+  "color": "#315370",
+  "tags": [
+    "dream",
+    "hypothesis"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "90cf0309-023f-486c-b7a0-322ee2910d46"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1793550688873
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -20,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Current concrete mobile rendering issue is implemented; awaiting real-device visual acceptance.\n\nThe only concrete mobile-support child was the high-DPR WebGL blur/TAA jitter issue. DPR-aware framebuffer, camera, culling, arrow, spinner, and TAA handling are now implemented and internally verified. Broader unspecified mobile work should be represented by concrete future ideas rather than keeping this vague container open.",
-    "date": 1784887308383
+    "date": 1793551410046
   },
   "intrinsicValue": 0,
   "cost": 1,

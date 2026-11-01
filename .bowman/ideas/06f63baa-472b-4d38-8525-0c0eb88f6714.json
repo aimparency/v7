@@ -1,6 +1,7 @@
 {
   "id": "06f63baa-472b-4d38-8525-0c0eb88f6714",
   "text": "Awaiting you: status toggles (unclear optional) and priority or chronological order",
+  "description": "Felix 2026-10-16: replace 'all' with a boxed toggle per status (review and human-dependent on by default, unclear available) and offer chronological order next to priority: by the idea's first appearance in the phases (phase before subphase, commitments in order, sub-ideas after their parent).",
   "archived": false,
   "color": "#30526c",
   "tags": [],
@@ -10,15 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "ReviewInboxModal: status toggles (review + human-dependent on, unclear off), order buttons priority | chronological; utils/review-inbox firstAppearanceOrder + sortChronologically. Tests: review-inbox 3/3, modal 3/3; pnpm check 25/25. Header count unchanged (review + human-dependent).",
-    "date": 1792137140247
+    "date": 1793550909583
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "Felix 2026-10-16: replace 'all' with a boxed toggle per status (review and human-dependent on by default, unclear available) and offer chronological order next to priority: by the idea's first appearance in the phases (phase before subphase, commitments in order, sub-ideas after their parent).",
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -10,14 +10,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented and internally verified; awaiting user demonstration and acceptance before marking done.\n\nLoop configurations are now visually distinct from runtime instances via dedicated styling and a configuration marker in LoopPanel.vue. Verified by the successful production Vite build.",
-    "date": 1784471514892
+    "date": 1793550895088
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

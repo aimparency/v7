@@ -1,7 +1,7 @@
 {
   "id": "b3b50366-25b2-4efe-9172-1e937a7e752f",
   "text": "/dream: consolidating sleep that remembers since the last dream",
-  "description": "MCP prompt /mcp__aimparency__dream, usable in every Aimparency project. It recalls the window since the newest \"Dream:\" reflection (fallback: 14 days of .bowman git history), consolidates it into at most 5 lessons, dreams from the ideas carrying intrinsic value (love = what is valued for its own sake), and wakes with \"I just woke up from dreaming, here is what I remember:\". It always records its memory as a reflection on the top root; other graph mutations need writeBack=true. Commit 7678a8a.",
+  "description": "MCP prompt /mcp__aimparency__dream, usable in every Aimparency project. It recalls the window since the last dream (the dream-memory idea's status.reviewedAt; fallback: 14 days of .bowman git history), consolidates it into at most 5 lessons, dreams from the ideas carrying intrinsic value (love = what is valued for its own sake), and wakes with \"I just woke up from dreaming, here is what I remember:\". It always records its memory in the status comment of the one idea tagged dream-memory; other graph mutations need writeBack=true. Commit 7678a8a.",
   "archived": false,
   "color": "#2d3266",
   "tags": [
@@ -15,14 +15,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Prompt reworked and tested (prompts.test.ts, pnpm check 25/25). Needs /mcp reconnect, then a first dream run by Felix to accept.",
-    "date": 1792106810085
+    "state": "implemented",
+    "comment": "First dream run by Felix on 2026-11-01; memory recorded in e1734671 (Dream memory). Felix accepted the dream's fixes.",
+    "date": 1793550653123
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

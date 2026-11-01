@@ -62,14 +62,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "All sub-ideas in review: backend read-only mode, open from Git URL, read-only UI with toasts, ?repo= link. Try: http://localhost:4000/?repo=https://github.com/aimparency/v7.git",
-    "date": 1792073000785
+    "date": 1793550908936
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

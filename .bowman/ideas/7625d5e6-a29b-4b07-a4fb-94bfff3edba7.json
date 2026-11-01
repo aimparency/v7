@@ -43,9 +43,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Commit-reference and code-presence reconciliation reports are implemented and characterized; the optional LLM judge was cancelled as unnecessary duplication of active-agent review. Awaiting user acceptance.\n\nReconciled the parent: deterministic commit evidence works; the code-presence heuristic is implemented but honestly documented as low precision; ambiguous cases remain direct review work for the active agent rather than a new LLM-scoring subsystem. The intended read-only status hygiene capability is available without automating status decisions.",
-    "date": 1784895298721
+    "date": 1793550899578
   },
   "intrinsicValue": 0,
   "cost": 1,

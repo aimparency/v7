@@ -11,14 +11,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Implemented; new Column.spec.ts (component test, jsdom) fails without the fix and passes with it; 249/249 frontend tests, vue-tsc clean. Not reproduced live because that would mean deleting a phase in Felix's real graph. Felix: delete a phase and watch its column.",
-    "date": 1790750048391
+    "date": 1793550910955
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

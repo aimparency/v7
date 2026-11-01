@@ -16,6 +16,33 @@
         2.08
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "3ebec4b7-5812-4d70-ab91-847fc8a30a87",
+      "relativePosition": [
+        -2.32,
+        -2.95
+      ],
+      "weight": 1,
+      "hypothesis": "If sampled items are reliable, a batch click clears the queue without giving up explicit confirmation. Uncertain: the agents' real error rate is unknown."
+    },
+    {
+      "ideaId": "8a6cc27e-da0b-4d61-b49b-b6d28d348946",
+      "relativePosition": [
+        -1.56,
+        -3.41
+      ],
+      "weight": 1,
+      "hypothesis": "Fresh work is easier to judge, so ordering by warmth shortens review time. Uncertain whether warmth correlates with reviewability."
+    },
+    {
+      "ideaId": "92a20e32-d4b8-464d-a7b0-60fe3d4d7291",
+      "relativePosition": [
+        1.12,
+        3.58
+      ],
+      "weight": 1,
+      "hypothesis": "Activity warmth can order the review queue so work is judged while fresh. Uncertain whether warmth correlates with how easy an idea is to review."
     }
   ],
   "supportedIdeas": [
@@ -24,9 +51,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Built and verified in the running app; awaiting Felix's acceptance (try it: ⧗ button in the header).\n\nImplemented in 57bba1a (pushed). Header button '⧗ N' opens ReviewInboxModal: all review + human-dependent ideas by calculated priority, filter chips with counts, status comment per row, full comment + recorded reflection (evidence) on the selected row. Keys j/k, o open (editor stacks on top), a accept (review → implemented, keeps the evidence comment), s send back to open with a reason. Verified: ranking unit tests 2/2, component tests 2/2 (order, accept only for review, send back, open), pnpm check 25/25, and in the running app via headless browser on the real graph: 250 waiting (167 review / 83 human-dependent), top item 'remove intrinsic values from most ideas' (1052×), selected review shows its evidence. No accept/send-back was performed on the real graph.",
-    "date": 1792065777284
+    "date": 1793551410275
   },
   "intrinsicValue": 0,
   "cost": 1,

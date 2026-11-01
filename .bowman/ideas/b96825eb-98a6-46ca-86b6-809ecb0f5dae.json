@@ -19,9 +19,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "727bd0cc: MCP prompt `idea-session` (args projectPath, optional topic), in Claude Code /mcp__aimparency__idea-session. Rules: search before adding, show duplicates/overlaps/conflicts and ask connect/revise/consolidate/add; status refresh (open/partially/review; implemented only on explicit confirmation); propose consolidations, never merge/delete/resolve without the human; no implementation unless asked; every turn ends with [AIMPARENCY_CONFIRM_HUMAN_BLOCK] so the continuation hook yields. Tests in prompts.test.ts (9/9). Needs /mcp reconnect to appear.",
-    "date": 1793533675688
+    "date": 1793550910724
   },
   "intrinsicValue": 0,
   "cost": 1,

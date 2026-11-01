@@ -29,14 +29,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "List and graph selection semantics plus staged bulk editing are aligned and verified; awaiting user acceptance.\n\nGraph behavior now matches list behavior: ordinary idea and background clicks clear multi-selection; Ctrl/Cmd toggles membership; long-pressing an idea already in a multi-selection opens the bulk editor. Existing behavior for long-pressing an unselected idea remains unchanged pending user direction. Focused selection tests pass 31/31 and production frontend build passes.",
-    "date": 1784550231261
+    "date": 1793550896458
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

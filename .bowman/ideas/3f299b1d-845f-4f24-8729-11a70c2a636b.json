@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Reworked again after Felix's feedback 2026-10-17 (commit 3cbcc4d6): 1.5x room (clearance 3, room 3.75, new connections default 3.75); spread term: neighbouring connections around an idea need their strength share of 270 deg, only children rotate, weight ramps up over the run so branches can pass each other, and rotations chain so a branch pulled to one side makes room on the other; outward kept as a weak tie-breaker that only acts on children behind the parent's half circle; length pull weighted by connection strength; semantic raised (per idea, nearest pairs only; the furthest pairs used to attract too), backend now sends 12 nearest neighbours while the simulation still springs 3; memory weight 3 -> 1 so the layout terms win. Preview starts at the top 20%, ranked by shift x sqrt(span/mean span): measured on this repo, ranking by connection strength was worse than plain shift (crossings 2338 vs 2210); sqrt(span) sits between scale-free shift (2210 crossings, 574 crowded) and on-screen shift (1401, 840). Top 20% vs the previous solver: crossings 2408 -> 1672, mean length 17.0 -> 14.1 radius sums, 84 files. Full solve: semantic neighbours 60 -> 40 radius sums, pairs inside 2 radius sums 458 -> 8. Measurement placed root ideas on an artificial grid and settled partial applies from offsets only, without the simulation. Tests: 14 autolayout specs (spread, make room, outward, ranking each checked by disabling the term), pnpm check 25/25. Not verified: how it looks in the running app; that's Felix's call.",
-    "date": 1792069686061
+    "date": 1793551410927
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -81,14 +81,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "The complete text/voice → optional selected-loop-model decomposition → transient recursive edit/review → explicit idempotent persistence flow is implemented and internally verified. Awaiting Felix's UI acceptance and a live configured-model trial.\n\nCompleted the conversational elicitation vertical slice across shared schema, read-only model generation, manual text and browser-speech entry, recursive editing/review, and idempotent approval persistence. Conversation and model output remain input, never authorization. A configured live provider credential is required only to exercise real inference; manual operation remains available without it.",
-    "date": 1784895132185
+    "date": 1793551411445
   },
   "intrinsicValue": 0,
   "cost": 5,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

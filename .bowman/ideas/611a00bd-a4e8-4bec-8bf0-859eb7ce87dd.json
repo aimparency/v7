@@ -1,0 +1,27 @@
+{
+  "id": "611a00bd-a4e8-4bec-8bf0-859eb7ce87dd",
+  "text": "Dream: write only falsifiable connection hypotheses",
+  "description": "Write a connection hypothesis only when it could fail; otherwise leave it empty. On 2026-11-01, 333 hypotheses were untested and 7 reflected, and most read as classifications (\"X is keyboard navigation behavior\"). Smallest experiment: reflect the ~80 hypotheses on implemented children and count how many could have failed at all. Disconfirming: the reflection rate stays near 2% even with falsifiable hypotheses.",
+  "archived": false,
+  "color": "#2e3e61",
+  "tags": [
+    "dream",
+    "hypothesis"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1793550689262
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

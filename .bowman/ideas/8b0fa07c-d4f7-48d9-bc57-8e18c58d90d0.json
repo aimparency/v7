@@ -37,15 +37,15 @@
     "f0a36d08-bbaa-45ed-a26d-0a57942ef1a2"
   ],
   "status": {
-    "state": "review",
+    "state": "implemented",
     "comment": "Matched paired-run executor is implemented and internally verified; awaiting user acceptance.\n\nImplemented runAutonomyBenchmark with injected sandbox execution, runner-owned task/condition/model/tool/token/time fields, frozen task copies, validated matched pair ordering, deterministic counterbalancing hook, per-run timeout plus AbortSignal, explicit timeout/adapter errors, and analysis of the preserved run set. Added tests for full matched execution, protected field stamping, counterbalanced ordering, adapter errors, timeout abortion, and invalid ordering. Verification: wrapped-agents/common 88/88 tests passed; TypeScript type-check passed; git diff check passed. No live model run occurred, so no comparative capability result is claimed.\n\nOutcome: Added a sandbox adapter boundary that enforces pair identity, resource budgets, counterbalancing, timeouts, and explicit failure evidence. Effectiveness: Completes the deterministic experiment infrastructure while avoiding an unsupported capability claim. Lesson: Experimental conditions and budgets must be stamped by the runner, never trusted to the system under test. Pattern: Separate frozen tasks, controlled execution, structured telemetry, and outcome analysis.",
-    "date": 1785594802317
+    "date": 1793550903225
   },
   "intrinsicValue": 0,
   "valueRationale": "The comparison cannot produce empirical evidence until a runner enforces matched conditions and preserves failed runs.",
   "cost": 3,
+  "selfWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

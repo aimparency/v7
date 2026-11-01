@@ -127,6 +127,15 @@
         -2.17
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "e1734671-9f93-4e01-9c66-aaa6ce7da4a1",
+      "relativePosition": [
+        2.67,
+        -2.64
+      ],
+      "weight": 0,
+      "hypothesis": "Consolidated memory across dreams lets the graph notice patterns over time instead of repeating them; weight 0 because it stores memory and carries no value."
     }
   ],
   "supportedIdeas": [],
