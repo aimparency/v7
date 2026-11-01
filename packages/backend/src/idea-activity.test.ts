@@ -1,21 +1,25 @@
 import { describe, expect, it } from 'vitest';
+import { addAccess } from 'shared';
 import { ideaChangeAccessKind, ideaActivitySnapshot, onIdeaAccess, recordIdeaAccess } from './idea-activity.js';
 import { emitChange } from './change-events.js';
 import { runWithOrigin } from './change-origin.js';
 
 describe('idea activity', () => {
-  it('keeps the latest time per kind and announces each access', () => {
-    const events: unknown[] = [];
+  it('adds up accesses per kind and announces each one, numbered', () => {
+    const events: { seq: number }[] = [];
     const stop = onIdeaAccess((event) => events.push(event));
     recordIdeaAccess('/tmp/activity-a', ['idea-1', 'idea-2'], 'found', 1000);
     recordIdeaAccess('/tmp/activity-a', ['idea-1'], 'read', 2000);
+    recordIdeaAccess('/tmp/activity-a', ['idea-1'], 'read', 3000);
     stop();
 
-    expect(ideaActivitySnapshot('/tmp/activity-a')).toEqual({
-      'idea-1': { found: 1000, read: 2000 },
-      'idea-2': { found: 1000 }
+    const snapshot = ideaActivitySnapshot('/tmp/activity-a');
+    expect(snapshot.ideas).toEqual({
+      'idea-1': addAccess(addAccess(addAccess(undefined, 'found', 1000), 'read', 2000), 'read', 3000),
+      'idea-2': addAccess(undefined, 'found', 1000)
     });
-    expect(events).toHaveLength(2);
+    expect(events.map((event) => event.seq - events[0]!.seq)).toEqual([0, 1, 2]);
+    expect(snapshot.seq).toBe(events[2]!.seq);
   });
 
   it('tells agent writes, agent status changes and manual edits apart', () => {
@@ -32,7 +36,7 @@ describe('idea activity', () => {
     runWithOrigin('ui-client', () =>
       emitChange({ type: 'idea', id: 'idea-2', projectPath, entity: { status: { state: 'open' } } as never, previous: null }));
 
-    const snapshot = ideaActivitySnapshot(projectPath);
+    const snapshot = ideaActivitySnapshot(projectPath).ideas;
     expect(Object.keys(snapshot['idea-1']!)).toEqual(['write']);
     expect(Object.keys(snapshot['idea-2']!)).toEqual(['manualEdit']);
   });

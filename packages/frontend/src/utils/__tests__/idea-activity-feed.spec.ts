@@ -19,16 +19,22 @@ vi.mock('../../trpc', () => ({
   }
 }))
 
+import { addAccess } from 'shared'
 import { followIdeaActivity, ideaActivity } from '../idea-activity-feed'
 
 describe('idea activity feed', () => {
-  it('merges the snapshot under accesses that arrived while it loaded', async () => {
+  it('adds accesses that arrived while the snapshot loaded, unless it has them already', async () => {
     followIdeaActivity('/project')
-    mocks.onData!({ projectPath: '/project', ideaIds: ['idea-1'], kind: 'read', at: 2000 })
-    mocks.resolveSnapshot!({ 'idea-1': { read: 1000, found: 500 }, 'idea-2': { write: 900 } })
+    const event = (seq: number, at: number) => ({ projectPath: '/project', ideaIds: ['idea-1'], kind: 'read', at, seq })
+    mocks.onData!(event(2, 2000)) // already in the snapshot
+    mocks.onData!(event(3, 3000)) // newer than the snapshot
+    const snapshotRead = addAccess(addAccess(undefined, 'read', 1000), 'read', 2000)
+    mocks.resolveSnapshot!({ seq: 2, ideas: { 'idea-1': snapshotRead, 'idea-2': { write: 0.5 } } })
     await vi.waitFor(() => expect(ideaActivity.size).toBe(2))
 
-    expect(ideaActivity.get('idea-1')).toEqual({ read: 2000, found: 500 })
-    expect(ideaActivity.get('idea-2')).toEqual({ write: 900 })
+    expect(ideaActivity.get('idea-1')).toEqual(addAccess(snapshotRead, 'read', 3000))
+    mocks.onData!(event(4, 4000)) // after the snapshot: applied right away
+    expect(ideaActivity.get('idea-1')).toEqual(addAccess(addAccess(snapshotRead, 'read', 3000), 'read', 4000))
+    expect(ideaActivity.get('idea-2')).toEqual({ write: 0.5 })
   })
 })
