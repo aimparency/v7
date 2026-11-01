@@ -31,7 +31,8 @@
         2.2756201637116766
       ],
       "weight": 1,
-      "hypothesis": "Tools catch graph decay that manual organizing misses in a graph of hundreds of ideas written by several agents."
+      "hypothesis": "Tools catch graph decay that manual organizing misses in a graph of hundreds of ideas written by several agents.",
+      "reflection": "Held in part. Status reconciliation and the hygiene report found decay manual organizing had missed (already-done ideas still open, open parents of finished children; fix d9fec7bd). The duplicate finder was weaker: most high-cosine pairs turned out to be intentional parent-child splits, so it gives candidates for a human to judge, not decisions."
     },
     {
       "ideaId": "01f4ab1a-39d4-4962-b568-70a3b0eac27e",

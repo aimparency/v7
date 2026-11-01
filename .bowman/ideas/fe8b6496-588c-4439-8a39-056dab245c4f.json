@@ -119,9 +119,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Container: graph health needs new tools as the graph and its failure modes grow (Felix 2026-10-17: containers can always be filled with ideas).",
-    "date": 1792218786723
+    "state": "implemented",
+    "comment": "Container settled 2026-11-01: all 12 children implemented (duplicate finder, merge, reparent suggester, status reconciliation, hygiene report, taxonomy convention, thresholds, parent-child exclusion, tested core, contextual create review, serialized commitments, status validation). The consolidate prompt (f0c0ffe0) wraps them into one procedure. New maintenance needs get a new child.",
+    "date": 1793551497138
   },
   "intrinsicValue": 0,
   "cost": 1,
