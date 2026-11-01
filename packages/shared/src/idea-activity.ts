@@ -31,14 +31,17 @@ export function accessStrength(kind: IdeaAccessKind, at: number, now: number): n
 }
 
 const IDLE_COLOR = [0.16, 0.16, 0.16] as const;
+// Activity adds at most #888 per channel on top of the idle grey, so the
+// white labels on the nodes stay readable.
+const MAX_GLOW = 0x88 / 0xff;
 
-// Idle grey plus each kind's color by its current strength, clamped per channel.
+// Idle grey plus each kind's color by its current strength, capped per channel.
 export function ideaActivityColor(activity: IdeaActivity | undefined, now: number): [number, number, number] {
-  const color: [number, number, number] = [...IDLE_COLOR];
+  const glow = [0, 0, 0];
   for (const kind in activity) {
     const strength = accessStrength(kind as IdeaAccessKind, activity[kind as IdeaAccessKind]!, now);
     const kindColor = IDEA_ACCESS_KINDS[kind as IdeaAccessKind].color;
-    for (let channel = 0; channel < 3; channel++) color[channel] = Math.min(1, color[channel]! + kindColor[channel]! * strength);
+    for (let channel = 0; channel < 3; channel++) glow[channel]! += kindColor[channel]! * strength * MAX_GLOW;
   }
-  return color;
+  return IDLE_COLOR.map((idle, channel) => idle + Math.min(MAX_GLOW, glow[channel]!)) as [number, number, number];
 }
