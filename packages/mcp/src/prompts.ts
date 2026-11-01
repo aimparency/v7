@@ -35,8 +35,8 @@ For every idea the human brings up:
 For feedback on an existing idea, refresh its status against that feedback and the current evidence, with the reason in the status comment:
 - open: the intended behavior is still missing;
 - partially: some of it exists, but gaps remain (name them);
-- review: the behavior is implemented and awaits the human's acceptance;
-- implemented: only after the human explicitly confirms it.
+- implemented: the behavior exists and is verified (tests, build or runtime), with the evidence in the comment;
+- review: only when acceptance needs the human's own judgment or check, with one short question for them.
 Do not keep a stale review or implemented state just because adjacent or partial functionality exists.
 
 As the session goes on, point out consolidation opportunities (duplicates, ideas that belong under a common parent, parents with too many direct children) and propose them. Never merge ideas, delete ideas or resolve conflicts without the human's decision.
@@ -75,7 +75,7 @@ Goal: a graph a human can navigate, where every idea appears once, sits under th
    - An idea under several parents is fine when it really serves each of them; do not remove such links to tidy up.
 
 4. STATUS
-   - reconcile_status: open ideas cited by commits. Check each against the code; done work goes to review (or partially, naming the gaps), never straight to implemented.
+   - reconcile_status: open ideas cited by commits. Check each against the code; verified done work goes to implemented with the evidence (or partially, naming the gaps); review only when the human must judge it.
    - Collapse candidates: finish the parent, or add the child idea it still needs.
    - Cancelled or failed ideas that are not archived: archive them.
    - Settled children whose connection hypothesis has no reflection: write the reflection when the evidence is clear.

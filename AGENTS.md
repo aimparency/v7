@@ -10,8 +10,12 @@
 
 ## Idea Completion
 
-- Use `review` when implementation and internal verification are complete but
-  the feature still needs to be shown to and accepted by the user.
+- When implementation is complete and verified (tests, build, runtime check),
+  mark the idea `implemented` with the evidence in the status comment.
+- Use `review` only when acceptance really needs the human: a judgment of look
+  or feel, a product decision, or a check only they can make (their accounts,
+  devices, real-world outcome). Put one short question for them in the status
+  comment.
 - Move an idea from `review` to `implemented` only after explicit user confirmation.
 
 

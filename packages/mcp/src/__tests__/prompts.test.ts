@@ -85,7 +85,7 @@ test("idea-session searches before adding, gates merges and yields every turn to
   assert.equal(result.description, "Feedback and ideation session");
   assert.match(text, /Project: the current repository's \.bowman directory/);
   assert.match(text, /Search before adding/);
-  assert.match(text, /implemented: only after the human explicitly confirms/);
+  assert.match(text, /review: only when acceptance needs the human/);
   assert.match(text, /Never merge ideas, delete ideas or resolve conflicts without the human's decision/);
   assert.match(text, /end every turn of this session with \[AIMPARENCY_CONFIRM_HUMAN_BLOCK\]/);
 });
