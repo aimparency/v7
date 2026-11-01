@@ -29,9 +29,9 @@
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
   ],
   "status": {
-    "state": "implemented",
-    "comment": "Implemented 'consolidate_ideas' prompt in packages/mcp/src/prompts.ts. It fetches all ideas and provides instructions for merging/linking/pruning. Rebuilt MCP package.",
-    "date": 1766053317534
+    "state": "review",
+    "comment": "The old consolidate_ideas prompt no longer existed in prompts.ts. f81854ed re-adds it as the MCP prompt `consolidate` (projectPath, optional focus subtree, writeBack). Steps: health (check/fix_consistency, graph_hygiene with megaParentThreshold 8), duplicates (find_duplicate_ideas, checked against structure, never merged by the agent), structure (group crowded parents by topic keeping hypotheses, suggest_reparents, parent the floating ideas), status (reconcile_status to review/partially, collapse candidates, archive cancelled/failed, missing reflections). Merge/delete/cancel/implemented/conflict resolution stay human decisions; without writeBack it only proposes. Tests: prompts.test.ts 11/11.",
+    "date": 1793533863145
   },
   "intrinsicValue": 0,
   "cost": 1,
