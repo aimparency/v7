@@ -5,6 +5,7 @@ import { backendWsUrl } from './utils/runtime-config';
 import { loginToken } from './utils/login';
 import { clientId, mutationActivity } from './utils/mutation-activity';
 import { readOnlyGuardLink } from './utils/read-only';
+import { connectionCallbacks, reconnectDelayMs } from './utils/backend-connection';
 
 const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
   if (op.type !== 'mutation') return next(op);
@@ -29,6 +30,11 @@ const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
 const wsClient = createWSClient({
   url: backendWsUrl(),
   connectionParams: { clientId, token: loginToken() ?? undefined },
+  // The dev backend restarts on every source change (tsx watch) and requests
+  // queue until the socket is back: tRPC's default backoff (2, 4, 8, 16 s…)
+  // turned a ~1 s restart into seconds of a dead UI. Retry quickly instead.
+  retryDelayMs: reconnectDelayMs,
+  ...connectionCallbacks(),
 });
 
 // Create tRPC client with WebSocket

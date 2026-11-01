@@ -271,3 +271,30 @@ describe('Multi-Client Synchronization', () => {
     expect(mockTrpc.phase.get.query).not.toHaveBeenCalled()
   })
 })
+
+describe('Reconnecting to the backend', () => {
+  beforeEach(() => {
+    setActivePinia(createPinia())
+    vi.clearAllMocks()
+  })
+
+  it('resyncs what changed while the socket was down', async () => {
+    const store = useDataStore()
+    const projectStore = useProjectStore()
+    projectStore.projectPath = '/test/project'
+    store.phases = { gone: { id: 'gone', name: 'Deleted meanwhile', childPhaseIds: [], commitments: [] } } as any
+    store.ideas = { stale: { id: 'stale', text: 'Deleted meanwhile' } } as any
+
+    const created = { id: 'created', name: 'Created meanwhile', parent: null, childPhaseIds: [], commitments: [] }
+    mockTrpc.project.getMeta.query.mockResolvedValue({ rootPhaseIds: ['created'] })
+    mockTrpc.phase.list.query.mockResolvedValue([created])
+    mockTrpc.project.loadIdeas.query.mockResolvedValue({ ideas: [], unreadable: [] })
+
+    await store.resyncProject('/test/project')
+
+    expect(Object.keys(store.phases)).toEqual(['created'])
+    expect(store.ideas).toEqual({})
+    expect(store.meta).toEqual({ rootPhaseIds: ['created'] })
+    expect(projectStore.connectionStatus).toBe('connected')
+  })
+})

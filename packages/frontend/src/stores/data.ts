@@ -5,6 +5,7 @@ import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
 import { calculateIdeaValues, defaultIdeaCost, INITIAL_STATES, toProjectRoot } from 'shared'
 import { trpc } from '../trpc'
 import { followIdeaActivity } from '../utils/idea-activity-feed'
+import { backendConnection } from '../utils/backend-connection'
 import { perfLog } from '../utils/perf-log'
 import { useUIStore } from './ui'
 import { useMapStore } from './map'
@@ -490,7 +491,14 @@ export const useDataStore = defineStore('data', {
     // sync afterwards.
     async loadAllPhases(projectPath: string) {
       if (!projectPath) return
+      // Only phases known before the request can be stale: one that arrived
+      // through the subscription meanwhile is newer than the list.
+      const knownPhaseIds = Object.keys(this.phases)
       const phases = await trpc.phase.list.query({ projectPath })
+      const serverPhaseIds = new Set(phases.map((phase) => phase.id))
+      for (const id of knownPhaseIds) {
+        if (!serverPhaseIds.has(id)) delete this.phases[id]
+      }
       for (const phase of phases) {
         this.replacePhaseIfCurrent(phase.id, phase, this.beginPhaseSync(phase.id))
       }
@@ -942,12 +950,12 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async loadAllIdeas(projectPath: string) {
+    async loadAllIdeas(projectPath: string, { useCache = true } = {}) {
       if (!projectPath) return;
       this.loading = true;
       try {
         // 1. Try cache first; it is optional (no IndexedDB in private windows or tests)
-        const cachedIdeas = await loadAllIdeasCache(projectPath).catch(() => []);
+        const cachedIdeas = useCache ? await loadAllIdeasCache(projectPath).catch(() => []) : [];
         if (cachedIdeas && cachedIdeas.length > 0) {
             console.log(`[DataStore] Loaded ${cachedIdeas.length} ideas from cache`);
             for (const idea of cachedIdeas) {
@@ -986,6 +994,26 @@ export const useDataStore = defineStore('data', {
       }
     },
 
+    // After the backend socket dropped: whatever changed meanwhile never came
+    // through the subscription, so reload the project from the server.
+    async resyncProject(projectPath: string) {
+      const projectStore = useProjectStore();
+      if (!projectPath) return;
+      try {
+        followIdeaActivity(projectPath);
+        const [meta] = await Promise.all([
+          trpc.project.getMeta.query({ projectPath }),
+          this.loadAllPhases(projectPath),
+          this.loadAllIdeas(projectPath, { useCache: false })
+        ]);
+        this.meta = meta;
+        projectStore.setConnectionStatus('connected');
+      } catch (error) {
+        console.error('Failed to resync after reconnecting:', error);
+        projectStore.setConnectionStatus('no connection');
+      }
+    },
+
     async loadProject(projectPath: string) {
       const uiStore = useUIStore();
       perfLog('data.loadProject:start', { projectPath });
@@ -1016,6 +1044,8 @@ export const useDataStore = defineStore('data', {
         // Start subscription
         this.subscribeToUpdates(projectPath);
         followIdeaActivity(projectPath);
+        backendConnection.onDrop = () => projectStore.setConnectionStatus('connecting')
+        backendConnection.onReconnect = () => void this.resyncProject(projectStore.projectPath)
 
         // The whole project is small enough to load at once (~100ms for 750
         // ideas); the subscription keeps it live afterwards.
