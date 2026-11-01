@@ -249,6 +249,15 @@
       ],
       "weight": 1,
       "hypothesis": "A shared ideation graph for a real group of people is the cooperation engine in its simplest live form."
+    },
+    {
+      "ideaId": "11ebbcfb-3a82-46e0-9ccc-5cc9a4172266",
+      "relativePosition": [
+        1.52,
+        -3.43
+      ],
+      "weight": 1,
+      "hypothesis": "Researchers working on human oversight of agents value pre-registered runs with negative results kept; a public note gets at least one substantive outside response (comment, citation, contact) within 6 weeks of publishing. Refuted if it gets none."
     }
   ],
   "supportedIdeas": [

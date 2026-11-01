@@ -1,0 +1,29 @@
+{
+  "id": "11ebbcfb-3a82-46e0-9ccc-5cc9a4172266",
+  "text": "Draft a public research note on Aimparency's corrigibility runs for the human-oversight community",
+  "description": "RESEARCHED (2026-11-01): 2026 funding calls that name human oversight and control of agents as their topic: Schmidt Sciences/Google DeepMind multi-agent safety call (https://grantedai.com/grants/google-deepmind-schmidt-cooperative-ai-aria-google-org-multi-agent-safety-research-10m-deepmind-e2f5a8b1), Foresight AI safety nodes with human oversight (https://foresight.org/wp-content/uploads/2025/05/Guidelines-and-Policies.pdf), Cooperative AI Foundation grants. Venture money meanwhile goes to agent infrastructure (https://valueaddvc.com/pulse/ai-startups-64-percent-record-q3-funding-2026). OBSERVED: the graph holds pre-registered, frozen corrigibility runs (986410a0 subtree) with negative results kept; the model alone failed correction recovery, and the composite system (authorization and deterministic actuation outside the model) passed the frozen v3 suite at 1.0 with zero critical failures. Draft a short note: method, frozen suite, every run incl. failures, the lesson 'separate authorization, deterministic actuation, model planning', and what it does not show. Publishing, and where, is Felix's decision.",
+  "archived": false,
+  "color": "#662d5f",
+  "tags": [
+    "hypothesis",
+    "major-hypothesis-loop",
+    "corrigibility",
+    "outreach"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Draft written: meta/corrigibility-research-note.md (7 runs in order with metrics from the 986410a0 subtree, lessons, and a 'does not show' section: composite not model, policy designed against the same 11 scenarios, small agent-written suite). Felix: publish it? If yes, where (blog/LessWrong/Alignment Forum, or sent to the Cooperative AI Foundation)? The 6-week response clock starts at publication.",
+    "date": 1793551736338
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
