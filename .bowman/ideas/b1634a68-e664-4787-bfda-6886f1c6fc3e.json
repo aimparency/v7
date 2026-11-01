@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792512470655
+    "state": "human-dependent",
+    "comment": "Not reproducible by an agent (2026-10-31 measurement found no long tasks). Felix: when it feels slow again, name the column/idea where you pressed l, or record one press with the DevTools Performance panel and save the trace.",
+    "date": 1793551645855
   },
   "intrinsicValue": 0,
   "cost": 1,

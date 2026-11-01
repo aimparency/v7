@@ -25,9 +25,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Extends the existing consolidate_ideas prompt into an ongoing background workflow. Needs policy for confidence thresholds, reversible changes, and user review queue.",
-    "date": 1792833103925
+    "state": "unclear",
+    "comment": "The on-demand part exists: the consolidate prompt (f0c0ffe0) runs duplicates, structure and status checks and queues decisions for the human. This idea asks for more: a periodic background run that merges clear restatements automatically. That conflicts with the consolidate rule that merges stay human decisions, and calibration showed most high-cosine pairs are intended parent-child splits. Question for Felix: allow automatic merges of exact restatements in a background run, or keep merges human-only and cancel the background part?",
+    "date": 1793551646176
   },
   "intrinsicValue": 0,
   "cost": 1,
