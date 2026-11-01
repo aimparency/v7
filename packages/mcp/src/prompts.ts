@@ -17,6 +17,37 @@ function hookTogglePrompt(name: "enable-hook" | "disable-hook", args: Record<str
   };
 }
 
+// A human-led session: the human gives feedback and ideas, the agent records them in the graph.
+function ideaSessionPrompt(args: Record<string, string> | undefined) {
+  const target = args?.projectPath?.trim() || DEFAULT_PROJECT_PATH;
+  const topic = args?.topic?.trim();
+  const text = `Start an Aimparency feedback and ideation session.
+
+Project: ${target}${topic ? `\nTopic: ${topic}` : ""}
+
+The human leads this session: they give feedback and ideas, you record them in the idea graph through the Aimparency MCP tools. Do not implement anything unless the human asks for it. Ask open questions when something is unclear instead of guessing.
+
+For every idea the human brings up:
+1. Search before adding: search_ideas (and search_ideas_semantic when the index exists) for the idea and its key terms.
+2. Show the human the relevant existing ideas: possible duplicates, overlaps and conflicts, with short ids. Ask whether to connect it, revise an existing idea, consolidate, or add it as a distinct idea. Add without asking only when nothing relevant exists.
+3. Place a new idea under the parent it serves, with a connection hypothesis saying why it should contribute.
+
+For feedback on an existing idea, refresh its status against that feedback and the current evidence, with the reason in the status comment:
+- open: the intended behavior is still missing;
+- partially: some of it exists, but gaps remain (name them);
+- review: the behavior is implemented and awaits the human's acceptance;
+- implemented: only after the human explicitly confirms it.
+Do not keep a stale review or implemented state just because adjacent or partial functionality exists.
+
+As the session goes on, point out consolidation opportunities (duplicates, ideas that belong under a common parent, parents with too many direct children) and propose them. Never merge ideas, delete ideas or resolve conflicts without the human's decision.
+
+After each change, report in one or two lines what you recorded (idea, short id, status). Then wait for the human: end every turn of this session with [AIMPARENCY_CONFIRM_HUMAN_BLOCK] so a continuation hook yields to them. The session ends when the human says so; then summarize what was recorded and which questions are still open.${topic ? `\n\nStart by showing the human what the graph already holds about the topic, then ask what they want to add or change.` : "\n\nStart by asking the human what they want to give feedback on or add."}`;
+  return {
+    description: topic ? `Feedback and ideation session about ${topic}` : "Feedback and ideation session",
+    messages: [{ role: "user", content: { type: "text", text } }],
+  };
+}
+
 export function registerPrompts(server: Server, caller: BackendClient) {
   server.setRequestHandler(ListPromptsRequestSchema, async () => ({
     prompts: [
@@ -43,6 +74,15 @@ export function registerPrompts(server: Server, caller: BackendClient) {
         ],
       },
       {
+        name: "idea-session",
+        description: "Human-led feedback and ideation session: record the human's ideas and feedback in the graph, searching for duplicates and conflicts first and keeping statuses current",
+        arguments: [PROJECT_PATH_PROMPT_ARGUMENT, {
+          name: "topic",
+          description: "Optional topic or idea UUID the session is about",
+          required: false,
+        }],
+      },
+      {
         name: "enable-hook",
         description: "Turn the Aimparency Stop continuation hook on (installing it if an agent is given) for this repository",
         arguments: [PROJECT_PATH_PROMPT_ARGUMENT, {
@@ -62,6 +102,7 @@ export function registerPrompts(server: Server, caller: BackendClient) {
   server.setRequestHandler(GetPromptRequestSchema, async (request) => {
     const { name, arguments: args } = request.params;
     if (name === "enable-hook" || name === "disable-hook") return hookTogglePrompt(name, args);
+    if (name === "idea-session") return ideaSessionPrompt(args);
     if (name !== "dream") throw new Error(`Unknown prompt: ${name}`);
 
     const projectPath = (args?.projectPath as string | undefined)?.trim();

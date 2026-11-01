@@ -78,3 +78,22 @@ test("enable-hook passes through projectPath and agent", async () => {
   const text = result.messages[0].content.text;
   assert.match(text, /enable_continue_hook with projectPath = \/p\/\.bowman and agent = claude/);
 });
+
+test("idea-session searches before adding, gates merges and yields every turn to the human", async () => {
+  const result = await setup().getPrompt("idea-session", {});
+  const text = result.messages[0].content.text;
+  assert.equal(result.description, "Feedback and ideation session");
+  assert.match(text, /Project: the current repository's \.bowman directory/);
+  assert.match(text, /Search before adding/);
+  assert.match(text, /implemented: only after the human explicitly confirms/);
+  assert.match(text, /Never merge ideas, delete ideas or resolve conflicts without the human's decision/);
+  assert.match(text, /end every turn of this session with \[AIMPARENCY_CONFIRM_HUMAN_BLOCK\]/);
+});
+
+test("idea-session starts from what the graph holds about a given topic", async () => {
+  const result = await setup().getPrompt("idea-session", { projectPath: "/p/.bowman", topic: "list view" });
+  const text = result.messages[0].content.text;
+  assert.equal(result.description, "Feedback and ideation session about list view");
+  assert.match(text, /Project: \/p\/\.bowman\nTopic: list view/);
+  assert.match(text, /Start by showing the human what the graph already holds about the topic/);
+});
