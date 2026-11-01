@@ -67,6 +67,8 @@ When the coding assistant attempts to stop normally, the hook blocks the stop ev
 4. Record status and evidence (status comment) with \`update_idea\`, reflect on each parent connection's hypothesis, and commit the code with the \`.bowman\` idea files it changed in one commit
 5. Reprioritize and continue
 
+Every Aimparency MCP tool may be run in the loop except the continue-hook toggles, e.g. \`major_hypothesis_loop\` when the priority list runs thin.
+
 An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for a human action) with the exact question in its status comment; it leaves the priority list and the loop moves on.
 
 ### Two-Stage Human-Wait Protocol

@@ -165,6 +165,15 @@
       ],
       "weight": 1,
       "hypothesis": "The autonomous loop is only trustworthy if its behavior is regression-tested without paid model calls."
+    },
+    {
+      "ideaId": "d4939a29-a43f-4f9e-b6d8-8f6596b29fc5",
+      "relativePosition": [
+        -0.26,
+        3.74
+      ],
+      "weight": 1,
+      "hypothesis": "When the priority list runs thin, an outward-looking loop (AI trends, money flows) yields sub ideas under major ideas that the inward-looking loop would not find; it fails if the created sub ideas are mostly cancelled or duplicates within a few loops."
     }
   ],
   "supportedIdeas": [

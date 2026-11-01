@@ -1,0 +1,26 @@
+{
+  "id": "d4939a29-a43f-4f9e-b6d8-8f6596b29fc5",
+  "text": "major_hypothesis_loop MCP tool: research AI and money trends, grow sub ideas under major ideas",
+  "archived": false,
+  "color": "#43662d",
+  "tags": [
+    "mcp",
+    "hypothesis"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Commit 217ebae5: tool in packages/mcp/src/tools/hypothesis-loop.ts returns the research → inspiration → ways → sub ideas procedure plus up to 12 major ideas (ongoing, intrinsic value > 0 or root). Stop hook text now names every MCP tool as available (except hook toggles) with this tool as the example. Verified: tools-system tests 15/15, mcp tsc clean, pnpm test:hooks PASS.",
+    "date": 1793551372684
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

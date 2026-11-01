@@ -3,6 +3,7 @@ import assert from 'node:assert';
 import path from 'node:path';
 import fs from 'fs-extra';
 import { registerTools } from '../tools/index.js';
+import { selectMajorIdeas } from '../tools/hypothesis-loop.js';
 import { MockServer, caller, createCallerProxy, createTestContext } from './test-utils.js';
 
 let ctx: ReturnType<typeof createTestContext>;
@@ -61,4 +62,34 @@ test('MCP Tools - Consistency', async () => {
 
   assert.equal((await call('check_consistency')).valid, true);
   assert.deepEqual((await fs.readJson(ideaFile)).committedIn, []);
+});
+
+test('MCP Tools - major_hypothesis_loop lists ongoing major ideas with the research procedure', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+  const create = (text: string, state: string, intrinsicValue: number) => caller.idea.createFloatingIdea({
+    projectPath: ctx.projectPath,
+    idea: { text, intrinsicValue, status: { state, comment: '', date: Date.now() } }
+  });
+  await create('Valued mission', 'open', 5);
+  await create('Finished mission', 'implemented', 9);
+
+  const text = (await server.callTool('major_hypothesis_loop', { projectPath: ctx.projectPath, focus: 'agents' })).content[0].text;
+  assert.match(text, /Focus: agents/);
+  assert.match(text, /Latest AI trends/);
+  assert.match(text, /Where money is moving/);
+  assert.match(text, /Valued mission \(intrinsic value 5, open/);
+  assert.doesNotMatch(text, /Finished mission/);
+});
+
+test('selectMajorIdeas keeps valued ideas and roots, drops plain children and settled ideas', () => {
+  const idea = (id: string, intrinsicValue: number, parents: string[], state = 'open') =>
+    ({ id, text: id, archived: false, intrinsicValue, supportedIdeas: parents, supportingConnections: [], status: { state, comment: '', date: 0 } }) as any;
+  const selected = selectMajorIdeas([
+    idea('plain-child', 0, ['root']),
+    idea('root', 0, []),
+    idea('valued-child', 3, ['root']),
+    idea('cancelled', 7, [], 'cancelled'),
+  ]).map((entry) => entry.id);
+  assert.deepEqual(selected, ['valued-child', 'root']);
 });
