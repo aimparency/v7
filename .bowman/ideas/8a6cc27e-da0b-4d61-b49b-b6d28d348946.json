@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1793550689054
+    "state": "unclear",
+    "comment": "Premise changed 2026-11-01: the review queue went from 197 to 1 (commit 708a52af) because verified work now goes straight to implemented and review is only for the human's own judgment. Question for Felix: with a near-empty review queue, is ordering it by activity warmth still worth an experiment, or cancel?",
+    "date": 1793551520073
   },
   "intrinsicValue": 0,
   "cost": 1,

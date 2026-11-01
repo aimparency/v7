@@ -1,6 +1,9 @@
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { addAccess } from 'shared';
-import { ideaChangeAccessKind, ideaActivitySnapshot, onIdeaAccess, recordIdeaAccess } from './idea-activity.js';
+import { ideaChangeAccessKind, ideaActivitySnapshot, loadIdeaActivity, onIdeaAccess, recordIdeaAccess, saveIdeaActivity } from './idea-activity.js';
 import { emitChange } from './change-events.js';
 import { runWithOrigin } from './change-origin.js';
 
@@ -39,5 +42,24 @@ describe('idea activity', () => {
     const snapshot = ideaActivitySnapshot(projectPath).ideas;
     expect(Object.keys(snapshot['idea-1']!)).toEqual(['write']);
     expect(Object.keys(snapshot['idea-2']!)).toEqual(['manualEdit']);
+  });
+
+  it('survives a restart through the runtime file, without what has faded', () => {
+    const projectPath = fs.mkdtempSync(path.join(os.tmpdir(), 'activity-file-'));
+    const now = 10 * 24 * 3600_000;
+    const activity = new Map([
+      ['fresh', addAccess(addAccess(undefined, 'found', now - 60_000), 'write', now - 60_000)],
+      // A 'found' a day ago faded long ago; its recent write still shows.
+      ['mixed', addAccess(addAccess(undefined, 'found', now - 24 * 3600_000), 'write', now - 60_000)],
+      ['faded', addAccess(undefined, 'read', now - 24 * 3600_000)]
+    ]);
+    saveIdeaActivity(projectPath, activity, now);
+
+    const loaded = loadIdeaActivity(projectPath);
+    expect([...loaded.keys()].sort()).toEqual(['fresh', 'mixed']);
+    expect(Object.keys(loaded.get('mixed')!)).toEqual(['write']);
+    expect(loaded.get('fresh')).toEqual(activity.get('fresh'));
+    expect(loadIdeaActivity(path.join(projectPath, 'missing')).size).toBe(0);
+    fs.rmSync(projectPath, { recursive: true, force: true });
   });
 });

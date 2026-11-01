@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Felix 2026-11-01: losing activity on restart was okay at first, but surviving restarts is better, especially in dev.",
-    "date": 1793519202202
+    "state": "implemented",
+    "comment": "backend/src/idea-activity.ts: per-project activity loads lazily from .bowman/runtime/idea-activity.json (gitignored), saves 2s debounced after accesses and on process exit, and drops kinds below strength 0.005 (ideas with none left) on every save. Writes only into existing project dirs. Verified: idea-activity tests 4/4 (new: round-trip without faded entries), backend tsc clean; live: an MCP get_idea on the running dev backend wrote the file with that idea's read level. Restart reload itself covered by the unit test, not by restarting the dev server.",
+    "date": 1793551604398
   },
   "intrinsicValue": 0,
   "cost": 1,

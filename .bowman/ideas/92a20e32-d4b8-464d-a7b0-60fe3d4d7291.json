@@ -13,7 +13,8 @@
         -3.65
       ],
       "weight": 1,
-      "hypothesis": "Activity that survives restarts keeps showing where agents worked, even though the dev backend restarts on every code change."
+      "hypothesis": "Activity that survives restarts keeps showing where agents worked, even though the dev backend restarts on every code change.",
+      "reflection": "Held mechanically: activity is now on disk and reloads on first use after a restart (unit-tested; the live backend writes the file). Whether the graph actually stays lit across a real tsx-watch restart in Felix's session is not yet observed."
     }
   ],
   "supportedIdeas": [

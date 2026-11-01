@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1793550688873
+    "state": "unclear",
+    "comment": "Premise changed 2026-11-01: the review queue went from 197 to 1 (commit 708a52af); verified work now goes straight to implemented. Sampled batch acceptance could instead apply to auditing implemented work (sample k agent-implemented ideas, check them). Question for Felix: repurpose it as an audit of implemented work, or cancel?",
+    "date": 1793551520240
   },
   "intrinsicValue": 0,
   "cost": 2,
