@@ -1,0 +1,32 @@
+{
+  "id": "b96825eb-98a6-46ca-86b6-809ecb0f5dae",
+  "text": "Add a /start-idea-recorder-session command",
+  "description": "Provide a dedicated command for starting this kind of idea-recording session, tentatively named /start-idea-recorder-session. Establish the session principle of recording aims through Aimparency MCP and asking open questions when clarification is needed. Before adding a proposed idea, search the graph and show the user relevant existing ideas, including possible duplicates, overlap, or conflicts; ask whether to connect, revise, consolidate, or add it as a distinct idea instead of adding blindly. As the session proceeds, notice and surface consolidation opportunities for user review. When touching an existing idea, refresh its status against the user's latest feedback and current evidence: set it to open when the intended behavior is still missing, partially when some intended behavior exists but gaps remain, and review only when the requested behavior is implemented and awaits user acceptance. Do not preserve a stale review/implemented state merely because adjacent or partial functionality exists. Do not merge ideas or resolve conflicts without the user's decision. Relate this to the existing consolidate_ideas MCP prompt and /enable-hook tools; exact command name and scope can be refined.",
+  "archived": false,
+  "color": "#2d665a",
+  "tags": [
+    "session",
+    "idea-recording",
+    "command",
+    "hook"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2",
+    "da74d69e-b275-4412-b186-0ccc7a0d0440",
+    "f0c0ffe0-4460-4346-97e4-4cd423b3fefa",
+    "1e2a1220-df04-4791-bc06-92d0f1466a7a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1793010917458
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

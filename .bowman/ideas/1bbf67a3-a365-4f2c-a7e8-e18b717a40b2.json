@@ -1,0 +1,30 @@
+{
+  "id": "1bbf67a3-a365-4f2c-a7e8-e18b717a40b2",
+  "text": "Focus the project path input when the website opens without a project",
+  "description": "When opening the website with no project selected (for example http://localhost:4000/), automatically focus the project path input so the user can start typing immediately. Currently no field is focused on page open.",
+  "archived": false,
+  "color": "#2d6661",
+  "tags": [
+    "frontend",
+    "project-loading",
+    "focus",
+    "ux"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7f122bed-ff75-43fc-ba0b-1b74c8141270",
+    "f6a936dc-b117-4a73-bf9d-fd2c63a5a4b4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "2c0b75d8: ProjectSelectionView focuses its input on mount (covers opening without a project and Switch Project). Verified in the rebuilt bundle: activeElement is .project-input on http://localhost:4000/. Awaiting Felix's acceptance.",
+    "date": 1793184690348
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

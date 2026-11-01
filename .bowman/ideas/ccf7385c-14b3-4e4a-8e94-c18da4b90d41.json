@@ -13,8 +13,8 @@
     {
       "ideaId": "a48d03b3-2260-4109-b717-f86e1945bb55",
       "relativePosition": [
-        2.07995395543467,
-        -1.3870081266062104
+        -10.29,
+        -29.53
       ],
       "weight": 0.8,
       "hypothesis": "Repairs a regression in the existing supervisor runtime metadata contract."
@@ -33,8 +33,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -1,6 +1,7 @@
 {
   "id": "bb023302-bd2f-49dc-99f0-83f7eb746e57",
   "text": "Implement WebGL arc-based arrow rendering",
+  "archived": false,
   "tags": [
     "webgl",
     "rendering"
@@ -9,8 +10,8 @@
     {
       "ideaId": "36495c75-6aec-4bcf-b142-c49ed928a2d5",
       "relativePosition": [
-        1.666454520227858,
-        -1.8635797090578499
+        17.56,
+        -20.05
       ],
       "weight": 1
     },
@@ -25,8 +26,8 @@
     {
       "ideaId": "7621e006-e194-4b2c-b3f1-d4bdef976b03",
       "relativePosition": [
-        -1.7531184302027398,
-        1.7822950849069525
+        -0.65,
+        -23.03
       ],
       "weight": 1
     },
@@ -49,8 +50,8 @@
     {
       "ideaId": "150dc21a-66bb-4293-a974-2b90dbca30bc",
       "relativePosition": [
-        -0.7722577324624885,
-        -2.377733793899539
+        8.87,
+        -25.46
       ],
       "weight": 1
     },
@@ -74,5 +75,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

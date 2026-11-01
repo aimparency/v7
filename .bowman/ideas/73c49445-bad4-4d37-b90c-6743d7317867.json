@@ -14,8 +14,8 @@
     {
       "ideaId": "88135653-1ca4-4f15-bdc7-15266cf3a523",
       "relativePosition": [
-        -2.3747949137905637,
-        -0.7812484351564926
+        17.7,
+        25.85
       ],
       "weight": 1,
       "hypothesis": "Hardens the frozen corrigibility harness against substituted trace entries."
@@ -52,8 +52,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A frozen scorer prevents moving success criteria after observing agent behavior and makes safety failures reproducible.",
   "cost": 5,
+  "selfWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

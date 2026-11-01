@@ -2,8 +2,28 @@
   "id": "f0c0ffe0-4460-4346-97e4-4cd423b3fefa",
   "text": "add a \"consolidate\" GetPromptRequestSchema that helps looking at all ideas and finds duplicates or creates connections where ideas are related",
   "description": "can be executed multiple times. Does not reduce information. Just consolidates and connects ideas.",
+  "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "1e2a1220-df04-4791-bc06-92d0f1466a7a",
+      "relativePosition": [
+        3.75,
+        0.05
+      ],
+      "weight": 1,
+      "hypothesis": "A recurring embedding powered workflow can keep the graph coherent while reserving ambiguous or consequential judgments for the user."
+    },
+    {
+      "ideaId": "b96825eb-98a6-46ca-86b6-809ecb0f5dae",
+      "relativePosition": [
+        3,
+        2.25
+      ],
+      "weight": 1,
+      "hypothesis": "The session starter can invoke or complement the existing consolidate_ideas prompt when related ideas, duplicates, or missing connections are found."
+    }
+  ],
   "supportedIdeas": [],
   "committedIn": [
     "f51f8930-c937-4c66-9db8-d4d313e6d286"
@@ -14,5 +34,9 @@
     "date": 1766053317534
   },
   "intrinsicValue": 0,
-  "selfWeight": 0
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -11,8 +11,8 @@
     {
       "ideaId": "5e981ca1-9a74-4c23-ab2a-fbc29a4f0d50",
       "relativePosition": [
-        2.498963820170674,
-        -0.07197100442534263
+        -6.32,
+        -31.1
       ],
       "weight": 0.5,
       "hypothesis": "Corrects the older automatic option-selection behavior while retaining input detection."
@@ -29,8 +29,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

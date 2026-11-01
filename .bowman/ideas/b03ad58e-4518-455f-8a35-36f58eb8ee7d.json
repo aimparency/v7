@@ -41,8 +41,8 @@
     {
       "ideaId": "13d74766-60e4-4c0d-9cb4-810b93f985f9",
       "relativePosition": [
-        2.4409167754360643,
-        -0.5403011154854356
+        -18.09,
+        -2.01
       ],
       "weight": 1,
       "hypothesis": "Evaluates whether the implemented reflection loop causes useful improvements."
@@ -50,8 +50,8 @@
     {
       "ideaId": "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46",
       "relativePosition": [
-        -0.28,
-        -2.48
+        7.39,
+        -34.12
       ],
       "weight": 1,
       "hypothesis": "Reflection tied to the connection it tests gives the loop an explicit belief update per hypothesis instead of free-floating lessons."
@@ -70,8 +70,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

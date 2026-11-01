@@ -2,13 +2,14 @@
   "id": "49258e32-69a4-4b61-9cc4-a54bac439d32",
   "text": "improved formatting for MCP output",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "ideaId": "88b84303-cb64-4c05-a62d-56dc03d7e532",
       "relativePosition": [
-        2.1422395203021254,
-        -1.288724112312531
+        -10.34,
+        -34.64
       ],
       "weight": 1
     }
@@ -24,5 +25,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

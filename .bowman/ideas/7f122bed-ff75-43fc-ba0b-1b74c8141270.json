@@ -29,10 +29,19 @@
         1.77
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "1bbf67a3-a365-4f2c-a7e8-e18b717a40b2",
+      "relativePosition": [
+        -2.16,
+        -3.06
+      ],
+      "weight": 1,
+      "hypothesis": "Focusing the path field improves the project-loading page's immediate keyboard workflow."
     }
   ],
   "supportedIdeas": [
-    "22dd4138-d7c2-436a-8891-15568dacf338"
+    "bd292a4b-146a-43fe-afc9-2c66be52c199"
   ],
   "committedIn": [],
   "status": {
@@ -42,8 +51,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

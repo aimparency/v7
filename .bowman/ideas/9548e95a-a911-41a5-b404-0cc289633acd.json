@@ -14,8 +14,8 @@
     {
       "ideaId": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
       "relativePosition": [
-        2.49879350379784,
-        0.0776596766521285
+        -9.75,
+        3.94
       ],
       "weight": 1,
       "hypothesis": "Existing paid design partnerships are an initial commercial channel for the transformation offer."
@@ -23,8 +23,8 @@
     {
       "ideaId": "fcb77ff3-0bb5-416c-8f70-ad6a5ac2e60e",
       "relativePosition": [
-        -0.16988813373675143,
-        -2.494220924861197
+        -10.28,
+        2.66
       ],
       "weight": 1
     },
@@ -47,8 +47,8 @@
     {
       "ideaId": "032b8a47-d3d2-4974-bdcd-559a377164ef",
       "relativePosition": [
-        -0.9221168118427702,
-        -2.32372558304911
+        -11.26,
+        3.09
       ],
       "weight": 1
     },
@@ -63,16 +63,16 @@
     {
       "ideaId": "43021984-0a79-4bdb-a961-81396ddfe877",
       "relativePosition": [
-        -0.1558969655653859,
-        -2.4951344925930354
+        -11.1,
+        -1.65
       ],
       "weight": 1
     },
     {
       "ideaId": "493d4f17-9781-4dff-a32c-2916e298f0bb",
       "relativePosition": [
-        -1.6784126771298735,
-        -1.8528170134283986
+        -11.94,
+        1.42
       ],
       "weight": 1
     },
@@ -87,24 +87,24 @@
     {
       "ideaId": "f011253f-b075-45bd-a0d3-e8b0bac21e29",
       "relativePosition": [
-        1.1717776414960503,
-        -2.2083788531160033
+        24.33,
+        0.68
       ],
       "weight": 1
     },
     {
       "ideaId": "b5348ae2-62d6-42ac-8191-b877e0570c61",
       "relativePosition": [
-        -0.6064726292541849,
-        2.4253228547897527
+        3.8,
+        -14.17
       ],
       "weight": 1
     },
     {
       "ideaId": "99134ce5-3c20-4c7d-ad1d-c462a5db4b41",
       "relativePosition": [
-        -1.9550732830693116,
-        -1.5581041229098214
+        5.39,
+        -14.59
       ],
       "weight": 1
     }
@@ -121,8 +121,8 @@
   },
   "intrinsicValue": 0,
   "cost": 8,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

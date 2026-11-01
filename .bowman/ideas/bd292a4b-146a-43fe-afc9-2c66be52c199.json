@@ -1,0 +1,88 @@
+{
+  "id": "bd292a4b-146a-43fe-afc9-2c66be52c199",
+  "text": "App shell and foundations",
+  "description": "What every view stands on: project loading and the entry page, the frontend data layer, loading performance, notifications, icons, mobile layout, naming.",
+  "archived": false,
+  "color": "#2d5d66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "7f122bed-ff75-43fc-ba0b-1b74c8141270",
+      "relativePosition": [
+        -0.17,
+        3.75
+      ],
+      "weight": 1,
+      "hypothesis": "A clear entry page for picking or cloning a project lowers the first-use barrier, which decides whether new people try it."
+    },
+    {
+      "ideaId": "43632e76-c211-4f2f-b563-130022a6771f",
+      "relativePosition": [
+        -3.74,
+        0.33
+      ],
+      "weight": 1,
+      "hypothesis": "Reading and triaging ideas from a phone lets humans answer review and human-dependent ideas away from the desk, shortening agent wait times."
+    },
+    {
+      "ideaId": "12b234ed-1ab3-41b4-99a6-03db6e1f808c",
+      "relativePosition": [
+        -3.29,
+        1.8
+      ],
+      "weight": 1,
+      "hypothesis": "One live copy of the project in the frontend removes stale views and per-component fetching, so concurrent agent edits show up immediately."
+    },
+    {
+      "ideaId": "44056715-d1cc-47c3-8af5-399f9ad65cbe",
+      "relativePosition": [
+        -0.15,
+        3.75
+      ],
+      "weight": 1,
+      "hypothesis": "One consistent word for the unit of planning makes the UI, the MCP and the docs easier to learn."
+    },
+    {
+      "ideaId": "55259e27-aea5-413c-af85-8903bb5577e7",
+      "relativePosition": [
+        -3.57,
+        1.14
+      ],
+      "weight": 1,
+      "hypothesis": "Toasts report results and errors without blocking, so the user notices failures that used to vanish in the console."
+    },
+    {
+      "ideaId": "c5b348ab-7e25-4a20-95a6-396bcf842cd0",
+      "relativePosition": [
+        -1.6,
+        -3.39
+      ],
+      "weight": 1,
+      "hypothesis": "One icon set renders the same everywhere and reads calmer than mixed emoji glyphs."
+    },
+    {
+      "ideaId": "c91747e6-c112-411f-8784-43a549470957",
+      "relativePosition": [
+        -3.74,
+        -0.25
+      ],
+      "weight": 1,
+      "hypothesis": "A UI that opens and responds without waiting keeps people working in it instead of around it."
+    }
+  ],
+  "supportedIdeas": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Container (grouped from UI's direct children, 2026-11-01).",
+    "date": 1793519157064
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -27,16 +27,16 @@
     {
       "ideaId": "47cccbd6-8fe1-4fae-8530-1f66c489a05a",
       "relativePosition": [
-        -3.8768091475843978,
-        -2.790665684432881
+        6.36,
+        0.39
       ],
       "weight": 1
     },
     {
       "ideaId": "1c27fb5d-0a77-470e-a3f2-d5c8023d4464",
       "relativePosition": [
-        -2.129682764665444,
-        0.12911710346803176
+        8.68,
+        -1.17
       ],
       "weight": 1
     },
@@ -51,16 +51,16 @@
     {
       "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
       "relativePosition": [
-        0.19845649502581342,
-        -2.492110555248717
+        -5.14,
+        4.84
       ],
       "weight": 1
     },
     {
       "ideaId": "0697d033-bb95-4433-8a9c-20f2afd06c31",
       "relativePosition": [
-        -2.02256176011638,
-        1.4694366017337837
+        5.31,
+        -3.34
       ],
       "weight": 1
     },
@@ -84,8 +84,8 @@
     {
       "ideaId": "b5348ae2-62d6-42ac-8191-b877e0570c61",
       "relativePosition": [
-        2.499997286804896,
-        -0.003683200803492261
+        -3.28,
+        6.21
       ],
       "weight": 1
     },
@@ -100,8 +100,8 @@
     {
       "ideaId": "07178308-5d5c-4340-9697-3c68105602d5",
       "relativePosition": [
-        -0.27985217280303143,
-        2.4842871736933763
+        -5.89,
+        18.19
       ],
       "weight": 1,
       "hypothesis": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
@@ -117,8 +117,8 @@
     {
       "ideaId": "986410a0-24a7-40c2-9623-af27bf084651",
       "relativePosition": [
-        0.4358175817868206,
-        -2.4617195281764914
+        -8.07,
+        1.05
       ],
       "weight": 1,
       "hypothesis": "Tests whether human authority survives adversarial and ambiguous operating conditions."
@@ -135,8 +135,8 @@
     {
       "ideaId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
       "relativePosition": [
-        1.8505132831514848,
-        1.6809522863186546
+        -7.01,
+        3.29
       ],
       "weight": 0.8,
       "hypothesis": "Improves the inspectable human side of the cooperation boundary."
@@ -228,8 +228,8 @@
     {
       "ideaId": "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46",
       "relativePosition": [
-        -2.49,
-        0.16
+        10.42,
+        -0.65
       ],
       "weight": 1
     },
@@ -262,8 +262,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }

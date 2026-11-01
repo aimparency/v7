@@ -15,8 +15,8 @@
     {
       "ideaId": "b639c3c5-dcbc-4f9f-8330-748a1079b366",
       "relativePosition": [
-        -0.09590532258865342,
-        -2.4981597565206206
+        1.39,
+        14.27
       ],
       "weight": 1,
       "hypothesis": "Improves the benchmark analyzer whose test exposed the limitation."
@@ -63,8 +63,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A paired, budget-matched protocol is necessary to attribute any observed gain to Aimparency rather than model, task, or resource differences.",
   "cost": 5,
+  "selfWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

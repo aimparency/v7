@@ -48,8 +48,8 @@
     {
       "ideaId": "e207bec5-1208-4553-bb80-cec73135c098",
       "relativePosition": [
-        -0.6367655417226696,
-        2.4175462032554074
+        5.23,
+        -30.43
       ],
       "weight": 1,
       "hypothesis": "A working protocol v0 is the concrete baseline the jury evaluates for a software-infrastructure project."
@@ -69,8 +69,8 @@
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

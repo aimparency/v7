@@ -17,8 +17,8 @@
     {
       "ideaId": "045d0879-46f3-4e2a-b13c-08ec339f03c2",
       "relativePosition": [
-        -1.6843274699234352,
-        1.7728002509485083
+        5.25,
+        7.41
       ],
       "weight": 2,
       "hypothesis": "Real economic participation is a major autonomy constraint and feedback channel."
@@ -89,8 +89,8 @@
     {
       "ideaId": "3253bc9e-14fe-4c9b-9849-588620518517",
       "relativePosition": [
-        -1.273845889712005,
-        -3.609367041913996
+        0.05,
+        3.65
       ],
       "weight": 3,
       "hypothesis": "Economic autonomy is the real-world survival test for otherwise technical agency."
@@ -143,8 +143,8 @@
     {
       "ideaId": "12da17c9-7c18-479c-8dc3-e78bc0a35805",
       "relativePosition": [
-        -0.8138262627739067,
-        -2.363828846177205
+        14.57,
+        3.67
       ],
       "weight": 0.5,
       "hypothesis": "Accurate concise tool descriptions reduce execution errors but have indirect autonomy impact."
@@ -161,8 +161,8 @@
     {
       "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
       "relativePosition": [
-        -0.08699397359144834,
-        -2.498485951243026
+        2.45,
+        -9.25
       ],
       "weight": 3,
       "hypothesis": "Real-world effectors are essential for moving from internal reasoning to bounded external action."
@@ -190,8 +190,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

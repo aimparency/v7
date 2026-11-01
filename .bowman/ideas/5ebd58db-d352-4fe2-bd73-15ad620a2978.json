@@ -13,8 +13,8 @@
     {
       "ideaId": "9548e95a-a911-41a5-b404-0cc289633acd",
       "relativePosition": [
-        -2.166640986340277,
-        1.2472637396759478
+        -3.32,
+        -11.59
       ],
       "weight": 1,
       "hypothesis": "Transforming client companies creates real value for users."
@@ -40,8 +40,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -29,8 +29,8 @@
     {
       "ideaId": "5cc73338-d648-4440-98ef-035217d06fcd",
       "relativePosition": [
-        2.3164487605880963,
-        0.9402473821127459
+        2.61,
+        17.19
       ],
       "weight": 1
     },
@@ -61,8 +61,8 @@
     {
       "ideaId": "3ae8bb39-e6e2-49a8-ac15-58d2c454acbd",
       "relativePosition": [
-        2.499681539775726,
-        -0.03990237717797983
+        -5.79,
+        10.44
       ],
       "weight": 1
     },
@@ -85,8 +85,8 @@
     {
       "ideaId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
       "relativePosition": [
-        -0.41935150557464734,
-        -1.574907224205172
+        14.09,
+        11.31
       ],
       "weight": 1
     },
@@ -126,16 +126,16 @@
     {
       "ideaId": "8197b533-9e2a-4702-a7c0-810be75cd288",
       "relativePosition": [
-        2.0333652009851173,
-        1.4544503977182428
+        -5.16,
+        14.13
       ],
       "weight": 1
     },
     {
       "ideaId": "8ac03697-c34f-46c6-8b54-678418d5adb2",
       "relativePosition": [
-        2.485465681372878,
-        -0.26918459598880246
+        -1.81,
+        10.32
       ],
       "weight": 1,
       "hypothesis": "Provides an evidence gate for the autonomous execution capability."
@@ -152,8 +152,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

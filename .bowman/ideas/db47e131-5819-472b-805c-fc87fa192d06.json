@@ -7,20 +7,21 @@
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3"
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
+    "10dfdf2f-444e-476e-b629-0578fdbe6b39"
   ],
   "committedIn": [
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "open",
-    "comment": "Felix 2026-10-16: an explicit field that anyone may change is fine. Git history shows who set whom, so someone who enters another person without authority can still be held to account. Shape: an optional list of git identities on the idea (who is working on it), editable in the UI and MCP. Each person uses their own git account; no shared account mode.",
-    "date": 1792172542997
+    "state": "review",
+    "comment": "f831e6c3: backend builds an idea → contributors map from one git log pass per HEAD (authors + Co-Authored-By of commits changing the idea file or naming its id prefix); edit dialog shows 'Worked on by'. Not yet seen in the browser.",
+    "date": 1793473600055
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

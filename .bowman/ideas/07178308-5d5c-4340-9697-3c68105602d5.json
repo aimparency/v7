@@ -15,8 +15,8 @@
     {
       "ideaId": "fdd2059a-2d3b-49b4-994b-023799c90397",
       "relativePosition": [
-        1.1905073307479888,
-        2.198338530671584
+        -27.03,
+        -1.41
       ],
       "weight": 1,
       "hypothesis": "Two-week operator validation produces the revenue wedge."
@@ -24,8 +24,8 @@
     {
       "ideaId": "7f2bae54-03a6-481f-8de7-114fba05c112",
       "relativePosition": [
-        0.3088475165115763,
-        -2.4808492923885224
+        6.13,
+        6.98
       ],
       "weight": 1,
       "hypothesis": "A real beneficiary turns the moonshot into evidence."
@@ -33,8 +33,8 @@
     {
       "ideaId": "6c611056-04f7-4009-90f1-32c1a5da8de4",
       "relativePosition": [
-        2.2080436666137313,
-        1.1724091292407228
+        7.75,
+        12.82
       ],
       "weight": 1,
       "hypothesis": "Strategy-agent interoperability is the scalable future architecture."
@@ -51,8 +51,8 @@
     {
       "ideaId": "7d6c029e-fc63-40bc-9c23-e69322240634",
       "relativePosition": [
-        2.4260041028070933,
-        0.6037417437639621
+        25.15,
+        4.92
       ],
       "weight": 1,
       "hypothesis": "Makes the one-month operating plan native to Aimparency."
@@ -72,8 +72,8 @@
   },
   "intrinsicValue": 0,
   "cost": 20,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

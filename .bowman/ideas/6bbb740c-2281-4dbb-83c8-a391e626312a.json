@@ -80,8 +80,8 @@
     {
       "ideaId": "71627e32-84ec-4969-b552-679cc04ca254",
       "relativePosition": [
-        0.7371518676175068,
-        2.544696199839303
+        26.38,
+        8.54
       ],
       "weight": 1
     },
@@ -96,8 +96,8 @@
     {
       "ideaId": "28134f24-5279-465d-bf6a-38795df36b8c",
       "relativePosition": [
-        -2.2251709950468412,
-        -1.1395674805829843
+        35.12,
+        4.48
       ],
       "weight": 1
     },
@@ -308,6 +308,33 @@
       ],
       "weight": 1,
       "hypothesis": "A readable graph without overlaps, achieved with small reviewable git diffs, keeps the graph usable as it grows."
+    },
+    {
+      "ideaId": "93468569-ef71-4e88-9232-de48d1a3f585",
+      "relativePosition": [
+        2.02,
+        3.16
+      ],
+      "weight": 1,
+      "hypothesis": "Picking the closest rendered connection makes overlapping graph connections easier to select."
+    },
+    {
+      "ideaId": "a5c00572-4434-49bf-affd-6d0b550368af",
+      "relativePosition": [
+        -1.66,
+        -3.36
+      ],
+      "weight": 1,
+      "hypothesis": "End-to-end tests that can find WebGL nodes keep the graph view from silently regressing while agents change the frontend."
+    },
+    {
+      "ideaId": "92a20e32-d4b8-464d-a7b0-60fe3d4d7291",
+      "relativePosition": [
+        -2.88,
+        2.4
+      ],
+      "weight": 1,
+      "hypothesis": "Watching ideas light up as agents read and change them shows in the graph where the work happens, so the human can follow and steer it."
     }
   ],
   "supportedIdeas": [
@@ -323,8 +350,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }

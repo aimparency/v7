@@ -1,0 +1,43 @@
+{
+  "id": "c91747e6-c112-411f-8784-43a549470957",
+  "text": "Improve UI loading performance",
+  "description": "",
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "f6a936dc-b117-4a73-bf9d-fd2c63a5a4b4",
+      "relativePosition": [
+        -1,
+        3.61
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "b1634a68-e664-4787-bfda-6886f1c6fc3e",
+      "relativePosition": [
+        2.98,
+        -2.27
+      ],
+      "weight": 0.9850746268656718
+    }
+  ],
+  "supportedIdeas": [
+    "bd292a4b-146a-43fe-afc9-2c66be52c199"
+  ],
+  "committedIn": [
+    "1260e724-8db3-4d04-97cf-09d34c467f4e"
+  ],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792512399385
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

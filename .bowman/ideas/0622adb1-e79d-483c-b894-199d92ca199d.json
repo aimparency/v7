@@ -13,8 +13,8 @@
     {
       "ideaId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
       "relativePosition": [
-        1.7463873520386552,
-        -0.6266153434442487
+        9.28,
+        6.44
       ],
       "weight": 1
     },
@@ -94,8 +94,8 @@
     {
       "ideaId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
       "relativePosition": [
-        -1.7046003183060134,
-        -1.8287530601016195
+        -2.18,
+        3.85
       ],
       "weight": 1
     },
@@ -182,8 +182,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

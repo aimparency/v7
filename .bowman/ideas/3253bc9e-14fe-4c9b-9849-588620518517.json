@@ -47,8 +47,8 @@
     {
       "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
       "relativePosition": [
-        0.5584539676597016,
-        -3.3023316901074047
+        2.75,
+        -10.71
       ],
       "weight": 1,
       "hypothesis": "Local-first open source supports adoption and trust, with an indirect contribution to economic survival."
@@ -136,8 +136,8 @@
     {
       "ideaId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
       "relativePosition": [
-        0.8812891865630943,
-        -2.339514772265172
+        5.89,
+        1.9
       ],
       "weight": 2,
       "hypothesis": "A calibrated priority model turns real evidence into coherent allocation decisions."
@@ -182,8 +182,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }

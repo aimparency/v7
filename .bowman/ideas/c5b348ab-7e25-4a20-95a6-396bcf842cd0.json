@@ -1,12 +1,13 @@
 {
   "id": "c5b348ab-7e25-4a20-95a6-396bcf842cd0",
   "text": "Unified icons: Lucide instead of Unicode/emoji glyphs",
+  "description": "About 70 glyphs in 17 components (six kinds of ×, emoji mixed with symbols) rendered differently per platform and ignored the text color. Replaced with lucide-vue-next components; one svg.lucide rule in style.css sizes them to the text and draws them in its color. Watchdog and loop panels were also made exclusive (006170d).",
   "archived": false,
   "color": "#64662d",
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "22dd4138-d7c2-436a-8891-15568dacf338"
+    "bd292a4b-146a-43fe-afc9-2c66be52c199"
   ],
   "committedIn": [],
   "status": {
@@ -16,9 +17,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "About 70 glyphs in 17 components (six kinds of ×, emoji mixed with symbols) rendered differently per platform and ignored the text color. Replaced with lucide-vue-next components; one svg.lucide rule in style.css sizes them to the text and draws them in its color. Watchdog and loop panels were also made exclusive (006170d).",
-  "selfWeight": 1
+  "valueVariance": 0
 }

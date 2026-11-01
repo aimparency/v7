@@ -1,0 +1,34 @@
+{
+  "id": "92a20e32-d4b8-464d-a7b0-60fe3d4d7291",
+  "text": "Show current AI agent activity",
+  "description": "Maybe when AI worked on an idea, it get's a visual highligt that fades over the days since status update.",
+  "archived": false,
+  "color": "#666666",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "a8740f1b-8870-4f85-925c-ba3a3fc62e3a",
+      "relativePosition": [
+        -0.88,
+        -3.65
+      ],
+      "weight": 1,
+      "hypothesis": "Activity that survives restarts keeps showing where agents worked, even though the dev backend restarts on every code change."
+    }
+  ],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "3fc03890: graph color mode 'Activity' (also via c). Backend keeps per idea a vector of last-access times by kind, in memory: found & contextRead (5 min half-life, weight 0.3, blue), read (15 min, 0.8, light blue), agent write (1 h, amber), agent status change (6 h, green), manual edit in the UI (1 h, pink). MCP read tools report what they showed; writes come from backend change events (no client id = agent). Needs: backend + MCP reconnect, then a look in the browser.",
+    "date": 1793474149846
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

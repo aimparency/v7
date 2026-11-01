@@ -22,6 +22,15 @@
       ],
       "weight": 0.9850746268656718,
       "hypothesis": "\"Leave uncommitted\" says what actually happens, so users do not fear losing an idea they don't place in a phase."
+    },
+    {
+      "ideaId": "b96825eb-98a6-46ca-86b6-809ecb0f5dae",
+      "relativePosition": [
+        -3.69,
+        -0.64
+      ],
+      "weight": 1,
+      "hypothesis": "The command makes idea capture and graph connection a repeatable session workflow."
     }
   ],
   "supportedIdeas": [

@@ -1,0 +1,38 @@
+{
+  "id": "1e2a1220-df04-4791-bc06-92d0f1466a7a",
+  "text": "Add background embedding powered idea consolidation with human review for ambiguous cases",
+  "description": "Periodically analyze the active idea graph using its embeddings to surface likely duplicates, missing connections, and conflicting ideas. Apply only high confidence, low risk cases automatically: merge clear restatements while preserving history and rewiring links; add a connection only when direction and support relationship are obvious; resolve conflicts only when the contradiction and authoritative resolution are explicit in the ideas. Queue uncertain or consequential cases for the user, with evidence and proposed actions. Start review with five most interesting cases, one at a time, and learn from user decisions. Never infer a conflict resolution from similarity alone. Embedding input should remain grounded in the idea’s own text, description, and tags; do not append parent or supported-idea content, since an arbitrary claimed support link could then move another idea embedding. Treat graph relationships as separate evidence, not as embedding text.",
+  "archived": false,
+  "tags": [
+    "embeddings",
+    "consolidation",
+    "graph hygiene",
+    "human review"
+  ],
+  "supportingConnections": [
+    {
+      "ideaId": "b96825eb-98a6-46ca-86b6-809ecb0f5dae",
+      "relativePosition": [
+        -3.73,
+        0.4
+      ],
+      "weight": 1,
+      "hypothesis": "The session should surface candidate duplicates, missing links, and conflicts for human review as new aims are recorded."
+    }
+  ],
+  "supportedIdeas": [
+    "f0c0ffe0-4460-4346-97e4-4cd423b3fefa"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Extends the existing consolidate_ideas prompt into an ongoing background workflow. Needs policy for confidence thresholds, reversible changes, and user review queue.",
+    "date": 1792833103925
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

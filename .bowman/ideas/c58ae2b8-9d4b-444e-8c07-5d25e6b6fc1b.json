@@ -48,8 +48,8 @@
     {
       "ideaId": "96adb3d0-5827-432e-8a48-8d26754fcaed",
       "relativePosition": [
-        2.4856113758658633,
-        0.2678359351659345
+        -17.49,
+        14.69
       ],
       "weight": 1
     },
@@ -111,8 +111,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }

@@ -1,0 +1,52 @@
+{
+  "id": "10dfdf2f-444e-476e-b629-0578fdbe6b39",
+  "text": "Human oversight in the UI",
+  "description": "Where the human checks and steers what agents did: what waits on them, what changed in code, who worked on what.",
+  "archived": false,
+  "color": "#66652d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "90cf0309-023f-486c-b7a0-322ee2910d46",
+      "relativePosition": [
+        -3.25,
+        1.88
+      ],
+      "weight": 1,
+      "hypothesis": "One queue of what waits on the human, ordered by value, turns review and human-dependent ideas into a short daily task instead of a hunt."
+    },
+    {
+      "ideaId": "8b5632eb-f9ab-4639-bdfb-a809a26dacd7",
+      "relativePosition": [
+        3.69,
+        -0.68
+      ],
+      "weight": 1,
+      "hypothesis": "Seeing the code diff behind an idea lets a human check what an agent actually did before accepting it, which makes review a judgment of the work rather than of its summary."
+    },
+    {
+      "ideaId": "db47e131-5819-472b-805c-fc87fa192d06",
+      "relativePosition": [
+        -3.42,
+        1.55
+      ],
+      "weight": 1,
+      "hypothesis": "Knowing which person or agent worked on an idea tells the human whom to ask and whose work to check."
+    }
+  ],
+  "supportedIdeas": [
+    "22dd4138-d7c2-436a-8891-15568dacf338"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Container (grouped from UI's direct children, 2026-11-01).",
+    "date": 1793519157133
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -47,8 +47,8 @@
     {
       "ideaId": "b42711f4-cb68-4f64-b0c1-4a1eca8d2029",
       "relativePosition": [
-        -2.4044596573530685,
-        -0.6845244744795937
+        -15.01,
+        -18.26
       ],
       "weight": 1
     },
@@ -72,16 +72,16 @@
     {
       "ideaId": "80b53c24-a0e8-48af-8acc-b3a76fde7513",
       "relativePosition": [
-        0.031284113935194514,
-        2.4998042531796942
+        -0.31,
+        -10.52
       ],
       "weight": 1
     },
     {
       "ideaId": "07178308-5d5c-4340-9697-3c68105602d5",
       "relativePosition": [
-        1.2029429979435802,
-        -2.191558382452658
+        -0.7,
+        -19.53
       ],
       "weight": 1,
       "hypothesis": "One-month runway requires committed funding or revenue."
@@ -101,8 +101,8 @@
   },
   "intrinsicValue": 0,
   "cost": 6,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

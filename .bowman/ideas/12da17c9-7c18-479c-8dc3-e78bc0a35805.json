@@ -8,8 +8,8 @@
     {
       "ideaId": "7d6c029e-fc63-40bc-9c23-e69322240634",
       "relativePosition": [
-        2.4874305973085913,
-        0.2503777617381863
+        -16.15,
+        -9.6
       ],
       "weight": 1,
       "hypothesis": "Extends lean MCP tool-surface guidance from generic autonomy to graph-first planning."
@@ -17,8 +17,8 @@
     {
       "ideaId": "8e8d8f7a-375d-46b8-8f03-192527b59106",
       "relativePosition": [
-        -1.1752037813392835,
-        2.206557516206149
+        56.21,
+        -17.72
       ],
       "weight": 1,
       "hypothesis": "Makes deduplication and prior graph decisions unavoidable at idea creation time."
@@ -45,8 +45,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

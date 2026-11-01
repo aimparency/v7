@@ -12,8 +12,8 @@
     {
       "ideaId": "e3ffa4d6-1c88-4b41-820b-831f68afcbd7",
       "relativePosition": [
-        -2.224563840690002,
-        1.1407522599997544
+        -3.28,
+        -19.32
       ],
       "weight": 0.7,
       "hypothesis": "Uses the established project-local watchdog runtime restoration path."
@@ -32,8 +32,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

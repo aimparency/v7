@@ -1,0 +1,34 @@
+{
+  "id": "f6a936dc-b117-4a73-bf9d-fd2c63a5a4b4",
+  "text": "On page / project load",
+  "description": "",
+  "archived": false,
+  "color": "#2d663a",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "1bbf67a3-a365-4f2c-a7e8-e18b717a40b2",
+      "relativePosition": [
+        3.1,
+        -2.1
+      ],
+      "weight": 1,
+      "hypothesis": "This specifies the needed focus behavior on page/project load when no project is active."
+    }
+  ],
+  "supportedIdeas": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792512412463
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

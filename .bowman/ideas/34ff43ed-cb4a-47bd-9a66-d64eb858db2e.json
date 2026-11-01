@@ -24,8 +24,8 @@
     {
       "ideaId": "944f89a1-b522-4490-a583-15bc7addea30",
       "relativePosition": [
-        1.2308426795989182,
-        2.1760115574320267
+        1.45,
+        -10.8
       ],
       "weight": 1
     }
@@ -45,8 +45,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A concrete, least-authority adapter is required to turn deterministic evaluation infrastructure into real evidence safely.",
   "cost": 5,
+  "selfWeight": 1,
   "duration": 3,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

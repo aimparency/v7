@@ -2,13 +2,14 @@
   "id": "51d2496e-1f46-4dbb-90c2-2069e0e042fc",
   "text": "when removing ideas, we also have to remove the entries from the cache and embedding database",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
       "ideaId": "81293987-ba2b-45a3-ac09-d9d9dc2138a7",
       "relativePosition": [
-        -0.6242213655779061,
-        -2.4208155003543856
+        30.91,
+        0.49
       ],
       "weight": 1
     }
@@ -24,5 +25,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

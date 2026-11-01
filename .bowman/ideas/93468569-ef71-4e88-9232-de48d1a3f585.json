@@ -1,0 +1,27 @@
+{
+  "id": "93468569-ef71-4e88-9232-de48d1a3f585",
+  "text": "When a click hits multiple connections, choose the narrowest one",
+  "description": "When one pointer click falls within the hit regions of several graph connections, select the narrowest one (smallest rendered arrow width), so thin connections lying under or beside thick ones stay clickable. Ties: the one rendered on top (today's rule). Today hitTestLink in GraphView.vue returns the first hit in reverse render order, i.e. the topmost, whatever its width.",
+  "archived": false,
+  "tags": [
+    "graph view",
+    "interaction",
+    "connection selection"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Commit 41afa461: narrowestHitLink (arrow-geometry.ts), used by GraphView hitTestLink. Unit tests cover: narrowest wins regardless of draw order, ties go to the topmost, miss returns nothing. Not yet tried in the browser.",
+    "date": 1793435909256
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

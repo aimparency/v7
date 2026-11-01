@@ -13,8 +13,8 @@
     {
       "ideaId": "f1bc585d-77c3-4d01-8cb1-e6e69a22ba7c",
       "relativePosition": [
-        1.818203953092568,
-        1.715848007534047
+        2.66,
+        -18.86
       ],
       "weight": 1,
       "hypothesis": "Strengthens the reusable funding/demo package."
@@ -34,8 +34,8 @@
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

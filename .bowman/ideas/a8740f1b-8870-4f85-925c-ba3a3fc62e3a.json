@@ -1,0 +1,24 @@
+{
+  "id": "a8740f1b-8870-4f85-925c-ba3a3fc62e3a",
+  "text": "Keep idea activity across backend restarts",
+  "description": "The Activity coloring's access times live only in backend memory, and the dev backend restarts on every source change (tsx watch), so the graph goes dark exactly while agents are working. Persist the per-idea access vector in the project's gitignored runtime area (e.g. .bowman/runtime/ or the cache), written debounced and read on start. Drop entries that have faded below visibility so the file stays small. Not versioned in git: it's live state, not history.",
+  "archived": false,
+  "color": "#2d4266",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "92a20e32-d4b8-464d-a7b0-60fe3d4d7291"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Felix 2026-11-01: losing activity on restart was okay at first, but surviving restarts is better, especially in dev.",
+    "date": 1793519202202
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

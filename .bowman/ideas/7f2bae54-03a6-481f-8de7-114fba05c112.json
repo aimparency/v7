@@ -16,16 +16,16 @@
     {
       "ideaId": "5bd2c07e-babe-479e-a68d-ae3cfafe32ab",
       "relativePosition": [
-        2.458286833542848,
-        -0.4547810946267208
+        -15.33,
+        -1.67
       ],
       "weight": 1
     },
     {
       "ideaId": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
       "relativePosition": [
-        1.4980744231605647,
-        2.0014427352967514
+        -12.02,
+        -1.81
       ],
       "weight": 1,
       "hypothesis": "Creates externally accepted, paid value for a named open-source beneficiary through an inspectable autonomous run."
@@ -48,8 +48,8 @@
   },
   "intrinsicValue": 0,
   "cost": 5,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }

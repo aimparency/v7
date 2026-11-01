@@ -8,8 +8,8 @@
     {
       "ideaId": "6bbb740c-2281-4dbb-83c8-a391e626312a",
       "relativePosition": [
-        2.523198469802153,
-        -3.124057484937025
+        11.26,
+        10.97
       ],
       "weight": 1,
       "hypothesis": "Seeing the graph as a graph shows structure, clusters and orphans that no list reveals, so humans and agents agree on the same picture."
@@ -17,8 +17,8 @@
     {
       "ideaId": "f2337265-ffc6-4ae8-a421-d6e4d5540210",
       "relativePosition": [
-        -3.7976710884539755,
-        -5.142943763344725
+        -1.37,
+        7.62
       ],
       "weight": 1,
       "hypothesis": "The keyboard-driven list is where daily work happens: fast navigation and editing decide whether people keep their plans in Aimparency at all."
@@ -33,94 +33,22 @@
       "hypothesis": "A watchdog the human can read and steer from the UI makes autonomous agent runs visible, so cooperation does not become blind delegation."
     },
     {
-      "ideaId": "7f122bed-ff75-43fc-ba0b-1b74c8141270",
+      "ideaId": "bd292a4b-146a-43fe-afc9-2c66be52c199",
       "relativePosition": [
-        1.9879581470373617,
-        1.105530497843709
-      ],
-      "weight": 0.9887640449438202,
-      "hypothesis": "A clear entry page for picking or cloning a project lowers the first-use barrier, which decides whether new people try it."
-    },
-    {
-      "ideaId": "43632e76-c211-4f2f-b563-130022a6771f",
-      "relativePosition": [
-        -1.242076596792979,
-        -3.7958890589480654
-      ],
-      "weight": 0.9987515605493135,
-      "hypothesis": "Reading and triaging ideas from a phone lets humans answer review and human-dependent ideas away from the desk, shortening agent wait times."
-    },
-    {
-      "ideaId": "a0e80284-510a-45d6-a55c-c40f727118e8",
-      "relativePosition": [
-        -2.3354779223600746,
-        0.8919321017704598
+        2.75,
+        2.55
       ],
       "weight": 1,
-      "hypothesis": "Ranking a phase's ideas by priority and state shows what to do next without manual sorting."
+      "hypothesis": "Views are only as good as what carries them: fast, live, consistent loading and feedback make every view trustworthy."
     },
     {
-      "ideaId": "a5c00572-4434-49bf-affd-6d0b550368af",
+      "ideaId": "10dfdf2f-444e-476e-b629-0578fdbe6b39",
       "relativePosition": [
-        -1.6608014452518651,
-        1.8686194260601368
+        -2.28,
+        -2.98
       ],
       "weight": 1,
-      "hypothesis": "End-to-end tests that can find WebGL nodes keep the graph view from silently regressing while agents change the frontend."
-    },
-    {
-      "ideaId": "12b234ed-1ab3-41b4-99a6-03db6e1f808c",
-      "relativePosition": [
-        0.5918225920871852,
-        -2.428939278676024
-      ],
-      "weight": 1,
-      "hypothesis": "One live copy of the project in the frontend removes stale views and per-component fetching, so concurrent agent edits show up immediately."
-    },
-    {
-      "ideaId": "44056715-d1cc-47c3-8af5-399f9ad65cbe",
-      "relativePosition": [
-        0.5436840208584375,
-        2.4401655037032226
-      ],
-      "weight": 1,
-      "hypothesis": "One consistent word for the unit of planning makes the UI, the MCP and the docs easier to learn."
-    },
-    {
-      "ideaId": "90cf0309-023f-486c-b7a0-322ee2910d46",
-      "relativePosition": [
-        0.25315275353337463,
-        2.487149710688617
-      ],
-      "weight": 1,
-      "hypothesis": "One queue of what waits on the human, ordered by value, turns review and human-dependent ideas into a short daily task instead of a hunt."
-    },
-    {
-      "ideaId": "55259e27-aea5-413c-af85-8903bb5577e7",
-      "relativePosition": [
-        1.8806349027689484,
-        -1.6471831599695366
-      ],
-      "weight": 1,
-      "hypothesis": "Toasts report results and errors without blocking, so the user notices failures that used to vanish in the console."
-    },
-    {
-      "ideaId": "c5b348ab-7e25-4a20-95a6-396bcf842cd0",
-      "relativePosition": [
-        -1.25,
-        -2.17
-      ],
-      "weight": 1,
-      "hypothesis": "One icon set renders the same everywhere and reads calmer than mixed emoji glyphs."
-    },
-    {
-      "ideaId": "8b5632eb-f9ab-4639-bdfb-a809a26dacd7",
-      "relativePosition": [
-        1.86,
-        1.67
-      ],
-      "weight": 1,
-      "hypothesis": "Seeing the code diff behind an idea lets a human check what an agent actually did before accepting it, which makes review a judgment of the work rather than of its summary."
+      "hypothesis": "The human stays the final authority only if checking agent work in the UI is quick."
     }
   ],
   "supportedIdeas": [

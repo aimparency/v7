@@ -1,0 +1,24 @@
+{
+  "id": "b1634a68-e664-4787-bfda-6886f1c6fc3e",
+  "text": "Moving right (l) into a new column feels slow",
+  "description": "Pressing l into a new column feels slow; the user's sense (2026-10-31) is that it's data loading or virtual-scroll calculation, not the 0.3s slide.\n\nMeasured 2026-10-31 in the live app (Chrome, dev build): moving between columns with h/l showed no long tasks (>50ms) and no key event handling over 16ms. The window was in the background, so frame timings weren't trustworthy, and the session couldn't reach a column that shifts the window (already at the deepest phase level). Not reproduced yet.\n\nSuspects left when a new column appears: the 0.3s transform slide on .columns-layout, the column first rendering with estimated entry heights and then jumping as they're measured (Column.vue measureEntryElement + useColumnScroll shift), and the smooth scroll that reveals the selection. Next step: a DevTools Performance recording of one slow l press (the user's), or name the exact column/idea where it's slow.",
+  "archived": false,
+  "color": "#66432d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1792512470655
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

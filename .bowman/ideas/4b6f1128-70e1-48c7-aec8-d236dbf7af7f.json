@@ -14,8 +14,8 @@
     {
       "ideaId": "1733c488-68b0-47cc-8439-c8c5c0476a87",
       "relativePosition": [
-        -0.2185644583097538,
-        -2.490427589303444
+        10.63,
+        -1.45
       ],
       "weight": 1,
       "hypothesis": "Implements the architectural boundary recommended after prompt tuning failed at 3/5."
@@ -37,8 +37,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A corrigible agent must distinguish updated human intent from shutdown; the failed ordered trials justify one general semantic intervention and a repeated frozen measurement.",
   "cost": 3,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

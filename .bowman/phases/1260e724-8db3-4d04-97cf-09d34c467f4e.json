@@ -1,0 +1,11 @@
+{
+  "id": "1260e724-8db3-4d04-97cf-09d34c467f4e",
+  "parent": "acd24a3f-66f0-4d03-9580-d0412fdd6332",
+  "childPhaseIds": [
+    "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
+  ],
+  "commitments": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "name": "Next Claude subscription (November)"
+}

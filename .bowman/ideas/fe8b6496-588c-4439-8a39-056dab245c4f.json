@@ -26,8 +26,8 @@
     {
       "ideaId": "b0fb3242-8866-435f-9765-a1d89256996f",
       "relativePosition": [
-        -1.5185512105537546,
-        1.9859512131282897
+        10.64,
+        -2.71
       ],
       "weight": 1,
       "hypothesis": "Suggested parents move ideas out of catch-all containers into the place where their value actually flows."
@@ -89,8 +89,8 @@
     {
       "ideaId": "8e8d8f7a-375d-46b8-8f03-192527b59106",
       "relativePosition": [
-        2.491101872485013,
-        0.21074026881842278
+        -4.18,
+        25.46
       ],
       "weight": 1,
       "hypothesis": "Uses cancelled and similar ideas as durable graph memory to prevent noise."

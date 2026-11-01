@@ -15,8 +15,8 @@
     {
       "ideaId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
       "relativePosition": [
-        2.4229153497679228,
-        -0.6160204605846987
+        6.49,
+        12.64
       ],
       "weight": 1,
       "hypothesis": "Uses the verified v2 isolation and evidence adapter."
@@ -55,8 +55,8 @@
   "intrinsicValue": 0,
   "valueRationale": "The new preregistration cannot produce empirical evidence until its richer fixtures can be executed and independently verified under identical isolation.",
   "cost": 4,
+  "selfWeight": 1,
   "duration": 2,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }
