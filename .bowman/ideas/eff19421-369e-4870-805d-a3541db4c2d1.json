@@ -1,0 +1,24 @@
+{
+  "id": "eff19421-369e-4870-805d-a3541db4c2d1",
+  "text": "Loop looks at every open idea, not only the top-ranked ones, before calling itself blocked",
+  "description": "Felix 2026-11-02, from another project's session: the agent read only the top 8-10 of get_prioritized_ideas, declared everything blocked and asked the human, while several concrete open ideas sat below the cut. Fix: get_prioritized_ideas reports 'shown N of M ranked' and its exploration contract starts with listing all open/partially ideas; the Stop hook's continue and challenge reasons say the same. Sibling of 5b992c55 (uncommitted ideas were invisible); this one is the ranking cut.",
+  "archived": false,
+  "color": "#66642d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "packages/mcp/src/tools/navigation.ts: diagnostics.shown = 'N of M ranked ideas; the rest are below the cut, not absent...', exploration contract's first move is listing every open/partially idea, tool description says only the top limit is shown. scripts/hooks/codex-continue-on-stop.sh: continue reason and challenge reason both tell the agent to list all open and partially done ideas (list_ideas) before concluding nothing is actionable. Verified: hook contract test PASS with new assertions that both reasons mention list_ideas; mcp tsc clean, mcp tests 54/54, continue-hook tests 6/6. Other repos pick up the hook text on their next enable_continue_hook (outdated recognized copies are refreshed); the MCP change needs /mcp reconnect.",
+    "date": 1793609635701
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

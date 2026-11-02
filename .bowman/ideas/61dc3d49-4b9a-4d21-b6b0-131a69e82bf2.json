@@ -44,6 +44,15 @@
       ],
       "weight": 1,
       "hypothesis": "A per-run log lets the human see what an autonomous run changed in a minute instead of reading git log and idea diffs; if the agent skips lines, the log is useless."
+    },
+    {
+      "ideaId": "eff19421-369e-4870-805d-a3541db4c2d1",
+      "relativePosition": [
+        3.75,
+        -0.1
+      ],
+      "weight": 1,
+      "hypothesis": "Agents stop asking the human while actionable open ideas exist below the ranking cut. Refuted if a hooked session again confirms a human block while list_ideas shows an actionable open leaf."
     }
   ],
   "supportedIdeas": [
