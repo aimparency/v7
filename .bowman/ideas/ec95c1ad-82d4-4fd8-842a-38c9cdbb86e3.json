@@ -13,7 +13,8 @@
         2.26
       ],
       "weight": 1,
-      "hypothesis": "Members engage when the graph answers 'what can I do today?' instead of asking them to read it."
+      "hypothesis": "Members engage when the graph answers 'what can I do today?' instead of asking them to read it.",
+      "reflection": "Not tested yet: the prompt exists (111eea7b), but no hub member has used it. Test once the hub instance is live: does someone pick up a suggested idea in the first week?"
     },
     {
       "ideaId": "ee7781d4-83fc-4d56-be3f-c901b586ddaf",
@@ -48,8 +49,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

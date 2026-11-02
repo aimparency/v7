@@ -28,14 +28,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Slice 1 (j/k over visible rows, e612081a) implemented, in review. h/l already match the target (h collapses or goes to parent, l expands or steps into first child), so no change needed there. Slice 3 (single row-key cursor state) open and waiting on the selection-model decision.",
-    "date": 1790717118608
+    "state": "implemented",
+    "comment": "Settled: both slices implemented. j/k walk the visible rows (e612081a); h/l already matched the target. Slice 3 was scoped down with Felix 2026-10-17 to selection by id instead of index (73c110aa): uiStore.selectedIdeaIdByPhaseId, floatingIdeaId and IdeaUIState.selectedChildId replace the index fields on entities, with idea-moves.spec and selection-anchor.spec covering it. Merging everything into one row-key cursor was dropped by that decision. Live keyboard check by Felix is noted on 73c110aa.",
+    "date": 1793608912694
   },
   "intrinsicValue": 0,
   "cost": 5,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }
