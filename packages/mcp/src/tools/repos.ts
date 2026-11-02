@@ -23,7 +23,7 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "import_spec_tasks",
-    description: "Start or top up the graph from spec-driven checklists (GitHub spec-kit specs/*/tasks.md, spec-workflow-mcp .spec-workflow/specs/*/tasks.md): one parent idea per tasks.md, one child per top-level task, [x] as implemented and [-] as partially. Re-running only adds tasks not imported yet. Afterwards, connect each parent to the mission it serves and estimate value/cost.",
+    description: "Start or top up the graph from spec-driven checklists (GitHub spec-kit specs/*/tasks.md, spec-workflow-mcp .spec-workflow/specs/*/tasks.md): one parent idea per tasks.md, one child per top-level task, [x] as implemented and [-] as partially. Re-running adds new tasks and moves ideas of tasks ticked since forward (never back). Afterwards, connect each parent to the mission it serves and estimate value/cost.",
     inputSchema: {
       type: "object",
       properties: {

@@ -187,7 +187,7 @@ The format is specified in [`protocol/`](protocol/README.md) with JSON Schemas, 
 
 ## Starting From Existing Issues
 
-To begin with what a project already tracks, import its open GitHub issues: they become ideas under one parent idea, and re-running only adds new ones. Agents can do this with the MCP tool `import_github_issues` (`owner/repo` or a github.com URL; set `GITHUB_TOKEN` for private repositories). Specs written for coding agents work the same way: `import_spec_tasks` turns the `tasks.md` checklists of GitHub spec-kit or spec-workflow-mcp into one parent idea per spec with its tasks as children, checked tasks as implemented.
+To begin with what a project already tracks, import its open GitHub issues: they become ideas under one parent idea, and re-running only adds new ones. Agents can do this with the MCP tool `import_github_issues` (`owner/repo` or a github.com URL; set `GITHUB_TOKEN` for private repositories). Specs written for coding agents work the same way: `import_spec_tasks` turns the `tasks.md` checklists of GitHub spec-kit or spec-workflow-mcp into one parent idea per spec with its tasks as children, checked tasks as implemented; re-running it adds new tasks and moves newly ticked ones forward.
 
 ## Viewing Someone Else's Graph
 

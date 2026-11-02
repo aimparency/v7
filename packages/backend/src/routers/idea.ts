@@ -1099,7 +1099,8 @@ export const ideaRouter = t.router({
 
   // Imports spec-driven checklists (spec-kit, spec-workflow-mcp): one parent idea per
   // tasks.md, one child per top-level task, checkbox state as status. A marker in the
-  // description makes re-imports add only new tasks. Paths stay inside the repository.
+  // description makes re-imports add only new tasks; tasks ticked since move their idea
+  // forward (open -> partially -> implemented), never back. Paths stay inside the repository.
   importSpecTasks: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
@@ -1112,12 +1113,21 @@ export const ideaRouter = t.router({
       const files = await findSpecTaskFiles(target);
 
       const { ideas } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
-      const imported = new Set(ideas.flatMap((idea) => idea.description?.match(/^Spec task \S+$/gm) ?? []));
-      const result = { files: [] as { file: string; parentId: string | null; imported: number; alreadyImported: number }[] };
+      const importedIdeas = new Map(ideas.flatMap((idea) => (idea.description?.match(/^Spec task \S+$/gm) ?? []).map((marker) => [marker, idea] as const)));
+      const progress = ['open', 'partially', 'implemented'];
+      const result = { files: [] as { file: string; parentId: string | null; imported: number; alreadyImported: number; advanced: number }[] };
       for (const file of files) {
         const relative = path.relative(repoRoot, file);
         const tasks = parseSpecTasks(await fs.readFile(file, 'utf8'));
-        const fresh = tasks.filter((task) => !imported.has(specTaskMarker(relative, task.key)));
+        const fresh = tasks.filter((task) => !importedIdeas.has(specTaskMarker(relative, task.key)));
+        let advanced = 0;
+        for (const task of tasks) {
+          const idea = importedIdeas.get(specTaskMarker(relative, task.key));
+          if (!idea || idea.archived || !progress.includes(idea.status.state) || progress.indexOf(task.state) <= progress.indexOf(idea.status.state)) continue;
+          const updated = await updateIdea(input.projectPath, idea.id, (current) => ({ ...current, status: { state: task.state, comment: `Checked in ${relative} (spec import).`, date: Date.now() } }));
+          if (updated) updateIdeaInIndex(normalizeProjectPath(input.projectPath), updated);
+          advanced++;
+        }
         const parentText = `Spec tasks: ${path.basename(path.dirname(file))}`;
         let parent = ideas.find((idea) => idea.text === parentText && idea.description?.includes(`Imported from ${relative}`) && idea.status.state !== 'archived');
         if (!parent && fresh.length > 0) {
@@ -1132,7 +1142,7 @@ export const ideaRouter = t.router({
           }, { colorParentId: parent!.id });
           await connectIdeasInternal(input.projectPath, parent!.id, child.id);
         }
-        result.files.push({ file: relative, parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: tasks.length - fresh.length });
+        result.files.push({ file: relative, parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: tasks.length - fresh.length, advanced });
       }
       return result;
     }),

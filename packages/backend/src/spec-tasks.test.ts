@@ -71,8 +71,24 @@ test('imports every tasks.md below a directory, one parent per spec, and only ad
 
   await fs.appendFile(path.join(root, 'specs', '001-user-signup', 'tasks.md'), '- [ ] T004 Signup endpoint\n');
   const second = await caller.idea.importSpecTasks({ projectPath, specPath: 'specs/001-user-signup/tasks.md' });
-  assert.deepEqual(second.files, [{ file: 'specs/001-user-signup/tasks.md', parentId: parent.id, imported: 1, alreadyImported: 3 }]);
+  assert.deepEqual(second.files, [{ file: 'specs/001-user-signup/tasks.md', parentId: parent.id, imported: 1, alreadyImported: 3, advanced: 0 }]);
   assert.equal((await caller.idea.list({ projectPath })).length, 9);
+});
+
+test('a re-import moves ticked tasks forward and never moves an idea back', async () => {
+  const file = path.join(root, 'specs', '001-user-signup', 'tasks.md');
+  const first = await caller.idea.importSpecTasks({ projectPath, specPath: 'specs' });
+  const parent = await caller.idea.get({ projectPath, ideaId: first.files[0]!.parentId! });
+  const byKey = async () => Object.fromEntries(await Promise.all(parent.supportingConnections.map(async (connection) => {
+    const idea = await caller.idea.get({ projectPath, ideaId: connection.ideaId });
+    return [idea.text.split(' ')[0], idea.status.state];
+  })));
+
+  // T002 ticked in the file; T001 unticked again (the graph stays ahead).
+  await fs.writeFile(file, SPEC_KIT.replace('- [ ] T002', '- [x] T002').replace('- [x] T001', '- [ ] T001'));
+  const second = await caller.idea.importSpecTasks({ projectPath, specPath: 'specs' });
+  assert.equal(second.files[0]!.advanced, 1);
+  assert.deepEqual(await byKey(), { T001: 'implemented', T002: 'implemented', T003: 'open' });
 });
 
 test('refuses paths outside the repository', async () => {
