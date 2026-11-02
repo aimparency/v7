@@ -13,6 +13,7 @@ import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 //   pnpm accounts role <name> <read|write|admin>
 //   pnpm accounts password <name>
 //   pnpm accounts remove <name>
+//   pnpm accounts agent-token   (prints a fresh token of the wrapped agents' account)
 //
 // The project is AIMPARENCY_PROJECT from .env, or --project <path>. A password
 // comes from AIMPARENCY_PASSWORD when set (the setup passes it so), else it is asked.
@@ -54,6 +55,10 @@ async function main() {
     case 'password':
       await accounts.setPassword(project, name ?? '', await password(name));
       console.log(`New password set for ${name}; their logins ended.`);
+      return;
+    case 'agent-token':
+      // The launcher reads stdout: the token and nothing else.
+      process.stdout.write(`${await accounts.agentToken(project)}\n`);
       return;
     case 'remove':
       await accounts.removeUser(project, name ?? '');

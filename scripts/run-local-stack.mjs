@@ -346,7 +346,7 @@ async function setup() {
 }
 
 // Hosted: the backend serves the UI, the API and (proxied) the MCP server on one port.
-function hostedCommands(env) {
+function hostedCommands(env, agentToken) {
   const command = (name, prefixColor, dir, startCommand, extraEnv) => {
     const cwd = path.join(repoRoot, 'packages', dir);
     return {
@@ -361,7 +361,13 @@ function hostedCommands(env) {
   // Admins' agents: the broker and its sessions stay on loopback; the backend's
   // port is their only way in, and it lets admins through (hosted-agent-gateway).
   const agents = env.AIMPARENCY_AGENTS === 'true'
-    ? [command('BROK', 'yellow', 'wrapped-agents/broker', 'node dist/index.js', { BIND_HOST: '127.0.0.1' })]
+    ? [command('BROK', 'yellow', 'wrapped-agents/broker', 'node dist/index.js', {
+      BIND_HOST: '127.0.0.1',
+      // The agents' Aimparency MCP (stdio, inherits this env) reaches the hosted
+      // backend as the wrapped-agents account.
+      BACKEND_WS_URL: `ws://${backendHost}:${env.PORT}/trpc`,
+      AIMPARENCY_TOKEN: agentToken,
+    })]
     : [];
   return [
     ...agents,
@@ -392,7 +398,10 @@ async function startHosted() {
     PATH: [path.join(repoRoot, 'node_modules', '.bin'), process.env.PATH].join(path.delimiter),
   };
   await requireFreePorts({ port, mcpPort });
-  const commands = hostedCommands(env);
+  const agentToken = env.AIMPARENCY_AGENTS === 'true' && !flags.has('--dry-run')
+    ? execFileSync(path.join(repoRoot, 'node_modules', '.bin', 'tsx'), ['scripts/accounts.mjs', 'agent-token', '--project', project], { cwd: repoRoot, encoding: 'utf8' }).trim()
+    : '';
+  const commands = hostedCommands(env, agentToken);
   console.log(`[local-runtime] hosting ${project} on http://${env.BIND_HOST}:${port} (MCP: /mcp/sse)`);
   if (flags.has('--dry-run')) {
     for (const { name, cwd, command } of commands) {

@@ -10,7 +10,17 @@
     "wrapped-agents",
     "accounts"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "d74a2e40-0bd0-4a1e-89f7-7a72febcb4a3",
+      "relativePosition": [
+        -3.65,
+        -0.87
+      ],
+      "weight": 1,
+      "hypothesis": "Admins' agents on the server can work the graph loop (read, edit, record status) instead of only having a shell."
+    }
+  ],
   "supportedIdeas": [
     "101cc131-b51e-45d9-ad8e-63d138338dc4",
     "af701cd6-7c9d-4991-996b-e38d5e1c9dc7"

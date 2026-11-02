@@ -158,3 +158,18 @@ export async function resolveToken(projectPath: string, token: string | undefine
   const user = entry && accounts.users.find(candidate => candidate.name === entry.user);
   return user ? { name: user.name, role: user.role } : null;
 }
+
+// The hosted instance's wrapped agents edit the graph through the MCP as this
+// account (write, never admin). Each start replaces its token, so an old one
+// stops working; an admin removing the account takes their write access away.
+export const AGENTS_ACCOUNT = 'wrapped-agents';
+
+export async function agentToken(projectPath: string): Promise<string> {
+  const accounts = await load(projectPath);
+  if (!accounts.users.some(user => user.name === AGENTS_ACCOUNT)) {
+    await createUser(projectPath, AGENTS_ACCOUNT, 'write', crypto.randomBytes(24).toString('base64url'));
+  }
+  const current = await load(projectPath);
+  await save(projectPath, { ...current, tokens: current.tokens.filter(token => token.user !== AGENTS_ACCOUNT) });
+  return issueToken(projectPath, AGENTS_ACCOUNT, 'agents');
+}

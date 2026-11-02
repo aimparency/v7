@@ -227,7 +227,10 @@ project can be opened. Wrapped agents (the watchdog) are off too unless you
 answer yes to "Let admins run wrapped agents?" (`AIMPARENCY_AGENTS=true`):
 then admins, and only admins, get them in the UI. The broker and the agent
 sessions listen on `127.0.0.1`; the one port lets a request through to them
-only with an admin's login and from the instance's own origin.
+only with an admin's login and from the instance's own origin. The agents'
+own Aimparency MCP edits the graph as the account `wrapped-agents` (write),
+whose token is replaced on every start; remove that account to make them
+read-only.
 
 - **Accounts.** Admins add people in the UI (header: Accounts), or on the
   server with `pnpm accounts add <name> <read|write|admin>`,

@@ -1,0 +1,29 @@
+{
+  "id": "d74a2e40-0bd0-4a1e-89f7-7a72febcb4a3",
+  "text": "Hosted wrapped agents reach the graph through their MCP as a write account",
+  "description": "Gap left by 69a7ab7c: an agent started on a hosted instance runs the Aimparency MCP (stdio), which pointed at ws://localhost:3001 without a token, so it could not reach the hosted backend or write. The hosted launcher now gives the broker (and through it every session and its MCP) BACKEND_WS_URL of the hosted /trpc and AIMPARENCY_TOKEN of a dedicated write account, wrapped-agents, whose token is replaced on every start.",
+  "archived": false,
+  "color": "#293e61",
+  "tags": [
+    "hosting",
+    "wrapped-agents",
+    "mcp",
+    "accounts"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "69a7ab7c-408c-4ce6-a6f1-3dd530ae4770"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "accounts.agentToken(project): ensures the account wrapped-agents (role write, random password) and replaces its tokens with one fresh token. pnpm accounts agent-token prints it on stdout. run-local-stack startHosted calls it when AIMPARENCY_AGENTS is on (not on --dry-run) and gives only the broker BACKEND_WS_URL=ws://<backend host>:<PORT>/trpc and AIMPARENCY_TOKEN; sessions and their stdio MCP inherit the broker's env (mcp/src/index.ts reads both). README notes the account and that removing it makes agents read-only. Evidence: auth.test 6/6: the token resolves to wrapped-agents/write; a second call invalidates the first; there is one account; the token creates an idea on a hosted instance and is refused admin actions. The CLI on a scratch project printed only a 43-character token and listed 'wrapped-agents write'. validate:local-runtime PASS; pnpm check 25/25. Not run on the server: the agents only use it if the served project's .mcp.json includes the Aimparency MCP.",
+    "date": 1793612024458
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

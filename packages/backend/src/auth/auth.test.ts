@@ -95,3 +95,19 @@ test('a wrong password is refused', async () => {
   host();
   await assert.rejects(as().auth.login({ name: 'admin', password: 'nope' }), /Wrong name or password/);
 });
+
+test('the wrapped agents write as their own account, and each start replaces their token', async () => {
+  await accounts.createUser(projectPath, 'admin', 'admin', 'admin password');
+  const first = await accounts.agentToken(projectPath);
+  assert.deepEqual(await accounts.resolveToken(projectPath, first), { name: accounts.AGENTS_ACCOUNT, role: 'write' });
+
+  const second = await accounts.agentToken(projectPath);
+  assert.equal(await accounts.resolveToken(projectPath, first), null, 'the previous start\'s token is gone');
+  assert.equal((await accounts.resolveToken(projectPath, second))?.role, 'write');
+  assert.equal((await accounts.listUsers(projectPath)).filter(user => user.name === accounts.AGENTS_ACCOUNT).length, 1);
+
+  host();
+  const created = await as(second).idea.createFloatingIdea({ projectPath: root, idea: { text: 'Written by an agent' } });
+  assert.ok(created);
+  await assert.rejects(as(second).auth.createUser({ name: 'x', role: 'admin', password: 'long enough pw' }), /admins only/);
+});
