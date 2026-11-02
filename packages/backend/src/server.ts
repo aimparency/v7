@@ -25,8 +25,9 @@ import { gitRouter } from './routers/git.js';
 import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { hostedProject } from './auth/access.js';
+import { hostedAgents, hostedProject } from './auth/access.js';
 import { followGitRemote } from './hosted-git-sync.js';
+import { agentRoute, isAdminRequest, issueAgentCookie, proxyAgentRequest, proxyAgentUpgrade, refuseUpgrade } from './hosted-agent-gateway.js';
 import { isAllowedClientOrigin, resolveBindHost } from 'shared';
 
 const appRouter = t.router({
@@ -81,8 +82,10 @@ function closeOnSigterm(server: { close(): unknown }, wss: WebSocketServer) {
   });
 }
 
-// Hosted: one port carries the built UI, the API (/trpc, HTTP and WebSocket)
-// and the MCP server (/mcp, proxied), so nginx needs a single proxy_pass.
+// Hosted: one port carries the built UI, the API (/trpc, HTTP and WebSocket),
+// the MCP server (/mcp, proxied) and, when AIMPARENCY_AGENTS is on, the
+// admins' agents (/broker, /session/<port>, see hosted-agent-gateway), so
+// nginx needs a single proxy_pass.
 function startHostedServer(project: string) {
   const port = parseInt(process.env.PORT || '4000');
   const mcpPort = parseInt(process.env.PORT_MCP || '3005');
@@ -95,11 +98,23 @@ function startHostedServer(project: string) {
       res.writeHead(503, { 'content-type': 'text/plain' });
       res.end('The UI is not built: run `pnpm start` (it builds) or `pnpm build`.');
     };
-  const runtimeConfig = JSON.stringify({ sameOrigin: true, hosted: true, project, voiceEnabled: false });
+  const agents = hostedAgents();
+  const agentPorts = {
+    brokerWs: parseInt(process.env.PORT_BROKER_WS || '5001'),
+    processStart: parseInt(process.env.PORT_PROCESS_START || '7000'),
+  };
+  const runtimeConfig = JSON.stringify({ sameOrigin: true, hosted: true, agents, project, voiceEnabled: false });
 
-  const server = http.createServer((req, res) => {
+  const server = http.createServer(async (req, res) => {
     const url = req.url ?? '/';
     if (url.startsWith('/trpc/')) return trpcHandler(req, res);
+    const route = agents ? agentRoute(url, agentPorts) : null;
+    if (route) {
+      if (await isAdminRequest(req, project)) return proxyAgentRequest(req, res, route);
+      res.writeHead(403, { 'content-type': 'text/plain' });
+      return res.end('Agents are for admins.');
+    }
+    if (agents && url === '/auth/agent-cookie') return issueAgentCookie(req, res, project);
     if (url.startsWith('/mcp/')) return proxy(req, res, mcpPort);
     if (url.startsWith('/runtime-config.json')) {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -107,9 +122,19 @@ function startHostedServer(project: string) {
     }
     serveFrontend(req, res);
   });
-  const wss = new WebSocketServer({ server, path: '/trpc' });
+  const wss = new WebSocketServer({ noServer: true });
   applyWSSHandler({ wss, router: appRouter, createContext });
   logConnections(wss);
+  server.on('upgrade', async (req, socket, head) => {
+    const url = req.url ?? '/';
+    if (url.split('?')[0] === '/trpc') {
+      return wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
+    }
+    const route = agents ? agentRoute(url, agentPorts) : null;
+    if (!route) return refuseUpgrade(socket, '404 Not Found');
+    if (await isAdminRequest(req, project)) return proxyAgentUpgrade(req, socket, head, route);
+    refuseUpgrade(socket);
+  });
   const host = resolveBindHost(BIND_HOST);
   server.listen(port, host, () => {
     console.log(`Hosting ${project} on http://${host}:${port}`);

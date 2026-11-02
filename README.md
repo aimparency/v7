@@ -222,8 +222,12 @@ pnpm start
 
 From then on `pnpm start` (for example from a systemd unit) serves that one
 project on that one port: the UI, the API under `/trpc`, and an MCP server under
-`/mcp/sse`. Agents, loops and the watchdog stay off on a hosted instance, and
-nothing outside the project can be opened.
+`/mcp/sse`. Loops stay off on a hosted instance, and nothing outside the
+project can be opened. Wrapped agents (the watchdog) are off too unless you
+answer yes to "Let admins run wrapped agents?" (`AIMPARENCY_AGENTS=true`):
+then admins, and only admins, get them in the UI. The broker and the agent
+sessions listen on `127.0.0.1`; the one port lets a request through to them
+only with an admin's login and from the instance's own origin.
 
 - **Accounts.** Admins add people in the UI (header: Accounts), or on the
   server with `pnpm accounts add <name> <read|write|admin>`,
@@ -231,8 +235,8 @@ nothing outside the project can be opened.
   live in the project's `.bowman/runtime/accounts.json` (gitignored); passwords
   are stored as scrypt hashes.
 - **Roles.** Reading needs no account. `write` edits ideas and phases.
-  `admin` also manages accounts, project settings and commits, and is meant to
-  hold the wrapped-agent shell: a shell on the server as the user Aimparency
+  `admin` also manages accounts, project settings and commits, and holds the
+  wrapped-agent shell when agents are on: a shell on the server as the user Aimparency
   runs as, with read access to whatever that user can read (`/etc`, other
   files) and every secret in Aimparency's `.env`. Make admin only people you
   would give an SSH login; the setup, `pnpm accounts` and the Accounts dialog
@@ -282,6 +286,7 @@ location / {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
     proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-Proto $scheme; # the agents' login cookie gets Secure
     proxy_buffering off;   # MCP streams server-sent events
     proxy_read_timeout 1d; # keeps idle WebSocket and MCP connections open
 }

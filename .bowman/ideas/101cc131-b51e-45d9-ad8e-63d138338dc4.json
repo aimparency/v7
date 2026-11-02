@@ -53,7 +53,8 @@
         -0.79
       ],
       "weight": 1,
-      "hypothesis": "One credential checked at every hop keeps the shell with the people the operator made admin, even with the server reachable from the internet."
+      "hypothesis": "One credential checked at every hop keeps the shell with the people the operator made admin, even with the server reachable from the internet.",
+      "reflection": "Held in tests: the gateway checks the admin cookie and origin at the only exposed hop, and broker and sessions are loopback-only. A demoted or logged-out admin is refused on the next request; an already open terminal socket stays open until it closes."
     }
   ],
   "supportedIdeas": [
@@ -61,9 +62,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Done: session sockets (0f307c81), backend/broker loopback + origin gate (de7abc26), hosted git following (b008055a), admin-shell warning (266dcf6b). Open: the admin-only shell on hosted instances, token-checked at backend, broker and session sockets.",
-    "date": 1793610663338
+    "state": "implemented",
+    "comment": "All parts done: session sockets (0f307c81), backend/broker loopback + origin gate (de7abc26), hosted git following (b008055a), admin-shell warning (266dcf6b), admin-only hosted shell behind the one port, opt-in via AIMPARENCY_AGENTS (69a7ab7c). Remaining exposure by design: pnpm dev:host opens the dev stack to the named interface (tailnet) without a login; anyone who can reach it from a non-browser client can drive it.",
+    "date": 1793611642853
   },
   "intrinsicValue": 0,
   "cost": 3,

@@ -17,9 +17,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1793611155113
+    "state": "implemented",
+    "comment": "Opt-in per server: AIMPARENCY_AGENTS=true, asked in pnpm start --setup with the shell warning. It is off by default so that existing admins don't silently get a shell on update. With it on: run-local-stack starts the broker (node dist/index.js) with BIND_HOST=127.0.0.1, so its sessions are loopback too. backend/src/hosted-agent-gateway.ts on the one hosted port: POST /auth/agent-cookie turns an admin's bearer token into an HttpOnly SameSite=Strict cookie (Secure behind X-Forwarded-Proto https) and refuses others; /broker and /session/<port>/ (port within PORT_PROCESS_START..+100 only) are proxied for HTTP and WebSocket upgrades only when the cookie's token resolves to an admin on every request and any Origin matches the Host; upstream sees a loopback Origin and no cookie. /trpc moved to noServer upgrade routing. access.ts: the watchdog router needs admin when agents are on (local otherwise). Frontend: runtime config 'agents'; broker at wss://<host>/broker and sessions at path /session/<port>/socket.io when hosted; the broker client holds operations until the cookie is set; the Watchdog button and w only for a logged-in admin with agents on; Loop stays local-only. README (hosting, roles, nginx X-Forwarded-Proto) and .env.example updated.\n\nEvidence: hosted-agent-gateway.test.ts 4/4 against a real hosted server with a fake broker and session on loopback. Only an admin token gets the cookie, with the exact flags. Session HTTP is 403 without a cookie or with a writer's cookie, and nothing reaches upstream; with an admin cookie it reaches upstream as /socket.io/?EIO=4..., with a loopback origin and no cookie. Broker and session WebSockets echo for an admin; a missing cookie, a writer's cookie or a foreign Origin get 403, and an unknown path 404. Route tests: MCP port and out-of-range ports are refused; neededRole('watchdog.*') is admin with agents and local without. runtime-config tests cover hosted/local URLs; validate:local-runtime checks BROK appears only with agents; pnpm check 25/25.\n\nNot covered: a live trial on the Commons Hub server behind nginx. Known limit: an agent started there reaches the Aimparency MCP only if its MCP config points at the hosted /trpc with a token; without one it can only read.",
+    "date": 1793611632601
   },
   "intrinsicValue": 0,
   "cost": 5,

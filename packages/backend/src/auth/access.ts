@@ -13,7 +13,14 @@ export function hostedProject(): string | null {
   return process.env.AIMPARENCY_HOSTED === 'true' && project ? normalizeProjectPath(project) : null;
 }
 
+// Admins' wrapped agents on a hosted instance: off unless the operator turns
+// them on, since an admin then holds a shell on the server.
+export function hostedAgents(): boolean {
+  return process.env.AIMPARENCY_AGENTS === 'true';
+}
+
 // Agents, loops and server paths: things a shared server must not hand out.
+// The watchdog's runtime state goes to admins when agents are on.
 const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'system', 'voice', 'market', 'spinOff']);
 const LOCAL_ONLY = new Set([
   'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions'
@@ -28,6 +35,7 @@ const WRITE_MUTATIONS = new Set(['history.restore', 'graphHealth.fixConsistency'
 
 export function neededRole(path: string, type: string): Need {
   const router = path.split('.')[0]!;
+  if (router === 'watchdog' && hostedAgents()) return 'admin';
   if (LOCAL_ONLY_ROUTERS.has(router) || LOCAL_ONLY.has(path)) return 'local';
   if (type !== 'mutation') return path.startsWith('auth.') && path !== 'auth.me' ? 'admin' : 'read';
   if (READ_MUTATIONS.has(path)) return 'read';

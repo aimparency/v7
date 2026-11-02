@@ -105,8 +105,12 @@ const showConsistencyModal = ref(false)
 const showReviewInbox = ref(false)
 const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities).length)
 const showIdeaProposalEntry = ref(false)
-// A hosted instance serves one project to many people: no agents, loops or project switching.
+// A hosted instance serves one project to many people: no loops or project
+// switching, and wrapped agents (a shell on the server) only for admins, when
+// the operator turned them on.
 const hosted = getRuntimeConfig().hosted
+const agentsAllowed = computed(() =>
+  !hosted || (getRuntimeConfig().agents && dataStore.access.user !== null && dataStore.access.role === 'admin'))
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
@@ -366,8 +370,8 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  // Watchdog toggle (p, w and a are local-only)
-  if (!hosted && event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  // Watchdog toggle (p and a are local-only, w hosted only for admins with agents on)
+  if (agentsAllowed.value && event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     projectStore.showWatchdog = !projectStore.showWatchdog
     return
   }
@@ -591,7 +595,7 @@ onUnmounted(() => {
           </span>
         </label>
 
-        <div v-if="!hosted" class="watchdog-controls">
+        <div v-if="agentsAllowed" class="watchdog-controls">
           <button
             @click="projectStore.showWatchdog = !projectStore.showWatchdog"
             class="icon-btn"
@@ -603,6 +607,7 @@ onUnmounted(() => {
           </button>
 
           <button
+            v-if="!hosted"
             @click="projectStore.showLoop = !projectStore.showLoop"
             class="icon-btn"
             style="width: auto; padding: 0 0.5rem; position: relative;"

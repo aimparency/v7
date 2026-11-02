@@ -3,7 +3,7 @@ import { io, type Socket } from 'socket.io-client'
 import { ref, shallowRef, computed } from 'vue'
 import { trpc } from '../trpc'
 import { trpcWatchdog } from '../trpc-watchdog'
-import { buildHttpUrl } from '../utils/runtime-config'
+import { sessionSocketTarget } from '../utils/runtime-config'
 import { useProjectStore } from './project-store'
 import { toProjectRoot } from 'shared'
 
@@ -284,7 +284,9 @@ export const useWatchdogStore = defineStore('watchdog', () => {
     if (selectedAgentType.value !== agentType) {
       setAgentType(agentType, { skipHydrate: true })
     }
-    socket.value = io(buildHttpUrl(port), {
+    const target = sessionSocketTarget(port)
+    socket.value = io(target.url, {
+      ...(target.path ? { path: target.path } : {}),
       transports: ['websocket'],
       autoConnect: true,
       reconnection: true,

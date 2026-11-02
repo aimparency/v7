@@ -46,7 +46,7 @@ const call = async (procedure: string, input: unknown, token?: string) => {
 
 test('one port serves the runtime config, the API and the MCP proxy', async () => {
   const config = await (await fetch(`${base}/runtime-config.json`)).json();
-  assert.deepEqual(config, { sameOrigin: true, hosted: true, project: path.join(root, '.bowman'), voiceEnabled: false });
+  assert.deepEqual(config, { sameOrigin: true, hosted: true, agents: false, project: path.join(root, '.bowman'), voiceEnabled: false });
 
   const me = await (await fetch(`${base}/trpc/auth.me`)).json() as any;
   assert.equal(me.result.data.hosted, true);

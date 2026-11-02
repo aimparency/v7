@@ -116,6 +116,7 @@ function createScenarioEnv(overrides = {}) {
     AIMPARENCY_ENABLE_VOICE: 'false',
     // Setup answers in this checkout's .env must not turn the scenarios hosted.
     AIMPARENCY_HOSTED: 'false',
+    AIMPARENCY_AGENTS: 'false',
     ...overrides,
   };
 }
@@ -203,6 +204,10 @@ async function main() {
     assert(hosted.code === 0, 'hosted dry run failed');
     assert(/hosting .* on http:\/\/127\.0\.0\.1:4410/.test(hosted.stdout), 'hosted mode did not use its one port');
     assert(!/BROK|FRNT/.test(hosted.stdout), 'hosted mode would start the broker or the dev frontend');
+    const withAgents = await launch('hosted-agents', 'start', { ...hostedEnv, AIMPARENCY_AGENTS: 'true' });
+    assert(withAgents.code === 0, 'hosted dry run with agents failed');
+    assert(/BROK: \(packages\/wrapped-agents\/broker\) node dist\/index\.js/.test(withAgents.stdout), 'admins\' agents did not start the broker');
+    assert(!/FRNT/.test(withAgents.stdout), 'hosted mode with agents would start the dev frontend');
   } finally {
     await fs.rm(hostedProject, { recursive: true, force: true });
   }

@@ -19,3 +19,16 @@ export function setLoginToken(token: string | null) {
   }
   window.location.reload()
 }
+
+// Hosted: the admins' agents gateway (/broker, /session/<port>) reads the login
+// from an HttpOnly cookie, since browser WebSockets send no headers. Asked once
+// per page; a non-admin gets a refusal and no cookie.
+let agentCookie: Promise<boolean> | null = null
+
+export function ensureAgentCookie(): Promise<boolean> {
+  agentCookie ??= fetch('/auth/agent-cookie', {
+    method: 'POST',
+    headers: { authorization: `Bearer ${loginToken() ?? ''}` },
+  }).then(response => response.ok, () => false)
+  return agentCookie
+}

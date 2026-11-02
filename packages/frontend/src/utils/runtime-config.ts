@@ -10,6 +10,8 @@ const DEFAULT_RUNTIME_CONFIG = {
   voiceEnabled: env.VITE_ENABLE_VOICE === 'true',
   // A hosted instance (one project, accounts) serves everything on its own origin.
   hosted: false,
+  // Hosted: admins may run wrapped agents (a shell on the server).
+  agents: false,
   project: '',
 }
 
@@ -76,6 +78,7 @@ function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
     processStartPort: readPort(value.processStartPort, DEFAULT_RUNTIME_CONFIG.processStartPort),
     voiceEnabled: readBoolean(value.voiceEnabled, DEFAULT_RUNTIME_CONFIG.voiceEnabled),
     hosted: readBoolean(value.hosted, false),
+    agents: readBoolean(value.agents, false),
     project: typeof value.project === 'string' ? value.project : '',
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : undefined,
   }
@@ -117,4 +120,16 @@ export function buildWsUrl(port: string | number): string {
 export function backendWsUrl(): string {
   if (runtimeConfig.hosted) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/trpc`
   return buildWsUrl(runtimeConfig.backendWsPort)
+}
+
+// Hosted, the broker and the agent sessions sit behind the page's own origin
+// (/broker, /session/<port>), where the backend lets only admins through.
+export function brokerWsUrl(): string {
+  if (runtimeConfig.hosted) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/broker`
+  return buildWsUrl(runtimeConfig.brokerWsPort)
+}
+
+export function sessionSocketTarget(port: number): { url: string, path?: string } {
+  if (runtimeConfig.hosted) return { url: getLocation()?.origin ?? '', path: `/session/${port}/socket.io` }
+  return { url: buildHttpUrl(port) }
 }

@@ -45,7 +45,7 @@ vi.mock('../../trpc', () => ({
 }))
 
 vi.mock('../../utils/runtime-config', () => ({
-  buildHttpUrl: (port: number) => `http://127.0.0.1:${port}`,
+  sessionSocketTarget: (port: number) => ({ url: `http://127.0.0.1:${port}` }),
   getRuntimeConfig: () => ({ hosted: false, project: '' })
 }))
 

@@ -59,4 +59,26 @@ describe('runtime-config', () => {
     expect(config.voiceEnabled).toBe(false)
     expect(getRuntimeConfig().brokerWsPort).toBe(5001)
   })
+
+  it('puts the broker and agent sessions behind the page origin when hosted, with agents only when switched on', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ hosted: true, agents: true, project: '/srv/p' }) }))
+
+    const { loadRuntimeConfig, brokerWsUrl, sessionSocketTarget } = await import('./runtime-config')
+    const config = await loadRuntimeConfig()
+
+    expect(config.agents).toBe(true)
+    expect(brokerWsUrl()).toBe(`ws://${window.location.host}/broker`)
+    expect(sessionSocketTarget(7001)).toEqual({ url: window.location.origin, path: '/session/7001/socket.io' })
+  })
+
+  it('keeps the broker and sessions on their own ports locally, agents off by default', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ brokerWsPort: 5401 }) }))
+
+    const { loadRuntimeConfig, brokerWsUrl, sessionSocketTarget } = await import('./runtime-config')
+    const config = await loadRuntimeConfig()
+
+    expect(config.agents).toBe(false)
+    expect(brokerWsUrl()).toBe('ws://localhost:5401')
+    expect(sessionSocketTarget(7001)).toEqual({ url: 'http://localhost:7001' })
+  })
 })

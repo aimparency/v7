@@ -330,6 +330,10 @@ async function setup() {
   if (hosted) {
     values.PORT = parsePort(await ask('Port:', process.env.PORT ?? '4000'), 4000);
     values.BIND_HOST = await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', process.env.BIND_HOST || '127.0.0.1');
+    values.AIMPARENCY_AGENTS = await askYesNo(
+      'Let admins run wrapped agents? That is a shell on this server for every admin: commands as this user, /etc and the secrets in .env included.',
+      process.env.AIMPARENCY_AGENTS === 'true',
+    );
   }
   await saveEnv(values);
   if (hosted && !hasAdmin(project)) {
@@ -354,7 +358,13 @@ function hostedCommands(env) {
     };
   };
   const backendHost = env.BIND_HOST === '0.0.0.0' ? '127.0.0.1' : env.BIND_HOST;
+  // Admins' agents: the broker and its sessions stay on loopback; the backend's
+  // port is their only way in, and it lets admins through (hosted-agent-gateway).
+  const agents = env.AIMPARENCY_AGENTS === 'true'
+    ? [command('BROK', 'yellow', 'wrapped-agents/broker', 'node dist/index.js', { BIND_HOST: '127.0.0.1' })]
+    : [];
   return [
+    ...agents,
     command('BACK', 'blue', 'backend', 'node dist/server.js', {}),
     command('MCPS', 'magenta', 'mcp', 'node build/sse.js', {
       MCP_BASE_PATH: '/mcp',
