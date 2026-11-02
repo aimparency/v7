@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Economic priority refactor (18d9bbb) and the value-calculation rewrite (bb8150a8) are done. Gap: empirical calibration against real deliveries (estimated vs actual duration, cost, outcomes).",
+    "comment": "Economic priority refactor (18d9bbb) and the value-calculation rewrite (bb8150a8) are done. Calibration attempt 2026-11-02 with scripts/priority-calibration.mjs (actual effort = code churn of commits citing the idea): of 666 implemented ideas, 96% carry the default duration 1 and 84% the default cost 1; only 49 are cited by commits with code changes, 9 of those with a real cost estimate. Spearman(cost, churn) = 0.69 on those 9 (0.13 over all 49, diluted by defaults): promising but far too few. Waiting on data, not on a human: rerun the script when at least 30 estimated implemented ideas exist (create_idea now asks for a cost). Duration cannot be calibrated at all yet; nearly every idea keeps the default.",
     "date": 1793550911626
   },
   "intrinsicValue": 0,
