@@ -12,7 +12,8 @@
         -3.16
       ],
       "weight": 1,
-      "hypothesis": "The existing phase-creation synchronization work is related; this report adds delayed acknowledgement and duplicate submission behavior."
+      "hypothesis": "The existing phase-creation synchronization work is related; this report adds delayed acknowledgement and duplicate submission behavior.",
+      "reflection": "Held: it was the same realtime gap. Change events sent while the socket was down never arrived; the resync on reconnect (9c478c93) closes it for phases and ideas alike."
     }
   ],
   "supportedIdeas": [

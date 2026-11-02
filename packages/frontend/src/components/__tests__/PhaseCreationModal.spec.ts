@@ -1,8 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import PhaseCreationModal from '../PhaseCreationModal.vue'
 import { useUIModalStore } from '../../stores/ui/modal-store'
+import { useDataStore } from '../../stores/data'
 import { trpc } from '../../trpc'
 
 vi.mock('../../trpc', () => ({
@@ -50,7 +51,7 @@ function mountPhaseModal() {
     }
   })
 
-  return { wrapper, modalStore }
+  return { wrapper, modalStore, dataStore: useDataStore(pinia) }
 }
 
 describe('PhaseCreationModal Escape behavior', () => {
@@ -119,5 +120,23 @@ describe('PhaseCreationModal keys: Space edits, Enter confirms', () => {
 
     await picker.trigger('keydown', { key: ' ' })
     expect(wrapper.findComponent({ name: 'PhaseSearchModal' }).exists()).toBe(true)
+  })
+})
+
+describe('PhaseCreationModal creates a phase once per submission', () => {
+  it('ignores Enter while the first creation is still in flight, then accepts the next one', async () => {
+    const { wrapper, dataStore } = mountPhaseModal()
+    let finish!: () => void
+    vi.mocked(dataStore.createAndSelectPhase).mockImplementation(() => new Promise<void>((resolve) => { finish = resolve }) as any)
+    const input = wrapper.find('input[placeholder="Enter phase name"]')
+
+    await input.trigger('keydown', { key: 'Enter' })
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(dataStore.createAndSelectPhase).toHaveBeenCalledOnce()
+
+    finish()
+    await flushPromises()
+    await input.trigger('keydown', { key: 'Enter' })
+    expect(dataStore.createAndSelectPhase).toHaveBeenCalledTimes(2)
   })
 })

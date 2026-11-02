@@ -166,7 +166,8 @@
         -3.27
       ],
       "weight": 1,
-      "hypothesis": "Phase creation is a core list-view phase-navigation interaction and this report describes a failure during that workflow."
+      "hypothesis": "Phase creation is a core list-view phase-navigation interaction and this report describes a failure during that workflow.",
+      "reflection": "Held only in part: the failure showed up in phase creation, but the cause was not in the phase workflow. It was the frontend's slow reconnect to a restarting dev backend, which affected every mutation."
     }
   ],
   "supportedIdeas": [

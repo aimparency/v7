@@ -44,14 +44,14 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Blocked by need for real-machine clean-clone testing - see supporting idea ee7781d4\n\nOutcome: Architecture fully implemented and verified: browser UI connects to local Node backend/broker services, all services support port fallback, .bowman project discovery works, current project is visible in UI, and git-friendly file-based storage is documented. Tests and builds pass. Effectiveness: High. The architecture is implemented, tested, and documented. The only remaining validation is end-to-end human testing of the startup flow on a fresh clone. Lesson: For local-first architectures, implementation and verification can be separated: runtime behavior (port fallback, connection logic, file storage) can be verified via tests and validators in sandbox, while first-run UX requires real-machine testing. Pattern: This follows the same pattern as the parent publishability idea: technical implementation completes first, then human verification gates the final 'done' status.",
-    "date": 1774590174324
+    "state": "implemented",
+    "comment": "All three children implemented; the blocker named here (real-machine clean-clone test, ee7781d4) was confirmed by Felix 2026-10-16 on the Commons Hub server. Local service + browser UI architecture runs from a fresh clone.",
+    "date": 1793609103384
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

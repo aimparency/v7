@@ -18,9 +18,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "review",
-    "comment": "Question for Felix: since 9c478c93 (2026-11-01), has creating a phase ever hung for seconds or produced two phases? If not after a few days, accept.\n\nCause found: the dev backend restarts under tsx watch on backend/shared source changes; tRPC's reconnect backoff (up to 16 s) left the mutation queued and the change event fell into the gap. 9c478c93: reconnect at 0/250/500 ms…2 s, a 'connecting' label while down, and a full resync on reconnect. Phase create itself costs a few ms.",
-    "date": 1793517453079
+    "state": "implemented",
+    "comment": "Validated by tests (Felix's note in next, 2026-11-02: settle review ideas through tests where possible). Cause: the dev backend restarts under tsx watch; tRPC's reconnect backoff (up to 16 s) left mutations queued and change events fell into the gap. Fix 9c478c93: reconnect at 0/250/500 ms..2 s, 'connecting' label, full resync on reconnect; covered by backend-connection.spec and MultiClient.spec. Duplicate phase on repeated Enter: PhaseCreationModal's in-flight guard now has a test (second Enter while the first create is pending is ignored; next Enter after it finishes creates again); confirmed the test fails with the guard removed. PhaseCreationModal.spec 6/6. Phase create itself costs a few ms. Reopen if a create or delete hangs again.",
+    "date": 1793609103220
   },
   "intrinsicValue": 0,
   "cost": 1,

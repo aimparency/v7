@@ -16,14 +16,14 @@
     "33ccb9f5-38de-463b-b7be-7c5615817564"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "State was misspelled 'human-dependency'. The sandbox blocker is stale: clean-clone install/build/validate/check were verified on the real machine 2026-10-15 (see ee7781d4, fix 0ee4507). Remaining: Felix runs pnpm dev / pnpm start in a fresh clone and opens the UI (the agent may not start servers).",
-    "date": 1792064923100
+    "state": "implemented",
+    "comment": "Settled from Felix's confirmation on ee7781d4 (2026-10-16): fresh https clone on the Commons Hub server, pnpm install, pnpm start (interactive setup + build) ran and the hosted server is up. pnpm dev is Felix's daily flow in this repo. Only noted rough edge: pnpm install warns that the loop-worker's aimparency-mcp bin cannot be linked before the MCP is built (harmless).",
+    "date": 1793609103324
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -60,7 +60,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "The local-first architecture and release preparation are implemented; both branches now wait on a real-machine clean-clone/first-run test and human acceptance.\n\nReconciled this strategy container: it is not open implementation work. Its architecture child is human-dependent and its publishability child is 4/5 complete with the same remaining clean-clone validation. Keep the long-standing strategy intent, but surface the actual human verification gate.",
+    "comment": "Updated 2026-11-02: deployment architecture (3ea51517), publishability (e2c26776), protocol v0 (e207bec5) and read-only public-repo viewing (250fb1aa) are implemented; clean-clone startup was confirmed on the Commons Hub server. Remaining: outside users (8f002aaf), which waits on Felix's Commons Hub trial.",
     "date": 1784895724839
   },
   "intrinsicValue": 0,
