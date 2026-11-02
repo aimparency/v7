@@ -1,4 +1,4 @@
-import { calculateIdeaValues, defaultIdeaCost, INITIAL_STATES, missionPathsToRoot } from "shared";
+import { calculateIdeaValues, childBrief, defaultIdeaCost, INITIAL_STATES, missionPathsToRoot } from "shared";
 import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
@@ -86,7 +86,7 @@ export async function ideaContext(trpcClient: BackendClient, projectPath: string
     .map((p) => ({ id: p.id, text: p.text, description: p.description }));
   const childContext = (idea.supportingConnections || [])
     .flatMap((c) => ideaMap.get(c.ideaId) ?? [])
-    .map((c) => ({ id: c.id, text: c.text, description: c.description }));
+    .map(childBrief);
 
   // Black-box repo supporters: whole external repos carrying part of this
   // idea. They are not in ideaMap (nothing inside them is loaded, by design),
@@ -137,7 +137,7 @@ export const ideaTools: ToolDefinition[] = [
   },
   {
     name: "get_idea_context",
-    description: "Orient before acting: returns the idea, the 10 strongest root-first mission paths (paths_to_root, ids and titles), the highest-value path with descriptions (path_to_root), related ideas, immediate parents, and children. Cyclic/non-root branches are excluded and truncation is reported.",
+    description: "Orient before acting: returns the idea, the 10 strongest root-first mission paths (paths_to_root, ids and titles), the highest-value path with descriptions (path_to_root), related ideas, immediate parents, and children (open ones in full, settled ones as id, title and state). Cyclic/non-root branches are excluded and truncation is reported.",
     inputSchema: {
       type: "object",
       properties: {

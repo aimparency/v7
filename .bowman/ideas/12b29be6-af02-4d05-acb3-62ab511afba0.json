@@ -1,0 +1,27 @@
+{
+  "id": "12b29be6-af02-4d05-acb3-62ab511afba0",
+  "text": "Idea context shows children with their state; settled children as one line",
+  "description": "The no-regret part of 0eeec63e's mechanical tier, needed whichever way the LLM-summary question is decided. get_idea_context (MCP and agent-tools) listed every child with its full description and without its state, so an agent could not see which children were still open, and containers of mostly finished work repeated their descriptions. Children now carry their state; open ones keep the description, implemented/cancelled/failed/archived ones are id, title, state.",
+  "archived": false,
+  "color": "#6f2c57",
+  "tags": [
+    "mcp",
+    "context-budget"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "0eeec63e-6943-4e18-a508-4950ef7281e6"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "shared/src/idea-context.ts childBrief(idea) is used by the MCP ideaContext and agent-tools get_idea_context. Settled states (implemented, cancelled, failed, archived) give {id, text, status}; others also include the description. The MCP tool description says so. Evidence: idea-context test 1/1 (open, partially, human-dependent keep the description; each settled state drops it); MCP 54/54, agent-tools 6/6, shared tsc clean; pnpm check 25/25. Measured on the real graph: children bytes 3d868d5b 22,965 -> 9,921, 986410a0 17,739 -> 3,248, f2337265 15,768 -> 7,044, 6bbb740c 14,035 -> 5,764. The live MCP shows it after a /mcp reconnect.",
+    "date": 1793612298290
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

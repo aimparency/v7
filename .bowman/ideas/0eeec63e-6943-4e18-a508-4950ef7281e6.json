@@ -10,7 +10,17 @@
     "cache",
     "mcp"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "12b29be6-af02-4d05-acb3-62ab511afba0",
+      "relativePosition": [
+        1.49,
+        -3.44
+      ],
+      "weight": 1,
+      "hypothesis": "Folding finished children into one line keeps the context an agent reads proportional to the open work, without any cached summary."
+    }
+  ],
   "supportedIdeas": [
     "6ad092fc-a69e-475d-8870-30f994a7f6a5"
   ],

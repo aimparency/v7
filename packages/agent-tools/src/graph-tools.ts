@@ -2,6 +2,7 @@ import { createTRPCClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'backend';
 import {
   calculateIdeaValues,
+  childBrief,
   defaultIdeaCost,
   missionPathsToRoot,
   resolveWorkPhase,
@@ -76,7 +77,7 @@ export function connectGraph(projectPath: string) {
       paths_to_root: pathsToRoot,
       paths_to_root_truncated: truncated,
       parents: (idea.supportedIdeas ?? []).flatMap(brief),
-      children: (idea.supportingConnections ?? []).flatMap((connection) => brief(connection.ideaId))
+      children: (idea.supportingConnections ?? []).flatMap((connection) => ideaMap.get(connection.ideaId) ?? []).map(childBrief)
     };
   }
 
