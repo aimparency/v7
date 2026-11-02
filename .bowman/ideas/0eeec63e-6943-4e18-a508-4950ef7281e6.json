@@ -27,7 +27,7 @@
   "committedIn": [],
   "status": {
     "state": "unclear",
-    "comment": "Felix (2026-10-17): liked the direction, no decision yet. Open: mechanical tier only vs. LLM tier written by the loop; agent context only or also the graph view.",
+    "comment": "Felix (2026-10-17): liked the direction, no decision yet. 2026-11-02: the mechanical part needed either way is done in 12b29be6 (children carry their state, settled ones are one line, -55..80% on the largest containers) and 5e502f79 (10 strongest root paths without descriptions). Remaining question for Felix: is that enough, or should the loop also write cached LLM summaries of finished subtrees (hash-keyed, served to agents and maybe as collapsed nodes in the graph view)?",
     "date": 1792224477703
   },
   "intrinsicValue": 0,
