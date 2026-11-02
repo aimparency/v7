@@ -1,6 +1,6 @@
 import http from 'node:http';
 import { existsSync } from 'node:fs';
-import { createHTTPHandler, createHTTPServer } from '@trpc/server/adapters/standalone';
+import { createHTTPHandler } from '@trpc/server/adapters/standalone';
 import sirv from 'sirv';
 import { applyWSSHandler } from '@trpc/server/adapters/ws';
 import { WebSocketServer } from 'ws';
@@ -26,6 +26,7 @@ import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
 import { hostedProject } from './auth/access.js';
+import { isAllowedClientOrigin, resolveBindHost } from 'shared';
 
 const appRouter = t.router({
   idea: ideaRouter,
@@ -51,8 +52,15 @@ export type AppRouter = typeof appRouter;
 
 const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
 const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
-// Restrict binding to a single interface (e.g. Tailscale IP) when set; otherwise all interfaces.
+// An explicit interface (e.g. the Tailscale IP from `pnpm dev:host`); unset means
+// loopback only. Hosted mode keeps its own default below.
 const BIND_HOST = process.env.BIND_HOST || undefined;
+
+// The dev API runs agents and loops: only pages from this machine (or the
+// named host) and local programs without an Origin may use it.
+function allowedOrigin(req: http.IncomingMessage) {
+  return isAllowedClientOrigin(req.headers.origin, BIND_HOST);
+}
 
 function logConnections(wss: WebSocketServer) {
   wss.on('connection', (ws) => {
@@ -101,8 +109,9 @@ function startHostedServer(project: string) {
   const wss = new WebSocketServer({ server, path: '/trpc' });
   applyWSSHandler({ wss, router: appRouter, createContext });
   logConnections(wss);
-  server.listen(port, BIND_HOST ?? '127.0.0.1', () => {
-    console.log(`Hosting ${project} on http://${BIND_HOST ?? '127.0.0.1'}:${port}`);
+  const host = resolveBindHost(BIND_HOST);
+  server.listen(port, host, () => {
+    console.log(`Hosting ${project} on http://${host}:${port}`);
   });
   closeOnSigterm(server, wss);
   return { server, wss };
@@ -128,12 +137,21 @@ export function startServer() {
   const project = hostedProject();
   if (project) return startHostedServer(project);
 
-  const server = createHTTPServer({
-    router: appRouter,
-    createContext,
+  const host = resolveBindHost(BIND_HOST);
+  const trpcHandler = createHTTPHandler({ router: appRouter, createContext });
+  const server = http.createServer((req, res) => {
+    if (!allowedOrigin(req)) {
+      res.writeHead(403, { 'content-type': 'text/plain' });
+      return res.end('Origin not allowed');
+    }
+    trpcHandler(req, res);
   });
 
-  const wss = new WebSocketServer({ port: WS_PORT, host: BIND_HOST });
+  const wss = new WebSocketServer({
+    port: WS_PORT,
+    host,
+    verifyClient: ({ req }: { req: http.IncomingMessage }) => allowedOrigin(req),
+  });
 
   applyWSSHandler({
     wss,
@@ -142,11 +160,11 @@ export function startServer() {
   });
   logConnections(wss);
 
-  server.listen(HTTP_PORT, BIND_HOST, () => {
-    console.log(`HTTP Server running on http://${BIND_HOST || 'localhost'}:${HTTP_PORT}`);
+  server.listen(HTTP_PORT, host, () => {
+    console.log(`HTTP Server running on http://${host}:${HTTP_PORT}`);
   });
 
-  console.log(`WebSocket Server running on ws://localhost:${WS_PORT}`);
+  console.log(`WebSocket Server running on ws://${host}:${WS_PORT}`);
   closeOnSigterm(server, wss);
 
   return { server, wss };

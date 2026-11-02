@@ -258,6 +258,15 @@
       ],
       "weight": 1,
       "hypothesis": "Researchers working on human oversight of agents value pre-registered runs with negative results kept; a public note gets at least one substantive outside response (comment, citation, contact) within 6 weeks of publishing. Refuted if it gets none."
+    },
+    {
+      "ideaId": "101cc131-b51e-45d9-ad8e-63d138338dc4",
+      "relativePosition": [
+        -0.91,
+        3.64
+      ],
+      "weight": 1,
+      "hypothesis": "Humans stay final authority only if no one but the operator can make the machine run code; one exposed port undoes every model-side safeguard."
     }
   ],
   "supportedIdeas": [

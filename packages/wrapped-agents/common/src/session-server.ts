@@ -16,7 +16,7 @@ import {
   WATCHDOG_PARSER_LINE_COUNT,
 } from './terminal-view';
 import { assertNoPermissionBypass } from './process-authority-policy';
-import { isAllowedSessionOrigin, resolveSessionBindHost } from './session-network-policy';
+import { isAllowedBrowserOrigin, resolveBindHost } from 'shared';
 import {
   dispatchTerminalInput,
   dispatchTerminalResize,
@@ -66,13 +66,13 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
   // Network exposure is opt-in: use loopback unless the operator explicitly
   // selects a single interface (for example a Tailscale IP).
   const CONFIGURED_BIND_HOST = process.env.BIND_HOST;
-  const BIND_HOST = resolveSessionBindHost(CONFIGURED_BIND_HOST);
+  const BIND_HOST = resolveBindHost(CONFIGURED_BIND_HOST);
   const AGENT_TYPE = profile.agentType;
 
   const allowSessionOrigin = (
     origin: string | undefined,
     callback: (error: Error | null, allowed?: boolean) => void,
-  ) => callback(null, isAllowedSessionOrigin(origin, CONFIGURED_BIND_HOST));
+  ) => callback(null, isAllowedBrowserOrigin(origin, CONFIGURED_BIND_HOST));
 
   // Load instruction text for autonomous guidance (package-relative, as before).
   const INSTRUCT_PATH = path.join(packageDir, '../../INSTRUCT.md');
@@ -96,7 +96,7 @@ export function startSession(profile: AgentProfile, options: StartSessionOptions
       const origin = Array.isArray(request.headers.origin)
         ? request.headers.origin[0]
         : request.headers.origin;
-      callback(null, isAllowedSessionOrigin(origin, CONFIGURED_BIND_HOST));
+      callback(null, isAllowedBrowserOrigin(origin, CONFIGURED_BIND_HOST));
     },
   });
 

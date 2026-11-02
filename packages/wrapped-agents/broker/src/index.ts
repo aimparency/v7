@@ -8,6 +8,8 @@ import { WatchdogManager, type AgentType } from './manager.js';
 
 const agentTypeSchema = z.enum(['claude', 'gemini', 'codex', 'agy', 'grok']).default('gemini');
 import cors from 'cors';
+import type http from 'node:http';
+import { isAllowedClientOrigin, resolveBindHost } from 'shared';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
@@ -68,10 +70,15 @@ export type AppRouter = typeof appRouter;
 // Broker Port
 const HTTP_PORT = parseInt(process.env.PORT_BROKER_HTTP || '5000');
 const WS_PORT = parseInt(process.env.PORT_BROKER_WS || '5001');
-// Restrict binding to a single interface (e.g. Tailscale IP) when set; otherwise all interfaces.
+// An explicit interface (e.g. the Tailscale IP from `pnpm dev:host`); unset means loopback only.
 const BIND_HOST = process.env.BIND_HOST || undefined;
+const host = resolveBindHost(BIND_HOST);
+// The broker starts agent sessions: only pages from this machine (or the named
+// host) and local programs without an Origin may use it.
+const allowedOrigin = (req: http.IncomingMessage) => isAllowedClientOrigin(req.headers.origin, BIND_HOST);
 
 const app = express();
+app.use((req, res, next) => (allowedOrigin(req) ? next() : res.status(403).send('Origin not allowed')));
 app.use(cors());
 
 // Serve static client
@@ -88,17 +95,17 @@ app.use(
   }) as any
 );
 
-const server = app.listen(HTTP_PORT, BIND_HOST as any, () => {
-  console.log(`[WatchdogBroker] HTTP Server running on http://${BIND_HOST || 'localhost'}:${HTTP_PORT}`);
+const server = app.listen(HTTP_PORT, host, () => {
+  console.log(`[WatchdogBroker] HTTP Server running on http://${host}:${HTTP_PORT}`);
 });
 
-console.log(`[WatchdogBroker] WebSocket Server running on ws://localhost:${WS_PORT}`);
+console.log(`[WatchdogBroker] WebSocket Server running on ws://${host}:${WS_PORT}`);
 
 // Watch live sessions for self-edit relaunch indicators (idea 29021d9a).
 WatchdogManager.startRelaunchWatcher();
 
 // WebSocket Server
-const wss = new WebSocketServer({ port: WS_PORT, host: BIND_HOST });
+const wss = new WebSocketServer({ port: WS_PORT, host, verifyClient: ({ req }: { req: http.IncomingMessage }) => allowedOrigin(req) });
 applyWSSHandler({
   wss: wss as any,
   router: appRouter,

@@ -1,0 +1,29 @@
+{
+  "id": "de7abc26-c440-4dbc-a6e1-2f90ed1fd358",
+  "text": "Backend and broker listen on loopback by default and refuse foreign web pages",
+  "description": "The dev backend (3000/3001) and broker (5000/5001) listened on every interface, and any website open in the user's browser could open a WebSocket to localhost and start a loop worker or agent session. Default to 127.0.0.1 unless BIND_HOST is set (pnpm dev:host), and reject any request or WebSocket handshake whose Origin is not loopback or the configured host. Local programs without an Origin (MCP, loop worker, scripts) keep working. One shared policy (shared/network-policy.ts) serves backend, broker and agent sessions.",
+  "archived": false,
+  "color": "#2c3563",
+  "tags": [
+    "security",
+    "network-authority",
+    "backend",
+    "broker"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "101cc131-b51e-45d9-ad8e-63d138338dc4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Moved the agent-session origin policy to shared/src/network-policy.ts (resolveBindHost, isAllowedBrowserOrigin; new isAllowedClientOrigin lets originless local programs through). Backend dev server: tRPC handler behind http.createServer with a 403 origin gate, WebSocketServer verifyClient, listen on resolveBindHost(BIND_HOST); hosted mode uses the same helper. Broker: same gate as express middleware and verifyClient, loopback default. Evidence on the running stack after tsx watch reloaded: ss shows 3000/3001/5000/5001 on 127.0.0.1 only (were *); Origin https://evil.example -> HTTP 403 on 3000 and 5000, WS 401 on 3001 and 5001; Origin http://localhost:4000 and no Origin -> accepted. shared network-policy tests 5/5, pnpm check 25/25. dev:host still sets BIND_HOST explicitly; mobile uses adb reverse to localhost, so it is unaffected.",
+    "date": 1793610685618
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

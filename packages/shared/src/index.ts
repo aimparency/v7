@@ -13,3 +13,4 @@ export * from './graph-consistency.js';
 export * from './git-url.js';
 export * from './phase-tree.js';
 export * from './idea-activity.js';
+export * from './network-policy.js';
