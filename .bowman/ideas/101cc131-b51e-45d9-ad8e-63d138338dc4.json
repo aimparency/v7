@@ -26,6 +26,16 @@
       ],
       "weight": 1,
       "hypothesis": "Closes the two widest doors (LAN exposure and drive-by websites) without breaking the UI, MCP, mobile via adb reverse, or dev:host."
+    },
+    {
+      "ideaId": "b008055a-a42a-4133-9987-3d07bf0e65b1",
+      "relativePosition": [
+        3.05,
+        2.18
+      ],
+      "weight": 1,
+      "hypothesis": "A server that only follows git can be shown to anyone without widening the code-execution surface.",
+      "reflection": "Held by construction: the sync only fetches and fast-forwards, so a hosted server stays a follower of git with no new capability."
     }
   ],
   "supportedIdeas": [

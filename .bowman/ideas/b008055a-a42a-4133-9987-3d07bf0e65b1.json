@@ -1,0 +1,31 @@
+{
+  "id": "b008055a-a42a-4133-9987-3d07bf0e65b1",
+  "text": "A hosted instance follows its git remote: periodic fast-forward pull, live in open browsers",
+  "description": "Felix 2026-11-01: a hosted (read-only) Aimparency should pick up what is pushed, by git pull from the server, ideally automatically. Nothing pulls today. On a hosted instance, every few minutes (AIMPARENCY_PULL_SECONDS, default 300, 0 = off): git fetch, then merge --ff-only from the upstream branch. Skip while .bowman has uncommitted changes (write accounts edit there and an admin commits by hand, af701cd6) and when history has diverged; log only when the outcome changes. After an update, emit idea/phase change events for the changed files so open browsers refresh and values recalculate. Never commits or pushes.",
+  "archived": false,
+  "color": "#2c4461",
+  "tags": [
+    "hosting",
+    "read-only",
+    "git",
+    "backend"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "101cc131-b51e-45d9-ad8e-63d138338dc4",
+    "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "backend/src/hosted-git-sync.ts: pullFastForward(.bowman) -> updated | unchanged | uncommitted-edits | diverged | no-upstream | failed. It skips when .bowman has uncommitted changes (readWorkingTreeStatus), requires an upstream, runs git fetch, fast-forwards only when HEAD is an ancestor of @{upstream} (merge --ff-only), and never commits or pushes; GIT_TERMINAL_PROMPT=0, 120 s timeout. changeEventsFor maps changed ideas/*.json, phases/*.json and meta.json to the change events storage emits (deleted files flagged), so open browsers refresh and values recalculate. followGitRemote starts with the hosted server, interval AIMPARENCY_PULL_SECONDS (default 300, 0 = off), logs only when the outcome changes, and resets the migration check after a pull. Documented in the README hosting section and .env.example.\n\nEvidence: hosted-git-sync.test.ts, 4 tests on real temp repos (bare upstream, author clone, server clone): a push is fast-forwarded with exactly ideas/gone (deleted), ideas/new and phases/p1 as events, and the src/ change is ignored; uncommitted server edits block the pull until they are gone; diverged history leaves HEAD untouched; a branch without upstream reports no-upstream; meta.json maps to a project event. pnpm check 25/25. Not run live: that would mean starting a hosted server, and it reaches the Commons Hub server on its next restart.",
+    "date": 1793610994260
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

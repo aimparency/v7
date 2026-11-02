@@ -128,7 +128,7 @@ For optional integrations too:
 pnpm build:optional
 ```
 
-The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background. The launcher prints the resolved ports at startup and writes them to `packages/frontend/public/runtime-config.json`.
+The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background: they listen on `127.0.0.1` only and answer only pages served from this machine, since they can start agents. `pnpm dev:host` opens them to `LAN_BIND_HOST` (or the Tailscale IP). The launcher prints the resolved ports at startup and writes them to `packages/frontend/public/runtime-config.json`.
 
 To validate the local launcher and runtime-config fallback behavior without starting the full stack, run:
 
@@ -235,6 +235,11 @@ nothing outside the project can be opened.
 - **Commits.** Edits change the files in the served repository; someone with
   push access commits and pushes them, and that git account answers for every
   account it lets in.
+- **Pulling.** Every 5 minutes the instance fast-forwards to what was pushed
+  upstream, and open browsers update. It waits while the served `.bowman` has
+  uncommitted edits and never merges diverged history (the log says why it is
+  not pulling). `AIMPARENCY_PULL_SECONDS` sets the interval; `0` turns it off.
+  A private repository needs fetch credentials for the server's user.
 - **MCP.** A logged-in user's "MCP link" (in the header) connects an MCP client
   as that account. It contains a token, so treat it like a password. Without a
   token the MCP can only read.

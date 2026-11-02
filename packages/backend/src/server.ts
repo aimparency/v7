@@ -26,6 +26,7 @@ import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
 import { hostedProject } from './auth/access.js';
+import { followGitRemote } from './hosted-git-sync.js';
 import { isAllowedClientOrigin, resolveBindHost } from 'shared';
 
 const appRouter = t.router({
@@ -114,6 +115,7 @@ function startHostedServer(project: string) {
     console.log(`Hosting ${project} on http://${host}:${port}`);
   });
   closeOnSigterm(server, wss);
+  followGitRemote(project, parseInt(process.env.AIMPARENCY_PULL_SECONDS || '300'));
   return { server, wss };
 }
 

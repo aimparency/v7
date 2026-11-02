@@ -42,6 +42,16 @@
       ],
       "weight": 1,
       "hypothesis": "A copy-paste unit and a warning-free install shorten Felix's remaining server setup at the hub."
+    },
+    {
+      "ideaId": "b008055a-a42a-4133-9987-3d07bf0e65b1",
+      "relativePosition": [
+        0.16,
+        -3.75
+      ],
+      "weight": 1,
+      "hypothesis": "The Commons Hub server stays current with what members push, without anyone logging in to pull.",
+      "reflection": "Pending: it takes effect on the server's next pnpm start; check the [git-sync] log line there (a private repo needs fetch credentials for the aimparency user)."
     }
   ],
   "supportedIdeas": [

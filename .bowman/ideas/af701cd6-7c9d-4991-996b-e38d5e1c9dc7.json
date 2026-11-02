@@ -5,7 +5,18 @@
   "archived": false,
   "color": "#662f2d",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "b008055a-a42a-4133-9987-3d07bf0e65b1",
+      "relativePosition": [
+        -3.6,
+        -1.04
+      ],
+      "weight": 1,
+      "hypothesis": "Without pulling, the hosted graph goes stale the day after setup, and nobody uses a stale graph.",
+      "reflection": "Not yet tested: the mechanism exists and is tested, but whether people keep using the hosted graph only shows once the Commons Hub server runs it."
+    }
+  ],
   "supportedIdeas": [
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
     "90656db4-c47f-491c-82aa-4f5631d7c264"
