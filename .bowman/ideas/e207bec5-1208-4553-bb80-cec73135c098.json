@@ -16,9 +16,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Spec, generated schemas and pnpm validate:bowman exist. Gap: protocol/README.md still describes data model 5 (and line 101 says dataModelVersion must be 4); the current data model is 6.",
-    "date": 1793550911705
+    "state": "implemented",
+    "comment": "protocol/README.md now names data model 6 everywhere (title, normative line, meta dataModelVersion must be 6, reader rule) and documents selfWeight. pnpm protocol:schemas produced no drift; pnpm validate:bowman . -> 830 ideas, 10 archived, 37 phases: valid. New test in bowman-validate.test.ts ties every README version mention to CURRENT_DATA_MODEL_VERSION; checked by hand that it fails when one mention is set to 5 and passes after it is restored (6/6).",
+    "date": 1793608653719
   },
   "intrinsicValue": 0,
   "cost": 1,

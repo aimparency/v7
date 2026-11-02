@@ -1,4 +1,4 @@
-# The .bowman format (protocol v0, data model version 5)
+# The .bowman format (protocol v0, data model version 6)
 
 A `.bowman` directory stores an idea graph as plain JSON files inside a Git
 repository. Git is the history: files hold the current state only, and every
@@ -6,7 +6,7 @@ change is a normal commit. Any tool can read and write a project with nothing
 but a JSON parser; Aimparency's backend, MCP server and agents are clients of
 this format, not its owners.
 
-This document is normative for data model version 5. The JSON Schemas in
+This document is normative for data model version 6. The JSON Schemas in
 [`schemas/`](schemas/) are generated from the code that reads the format and
 define the shape of each file; the rules below add what a schema cannot
 express. Check a project with:
@@ -54,7 +54,9 @@ An idea is a unit of intent at any scale, from a mission to a one-line fix.
 - `intrinsicValue` (≥ 0) is the idea's standalone estimated value, `cost` (> 0)
   its estimated direct cost in the project's `costUnit`, and `duration` the
   estimated days until its value is realized. `valueRationale` explains the
-  value estimate. `calculated*` properties are derived caches; readers must not
+  value estimate. `selfWeight` (≥ 0, default 0) is the share of the value
+  reaching the idea that it realizes through its own work rather than passing
+  on to its children (see the share rule below). `calculated*` properties are derived caches; readers must not
   trust them and writers may omit them.
 - `tags`, `color` (`#rrggbb`) and `archived` are presentation and filtering
   hints.
@@ -98,7 +100,7 @@ Phases group commitments ("what we do now / next"), not dates.
 
 ## Project meta
 
-- `name`, `color`, and `dataModelVersion`, which must be `4` for this version
+- `name`, `color`, and `dataModelVersion`, which must be `6` for this version
   of the protocol.
 - `statuses` defines the project's states: `key` (`[a-z0-9-]+`), `color`, and
   `promptsReflection` (entering the state asks to reflect on the hypotheses of the idea's links).
@@ -119,6 +121,6 @@ Phases group commitments ("what we do now / next"), not dates.
 `meta.json` `dataModelVersion` names the format version. Aimparency upgrades
 older projects in place through idempotent migrations when it opens them, and
 refuses to write projects with a newer version than it knows. A reader that
-only understands version 5 should reject other versions rather than guess.
+only understands version 6 should reject other versions rather than guess.
 Frozen examples of earlier versions live in
 `packages/shared/fixtures/data-model-<N>/`.

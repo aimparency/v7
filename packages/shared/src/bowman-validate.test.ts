@@ -42,6 +42,13 @@ test('published schemas match the zod schemas they are generated from (run pnpm 
   }
 });
 
+test('the protocol README names the current data model version everywhere it names one', () => {
+  const readme = fs.readFileSync(path.join(PROTOCOL_SCHEMA_DIR, '..', 'README.md'), 'utf8');
+  const named = [...readme.matchAll(/(?:data model version|must be|understands version) `?(\d+)/g)].map((match) => Number(match[1]));
+  assert.ok(named.length >= 3, 'README version mentions not found');
+  assert.deepEqual(new Set(named), new Set([CURRENT_DATA_MODEL_VERSION]));
+});
+
 test('a minimal consistent project is valid, from the root or the .bowman directory', () => {
   const root = project();
   assert.deepEqual(validateBowman(root), { errors: [], counts: { ideas: 2, archivedIdeas: 0, phases: 1 } });
