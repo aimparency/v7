@@ -22,6 +22,25 @@ export const repoTools: ToolDefinition[] = [
     },
   },
   {
+    name: "import_spec_tasks",
+    description: "Start or top up the graph from spec-driven checklists (GitHub spec-kit specs/*/tasks.md, spec-workflow-mcp .spec-workflow/specs/*/tasks.md): one parent idea per tasks.md, one child per top-level task, [x] as implemented and [-] as partially. Re-running only adds tasks not imported yet. Afterwards, connect each parent to the mission it serves and estimate value/cost.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        specPath: { type: "string", description: "A tasks.md file or a directory to search, relative to the repository root (e.g. 'specs' or '.')" },
+      },
+      required: ["projectPath", "specPath"],
+    },
+    handler: async (args, trpcClient) => {
+      const result = await trpcClient.idea.importSpecTasks.mutate({
+        projectPath: args.projectPath as string,
+        specPath: args.specPath as string,
+      });
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  },
+  {
     name: "list_linked_repos",
     description: "List the repos this project can link an idea to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
     inputSchema: {

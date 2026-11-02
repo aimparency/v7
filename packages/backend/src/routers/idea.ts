@@ -10,6 +10,7 @@ import { getIdeaCommitEvidence, getIdeaContributors, getIdeaStatusHistory, getCo
 import { t, delayedProcedure } from '../trpc.js';
 import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, updateIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
 import { fetchOpenGithubIssues, parseGithubRepository } from '../github-issues.js';
+import { findSpecTaskFiles, parseSpecTasks, specTaskMarker } from '../spec-tasks.js';
 import { readPhase } from '../storage/phases.js';
 import { readProjectMeta } from '../storage/project.js';
 import { deleteIdeas, detachIdea, disconnectIdeas } from '../storage/idea-removal.js';
@@ -1094,6 +1095,46 @@ export const ideaRouter = t.router({
         await connectIdeasInternal(input.projectPath, parent!.id, child.id);
       }
       return { parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: issues.length - fresh.length };
+    }),
+
+  // Imports spec-driven checklists (spec-kit, spec-workflow-mcp): one parent idea per
+  // tasks.md, one child per top-level task, checkbox state as status. A marker in the
+  // description makes re-imports add only new tasks. Paths stay inside the repository.
+  importSpecTasks: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      specPath: z.string().min(1) // a tasks.md file or a directory, relative to the repository root or absolute
+    }))
+    .mutation(async ({ input }) => {
+      const repoRoot = path.dirname(normalizeProjectPath(input.projectPath));
+      const target = path.resolve(repoRoot, input.specPath);
+      if (path.relative(repoRoot, target).startsWith('..')) throw new Error(`specPath must be inside the repository: ${input.specPath}`);
+      const files = await findSpecTaskFiles(target);
+
+      const { ideas } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
+      const imported = new Set(ideas.flatMap((idea) => idea.description?.match(/^Spec task \S+$/gm) ?? []));
+      const result = { files: [] as { file: string; parentId: string | null; imported: number; alreadyImported: number }[] };
+      for (const file of files) {
+        const relative = path.relative(repoRoot, file);
+        const tasks = parseSpecTasks(await fs.readFile(file, 'utf8'));
+        const fresh = tasks.filter((task) => !imported.has(specTaskMarker(relative, task.key)));
+        const parentText = `Spec tasks: ${path.basename(path.dirname(file))}`;
+        let parent = ideas.find((idea) => idea.text === parentText && idea.description?.includes(`Imported from ${relative}`) && idea.status.state !== 'archived');
+        if (!parent && fresh.length > 0) {
+          parent = await storeNewIdea(input.projectPath, { text: parentText, description: `Imported from ${relative}`, tags: ['spec'] }, {});
+        }
+        for (const task of fresh) {
+          const child = await storeNewIdea(input.projectPath, {
+            text: task.title,
+            description: [task.details, specTaskMarker(relative, task.key)].filter(Boolean).join('\n\n'),
+            tags: ['spec-task'],
+            status: { state: task.state, comment: task.state === 'open' ? '' : `Checked in ${relative} when imported.`, date: Date.now() }
+          }, { colorParentId: parent!.id });
+          await connectIdeasInternal(input.projectPath, parent!.id, child.id);
+        }
+        result.files.push({ file: relative, parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: tasks.length - fresh.length });
+      }
+      return result;
     }),
 
   merge: delayedProcedure

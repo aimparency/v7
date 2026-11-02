@@ -53,6 +53,24 @@
       ],
       "weight": 1,
       "hypothesis": "A whole community using the graph daily yields more outside feedback than inviting single maintainers one by one."
+    },
+    {
+      "ideaId": "0ca1b9cf-593c-4b5a-9a8d-80651a28bba1",
+      "relativePosition": [
+        -2.56,
+        -2.74
+      ],
+      "weight": 1,
+      "hypothesis": "Developers who already keep agent specs in tasks.md try Aimparency when one command turns their existing specs into a graph, instead of starting from an empty one. Refuted if, once the import ships and is mentioned in the README, no outside user imports a spec within two months."
+    },
+    {
+      "ideaId": "d8e9a2b1-2585-46b9-a83b-68b525b1c0d6",
+      "relativePosition": [
+        3.74,
+        -0.26
+      ],
+      "weight": 1,
+      "hypothesis": "A registry listing in the spec/planning category brings the first outside installs without outreach. Refuted if the listing yields no GitHub stars, issues or clones from strangers within six weeks."
     }
   ],
   "supportedIdeas": [
@@ -67,8 +85,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

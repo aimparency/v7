@@ -1,0 +1,28 @@
+{
+  "id": "d8e9a2b1-2585-46b9-a83b-68b525b1c0d6",
+  "text": "List the Aimparency MCP server in the public MCP registries",
+  "description": "Major hypothesis loop 2026-11-02. RESEARCHED: developers find agent tooling through MCP catalogs and directories (e.g. https://skillselion.com/mcp/tool/io.github.mybolide/mcp-probe-kit, https://www.nuget.org/packages/speccodingmcpserver); spec/planning MCP servers are a visible category there. OBSERVED: the Aimparency MCP runs from source in this repo; it is not published as a package or listed anywhere. Needs a stdio entry that works from a fresh clone (or an npm package) and a registry entry naming the repo. Publishing under Felix's name is his decision.",
+  "archived": false,
+  "color": "#707031",
+  "tags": [
+    "hypothesis",
+    "major-hypothesis-loop",
+    "adoption"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8f002aaf-7628-4b04-a814-8c52db56b6f7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Question for Felix: may the Aimparency MCP be published (npm package and/or MCP registry entry) under your GitHub name now, or only after the Commons Hub trial? Publishing is outward-facing, so the agent will not do it on its own.",
+    "date": 1793609193637
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
