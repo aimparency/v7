@@ -116,3 +116,21 @@ test("consolidate can apply the safe reorganization within a subtree", async () 
   assert.match(text, /Scope: the subtree of 22dd4138/);
   assert.match(text, /Apply everything else .* and report every mutation/);
 });
+
+test("today asks for missing interests and time, mixes waiting-for-a-human ideas in, and stays read-only", async () => {
+  const result = await setup().getPrompt("today", {});
+  const text = result.messages[0].content.text;
+  assert.equal(result.description, "What can I do today?");
+  assert.match(text, /First ask, in one short message, what you still need: what they care about or are good at and how much time they have today/);
+  assert.match(text, /list_ideas with status human-dependent and unclear/);
+  assert.match(text, /Pick at most three/);
+  assert.match(text, /Do not change, create or claim any idea/);
+});
+
+test("today goes straight to suggestions when interests and time are given", async () => {
+  const result = await setup().getPrompt("today", { projectPath: "/hub/.bowman", interests: "gardening", time: "2 hours" });
+  const text = result.messages[0].content.text;
+  assert.equal(result.description, "What can I do today? (gardening)");
+  assert.match(text, /Project: \/hub\/\.bowman\nInterests: gardening\nTime available: 2 hours/);
+  assert.doesNotMatch(text, /First ask/);
+});

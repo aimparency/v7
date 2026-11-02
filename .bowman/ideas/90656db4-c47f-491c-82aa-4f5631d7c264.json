@@ -23,14 +23,14 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792172340123
+    "state": "implemented",
+    "comment": "MCP prompt 'today' (packages/mcp/src/prompts.ts; in Claude Code /mcp__aimparency__today, in Claude Desktop from the prompt menu): asks for interests and time if not given, gathers candidates from get_prioritized_ideas, human-dependent/unclear ideas (the ones waiting for a person) and semantic search on interests, and answers with at most three unblocked ideas: title, short id, why it matters (mission path), first step today. Read-only by instruction and by the backend's account access (af701cd6), so guests can use it. No new backend code: any MCP client connected to the hub instance is the assistant. Verified: prompts tests 13/13 (2 new), mcp tsc clean. Not yet tried by a hub member; that depends on the hub instance trial (af701cd6, human-dependent).",
+    "date": 1793608898467
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -91,6 +91,35 @@ Report compactly, by section: what you found, what you ${writeBack ? "changed" :
   };
 }
 
+// "What can I do today?": a person asks the graph for a few ideas that fit them. Read-only,
+// so it works for guest accounts of a shared instance (Commons Hub) as well.
+function todayPrompt(args: Record<string, string> | undefined) {
+  const target = args?.projectPath?.trim() || DEFAULT_PROJECT_PATH;
+  const interests = args?.interests?.trim();
+  const time = args?.time?.trim();
+  const known = [interests && `Interests: ${interests}`, time && `Time available: ${time}`].filter(Boolean).join("\n");
+  const text = `Someone asks the idea graph: "What can I do today?" Answer them with a few concrete ideas that fit them.
+
+Project: ${target}${known ? `\n${known}` : ""}
+
+${interests && time ? "" : `First ask, in one short message, what you still need: ${[!interests && "what they care about or are good at", !time && "how much time they have today"].filter(Boolean).join(" and ")}. Then continue.\n\n`}Find candidates with the read-only Aimparency tools:
+- get_prioritized_ideas: the most valuable open ideas whose prerequisites are done.
+- list_ideas with status human-dependent and unclear: ideas waiting for a person, often exactly what a human can do today (a decision, a contact, a check, a hands-on task).
+- search_ideas_semantic (or search_ideas) with their interests, to find ideas they would enjoy.
+
+Pick at most three. Each one must be unblocked (no open child it depends on), small enough for the time they have, and fit what they care about. Prefer a mix: one high-value, one that matches their interests, one quick win. For each, call get_idea_context and answer with:
+- the idea's title and short id;
+- why it matters: its path up to the mission, in one sentence;
+- the first concrete step they can take today;
+- who to talk to or what to read, if the idea or its comments name it.
+
+Rules: this is read-only. Do not change, create or claim any idea; the person picks something up in their own git account or by telling the people responsible. Only state what the graph says; if nothing fits, say so and name the closest idea and what is missing. Keep the answer short enough to read on a phone.`;
+  return {
+    description: interests ? `What can I do today? (${interests})` : "What can I do today?",
+    messages: [{ role: "user", content: { type: "text", text } }],
+  };
+}
+
 export function registerPrompts(server: Server, caller: BackendClient) {
   server.setRequestHandler(ListPromptsRequestSchema, async () => ({
     prompts: [
@@ -135,6 +164,15 @@ export function registerPrompts(server: Server, caller: BackendClient) {
         }],
       },
       {
+        name: "today",
+        description: "Ask the graph \"what can I do today?\": a few unblocked, valuable ideas that fit the person's interests and time, with why each matters; read-only",
+        arguments: [
+          PROJECT_PATH_PROMPT_ARGUMENT,
+          { name: "interests", description: "Optional: what the person cares about or is good at", required: false },
+          { name: "time", description: "Optional: how much time they have today, e.g. \"2 hours\"", required: false },
+        ],
+      },
+      {
         name: "enable-hook",
         description: "Turn the Aimparency Stop continuation hook on (installing it if an agent is given) for this repository",
         arguments: [PROJECT_PATH_PROMPT_ARGUMENT, {
@@ -156,6 +194,7 @@ export function registerPrompts(server: Server, caller: BackendClient) {
     if (name === "enable-hook" || name === "disable-hook") return hookTogglePrompt(name, args);
     if (name === "idea-session") return ideaSessionPrompt(args);
     if (name === "consolidate") return consolidatePrompt(args);
+    if (name === "today") return todayPrompt(args);
     if (name !== "dream") throw new Error(`Unknown prompt: ${name}`);
 
     const projectPath = (args?.projectPath as string | undefined)?.trim();
