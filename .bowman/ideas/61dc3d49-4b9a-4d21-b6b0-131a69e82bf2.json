@@ -35,6 +35,15 @@
       ],
       "weight": 1,
       "hypothesis": "A purpose-built session command complements the existing hook controls by establishing the idea-recording workflow at session start."
+    },
+    {
+      "ideaId": "52118ff6-8b86-44c4-86df-766f16935e47",
+      "relativePosition": [
+        -0.42,
+        -3.73
+      ],
+      "weight": 1,
+      "hypothesis": "A per-run log lets the human see what an autonomous run changed in a minute instead of reading git log and idea diffs; if the agent skips lines, the log is useless."
     }
   ],
   "supportedIdeas": [

@@ -4,7 +4,7 @@ import { execFileSync } from "child_process";
 import * as fs from "fs";
 import * as os from "os";
 import * as path from "path";
-import { continueHookStatus, disableContinueHook, disabledFlagPath, enableContinueHook } from "./continue-hook.js";
+import { continueHookStatus, currentProgressLog, disableContinueHook, disabledFlagPath, enableContinueHook } from "./continue-hook.js";
 
 function makeProject(): string {
   const root = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "continue-hook-")));
@@ -82,6 +82,38 @@ test("the old flag inside .git still disables, and toggling moves it to .bowman/
     enableContinueHook(path.join(root, ".bowman"));
     assert.ok(!fs.existsSync(legacy));
     assert.equal(runHook(root).decision, "block");
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("each enable starts a timestamped progress log the hook points the agent to; disable closes it", () => {
+  const root = makeProject();
+  try {
+    assert.equal(currentProgressLog(root), null);
+    const message = enableContinueHook(path.join(root, ".bowman"), "claude");
+    const log = currentProgressLog(root)!;
+    assert.match(path.relative(root, log), /^\.bowman\/runtime\/continue-logs\/\d{4}-\d\d-\d\dT\d\d-\d\d-\d\d\.md$/);
+    assert.ok(message.includes(path.relative(root, log)));
+    assert.match(fs.readFileSync(log, "utf8"), /^# Autonomous run, started /);
+    assert.ok(runHook(root).reason.includes(`append one succinct line to ${log}`));
+
+    disableContinueHook(path.join(root, ".bowman"));
+    assert.equal(currentProgressLog(root), null);
+    assert.match(fs.readFileSync(log, "utf8"), /Hook disabled .*\n$/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test("enabling without agent refreshes an outdated recognized hook copy so it logs", () => {
+  const root = makeProject();
+  try {
+    enableContinueHook(path.join(root, ".bowman"), "claude");
+    const hook = path.join(root, "scripts/hooks/codex-continue-on-stop.sh");
+    fs.writeFileSync(hook, "#!/usr/bin/env bash\n# Continue the current Codex conversation through the Aimparency MCP loop.\ncat >/dev/null\nprintf '{\"decision\":\"block\",\"reason\":\"old\"}\\n'\n", { mode: 0o755 });
+    assert.match(enableContinueHook(path.join(root, ".bowman")), /upgraded/);
+    assert.ok(runHook(root).reason.includes(currentProgressLog(root)!));
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

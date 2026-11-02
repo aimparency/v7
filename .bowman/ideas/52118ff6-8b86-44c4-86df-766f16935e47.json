@@ -1,0 +1,24 @@
+{
+  "id": "52118ff6-8b86-44c4-86df-766f16935e47",
+  "text": "Enabling the continuation hook starts a timestamped progress log the agent appends to, for the human's later overview",
+  "description": "Felix 2026-11-02: when the stop hook is enabled, create a timestamped file and log all progress and changes into it succinctly, so the human can review the run later. Each enable writes .bowman/runtime/continue-logs/<ISO timestamp>.md (gitignored), with a header naming the start time and HEAD, and points .bowman/runtime/continue-hook-log at it. Every block reason from the hook tells the agent to append one line per finished step (idea, what changed, commit, or the question it is parked on). Disable appends the stop time and removes the pointer. Distinct from the cancelled agent_log.json (4545e25f): a short human-readable summary, not a full decision/tool-call audit trail.",
+  "archived": false,
+  "color": "#56662d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "shared/continue-hook.ts: enable (with or without agent) starts .bowman/runtime/continue-logs/<timestamp>.md and the pointer .bowman/runtime/continue-hook-log; enable without agent also refreshes an outdated recognized hook copy in other repos; disable appends 'Hook disabled <time>' and drops the pointer. codex-continue-on-stop.sh adds the log instruction to both block reasons (JSON now built with node, so paths are escaped). Verified: continue-hook tests 6/6 (2 new: log lifecycle + hook reason names the file; outdated copy upgraded on enable), scripts/hooks/test.sh PASS, shared + mcp tsc clean. Live: started this run's log .bowman/runtime/continue-logs/2026-11-02T08-39-50.md; the v7 hook's reason now names it. The running MCP server needs /mcp reconnect to pick up the new enable message.",
+    "date": 1793608809728
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

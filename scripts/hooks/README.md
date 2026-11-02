@@ -63,6 +63,11 @@ on every Stop, so it takes effect immediately without reloading agent hook
 config. Enabling removes the flag; with an agent it also (re)installs the hook.
 Manually: `touch .bowman/runtime/continue-hook-disabled`.
 
+Each enable also starts a progress log, `.bowman/runtime/continue-logs/<timestamp>.md`
+(gitignored), named by `.bowman/runtime/continue-hook-log`. Every block reason
+asks the agent to append one succinct line per finished step, so the human can
+read the run's changes later. Disabling appends the stop time and drops the pointer.
+
 ## Continuation contract
 
 On a normal Codex `Stop`, the hook returns valid JSON with
