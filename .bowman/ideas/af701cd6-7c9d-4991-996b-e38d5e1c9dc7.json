@@ -15,6 +15,15 @@
       "weight": 1,
       "hypothesis": "Without pulling, the hosted graph goes stale the day after setup, and nobody uses a stale graph.",
       "reflection": "Not yet tested: the mechanism exists and is tested, but whether people keep using the hosted graph only shows once the Commons Hub server runs it."
+    },
+    {
+      "ideaId": "69a7ab7c-408c-4ce6-a6f1-3dd530ae4770",
+      "relativePosition": [
+        3.18,
+        1.98
+      ],
+      "weight": 0.5,
+      "hypothesis": "Admins can run agents on the shared graph from the browser, without an SSH session."
     }
   ],
   "supportedIdeas": [

@@ -1,7 +1,7 @@
 {
   "id": "101cc131-b51e-45d9-ad8e-63d138338dc4",
   "text": "Keep Aimparency's code-execution surface in the hands of its operator",
-  "description": "Felix 2026-11-01: through the wrapper feature, an ordinary Aimparency instance is a gate to a terminal, i.e. code execution and full control of the machine. Every server that can start agents, loops or clones (backend, broker, agent sessions) must answer only its operator: loopback by default, explicit opt-in for a network interface, no driving from foreign web pages, and an operator credential before anything runs code when the stack is reachable from elsewhere. Hosting for other people (read-only or with accounts) must never inherit this capability.",
+  "description": "Felix 2026-11-01: through the wrapper feature, an ordinary Aimparency instance is a gate to a terminal, i.e. code execution and full control of the machine. Every server that can start agents, loops or clones (backend, broker, agent sessions) must answer only its operator: loopback by default, explicit opt-in for a network interface, no driving from foreign web pages. Felix 2026-11-02: on a hosted instance (behind nginx) the operator role is admin, with no separate role: only admins get the wrapped-agent shell, and creating an admin warns that this is shell access as the aimparency user (/etc, every env secret). Read and write accounts never get it.",
   "archived": false,
   "color": "#2d3d66",
   "tags": [
@@ -36,6 +36,24 @@
       "weight": 1,
       "hypothesis": "A server that only follows git can be shown to anyone without widening the code-execution surface.",
       "reflection": "Held by construction: the sync only fetches and fast-forwards, so a hosted server stays a follower of git with no new capability."
+    },
+    {
+      "ideaId": "266dcf6b-349a-4a75-9f94-a6da57cdd604",
+      "relativePosition": [
+        -2.15,
+        -3.07
+      ],
+      "weight": 1,
+      "hypothesis": "People hand out admin carefully once every path that creates one says plainly that it is an SSH-equivalent login."
+    },
+    {
+      "ideaId": "69a7ab7c-408c-4ce6-a6f1-3dd530ae4770",
+      "relativePosition": [
+        -3.67,
+        -0.79
+      ],
+      "weight": 1,
+      "hypothesis": "One credential checked at every hop keeps the shell with the people the operator made admin, even with the server reachable from the internet."
     }
   ],
   "supportedIdeas": [
@@ -44,7 +62,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Session sockets (0f307c81) and backend/broker (loopback + origin gate) are closed. Open: an operator credential for code-running routes on network-exposed stacks; the hosted read-only server's sync and roles wait on Felix's decision.",
+    "comment": "Done: session sockets (0f307c81), backend/broker loopback + origin gate (de7abc26), hosted git following (b008055a), admin-shell warning (266dcf6b). Open: the admin-only shell on hosted instances, token-checked at backend, broker and session sockets.",
     "date": 1793610663338
   },
   "intrinsicValue": 0,

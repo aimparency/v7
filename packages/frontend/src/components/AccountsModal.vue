@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from 'vue'
+import { ADMIN_SHELL_WARNING } from 'shared'
 import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
 
@@ -27,12 +28,25 @@ const run = async (action: () => Promise<unknown>) => {
   }
 }
 
-const add = () => run(async () => {
-  await trpc.auth.createUser.mutate({ name: name.value, role: role.value, password: password.value })
-  name.value = password.value = ''
-})
+// Making someone admin hands out a shell on the server: ask every time.
+const confirmAdmin = (user: string, next: string) =>
+  next !== 'admin' || window.confirm(`Make ${user || 'this account'} admin?\n\n${ADMIN_SHELL_WARNING}`)
 
-const setRole = (user: string, next: string) => run(() => trpc.auth.setRole.mutate({ name: user, role: next as Role }))
+const add = () => {
+  if (!confirmAdmin(name.value, role.value)) return
+  void run(async () => {
+    await trpc.auth.createUser.mutate({ name: name.value, role: role.value, password: password.value })
+    name.value = password.value = ''
+  })
+}
+
+const setRole = (user: string, select: HTMLSelectElement) => {
+  if (!confirmAdmin(user, select.value)) {
+    select.value = users.value.find(account => account.name === user)?.role ?? select.value
+    return
+  }
+  void run(() => trpc.auth.setRole.mutate({ name: user, role: select.value as Role }))
+}
 const remove = (user: string) => run(() => trpc.auth.removeUser.mutate({ name: user }))
 
 const resetPassword = (user: string) => {
@@ -48,7 +62,7 @@ onMounted(() => run(async () => undefined))
     <div class="accounts">
       <div v-for="user in users" :key="user.name" class="row">
         <span class="name">{{ user.name }}{{ user.name === me ? ' (you)' : '' }}</span>
-        <select :value="user.role" @change="setRole(user.name, ($event.target as HTMLSelectElement).value)">
+        <select :value="user.role" @change="setRole(user.name, $event.target as HTMLSelectElement)">
           <option v-for="option in ROLES" :key="option" :value="option">{{ option }}</option>
         </select>
         <button class="btn-secondary" @click="resetPassword(user.name)">Password</button>
@@ -65,6 +79,7 @@ onMounted(() => run(async () => undefined))
       </form>
       <p v-if="error" class="error">{{ error }}</p>
       <p class="hint">read: sees what anyone sees · write: edits ideas and phases · admin: also accounts, settings and commits</p>
+      <p class="hint warning">{{ ADMIN_SHELL_WARNING }}</p>
     </div>
   </FormModalShell>
 </template>
@@ -93,6 +108,10 @@ onMounted(() => run(async () => undefined))
   .hint {
     color: #888;
     margin: 0;
+
+    &.warning {
+      color: #e0a050;
+    }
   }
 }
 </style>

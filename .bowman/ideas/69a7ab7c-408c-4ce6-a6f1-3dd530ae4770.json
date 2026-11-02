@@ -1,0 +1,30 @@
+{
+  "id": "69a7ab7c-408c-4ce6-a6f1-3dd530ae4770",
+  "text": "Wrapped-agent shell on a hosted instance, for admins only, through the one nginx-fronted port",
+  "description": "Felix 2026-11-02: there will be nginx in front of the hosted instance, and only admin users should have the shell in wrapped agents. Today hosted mode refuses loop and watchdog entirely and runs no broker, so nobody has it. To give it to admins: run the broker on the hosted server, proxy broker and agent-session traffic (HTTP, tRPC WebSocket, Socket.IO) through the single hosted port (e.g. /broker/, /session/<port>/), and require an admin token on every hop: the backend's watchdog/loop routes need 'admin' instead of 'local', and the broker and each session server check the token (connectionParams / Socket.IO auth) against the project's accounts, because a session socket is a raw terminal. Origin checks stay; behind nginx the allowed origin is the public host (configure it, since BIND_HOST is 127.0.0.1 there). Non-admins never get a session port, a session id, or terminal output.",
+  "archived": false,
+  "color": "#2c4a61",
+  "tags": [
+    "security",
+    "hosting",
+    "wrapped-agents",
+    "accounts"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "101cc131-b51e-45d9-ad8e-63d138338dc4",
+    "af701cd6-7c9d-4991-996b-e38d5e1c9dc7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1793611155113
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "selfWeight": 1,
+  "duration": 3,
+  "costVariance": 0,
+  "valueVariance": 0
+}

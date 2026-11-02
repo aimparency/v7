@@ -1,0 +1,28 @@
+{
+  "id": "266dcf6b-349a-4a75-9f94-a6da57cdd604",
+  "text": "Warn that admin means a shell on the server wherever an admin is created or promoted",
+  "description": "Felix 2026-11-02: admin users get the wrapped-agent shell, which is shell access as the aimparency user: read access to /etc, the served repository, other files, and every secret in Aimparency's env. Creating an admin must warn about that: the setup's first admin, pnpm accounts add/role, and the Accounts dialog (confirm before adding or promoting). One text, ADMIN_SHELL_WARNING in shared.",
+  "archived": false,
+  "color": "#2b4561",
+  "tags": [
+    "security",
+    "hosting",
+    "accounts"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "101cc131-b51e-45d9-ad8e-63d138338dc4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "ADMIN_SHELL_WARNING (shared/src/admin-role.ts) is the one text. pnpm accounts add/role print it as a warning whenever the role is admin; the setup's first admin goes through accounts add, so it prints there too. The Accounts dialog shows it permanently under the role hint, and asks window.confirm with it before adding an admin or promoting someone; when declined, nothing is sent and the select returns to the current role. README Roles bullet says admin holds the shell. Evidence: AccountsModal.spec.ts 3/3 (warning shown; declined promotion sends nothing and resets the select, accepted one calls setRole admin; write accounts added without a question, admin add declined sends nothing); CLI run on a scratch project printed the warning for add bo admin and role ana admin and not for add ana write; vue-tsc and shared tsc clean.",
+    "date": 1793611141377
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

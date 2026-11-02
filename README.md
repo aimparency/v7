@@ -231,7 +231,12 @@ nothing outside the project can be opened.
   live in the project's `.bowman/runtime/accounts.json` (gitignored); passwords
   are stored as scrypt hashes.
 - **Roles.** Reading needs no account. `write` edits ideas and phases.
-  `admin` also manages accounts, project settings and commits.
+  `admin` also manages accounts, project settings and commits, and is meant to
+  hold the wrapped-agent shell: a shell on the server as the user Aimparency
+  runs as, with read access to whatever that user can read (`/etc`, other
+  files) and every secret in Aimparency's `.env`. Make admin only people you
+  would give an SSH login; the setup, `pnpm accounts` and the Accounts dialog
+  warn about this.
 - **Commits.** Edits change the files in the served repository; someone with
   push access commits and pushes them, and that git account answers for every
   account it lets in.

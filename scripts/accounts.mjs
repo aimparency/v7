@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 import { askNewPassword, closeQuestions } from './ask.mjs';
 import * as accounts from '../packages/backend/src/auth/accounts.ts';
 import { ensureProjectStructure } from '../packages/backend/src/storage/project.ts';
+import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 
 // Accounts of the hosted project, from the server's terminal (run through tsx):
 //
@@ -43,10 +44,12 @@ async function main() {
       await ensureProjectStructure(path.resolve(project));
       await accounts.createUser(project, name ?? '', checkRole(role), await password(name));
       console.log(`Added ${name} (${role}).`);
+      if (role === 'admin') console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
       return;
     case 'role':
       await accounts.setRole(project, name ?? '', checkRole(role));
       console.log(`${name} is ${role} now.`);
+      if (role === 'admin') console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
       return;
     case 'password':
       await accounts.setPassword(project, name ?? '', await password(name));
