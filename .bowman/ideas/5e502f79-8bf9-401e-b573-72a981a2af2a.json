@@ -1,0 +1,27 @@
+{
+  "id": "5e502f79-8bf9-401e-b573-72a981a2af2a",
+  "text": "Keep get_idea_context small: the strongest root paths, without repeated descriptions",
+  "description": "get_idea_context for 0f307c81 returned 1.1 MB (100 root paths of up to 16 ancestors, each with its full description), over the MCP output limit, so agents could not orient on well-connected ideas. paths_to_root now lists the 10 strongest paths (parents walked by value inflow), steps with id, title, intrinsic value and inflow only; path_to_root keeps descriptions; truncation is still reported.",
+  "archived": false,
+  "color": "#2d6652",
+  "tags": [
+    "mcp",
+    "context-budget"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "051ae7cd-9509-4451-a686-2041d9b38a98"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "shared/src/mission-paths.ts (used by the MCP and agent-tools): MAX_PATHS 100 -> 10. The walk visits parents in descending value inflow, so the kept paths are the strongest. paths_to_root steps carry id, text, intrinsicValue and valueInflow; path_to_root keeps descriptions. The MCP tool description says so. Evidence: mission-paths tests 2/2: the order follows inflow, path_to_root keeps descriptions and paths_to_root has none, and of 30 single-parent roots exactly the 10 strongest are kept with truncated=true. MCP suite 54/54, agent-tools 6/6. Measured on this repo's real graph: 0f307c81 path data from 1,026,825 bytes (100 paths) to 16,368 (10 paths); the largest over all ideas is 31,725. The running MCP shows it after a /mcp reconnect.",
+    "date": 1793611787715
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

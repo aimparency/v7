@@ -4,7 +4,17 @@
   "description": "Return full root ancestry for orientation. Preserve the value-guided path_to_root for backward compatibility, and add paths_to_root containing every distinct root-first path through branching parents. Guard each branch against cycles, exclude cyclic dead ends from root paths, use explicit safety bounds with a truncation flag, and keep MCP and filesystem-backed agent-tools behavior aligned.",
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5e502f79-8bf9-401e-b573-72a981a2af2a",
+      "relativePosition": [
+        -3.26,
+        1.85
+      ],
+      "weight": 1,
+      "hypothesis": "The strongest few paths orient an agent as well as all of them, at a size it can read."
+    }
+  ],
   "supportedIdeas": [
     "cffdcd91-fd9c-45e4-98fd-e265650be143"
   ],

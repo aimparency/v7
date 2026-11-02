@@ -137,7 +137,7 @@ export const ideaTools: ToolDefinition[] = [
   },
   {
     name: "get_idea_context",
-    description: "Orient before acting: returns the idea, every distinct root-first mission path (paths_to_root), the backward-compatible highest-value path (path_to_root), related ideas, immediate parents, and children. Cyclic/non-root branches are excluded and truncation is reported.",
+    description: "Orient before acting: returns the idea, the 10 strongest root-first mission paths (paths_to_root, ids and titles), the highest-value path with descriptions (path_to_root), related ideas, immediate parents, and children. Cyclic/non-root branches are excluded and truncation is reported.",
     inputSchema: {
       type: "object",
       properties: {
