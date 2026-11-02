@@ -239,6 +239,30 @@ nothing outside the project can be opened.
   as that account. It contains a token, so treat it like a password. Without a
   token the MCP can only read.
 
+To keep it running, a systemd unit such as `/etc/systemd/system/aimparency.service`
+(adjust user and path; `pnpm` must be on systemd's PATH, check with `which pnpm`).
+Without a terminal `pnpm start` asks nothing and uses the saved answers; it
+rebuilds on each start, `pnpm start --no-build` skips that:
+
+```ini
+[Unit]
+Description=Aimparency (hosted)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=aimparency
+WorkingDirectory=/srv/aimparency/aimparency
+ExecStart=/usr/bin/env pnpm start
+Restart=on-failure
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Then `sudo systemctl enable --now aimparency` and follow it with `journalctl -u aimparency -f`.
+
 Behind nginx with TLS, one location is enough:
 
 ```nginx

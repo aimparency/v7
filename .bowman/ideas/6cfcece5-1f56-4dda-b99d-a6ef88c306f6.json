@@ -1,0 +1,24 @@
+{
+  "id": "6cfcece5-1f56-4dda-b99d-a6ef88c306f6",
+  "text": "Hosting docs: systemd unit example; fresh install without the mcp bin warning",
+  "description": "Remaining Commons Hub server steps (ec95c1ad) include a systemd unit; the README only said 'for example from a systemd unit'. And every fresh-clone pnpm install warned that loop-worker's aimparency-mcp bin cannot be linked (mcp/build does not exist before the build). Nothing used the bin name.",
+  "archived": false,
+  "color": "#61602c",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "README 'Hosting It for a Group': systemd unit (User, WorkingDirectory, ExecStart=/usr/bin/env pnpm start, Restart=on-failure) with enable/journalctl lines and a note on --no-build; the unit passes systemd-analyze verify. Confirmed from scripts/run-local-stack.mjs that without a TTY pnpm start asks nothing and loads .env. Removed the unused bin from packages/mcp/package.json (npm pkg delete bin); a fresh clone's pnpm install showed the 'Failed to create bin ... aimparency-mcp' warning on HEAD and none after the change (clean reinstall). If the MCP is ever published (d8e9a2b1), a bin can return with a launcher file that exists before the build.",
+    "date": 1793609642008
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

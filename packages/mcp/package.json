@@ -4,9 +4,6 @@
   "private": true,
   "description": "MCP server for Aimparency - allows LLMs to interact with ideas and phases",
   "type": "module",
-  "bin": {
-    "aimparency-mcp": "./build/index.js"
-  },
   "scripts": {
     "build": "tsdown",
     "dev": "tsx watch src/index.ts",

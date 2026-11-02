@@ -33,6 +33,15 @@
       ],
       "weight": 1,
       "hypothesis": "Several people on one graph need to see who is on what, or they collide or wait on each other."
+    },
+    {
+      "ideaId": "6cfcece5-1f56-4dda-b99d-a6ef88c306f6",
+      "relativePosition": [
+        -3.34,
+        -1.71
+      ],
+      "weight": 1,
+      "hypothesis": "A copy-paste unit and a warning-free install shorten Felix's remaining server setup at the hub."
     }
   ],
   "supportedIdeas": [
