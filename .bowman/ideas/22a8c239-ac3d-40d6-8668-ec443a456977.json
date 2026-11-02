@@ -31,7 +31,8 @@
         -2.498290947400397,
         0.09242479178892951
       ],
-      "weight": 1
+      "weight": 1,
+      "reflection": "Supports it: other local tools can read and validate a .bowman project from the spec and schemas alone, without the backend or MCP."
     },
     {
       "ideaId": "8f002aaf-7628-4b04-a814-8c52db56b6f7",
@@ -64,8 +65,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

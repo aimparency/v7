@@ -52,7 +52,8 @@
         -30.43
       ],
       "weight": 1,
-      "hypothesis": "A working protocol v0 is the concrete baseline the jury evaluates for a software-infrastructure project."
+      "hypothesis": "A working protocol v0 is the concrete baseline the jury evaluates for a software-infrastructure project.",
+      "reflection": "Untested: no jury has seen it, since no application was submitted. The protocol is now accurate for data model 6 and guarded against version drift, so it would stand as the baseline if an application goes in."
     }
   ],
   "supportedIdeas": [
