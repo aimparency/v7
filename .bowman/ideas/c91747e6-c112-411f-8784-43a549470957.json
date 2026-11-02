@@ -21,6 +21,15 @@
         -2.27
       ],
       "weight": 0.9850746268656718
+    },
+    {
+      "ideaId": "ffad71e6-830d-4382-9239-0eb604aaf448",
+      "relativePosition": [
+        -0.31,
+        3.74
+      ],
+      "weight": 1,
+      "hypothesis": "Most of the remaining built-app delay sits in one stage between data arrival and paint; measuring the stages finds it. Refuted if the time spreads evenly with no stage over ~30%."
     }
   ],
   "supportedIdeas": [
