@@ -1,0 +1,28 @@
+{
+  "id": "246f5e81-990b-4bc2-a817-b4153d47c319",
+  "text": "pnpm dev:host opens the dev stack (agents, loops, shell) to the network without a login",
+  "description": "After de7abc26 the dev stack is loopback-only by default and refuses foreign web pages. pnpm dev:host binds backend, broker and sessions to LAN_BIND_HOST (here a Tailscale IP) on purpose; then anyone who can reach that address with a non-browser client can start agents and loops, i.e. run commands as Felix. Options: (a) trust the network (tailnet = own devices), document it, change nothing; (b) dev:host requires a login: reuse the hosted accounts and the admin gate (69a7ab7c) for the dev stack whenever BIND_HOST is set; (c) a per-machine key the phone/laptop must enter once. A key in runtime-config.json would not help: whoever reaches the UI can read it.",
+  "archived": false,
+  "color": "#2c4f69",
+  "tags": [
+    "security",
+    "network-authority",
+    "dev-stack"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "101cc131-b51e-45d9-ad8e-63d138338dc4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Question for Felix: is everyone on your tailnet trusted to run commands as you (option a: document it, change nothing), or should pnpm dev:host require a login (b: hosted accounts + admin gate on the dev stack whenever BIND_HOST is set; c: a per-device key entered once)? I'd pick (a) as long as the tailnet holds only your own devices, and (b) as soon as a node is shared.",
+    "date": 1793612072879
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

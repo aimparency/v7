@@ -55,6 +55,15 @@
       "weight": 1,
       "hypothesis": "One credential checked at every hop keeps the shell with the people the operator made admin, even with the server reachable from the internet.",
       "reflection": "Held in tests: the gateway checks the admin cookie and origin at the only exposed hop, and broker and sessions are loopback-only. A demoted or logged-out admin is refused on the next request; an already open terminal socket stays open until it closes."
+    },
+    {
+      "ideaId": "246f5e81-990b-4bc2-a817-b4153d47c319",
+      "relativePosition": [
+        -2.98,
+        -2.28
+      ],
+      "weight": 1,
+      "hypothesis": "Closing the last unauthenticated way to run code finishes the operator-only surface."
     }
   ],
   "supportedIdeas": [
