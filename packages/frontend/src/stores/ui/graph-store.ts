@@ -99,6 +99,15 @@ export const useGraphUIStore = defineStore('ui-graph', {
       this.pendingDeleteIdeaId = ideaId
     },
 
+    resetForNewProject() {
+      this.clearGraphSelection()
+      this.deselectLink()
+      this.phaseFilter = null
+      this.spinOffPreviewRootIds = []
+      if (this.spinOffPreviewPrevMode) this.graphColorMode = this.spinOffPreviewPrevMode
+      this.spinOffPreviewPrevMode = null
+    },
+
     selectLink(parentId: string, childId: string) {
       this.selectedLink = { parentId, childId }
       this.pendingDeleteLink = null

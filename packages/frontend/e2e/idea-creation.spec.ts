@@ -63,6 +63,7 @@ test('idea creation with o key inserts after selected idea', async ({ page }) =>
 
     // Wait for the project to load
     await page.waitForSelector('.main-split', { timeout: 10000 });
+    await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
     await page.waitForTimeout(1000);
 
     // Focus the app
@@ -143,6 +144,8 @@ test('idea creation with O key inserts before selected idea', async ({ page }) =
     await projectInput.press('Enter');
 
     await page.waitForSelector('.main-split', { timeout: 10000 });
+
+    await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
     await page.waitForTimeout(1000);
 
     await page.focus('.app');

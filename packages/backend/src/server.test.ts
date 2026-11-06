@@ -1,3 +1,5 @@
+import { onProjectLoadProgress, type ProjectLoadProgress } from './project-load-progress';
+import { normalizeProjectPath } from './project-path';
 import { test, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert';
 import fs from 'fs-extra';
@@ -1391,6 +1393,22 @@ test('history.restore applies nothing when one snapshot is invalid', async () =>
   );
   assert.deepStrictEqual(await fs.readJson(firstFile), firstStored);
   assert.deepStrictEqual(await fs.readJson(secondFile), secondStored);
+});
+
+test('loadIdeas reports its reading progress for that project only', async () => {
+  const status = { state: 'open', comment: '', date: Date.now() };
+  for (let index = 0; index < 120; index++) {
+    await caller.idea.createFloatingIdea({ projectPath: testProjectPath, idea: { text: `Idea ${index}`, status } });
+  }
+  const seen: ProjectLoadProgress[] = [];
+  const stop = onProjectLoadProgress((progress) => seen.push(progress));
+  await caller.project.loadIdeas({ projectPath: testProjectPath });
+  stop();
+
+  assert.ok(seen.every((progress) => progress.projectPath === normalizeProjectPath(testProjectPath) && progress.total === 120));
+  assert.equal(seen.at(-1)!.done, 120);
+  assert.ok(seen.length < 120, 'reports in steps, not per file');
+  assert.deepStrictEqual(seen.map((progress) => progress.done), seen.map((progress) => progress.done).sort((a, b) => a - b));
 });
 
 test('loadIdeas returns the readable ideas and what a broken file still says', async () => {

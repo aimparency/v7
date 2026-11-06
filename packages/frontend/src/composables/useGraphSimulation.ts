@@ -689,18 +689,25 @@ export function useGraphSimulation() {
   }
 
   // --- Lifecycle ---
+  // The project this view was opened on: when it unmounts because the project
+  // is being closed, the store's path is already empty.
+  const projectPath = projectStore.projectPath
+  // Graph data waits for the saved positions, or nodes would start at random ones.
+  let positionsApplied = false
+  let disposed = false
+  const refreshGraphData = () => { if (positionsApplied) updateGraphData() }
+  watch(() => dataStore.graphData, refreshGraphData, { deep: true })
+  watch(() => graphUIStore.graphColorMode, refreshGraphData)
+  watch(() => graphUIStore.phaseFilter, refreshGraphData)
+
   const init = async () => {
     mapStore.setNodeGetter((id) => nodeMap.get(id))
-    
-    // Load Data
-    if (projectStore.projectPath) {
-      dataStore.loadAllIdeas(projectStore.projectPath)
-    }
-    
+
     // Load positions
     let restoredCamera = false
     try {
       const positions = await loadAllPositions()
+      if (disposed) return
       // The graph's mass point sits at (0, 0): the physics keeps it where it
       // is (see the drift correction), so put it there once on load.
       const centroid = positionCentroid(positions, Object.keys(dataStore.ideas))
@@ -713,7 +720,8 @@ export function useGraphSimulation() {
         if (node) node.pos = [pos.x, pos.y]
       }
       
-      const camera = await loadCamera(projectStore.projectPath)
+      const camera = await loadCamera(projectPath)
+      if (disposed) return
       restoredCamera = !!camera
       if (camera) {
         // Moved with the ideas, so the view shows what it showed before.
@@ -726,33 +734,35 @@ export function useGraphSimulation() {
       console.error("Failed to load positions", e)
     }
 
+    positionsApplied = true
     updateGraphData()
     trigger.value++ // Force initial render to pick up calculated sizes/positions
-    // Without a saved pan and zoom for this project, start with the whole graph in view.
-    if (!restoredCamera) mapStore.centerOnGraph(nodes.value, 1, { percentile: 0.9, zoomOut: 1.2 })
+    // Without a saved pan and zoom for this project, start with the whole graph
+    // in view. Nodes without saved positions are a small blob about to spread:
+    // fitting that would zoom in so far that they all leave the view.
+    if (!restoredCamera && nodes.value.some((node) => loadedPositions.has(node.id))) {
+      mapStore.centerOnGraph(nodes.value, 1, { percentile: 0.9, zoomOut: 1.2 })
+    }
     layout()
     
     saveIntervalId = setInterval(async () => {
         if (nodes.value.length > 0) {
             const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
             await savePositions(toSave)
-            await saveCamera(projectStore.projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
+            await saveCamera(projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
         }
     }, 2000) as any
-    
-    watch(() => dataStore.graphData, updateGraphData, { deep: true })
-    watch(() => graphUIStore.graphColorMode, updateGraphData)
-    watch(() => graphUIStore.phaseFilter, updateGraphData)
   }
 
   const cleanup = () => {
+    disposed = true
     if (animFrameId) cancelAnimationFrame(animFrameId)
     if (saveIntervalId) clearInterval(saveIntervalId)
     // Save state on exit to ensure persistence
     if (nodes.value.length > 0) {
         const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
         savePositions(toSave)
-        saveCamera(projectStore.projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
+        saveCamera(projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
     }
   }
 

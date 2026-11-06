@@ -291,7 +291,7 @@ const save = async () => {
               .filter(Boolean)
           }
         })
-        await dataStore.loadProject(projectStore.projectPath)
+        await dataStore.resyncProject(projectStore.projectPath)
         modalStore.closeSettingsModal()
     } catch (e) {
         console.error(e)

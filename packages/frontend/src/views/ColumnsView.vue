@@ -1,13 +1,29 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useUIStore } from '../stores/ui'
 import { useDataStore } from '../stores/data'
 import { navigateColumnBackward, navigateColumnForward } from '../stores/ui/keyboard-actions'
 import RootIdeasColumn from '../components/RootIdeasColumn.vue'
 import Column from '../components/Column.vue'
+import { useProjectLoadStore } from '../stores/project-load'
+import { watchColumnsSettle } from '../utils/columns-settle'
 
 const uiStore = useUIStore()
 const dataStore = useDataStore()
+const projectLoad = useProjectLoadStore()
+
+// The loading screen stays until every column is measured and scrolled to its selection.
+const layoutRef = ref<HTMLElement>()
+let stopWatchingSettle = () => {}
+onMounted(() => {
+  if (!projectLoad.isWaitingForView) return
+  stopWatchingSettle = watchColumnsSettle(
+    () => [...layoutRef.value!.children].map((column) => column.querySelector('.column-list, .ideas-container') ?? column),
+    (settled, total) => projectLoad.reportViewProgress(settled, total, 'Measuring columns'),
+    () => projectLoad.viewIsReady()
+  )
+})
+onUnmounted(() => stopWatchingSettle())
 
 const containerOffset = computed(() => {
   const columnWidth = 100 / uiStore.windowSize
@@ -61,6 +77,7 @@ const onTouchEnd = (event: TouchEvent) => {
 
 <template>
   <div
+    ref="layoutRef"
     class="columns-layout"
     :style="{ transform: containerOffset, '--column-width': columnWidth }"
     @touchstart.passive="onTouchStart"

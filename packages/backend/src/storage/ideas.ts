@@ -170,7 +170,12 @@ export type UnreadableIdea = {
 // Reads every idea file of the given directories once: the ideas that load,
 // and the files that fail to (e.g. a value an older schema allowed, or edited
 // outside the backend), with whatever the raw file still says.
-export async function scanIdeaFiles(rawProjectPath: string, dirNames: string[]): Promise<{ ideas: Idea[]; unreadable: UnreadableIdea[] }> {
+// `onProgress` hears about every 2% of the files and always about the last one.
+export async function scanIdeaFiles(
+  rawProjectPath: string,
+  dirNames: string[],
+  onProgress?: (done: number, total: number) => void
+): Promise<{ ideas: Idea[]; unreadable: UnreadableIdea[] }> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   await migrateProject(projectPath);
   const ideas: Idea[] = [];
@@ -179,6 +184,8 @@ export async function scanIdeaFiles(rawProjectPath: string, dirNames: string[]):
     const dir = path.join(projectPath, dirName);
     if (!(await fs.pathExists(dir))) continue;
     const files = (await fs.readdir(dir)).filter((name) => name.endsWith('.json'));
+    const reportEvery = Math.max(1, Math.ceil(files.length / 50));
+    let done = 0;
     await Promise.all(files.map(async (file) => {
       let raw: any = null;
       try {
@@ -196,6 +203,8 @@ export async function scanIdeaFiles(rawProjectPath: string, dirNames: string[]):
             .filter((id: unknown): id is string => typeof id === 'string'),
         });
       }
+      done++;
+      if (done % reportEvery === 0 || done === files.length) onProgress?.(done, files.length);
     }));
   }
   return { ideas, unreadable };

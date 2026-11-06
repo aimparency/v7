@@ -154,6 +154,7 @@ test('search finds deep nested idea after reload', async ({ page }) => {
   
   await expect(page.locator('.project-path:not(.bowman-path)')).toHaveText(PROJECT_PATH);
   await page.waitForSelector('.main-split', { timeout: 10000 });
+  await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
   await page.focus('.app');
   
   // 3. Search for 'target idea'

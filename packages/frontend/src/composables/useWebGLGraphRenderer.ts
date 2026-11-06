@@ -49,6 +49,20 @@ export function useWebGLGraphRenderer(
   const isInitialized = ref(false)
   const error = ref<string | null>(null)
 
+  // Settled once the renderer started or failed, whichever way init ends.
+  let settleRendererStart = () => {}
+  const rendererStarted = new Promise<void>((resolve) => { settleRendererStart = resolve })
+  let frameWaiters: Array<() => void> = []
+  const finishFrameWaiters = () => {
+    const waiters = frameWaiters
+    frameWaiters = []
+    for (const resolve of waiters) resolve()
+  }
+  // The next frame put on screen; right away if none can come.
+  const nextFrameDrawn = () => error.value
+    ? Promise.resolve()
+    : new Promise<void>((resolve) => { frameWaiters.push(resolve) })
+
   // Camera movement tracking for TAA (full screen override when panning/zooming)
   let lastPanX = 0
   let lastPanY = 0
@@ -443,6 +457,7 @@ export function useWebGLGraphRenderer(
       spinnerRenderer.setCamera(buildViewMatrix(physicalPanX, physicalPanY, physicalScale))
       spinnerRenderer.render(spinnerTime)
     }
+    finishFrameWaiters()
 
     // Continue loop
     animationFrameId = requestAnimationFrame(animate)
@@ -452,6 +467,8 @@ export function useWebGLGraphRenderer(
   async function initRenderer() {
     if (!canvasRef.value) {
       error.value = 'Canvas ref not available'
+      settleRendererStart()
+      finishFrameWaiters()
       return
     }
 
@@ -490,6 +507,9 @@ export function useWebGLGraphRenderer(
     } catch (e) {
       error.value = e instanceof Error ? e.message : 'Unknown error'
       console.error('Failed to initialize WebGL2 renderer:', e)
+      finishFrameWaiters()
+    } finally {
+      settleRendererStart()
     }
   }
 
@@ -550,6 +570,8 @@ export function useWebGLGraphRenderer(
     isInitialized,
     error,
     forceUpdate,
+    rendererStarted,
+    nextFrameDrawn,
     captureThumbnail,
     getRenderer: () => renderer,
     getQuadtree: () => renderer?.getQuadtree() ?? null

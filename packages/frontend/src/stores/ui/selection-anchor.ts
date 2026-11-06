@@ -105,9 +105,8 @@ export async function applySelectionAnchor(uiStore: any, anchor: SelectionAnchor
   }
   const deepestLevel = await uiStore.restoreSelectionPath(
     phaseIdByLevel,
-    () => true,
     Math.max(0, anchor.maxColumn, anchor.activeColumn)
-  ) ?? 0
+  )
   uiStore.maxColumn = deepestLevel
   uiStore.activeColumn = Math.min(anchor.activeColumn, deepestLevel)
 

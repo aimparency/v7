@@ -12,6 +12,7 @@ async function openProject(page: Page, projectPath: string) {
   await projectInput.fill(projectPath);
   await projectInput.press('Enter');
   await page.waitForSelector('.main-split', { timeout: 20000 });
+  await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
   await page.focus('.app');
 }
 
@@ -126,6 +127,7 @@ test.describe('Reload restore', () => {
 
     await page.reload();
     await page.waitForSelector('.main-split', { timeout: 20000 });
+    await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
     await page.focus('.app');
 
     await expect(page.locator('.column-panel.active .phase-container.selected .phase-name')).toHaveText('Grandchild B');

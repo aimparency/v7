@@ -1,7 +1,6 @@
 const DB_NAME = 'aimparency-graph';
-const DB_VERSION = 4;
+const DB_VERSION = 5;
 const STORE_NAME = 'idea-positions';
-const IDEA_STORE_NAME = 'idea-data';
 const THUMBNAIL_STORE_NAME = 'project-thumbnails';
 
 let dbPromise: Promise<IDBDatabase> | null = null;
@@ -14,15 +13,13 @@ function getDB(): Promise<IDBDatabase> {
 
     request.onupgradeneeded = (event) => {
       const db = (event.target as IDBOpenDBRequest).result;
-      // Version 3 renamed the caches from aim-* to idea-*; the old ones are dropped, not migrated.
-      for (const legacyStore of ['aim-positions', 'aim-data']) {
+      // Version 3 renamed the caches from aim-* to idea-*, and version 5 removed the
+      // idea data cache (a project shows only what the server answered); both are dropped.
+      for (const legacyStore of ['aim-positions', 'aim-data', 'idea-data']) {
         if (db.objectStoreNames.contains(legacyStore)) db.deleteObjectStore(legacyStore);
       }
       if (!db.objectStoreNames.contains(STORE_NAME)) {
         db.createObjectStore(STORE_NAME, { keyPath: 'id' });
-      }
-      if (!db.objectStoreNames.contains(IDEA_STORE_NAME)) {
-        db.createObjectStore(IDEA_STORE_NAME, { keyPath: 'id' });
       }
       // Version 4: a screenshot of each project's graph for the project selection page.
       if (!db.objectStoreNames.contains(THUMBNAIL_STORE_NAME)) {
@@ -46,55 +43,6 @@ export interface Position {
   id: string;
   x: number;
   y: number;
-}
-
-export async function saveIdeas(projectPath: string, ideas: any[]) {
-  const db = await getDB();
-  return new Promise<void>((resolve, reject) => {
-    const transaction = db.transaction(IDEA_STORE_NAME, 'readwrite');
-    const store = transaction.objectStore(IDEA_STORE_NAME);
-
-    store.clear(); 
-    
-    // Store project path meta
-    store.put({ id: '__META__', projectPath });
-
-    for (const idea of ideas) {
-      store.put(idea);
-    }
-
-    transaction.oncomplete = () => resolve();
-    transaction.onerror = () => reject(transaction.error);
-  });
-}
-
-export async function loadAllIdeasCache(expectedProjectPath: string): Promise<any[]> {
-  const db = await getDB();
-  return new Promise((resolve, reject) => {
-    if (!db.objectStoreNames.contains(IDEA_STORE_NAME)) {
-        resolve([]);
-        return;
-    }
-    const transaction = db.transaction(IDEA_STORE_NAME, 'readonly');
-    const store = transaction.objectStore(IDEA_STORE_NAME);
-    const request = store.getAll();
-
-    request.onsuccess = () => {
-      const results = request.result as any[];
-      const meta = results.find(r => r.id === '__META__');
-      
-      // Safety check: only return data if project path matches
-      if (!meta || meta.projectPath !== expectedProjectPath) {
-          console.log(`[Cache] Cache miss or project mismatch. Expected: ${expectedProjectPath}, Found: ${meta?.projectPath}`);
-          resolve([]);
-          return;
-      }
-      
-      resolve(results.filter(r => r.id !== '__META__'));
-    };
-
-    request.onerror = () => reject(request.error);
-  });
 }
 
 export async function savePositions(positions: Position[]) {

@@ -6,7 +6,6 @@ import type { Idea } from 'shared'
 // data.ts pulls in browser-only deps at module load; stub them — graphData is a
 // pure getter over store state and needs none of them.
 vi.mock('../../trpc', () => ({ trpc: {} }))
-vi.mock('../../utils/db', () => ({ loadAllIdeasCache: vi.fn(), saveIdeas: vi.fn() }))
 vi.mock('../../utils/perf-log', () => ({ perfLog: vi.fn() }))
 
 const REPO_ID = '11111111-1111-4111-8111-111111111111'

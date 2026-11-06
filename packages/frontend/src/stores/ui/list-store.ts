@@ -142,8 +142,8 @@ export const useUIStore = defineStore('ui', {
     lastSelectedSubPhaseIndexByPhase: {} as Record<string, number>,
 
     uiStatePersistTimeout: null as ReturnType<typeof setTimeout> | null,
+    // While a project opens: nothing persists, and columns jump instead of animating.
     isRestoringUIState: false,
-    restoreGeneration: 0,
     floatingIdeaUIStates: {} as IdeaUIStateTree,
     phaseIdeaUIStatesByPhaseId: {} as Record<string, IdeaUIStateTree>,
   }),
@@ -205,18 +205,10 @@ export const useUIStore = defineStore('ui', {
   actions: {
     beginUIStateRestore() {
       this.isRestoringUIState = true
-      this.restoreGeneration++
     },
 
     endUIStateRestore() {
       this.isRestoringUIState = false
-      this.restoreGeneration++
-    },
-
-    interruptUIStateRestore() {
-      if (this.isRestoringUIState) {
-        this.endUIStateRestore()
-      }
     },
 
     getPersistedUIStateKey(projectPath: string) {
@@ -294,18 +286,15 @@ export const useUIStore = defineStore('ui', {
     // Rebuilds the column selection top-down from phase ids per level. Levels whose
     // id is missing or no longer under the selected parent fall back to the
     // remembered/first owned child. Stops after `maxLevel` or the first column
-    // without a selectable phase. Returns the deepest selected level, or undefined when
-    // `shouldContinue` aborted the restore.
+    // without a selectable phase. Returns the deepest selected level.
     async restoreSelectionPath(
       phaseIdByLevel: Record<string | number, string>,
-      shouldContinue: () => boolean = () => true,
       maxLevel: number = Math.max(0, ...Object.keys(phaseIdByLevel).map(Number).filter((level) => !isNaN(level)))
-    ): Promise<number | undefined> {
+    ): Promise<number> {
       let deepestLevel = 0
 
       for (let level = 0; level <= maxLevel; level++) {
         this.ensureColumnSelection(level)
-        if (!shouldContinue()) return undefined
 
         const phaseId = phaseIdByLevel[level]
         const index = phaseId ? this.findSelectableIndexForPhase(level, phaseId) : -1
@@ -993,7 +982,6 @@ export const useUIStore = defineStore('ui', {
 
         await this.restoreSelectionPath(
           Object.fromEntries(phasePath.map((phase, level) => [level, phase.id])),
-          undefined,
           phasePath.length - 1
         )
 
@@ -1224,9 +1212,11 @@ export const useUIStore = defineStore('ui', {
       }
       this.selectedEntryKeyByColumn = {}
       this.lastSelectedSubPhaseIndexByPhase = {}
-      const graphStore = useGraphUIStore()
-      graphStore.deselectLink()
-      graphStore.clearGraphSelection()
+      this.currentPhaseIdByLevel = {}
+      this.floatingIdeaUIStates = {}
+      this.phaseIdeaUIStatesByPhaseId = {}
+      this.clearMultiSelect()
+      useGraphUIStore().resetForNewProject()
     },
   }
 })

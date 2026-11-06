@@ -86,6 +86,7 @@ export async function openProject(page: import('@playwright/test').Page, project
   await projectInput.fill(projectPath);
   await projectInput.press('Enter');
   await page.waitForSelector('.main-split', { timeout: 20000 });
+  await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
 }
 
 // Creating an idea can open follow-up prompts: "Connect to Supported Idea" for

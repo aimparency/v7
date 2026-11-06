@@ -11,6 +11,7 @@ import { assertWritableBowman, bowmanWriteBlocker } from 'shared/bowman-migratio
 import { currentOrigin } from '../change-origin.js';
 import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-completion.js';
 import { onChange, type ChangeEvent } from '../change-events.js';
+import { onProjectLoadProgress, reportProjectLoadProgress, type ProjectLoadProgress } from '../project-load-progress.js';
 import { writeJsonAtomic } from '../storage/json.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { openGitRepository } from '../git-repository-cache.js';
@@ -297,5 +298,16 @@ export const projectRouter = t.router({
     .input(z.object({
       projectPath: z.string()
     }))
-    .query(async ({ input }) => scanIdeaFiles(input.projectPath, ['ideas']))
+    .query(async ({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      return scanIdeaFiles(projectPath, ['ideas'], (done, total) => reportProjectLoadProgress({ projectPath, done, total }));
+    }),
+
+  onLoadProgress: procedure
+    .input(z.object({ projectPath: z.string() }))
+    .subscription(({ input }) => {
+      const projectPath = normalizeProjectPath(input.projectPath);
+      return observable<ProjectLoadProgress>((emit) =>
+        onProjectLoadProgress((progress) => { if (progress.projectPath === projectPath) emit.next(progress); }));
+    })
 });

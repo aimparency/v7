@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, shallowRef, onMounted, onUnmounted, computed, watch } from 'vue'
+import { ref, shallowRef, nextTick, onMounted, onUnmounted, computed, watch } from 'vue'
 import { useDataStore } from '../stores/data'
 import { useUIStore } from '../stores/ui'
 import { useGraphUIStore } from '../stores/ui/graph-store'
@@ -7,6 +7,7 @@ import type { GraphColorMode } from '../stores/ui/view-helpers'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { isModalOpen } from '../stores/ui/modal-helpers'
 import { useProjectStore } from '../stores/project-store'
+import { useProjectLoadStore } from '../stores/project-load'
 import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
@@ -33,6 +34,7 @@ const uiStore = useUIStore()
 const graphUIStore = useGraphUIStore()
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
+const projectLoad = useProjectLoadStore()
 const mapStore = useMapStore()
 
 const canvasRef = ref<HTMLCanvasElement>()
@@ -158,9 +160,30 @@ function getNodeClientPosition(ideaText: string) {
     return { x: rect.left + x!, y: rect.top + y! }
 }
 
+// The loading screen stays until nodes and labels are on screen. Physics isn't
+// waited for: it has no end, and the graph is usable while nodes still spread.
+let unmounted = false
+async function startGraph() {
+    const started = simulation.init()
+    const report = (done: number, label: string) => projectLoad.reportViewProgress(done, 4, label)
+    report(0, 'Reading saved positions')
+    await started
+    if (unmounted) return
+    report(1, 'Starting the renderer')
+    await webglRenderer.rendererStarted
+    if (unmounted) return
+    report(2, 'Drawing the first frame')
+    await webglRenderer.nextFrameDrawn()
+    if (unmounted) return
+    report(3, 'Placing labels')
+    updateVisibleLabels()
+    await nextTick()
+    if (!unmounted) projectLoad.viewIsReady()
+}
+
 onMounted(() => {
     mapStore.isTracking = true
-    simulation.init()
+    void startGraph()
     interaction.initListeners()
     window.addEventListener('keydown', onKeydown)
     updateVisibleLabels()
@@ -173,6 +196,7 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
+    unmounted = true
     if (import.meta.env.DEV) delete (window as any).__aimparencyGraph
     simulation.cleanup()
     interaction.cleanupListeners()

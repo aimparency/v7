@@ -3,7 +3,8 @@ import { computed, ref, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useUIStore, type IdeaPath } from './stores/ui'
 import { useUIModalStore } from './stores/ui/modal-store'
 import { useGraphUIStore } from './stores/ui/graph-store'
-import { getRepoUrlParam, setRepoUrlParam, useProjectStore } from './stores/project-store'
+import { getRepoUrlParam, useProjectStore } from './stores/project-store'
+import { useProjectLoadStore } from './stores/project-load'
 import { useWatchdogStore } from './stores/watchdog'
 import { useDataStore, type Idea } from './stores/data'
 import { useMapStore } from './stores/map'
@@ -33,6 +34,7 @@ import CommitModal from './components/CommitModal.vue'
 import { needsCommit, type WorkingTreeChange } from './utils/git-status'
 import { formatRelativeTime } from './utils/relative-time'
 import ToastStack from './components/ToastStack.vue'
+import ProjectLoadScreen from './components/ProjectLoadScreen.vue'
 import { useToastStore } from './stores/toast'
 import { gitRepositoryLocation } from 'shared'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
@@ -47,6 +49,7 @@ const uiStore = useUIStore()
 const modalStore = useUIModalStore()
 const graphUIStore = useGraphUIStore()
 const projectStore = useProjectStore()
+const projectLoad = useProjectLoadStore()
 const watchdogStore = useWatchdogStore()
 const dataStore = useDataStore()
 const mapStore = useMapStore()
@@ -116,11 +119,13 @@ const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
 const refreshContinueHook = async () => {
   const projectPath = projectStore.projectPath
+  let hook = { installed: false, enabled: false }
   try {
-    continueHook.value = projectPath ? await trpc.system.getContinueHook.query({ projectPath }) : { installed: false, enabled: false }
+    if (projectPath) hook = await trpc.system.getContinueHook.query({ projectPath })
   } catch {
-    continueHook.value = { installed: false, enabled: false }
+    // stays off
   }
+  if (projectPath === projectStore.projectPath) continueHook.value = hook
 }
 const toggleContinueHook = async () => {
   continueHook.value = await trpc.system.setContinueHook.mutate({ projectPath: projectStore.projectPath, enabled: !continueHook.value.enabled })
@@ -131,12 +136,13 @@ const workingTree = ref<{ changes: WorkingTreeChange[]; lastCommitAt: number | n
 const showCommitDialog = ref(false)
 const refreshWorkingTree = async () => {
   const projectPath = projectStore.projectPath
+  let status = null
   try {
-    const status = projectPath ? await trpc.git.status.query({ projectPath }) : null
-    workingTree.value = status?.isRepository ? status : null
+    if (projectPath) status = await trpc.git.status.query({ projectPath })
   } catch {
-    workingTree.value = null
+    // treated as no repository
   }
+  if (projectPath === projectStore.projectPath) workingTree.value = status?.isRepository ? status : null
 }
 const commitPrompt = computed(() => workingTree.value !== null && needsCommit(workingTree.value.changes, workingTree.value.lastCommitAt))
 const workingTreeTitle = computed(() => {
@@ -183,8 +189,8 @@ watch(() => projectStore.terminalFullscreen, (val) => {
   localStorage.setItem('aimparency-terminal-fullscreen', String(val))
 })
 
-watch(() => projectStore.isInProjectSelection, (isInProjectSelection) => {
-  if (isInProjectSelection) {
+watch(() => projectStore.isInProjectSelection && !projectLoad.isActive, (selecting) => {
+  if (selecting) {
     void refreshDiscoveredProjects()
   }
 })
@@ -218,32 +224,15 @@ const stopResizeWatchdog = () => {
 // Template refs
 const projectPathInput = ref('')
 
-const isOpeningGitUrl = ref(false)
-
-const handleSelectProject = async () => {
-  const path = projectPathInput.value.trim()
-  projectSelectionReturnPath.value = ''
-  if (!gitRepositoryLocation(path)) {
-    // A bare name would resolve against the backend's working directory.
-    if (!/^(\/|[A-Za-z]:[\\/])/.test(path)) {
-      useToastStore().error('Type a full path, starting with /, or pick a project from the list')
-      return
-    }
-    setRepoUrlParam('')
-    await runProjectRestore(path)
+const handleSelectProject = () => {
+  const target = projectPathInput.value.trim()
+  // A bare name would resolve against the backend's working directory.
+  if (!gitRepositoryLocation(target) && !/^(\/|[A-Za-z]:[\\/])/.test(target)) {
+    useToastStore().error('Type a full path, starting with /, or pick a project from the list')
     return
   }
-  // Someone else's project: the backend clones its .bowman and opens it read-only.
-  isOpeningGitUrl.value = true
-  try {
-    const { projectPath } = await trpc.project.openGitUrl.mutate({ url: path })
-    await runProjectRestore(projectPath)
-    setRepoUrlParam(path) // keeps the address shareable
-  } catch (error) {
-    useToastStore().error('Could not open the repository', error)
-  } finally {
-    isOpeningGitUrl.value = false
-  }
+  projectSelectionReturnPath.value = ''
+  void projectLoad.open(target)
 }
 
 const refreshDiscoveredProjects = async () => {
@@ -263,16 +252,15 @@ const refreshDiscoveredProjects = async () => {
   }
 }
 
-const openProjectFromHistory = async (path: string) => {
+const openProjectFromHistory = (path: string) => {
   projectSelectionReturnPath.value = ''
   projectPathInput.value = path
-  await runProjectRestore(path)
+  void projectLoad.open(path)
 }
 
-const openDiscoveredProject = async (path: string) => {
-  projectSelectionReturnPath.value = ''
+const openDiscoveredProject = (path: string) => {
   projectPathInput.value = path
-  await handleSelectProject()
+  handleSelectProject()
 }
 
 const removeFromHistory = (path: string) => {
@@ -284,6 +272,7 @@ const closeProject = () => {
 }
 
 const openProjectSelection = () => {
+  flushPersistedUIState()
   projectSelectionReturnPath.value = projectStore.projectPath
   projectStore.setProjectPath('')
   projectPathInput.value = '' // the input filters the lists, so start with all of them
@@ -294,18 +283,6 @@ const cancelProjectSelection = () => {
 
   projectStore.setProjectPath(projectSelectionReturnPath.value)
   projectSelectionReturnPath.value = ''
-}
-
-const runProjectRestore = async (path: string) => {
-  uiStore.beginUIStateRestore()
-  await dataStore.loadProject(path)
-  const restored = await uiStore.restoreProjectUIState()
-  if (!restored && !Object.keys(uiStore.selectedEntryKeyByColumn).length) {
-    uiStore.beginUIStateRestore()
-    await uiStore.selectPhase(0, 0)
-    uiStore.ensureSelectionVisible()
-    uiStore.endUIStateRestore()
-  }
 }
 
 const flushPersistedUIState = () => {
@@ -344,6 +321,12 @@ const handleProposalPersisted = async (result: { rootIdeaId: string }) => {
   graphUIStore.setGraphSelection(result.rootIdeaId)
 }
 
+// Opened here, not on mount: the first render already has the loading screen,
+// and no view mounts before the project is there.
+const startupTarget = getRepoUrlParam() || projectStore.projectPath
+projectPathInput.value = getRepoUrlParam()
+const startupLoad = startupTarget ? projectLoad.open(startupTarget) : null
+
 // Global keydown handler
 const handleGlobalKeydown = (event: KeyboardEvent) => {
   const target = event.target as HTMLElement
@@ -359,10 +342,6 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
 
   // Ignore if user is typing in an input or a modal is open; modals handle their own keys
   if (isInput || isModalOpen()) return
-
-  if (uiStore.isRestoringUIState) {
-    uiStore.interruptUIStateRestore()
-  }
 
   if (!hosted && event.key === 'p' && !uiStore.navigatingIdeas && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault()
@@ -498,13 +477,8 @@ onMounted(async () => {
   window.addEventListener('beforeunload', flushPersistedUIState)
   document.addEventListener('visibilitychange', handleVisibilityChange)
 
-  const repoUrl = getRepoUrlParam()
-  if (repoUrl) {
-    projectPathInput.value = repoUrl
-    await handleSelectProject()
-  } else if (projectStore.projectPath) {
-    await runProjectRestore(projectStore.projectPath)
-    uiStore.ensureSelectionVisible();
+  if (startupLoad) {
+    await startupLoad
     if (projectStore.showWatchdog) {
       // Reload path: panel may reconnect async — retry focus after restore settles.
       nextTick(() => watchdogRef.value?.focusWorker())
@@ -726,7 +700,6 @@ onUnmounted(() => {
       :discovered-projects="discoveredProjects"
       :scanned-roots="discoveredProjectRoots"
       :is-refreshing-discovered-projects="isRefreshingDiscoveredProjects"
-      :is-opening-git-url="isOpeningGitUrl"
       @select-project="handleSelectProject"
       @open-project-from-history="openProjectFromHistory"
       @remove-from-history="removeFromHistory"
@@ -749,17 +722,19 @@ onUnmounted(() => {
           </button>
           <button type="button" @click="uiStore.clearMultiSelect()">Clear</button>
         </div>
-        <!-- Columns View -->
-        <ColumnsView v-if="projectStore.currentView === 'columns'" />
+        <template v-if="projectLoad.viewsMayMount">
+          <!-- Columns View -->
+          <ColumnsView v-if="projectStore.currentView === 'columns'" />
 
-        <!-- Graph View -->
-        <GraphViewWrapper v-else-if="projectStore.currentView === 'graph'" />
+          <!-- Graph View -->
+          <GraphViewWrapper v-else-if="projectStore.currentView === 'graph'" />
 
-        <!-- Voice View -->
-        <VoiceView
-          v-else-if="voiceEnabled && projectStore.currentView === 'voice'"
-          @proposal-persisted="handleProposalPersisted"
-        />
+          <!-- Voice View -->
+          <VoiceView
+            v-else-if="voiceEnabled && projectStore.currentView === 'voice'"
+            @proposal-persisted="handleProposalPersisted"
+          />
+        </template>
       </main>
 
       <!-- Watchdog Panel -->
@@ -781,6 +756,8 @@ onUnmounted(() => {
         <LoopPanel ref="loopRef" />
       </div>
     </div>
+
+    <ProjectLoadScreen />
 
     <!-- Phase Creation Modal -->
     <PhaseCreationModal />

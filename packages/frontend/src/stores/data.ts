@@ -15,7 +15,6 @@ import { useToastStore } from './toast'
 import { setProjectAccess } from '../utils/read-only'
 import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
-import { loadAllIdeasCache, saveIdeas } from '../utils/db'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
 type ConsistencyIssue = RouterOutputs['graphHealth']['checkConsistency']['issues'][number]
@@ -202,6 +201,16 @@ function toPhaseColumn(phases: Phase[], entries: PhaseLevelEntry[]): PhaseColumn
 }
 
 // A floating idea has no phase commitment and no parent.
+type ProjectUpdate = { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean, previous?: unknown, origin?: string }
+type ProjectAccess = { writable: boolean, reason: string | null, user: string | null, role: 'read' | 'write' | 'admin' }
+const unrestrictedAccess = (): ProjectAccess => ({ writable: true, reason: null, user: null, role: 'admin' })
+export type ProjectLoadStage = 'opening' | 'reading' | 'applying'
+export type ProjectLoadHooks = {
+  isCurrent?: () => boolean
+  // Awaited, so the loading screen can paint before the next stretch of work.
+  onProgress?: (stage: ProjectLoadStage) => void | Promise<void>
+}
+
 const isFloatingIdea = (idea: BaseIdea) => !idea.committedIn?.length && !idea.supportedIdeas?.length
 
 export const useDataStore = defineStore('data', {
@@ -210,7 +219,6 @@ export const useDataStore = defineStore('data', {
     ideas: {} as Record<string, Idea>,
     // Idea files the backend cannot load; shown as warning nodes in the graph.
     unreadableIdeas: [] as UnreadableIdea[],
-    loading: false,
     error: null as string | null,
     subscription: null as { unsubscribe: () => void } | null,
     
@@ -248,7 +256,7 @@ export const useDataStore = defineStore('data', {
     meta: null as BaseIdea['status'] | any | null, // ProjectMeta
     // Whether the open project's graph may be changed here, and by whom
     // (project.getAccess; user is the login of a hosted instance)
-    access: { writable: true, reason: null as string | null, user: null as string | null, role: 'admin' as 'read' | 'write' | 'admin' },
+    access: unrestrictedAccess(),
   }),
 
   getters: {
@@ -494,7 +502,10 @@ export const useDataStore = defineStore('data', {
       // Only phases known before the request can be stale: one that arrived
       // through the subscription meanwhile is newer than the list.
       const knownPhaseIds = Object.keys(this.phases)
-      const phases = await trpc.phase.list.query({ projectPath })
+      this.applyPhaseList(await trpc.phase.list.query({ projectPath }), knownPhaseIds)
+    },
+
+    applyPhaseList(phases: BasePhase[], knownPhaseIds: string[]) {
       const serverPhaseIds = new Set(phases.map((phase) => phase.id))
       for (const id of knownPhaseIds) {
         if (!serverPhaseIds.has(id)) delete this.phases[id]
@@ -524,19 +535,22 @@ export const useDataStore = defineStore('data', {
     recalculateValues() {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         
-        this.recalculateTimeout = setTimeout(() => {
-            const allIdeas = Object.values(this.ideas) as Idea[];
-            const result = calculateIdeaValues(allIdeas, this.defaultCost);
-            this.calculatedValues = result.values;
-            this.calculatedCosts = result.costs;
-            this.calculatedDoneCosts = result.doneCosts;
-            this.calculatedPriorities = result.priorities;
-            this.flowShares = result.flowShares;
-            this.flowValues = result.flowValues;
-            this.attributionShares = result.attributionShares;
-            this.totalIntrinsicValue = result.totalIntrinsic;
-            this.recalculateTimeout = null;
-        }, 50)
+        this.recalculateTimeout = setTimeout(() => this.recalculateValuesNow(), 50)
+    },
+
+    recalculateValuesNow() {
+        if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
+        this.recalculateTimeout = null;
+        const allIdeas = Object.values(this.ideas) as Idea[];
+        const result = calculateIdeaValues(allIdeas, this.defaultCost);
+        this.calculatedValues = result.values;
+        this.calculatedCosts = result.costs;
+        this.calculatedDoneCosts = result.doneCosts;
+        this.calculatedPriorities = result.priorities;
+        this.flowShares = result.flowShares;
+        this.flowValues = result.flowValues;
+        this.attributionShares = result.attributionShares;
+        this.totalIntrinsicValue = result.totalIntrinsic;
     },
 
     
@@ -950,48 +964,26 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async loadAllIdeas(projectPath: string, { useCache = true } = {}) {
+    async loadAllIdeas(projectPath: string) {
       if (!projectPath) return;
-      this.loading = true;
       try {
-        // 1. Try cache first; it is optional (no IndexedDB in private windows or tests)
-        const cachedIdeas = useCache ? await loadAllIdeasCache(projectPath).catch(() => []) : [];
-        if (cachedIdeas && cachedIdeas.length > 0) {
-            console.log(`[DataStore] Loaded ${cachedIdeas.length} ideas from cache`);
-            for (const idea of cachedIdeas) {
-                this.replaceIdea(idea.id, idea);
-            }
-            this.recalculateValues();
-        }
-
-        // 2. Fetch from server
-        const { ideas, unreadable } = await trpc.project.loadIdeas.query({ projectPath });
-        this.unreadableIdeas = unreadable;
-        console.log(`[DataStore] Fetched ${ideas.length} ideas from server`);
-        
-        const serverIdeaIds = new Set(ideas.map(a => a.id));
-        
-        // Remove stale ideas
-        for (const id in this.ideas) {
-            if (!serverIdeaIds.has(id)) {
-                delete this.ideas[id];
-            }
-        }
-
-        for (const idea of ideas) {
-          this.replaceIdea(idea.id, idea);
-        }
-        this.floatingIdeasIds = ideas.filter(isFloatingIdea).map((idea) => idea.id);
-        this.recalculateValues();
-        
-        // 3. Update cache
-        saveIdeas(projectPath, ideas).catch(() => {});
-        
+        this.applyIdeaScan(await trpc.project.loadIdeas.query({ projectPath }));
       } catch (error) {
         console.error('Failed to load all ideas:', error);
-      } finally {
-        this.loading = false;
       }
+    },
+
+    applyIdeaScan({ ideas, unreadable }: { ideas: BaseIdea[], unreadable: UnreadableIdea[] }) {
+      this.unreadableIdeas = unreadable;
+      const serverIdeaIds = new Set(ideas.map(a => a.id));
+      for (const id in this.ideas) {
+        if (!serverIdeaIds.has(id)) delete this.ideas[id];
+      }
+      for (const idea of ideas) {
+        this.replaceIdea(idea.id, idea);
+      }
+      this.floatingIdeasIds = ideas.filter(isFloatingIdea).map((idea) => idea.id);
+      this.recalculateValues();
     },
 
     // After the backend socket dropped: whatever changed meanwhile never came
@@ -1001,12 +993,18 @@ export const useDataStore = defineStore('data', {
       if (!projectPath) return;
       try {
         followIdeaActivity(projectPath);
-        const [meta] = await Promise.all([
+        const knownPhaseIds = Object.keys(this.phases);
+        const [meta, access, phases, ideaScan] = await Promise.all([
           trpc.project.getMeta.query({ projectPath }),
-          this.loadAllPhases(projectPath),
-          this.loadAllIdeas(projectPath, { useCache: false })
+          trpc.project.getAccess.query({ projectPath }),
+          trpc.phase.list.query({ projectPath }),
+          trpc.project.loadIdeas.query({ projectPath })
         ]);
+        if (projectStore.projectPath !== projectPath) return;
         this.meta = meta;
+        this.applyAccess(projectPath, access);
+        this.applyPhaseList(phases, knownPhaseIds);
+        this.applyIdeaScan(ideaScan);
         projectStore.setConnectionStatus('connected');
       } catch (error) {
         console.error('Failed to resync after reconnecting:', error);
@@ -1014,58 +1012,94 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    async loadProject(projectPath: string) {
-      const uiStore = useUIStore();
+    applyAccess(projectPath: string, access: ProjectAccess) {
+      this.access = access;
+      setProjectAccess(projectPath, access.reason);
+    },
+
+    // Forgets the open project, so nothing of it can show under the next one.
+    resetProjectData() {
+      this.subscription?.unsubscribe();
+      this.subscription = null;
+      backendConnection.onDrop = () => {};
+      backendConnection.onReconnect = () => {};
+      remoteIdeaUpdates.length = 0;
+      if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout);
+      this.recalculateTimeout = null;
+
+      this.phases = {};
+      this.ideas = {};
+      this.unreadableIdeas = [];
+      this.floatingIdeasIds = [];
+      this.calculatedValues = new Map();
+      this.calculatedCosts = new Map();
+      this.calculatedDoneCosts = new Map();
+      this.calculatedPriorities = new Map();
+      this.flowShares = new Map();
+      this.flowValues = new Map();
+      this.attributionShares = new Map();
+      this.totalIntrinsicValue = 0;
+      this.deletedIdeas = new Set();
+      this.ideaSyncRevisions = {};
+      this.phaseSyncRevisions = {};
+      this.consistencyErrors = [];
+      this.consistencyIssues = [];
+      this.meta = null;
+      this.access = unrestrictedAccess();
+    },
+
+    // Fetches the whole project, then applies it in one go: until then the store
+    // doesn't change, so a slow or abandoned load leaves nothing half-applied.
+    // Rejects when the project can't be read. Returns false if `isCurrent` says
+    // another load took over.
+    async loadProject(projectPath: string, { isCurrent = () => true, onProgress }: ProjectLoadHooks = {}): Promise<boolean> {
       perfLog('data.loadProject:start', { projectPath });
       const projectStore = useProjectStore();
-      const mapStore = useMapStore();
+      projectStore.setConnectionStatus('connecting');
 
-      if (!projectPath) return;
+      // Before the requests: what changes while they run is replayed on top of their answers.
+      const releaseUpdates = this.subscribeToUpdates(projectPath, { hold: true });
+      followIdeaActivity(projectPath);
 
-      try {
-        projectStore.setProjectPath(projectPath);
-        projectStore.setConnectionStatus('connecting');
+      const reporting = <T>(request: Promise<T>) => request.then((value) => {
+        if (isCurrent()) onProgress?.('opening');
+        return value;
+      });
+      const [meta, access] = await Promise.all([
+        reporting(trpc.project.getMeta.query({ projectPath })),
+        reporting(trpc.project.getAccess.query({ projectPath }))
+      ]);
+      if (!isCurrent()) return false;
 
-        // Reset view state when switching projects
-        uiStore.resetViewState();
-        useHistoryStore().reset();
-        projectStore.setCurrentView('columns');
-        mapStore.resetView();
+      // The whole project is small enough to load at once (~100ms for 750
+      // ideas); the subscription keeps it live afterwards.
+      await onProgress?.('reading');
+      const [phases, ideaScan] = await Promise.all([
+        trpc.phase.list.query({ projectPath }),
+        trpc.project.loadIdeas.query({ projectPath })
+      ]);
+      if (!isCurrent()) return false;
 
-        const [meta, access] = await Promise.all([
-          trpc.project.getMeta.query({ projectPath }),
-          trpc.project.getAccess.query({ projectPath })
-        ]);
+      await onProgress?.('applying');
+      if (!isCurrent()) return false;
+      this.meta = meta;
+      this.applyAccess(projectPath, access);
+      this.applyPhaseList(phases, Object.keys(this.phases));
+      this.applyIdeaScan(ideaScan);
+      await releaseUpdates();
+      if (!isCurrent()) return false;
+      flushRemoteIdeaUpdates();
+      this.recalculateValuesNow();
 
-        this.meta = meta;
-        this.access = access;
-        setProjectAccess(projectPath, access.reason);
-
-        // Start subscription
-        this.subscribeToUpdates(projectPath);
-        followIdeaActivity(projectPath);
-        backendConnection.onDrop = () => projectStore.setConnectionStatus('connecting')
-        backendConnection.onReconnect = () => void this.resyncProject(projectStore.projectPath)
-
-        // The whole project is small enough to load at once (~100ms for 750
-        // ideas); the subscription keeps it live afterwards.
-        await Promise.all([this.loadAllPhases(projectPath), this.loadAllIdeas(projectPath)]);
-
-        perfLog('data.loadProject:done', {
-          projectPath,
-          rootPhases: this.meta?.rootPhaseIds?.length ?? 0,
-          floatingIdeas: this.floatingIdeasIds.length
-        })
-
-        projectStore.setConnectionStatus('connected');
-        projectStore.addProjectToHistory(projectPath);
-        projectStore.clearProjectFailure(projectPath);
-      } catch (error) {
-        perfLog('data.loadProject:error', { projectPath, error })
-        console.error('Failed to load project:', error);
-        projectStore.setConnectionStatus('no connection');
-        projectStore.markProjectAsFailed(projectPath);
-      }
+      backendConnection.onDrop = () => projectStore.setConnectionStatus('connecting');
+      backendConnection.onReconnect = () => void this.resyncProject(projectStore.projectPath);
+      projectStore.setConnectionStatus('connected');
+      perfLog('data.loadProject:done', {
+        projectPath,
+        rootPhases: this.meta?.rootPhaseIds?.length ?? 0,
+        floatingIdeas: this.floatingIdeasIds.length
+      });
+      return true;
     },
 
     async updateProjectMeta(projectPath: string, meta: any) {
@@ -1085,46 +1119,57 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    subscribeToUpdates(projectPath: string) {
-      if (this.subscription) {
-        this.subscription.unsubscribe();
-      }
+    // Live updates of the project. With `hold` they wait until the returned
+    // function is called: a loading project's answers are applied first, then
+    // what happened since, in order, so the latest event wins.
+    subscribeToUpdates(projectPath: string, { hold = false } = {}): () => Promise<void> {
+      this.subscription?.unsubscribe();
 
+      let held: ProjectUpdate[] | null = hold ? [] : null;
       // @ts-ignore - trpc subscription typing might differ
       this.subscription = trpc.project.onUpdate.subscribe(undefined, {
-        onData: async (data: { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean, previous?: unknown, origin?: string }) => {
+        onData: async (data: ProjectUpdate) => {
           if (toProjectRoot(data.projectPath) !== toProjectRoot(projectPath)) return;
-
-          // Before applying: the history needs the event, not the store state.
-          useHistoryStore().recordChange(data);
-
-          // A change that takes the selected idea out of its list selects its neighbour.
-          const applyEntity = (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
-
-          if (data.type === 'project') {
-            this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
-          } else if (data.type === 'idea') {
-            if (data.deleted) {
-              applyRemoteIdeaUpdate(() => applyEntity(() => this.removeIdeaLocally(data.id)))
-            } else if (!this.deletedIdeas.has(data.id)) {
-              const revision = this.beginIdeaSync(data.id)
-              const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
-              applyRemoteIdeaUpdate(() => applyEntity(() => {
-                if (this.replaceIdeaIfCurrent(idea.id, idea, revision)) this.syncFloatingIdea(idea)
-              }))
-            }
-          } else if (data.type === 'phase') {
-            if (data.deleted) {
-              delete this.phases[data.id]
-            } else if (data.entity) {
-              applyEntity(() => this.replacePhaseIfCurrent(data.id, data.entity as BasePhase, this.beginPhaseSync(data.id)))
-            } else {
-              await this.loadPhaseById(projectPath, data.id, { force: true })
-            }
-          }
+          if (held) held.push(data);
+          else await this.applyProjectUpdate(projectPath, data);
         },
         onError: (err: any) => useToastStore().error('Live updates stopped; reload to resync', err)
       });
+      return async () => {
+        const updates = held ?? [];
+        held = null;
+        for (const update of updates) await this.applyProjectUpdate(projectPath, update);
+      };
+    },
+
+    async applyProjectUpdate(projectPath: string, data: ProjectUpdate) {
+        // Before applying: the history needs the event, not the store state.
+        useHistoryStore().recordChange(data);
+
+        // A change that takes the selected idea out of its list selects its neighbour.
+        const applyEntity = (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
+
+        if (data.type === 'project') {
+          this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
+        } else if (data.type === 'idea') {
+          if (data.deleted) {
+            applyRemoteIdeaUpdate(() => applyEntity(() => this.removeIdeaLocally(data.id)))
+          } else if (!this.deletedIdeas.has(data.id)) {
+            const revision = this.beginIdeaSync(data.id)
+            const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
+            applyRemoteIdeaUpdate(() => applyEntity(() => {
+              if (this.replaceIdeaIfCurrent(idea.id, idea, revision)) this.syncFloatingIdea(idea)
+            }))
+          }
+        } else if (data.type === 'phase') {
+          if (data.deleted) {
+            delete this.phases[data.id]
+          } else if (data.entity) {
+            applyEntity(() => this.replacePhaseIfCurrent(data.id, data.entity as BasePhase, this.beginPhaseSync(data.id)))
+          } else {
+            await this.loadPhaseById(projectPath, data.id, { force: true })
+          }
+        }
     },
 
     async deletePhase(phaseId: string) {
@@ -1265,7 +1310,7 @@ export const useDataStore = defineStore('data', {
         try {
             const result = await trpc.graphHealth.fixConsistency.mutate({ projectPath });
             // Reload everything after fix
-            await this.loadProject(projectPath);
+            await this.resyncProject(projectPath);
             this.consistencyErrors = [];
             this.consistencyIssues = [];
             return result.fixes;

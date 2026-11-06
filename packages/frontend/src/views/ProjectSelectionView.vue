@@ -19,7 +19,6 @@ const props = defineProps<{
   discoveredProjects: DiscoveredProject[]
   scannedRoots: string[]
   isRefreshingDiscoveredProjects: boolean
-  isOpeningGitUrl: boolean
 }>()
 
 const emit = defineEmits<{
@@ -70,7 +69,6 @@ watch(() => props.modelValue, (value) => {
 onUnmounted(() => clearTimeout(inspectionTimer))
 
 const selectButtonLabel = computed(() => {
-  if (props.isOpeningGitUrl) return 'Cloning…'
   if (gitRepositoryLocation(props.modelValue)) return 'Open read-only'
   return props.modelValue.trim() && inspectedPath.value === props.modelValue.trim() && bowmanExists.value === false
     ? 'New Project'
@@ -214,7 +212,7 @@ onUnmounted(revokeThumbnails)
           @keydown.enter="onInputEnter"
         />
       </div>
-      <button @click="emit('select-project')" class="select-project" :disabled="props.isOpeningGitUrl">{{ selectButtonLabel }}</button>
+      <button @click="emit('select-project')" class="select-project">{{ selectButtonLabel }}</button>
     </div>
 
     <div ref="listRef" class="project-lists" @keydown="onListKeydown">

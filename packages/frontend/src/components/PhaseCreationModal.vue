@@ -86,7 +86,6 @@ const updatePhase = async () => {
 
       await uiStore.restoreSelectionPath(
         previousSelectionIds,
-        undefined,
         Math.min(uiStore.maxColumn, uiStore.getVisibleMaxColumn())
       )
 

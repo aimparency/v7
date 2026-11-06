@@ -20,7 +20,6 @@ const mountView = (modelValue: string, lists = false) => mount(ProjectSelectionV
     discoveredProjects: lists ? discovered : [],
     scannedRoots: [],
     isRefreshingDiscoveredProjects: false,
-    isOpeningGitUrl: false,
   },
 })
 

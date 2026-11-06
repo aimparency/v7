@@ -80,27 +80,15 @@ export async function restoreCursorFromMeta(ui: UIStore): Promise<boolean> {
   const cursors = currentPhaseCursors(dataStore.meta)
   if (Object.keys(cursors).length === 0) return false
 
-  ui.beginUIStateRestore()
-  const restoreGeneration = ui.restoreGeneration
-  try {
-    const deepestLevel = await ui.restoreSelectionPath(
-      cursors,
-      () => ui.isRestoringUIState && ui.restoreGeneration === restoreGeneration
-    )
-    if (deepestLevel === undefined) return true
+  const deepestLevel = await ui.restoreSelectionPath(cursors)
 
-    // Startup follows the complete authoritative cursor chain. Focus the
-    // deepest populated phase level rather than restoring a stale browser
-    // column or exposing a trailing empty child column.
-    ui.activeColumn = deepestLevel
-    ui.maxColumn = deepestLevel
-    ui.ensureSelectionVisible()
-    return true
-  } finally {
-    if (ui.restoreGeneration === restoreGeneration && ui.isRestoringUIState) {
-      ui.endUIStateRestore()
-    }
-  }
+  // Startup follows the complete authoritative cursor chain. Focus the
+  // deepest populated phase level rather than restoring a stale browser
+  // column or exposing a trailing empty child column.
+  ui.activeColumn = deepestLevel
+  ui.maxColumn = deepestLevel
+  ui.ensureSelectionVisible()
+  return true
 }
 
 export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
@@ -135,71 +123,61 @@ export async function restoreProjectUIState(ui: UIStore): Promise<boolean> {
     return await restoreCursorFromMeta(ui)
   }
 
-  ui.beginUIStateRestore()
-  const restoreGeneration = ui.restoreGeneration
-  try {
-    if (parsed.currentView) {
-      projectStore.setCurrentView(parsed.currentView)
-    }
-
-    const listViewState = parsed.listViewState
-    if (listViewState) {
-      ui.windowSize = listViewState.windowSize
-      ui.windowStart = listViewState.windowStart
-      ui.activeColumn = listViewState.activeColumn
-      ui.floatingIdeaId = listViewState.floatingIdeaId ?? null
-      ui.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
-      ui.navigatingIdeas = listViewState.navigatingIdeas
-
-      const shouldContinue = () => ui.isRestoringUIState && ui.restoreGeneration === restoreGeneration
-      const restoreVisibleMax = Math.max(ui.activeColumn, ui.getVisibleMaxColumn())
-      const phaseIdByLevel: Record<number, string> = {}
-      const savedKeys = listViewState.selectedEntryKeyByColumn
-        ?? Object.fromEntries(Object.entries(listViewState.selectedPhaseIdByColumn ?? {}).map(([level, id]) => [level, `${PHASE_KEY_PREFIX}${id}`]))
-      for (const [level, key] of Object.entries(savedKeys)) {
-        if (Number(level) <= restoreVisibleMax && key.startsWith(PHASE_KEY_PREFIX)) {
-          phaseIdByLevel[Number(level)] = key.slice(PHASE_KEY_PREFIX.length)
-        }
-      }
-
-      ui.maxColumn = ui.windowStart < 0 ? -1 : 0
-      if (restoreVisibleMax >= 0) {
-        const deepestLevel = await ui.restoreSelectionPath(phaseIdByLevel, shouldContinue, restoreVisibleMax)
-        if (deepestLevel === undefined) return true
-        ui.maxColumn = Math.max(ui.maxColumn, deepestLevel)
-      }
-      if (ui.activeColumn > ui.maxColumn) {
-        ui.activeColumn = ui.maxColumn
-      }
-
-      ui.selectedIdeaIdByPhaseId = { ...listViewState.selectedIdeaIdByPhaseId }
-      if (listViewState.floatingIdeaUIStates) {
-        ui.floatingIdeaUIStates = listViewState.floatingIdeaUIStates
-      }
-      if (listViewState.phaseIdeaUIStatesByPhaseId) {
-        ui.phaseIdeaUIStatesByPhaseId = listViewState.phaseIdeaUIStatesByPhaseId
-      }
-
-      if (listViewState.selection) {
-        await applySelectionAnchor(ui, listViewState.selection)
-      }
-
-      ui.ensureSelectionVisible()
-    }
-
-    graphStore.applyPersistedGraphViewState(parsed.graphViewState)
-    perfLog('ui.restoreProjectUIState:done', {
-      projectPath: projectStore.projectPath,
-      durationMs: Math.round((performance.now() - restoreStartedAt) * 10) / 10,
-      activeColumn: ui.activeColumn,
-      windowStart: ui.windowStart,
-      windowSize: ui.windowSize,
-      maxColumn: ui.maxColumn
-    })
-    return true
-  } finally {
-    if (ui.restoreGeneration === restoreGeneration && ui.isRestoringUIState) {
-      ui.endUIStateRestore()
-    }
+  if (parsed.currentView) {
+    projectStore.setCurrentView(parsed.currentView)
   }
+
+  const listViewState = parsed.listViewState
+  if (listViewState) {
+    ui.windowSize = listViewState.windowSize
+    ui.windowStart = listViewState.windowStart
+    ui.activeColumn = listViewState.activeColumn
+    ui.floatingIdeaId = listViewState.floatingIdeaId ?? null
+    ui.lastSelectedSubPhaseIndexByPhase = { ...listViewState.lastSelectedSubPhaseIndexByPhase }
+    ui.navigatingIdeas = listViewState.navigatingIdeas
+
+    const restoreVisibleMax = Math.max(ui.activeColumn, ui.getVisibleMaxColumn())
+    const phaseIdByLevel: Record<number, string> = {}
+    const savedKeys = listViewState.selectedEntryKeyByColumn
+      ?? Object.fromEntries(Object.entries(listViewState.selectedPhaseIdByColumn ?? {}).map(([level, id]) => [level, `${PHASE_KEY_PREFIX}${id}`]))
+    for (const [level, key] of Object.entries(savedKeys)) {
+      if (Number(level) <= restoreVisibleMax && key.startsWith(PHASE_KEY_PREFIX)) {
+        phaseIdByLevel[Number(level)] = key.slice(PHASE_KEY_PREFIX.length)
+      }
+    }
+
+    ui.maxColumn = ui.windowStart < 0 ? -1 : 0
+    if (restoreVisibleMax >= 0) {
+      const deepestLevel = await ui.restoreSelectionPath(phaseIdByLevel, restoreVisibleMax)
+      ui.maxColumn = Math.max(ui.maxColumn, deepestLevel)
+    }
+    if (ui.activeColumn > ui.maxColumn) {
+      ui.activeColumn = ui.maxColumn
+    }
+
+    ui.selectedIdeaIdByPhaseId = { ...listViewState.selectedIdeaIdByPhaseId }
+    if (listViewState.floatingIdeaUIStates) {
+      ui.floatingIdeaUIStates = listViewState.floatingIdeaUIStates
+    }
+    if (listViewState.phaseIdeaUIStatesByPhaseId) {
+      ui.phaseIdeaUIStatesByPhaseId = listViewState.phaseIdeaUIStatesByPhaseId
+    }
+
+    if (listViewState.selection) {
+      await applySelectionAnchor(ui, listViewState.selection)
+    }
+
+    ui.ensureSelectionVisible()
+  }
+
+  graphStore.applyPersistedGraphViewState(parsed.graphViewState)
+  perfLog('ui.restoreProjectUIState:done', {
+    projectPath: projectStore.projectPath,
+    durationMs: Math.round((performance.now() - restoreStartedAt) * 10) / 10,
+    activeColumn: ui.activeColumn,
+    windowStart: ui.windowStart,
+    windowSize: ui.windowSize,
+    maxColumn: ui.maxColumn
+  })
+  return true
 }

@@ -73,11 +73,6 @@ const heights = computed(() => entries.value.map((entry) => (
   measuredHeightByKey.value.get(entry.key) ?? getEstimatedHeight(entry)
 )))
 
-const restoreTopReserve = computed(() => {
-  if (!uiStore.isRestoringUIState) return 0
-  return Math.max(viewportHeight.value * 10, 4000)
-})
-
 const offsets = computed(() => {
   const nextOffsets: number[] = new Array(entries.value.length)
   let runningTop = 0
@@ -93,10 +88,10 @@ const offsets = computed(() => {
 const totalHeight = computed(() => {
   if (entries.value.length === 0) return 0
   const lastIndex = entries.value.length - 1
-  return restoreTopReserve.value + (offsets.value[lastIndex] ?? 0) + (heights.value[lastIndex] ?? 0)
+  return (offsets.value[lastIndex] ?? 0) + (heights.value[lastIndex] ?? 0)
 })
 
-const getRenderedTop = (index: number) => restoreTopReserve.value + (offsets.value[index] ?? 0)
+const getRenderedTop = (index: number) => offsets.value[index] ?? 0
 const getRenderedBottom = (index: number) => getRenderedTop(index) + (heights.value[index] ?? 0)
 
 const findFirstVisibleIndex = (targetTop: number) => {

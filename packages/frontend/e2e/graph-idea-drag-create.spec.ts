@@ -39,6 +39,8 @@ async function setupBlankProject(page: Page, projectPath: string) {
   await projectInput.press('Enter');
 
   await page.waitForSelector('.main-split', { timeout: 10000 });
+
+  await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
   await page.waitForTimeout(1000);
 }
 

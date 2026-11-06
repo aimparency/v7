@@ -45,6 +45,7 @@ test('create first idea in empty phase shows modal and creates idea', async ({ p
 
     // Wait for the project to load
     await page.waitForSelector('.main-split', { timeout: 10000 });
+    await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
     await page.waitForTimeout(1000);
 
     // Focus the app

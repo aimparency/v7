@@ -1,0 +1,27 @@
+{
+  "id": "3550bb8f-89ce-465e-9171-57c2df293147",
+  "text": "Project loading screen: opaque two-bar progress from click until the graph or list DOM is ready, no stale or empty lists",
+  "description": "Opening a project shows the old project's lists, then empty states, then partial lists. One openProject path with a load token, fetch-then-commit, restored view chosen before mount, and a detail and overall progress bar.",
+  "archived": false,
+  "color": "#2c6143",
+  "tags": [
+    "frontend",
+    "loading"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "f6a936dc-b117-4a73-bf9d-fd2c63a5a4b4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "Does the loading screen look and feel right on your machine, in both list and graph view?\n\nEvidence: pnpm check 25/25. Playwright e2e against the running stack: 18 of 19 passed in the full run; the one failure (reload-restore's visibility check) passed alone and in 3 repeats, so it looks timing-dependent. Frame-by-frame browser log on a slowed socket: no empty lists or old-project text after the screen left, in either direction checked (fixture text gone after switching back to v7); saved graph view never mounts the columns view; overall bar only moves forward; rapid switch ends on the last project; Escape returns to the picker; a bad path shows the failed state; with animation frames disabled the 20 s timeout releases the screen. Not reproduced: one Puppeteer session (headless, no animation frames) stayed on Laying out lists past the timeout, cause unknown. Known limit: in a browser with no saved positions the graph still opens zoomed in while nodes spread.",
+    "date": 1793952131409
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

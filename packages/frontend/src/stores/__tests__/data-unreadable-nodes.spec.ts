@@ -4,7 +4,6 @@ import { useDataStore } from '../data'
 import type { Idea } from 'shared'
 
 vi.mock('../../trpc', () => ({ trpc: {} }))
-vi.mock('../../utils/db', () => ({ loadAllIdeasCache: vi.fn(), saveIdeas: vi.fn() }))
 vi.mock('../../utils/perf-log', () => ({ perfLog: vi.fn() }))
 
 function mkIdea(id: string, childIds: string[] = []): Idea {

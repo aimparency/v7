@@ -9,8 +9,9 @@
       window.global = window;
     </script>
   </head>
-  <body>
-    <div id="app"></div>
+  <body style="background: #000">
+    <!-- Until the app is up; Vue's mount replaces it with the real loading screen. -->
+    <div id="app"><div style="position: fixed; inset: 0; display: flex; align-items: center; justify-content: center; font-family: monospace, sans-serif; color: #e0e0e0">Loading Aimparency</div></div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

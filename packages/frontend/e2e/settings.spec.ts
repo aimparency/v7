@@ -25,6 +25,8 @@ test.describe('Project Settings Tests', () => {
     await projectInput.press('Enter');
 
     await page.waitForSelector('.main-split', { timeout: 20000 });
+
+    await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
   });
 
   test.afterEach(async () => {
@@ -64,6 +66,7 @@ test.describe('Project Settings Tests', () => {
     // Reload
     await page.reload();
     await page.waitForSelector('.main-split', { timeout: 20000 });
+    await page.locator('#project-load-screen').waitFor({ state: 'hidden', timeout: 30000 });
 
     // Open Settings Again
     await page.click('button[title="Project Settings"]');
