@@ -27,6 +27,8 @@ export type CycleTrace = {
   statusChange: StatusChange | null;
   notes: string[];
   usage: StageUsage;
+  /** null when a stage ran on a model without a price in harness.json. */
+  costUsd: number | null;
 };
 
 export const tracesDir = (projectPath: string) => path.join(toBowmanPath(path.resolve(projectPath)), 'runtime', 'traces');

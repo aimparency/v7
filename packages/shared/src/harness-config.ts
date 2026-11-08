@@ -30,7 +30,18 @@ export const harnessConfigSchema = z.object({
     /** Claimed commands the harness re-runs before verification. */
     maxCommands: z.number().int().min(0).max(20).default(5),
     timeoutMs: z.number().int().min(1000).max(600_000).default(120_000)
-  }).default({})
+  }).default({}),
+  /** USD per million tokens, keyed by model id as configured in loops.json. */
+  prices: z.record(z.string(), z.object({
+    inputPerMTok: z.number().min(0),
+    outputPerMTok: z.number().min(0)
+  }).strict()).default({}),
+  budgets: z.object({
+    /** Once a cycle has used this many tokens, it starts no further stage. */
+    maxTokensPerCycle: z.number().int().positive().optional(),
+    /** Once today's priced cycles (UTC) cost this much, cycles are skipped until tomorrow. */
+    maxUsdPerDay: z.number().positive().optional()
+  }).strict().default({})
 }).strict();
 
 export type HarnessConfig = z.infer<typeof harnessConfigSchema>;

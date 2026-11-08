@@ -1,0 +1,28 @@
+{
+  "id": "675fce29-1698-4c50-8b54-7bf6d1d6b3be",
+  "text": "Store realized harness cost on the idea next to its estimate (data model change)",
+  "description": "Today a cycle's USD cost and tokens live in the trace (.bowman/runtime/traces, local, newest 200). For the priority-model calibration (b2a7c3cf: estimated vs actual on 30+ ideas) it must be durable in the graph. Proposal: optional field on an idea = summed realized cost of harness cycles that worked on it, added by the record stage; git versions it (no history arrays). Needs a migration per AGENTS.md (bump dataModelVersion, fixture of the previous format), plus a decision on the unit.",
+  "archived": false,
+  "color": "#6c4335",
+  "tags": [
+    "harness",
+    "data-model",
+    "cost"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "4ba40b58-685b-4e2a-94cf-27080dcbcf83"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Question for Felix: store realized cost on ideas in USD (what the harness measures), or in the project's abstract cost unit (what estimates use)? Options: (a) USD field `realizedCostUsd`, calibration converts with a configurable rate; (b) cost-unit field, with the USD-per-unit rate in meta.json; (c) no data model change: keep it in traces and export a calibration CSV.",
+    "date": 1794161142163
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -5,16 +5,26 @@
   "archived": false,
   "color": "#61322f",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "675fce29-1698-4c50-8b54-7bf6d1d6b3be",
+      "relativePosition": [
+        1.04,
+        -3.6
+      ],
+      "weight": 1,
+      "hypothesis": "Durable realized cost per idea is the data the calibration of cost estimates has been waiting for; refuted if harness cycles turn out too few or too uneven per idea to compare with estimates."
+    }
+  ],
   "supportedIdeas": [
     "5949b781-3f96-4028-a7bc-7d04f9226f9d",
     "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158151077
+    "state": "partially",
+    "comment": "Done: each stage records tokens and wall time (trace); harness.json `prices` (USD per million tokens by model id) give each cycle's cost, stored as trace costUsd and shown in the cycle's status event ('Cost unknown' naming unpriced models instead of guessing); `budgets.maxTokensPerCycle` stops before the next stage, `budgets.maxUsdPerDay` skips cycles once today's priced traces reach it. Evidence: costs.test (sum, unpriced, today's spend), cycle.test budgets (priced cost 40 in a mock cycle, token budget stops before verify without status change, daily budget makes no model call and no trace), loop-worker 27/27, backend loop-cycle e2e 3/3, knip clean. Remaining: durable realized cost on the idea — split into the unclear child with the unit question for Felix.",
+    "date": 1794161142312
   },
   "intrinsicValue": 0,
   "cost": 2,

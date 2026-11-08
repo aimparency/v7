@@ -19,6 +19,7 @@ import { applyDecomposition, applyReflections, applyStatus } from './graph-write
 import { selectCycleTarget } from './runtime-policy.js';
 import { runStage, type StageTrace, type StageUsage } from './stage-runner.js';
 import { writeCycleTrace } from './traces.js';
+import { cycleCostUsd, spentTodayUsd, tokensUsed, unpricedModels } from './costs.js';
 import {
   decompositionSchema,
   executionSchema,
@@ -78,6 +79,19 @@ export async function runCycle(ctx: CycleContext) {
   const harnessConfig = loadHarnessConfig(projectPath);
   const { config } = harnessConfig;
 
+  const { maxUsdPerDay, maxTokensPerCycle } = config.budgets;
+  if (maxUsdPerDay !== undefined) {
+    const spent = await spentTodayUsd(projectPath);
+    if (spent >= maxUsdPerDay) {
+      await appendLoopEvent(projectPath, instanceId, {
+        role: 'system',
+        kind: 'status',
+        content: `Daily budget reached: $${spent.toFixed(4)} of $${maxUsdPerDay} spent today (UTC). Skipping this cycle.`
+      });
+      return;
+    }
+  }
+
   // orient
   await markLoopPhase(projectPath, instanceId, 'orient: picking an idea');
   const instance = (await readLoopRuntimeState(projectPath)).instances.find((candidate) => candidate.id === instanceId);
@@ -114,6 +128,10 @@ export async function runCycle(ctx: CycleContext) {
   let stage: Stage = nextStage({ stage: 'orient', work }, decomposed);
 
   while (stage !== 'record' && !signal.aborted) {
+    if (maxTokensPerCycle !== undefined && tokensUsed(usage) >= maxTokensPerCycle) {
+      notes.push(`token budget of ${maxTokensPerCycle} reached before ${stage}`);
+      break;
+    }
     await markLoopPhase(projectPath, instanceId, `${stage}: ${idea.text}`);
     let outcome: StageOutcome;
     if (stage === 'decompose') {
@@ -213,6 +231,8 @@ export async function runCycle(ctx: CycleContext) {
   // record
   const change = statusAfter(execution, verification);
   if (change && !signal.aborted) await applyStatus(graph, projectPath, idea.id, change);
+  const costUsd = cycleCostUsd(stageTraces, config.prices);
+  const unpriced = unpricedModels(stageTraces, config.prices);
   const tracePath = await writeCycleTrace(projectPath, {
     instanceId,
     startedAt,
@@ -226,7 +246,8 @@ export async function runCycle(ctx: CycleContext) {
     receipts,
     statusChange: change,
     notes,
-    usage
+    usage,
+    costUsd
   });
   await appendLoopEvent(projectPath, instanceId, {
     role: 'tool',
@@ -235,6 +256,7 @@ export async function runCycle(ctx: CycleContext) {
       `Cycle on "${idea.text}": ${notes.join('; ') || 'no stage result'}.`,
       change ? `Status → ${change.state}.` : 'Status unchanged.',
       `Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out.`,
+      costUsd !== null ? `Cost: $${costUsd.toFixed(4)}.` : `Cost unknown: no price in .bowman/harness.json for ${unpriced.join(', ')}.`,
       `Trace: ${path.basename(tracePath)}.`
     ].join(' ')
   });

@@ -185,3 +185,45 @@ test('.bowman/harness.json steers the cycle: children land as ai-proposition, ca
   assert.match(trace.harnessConfig.version, /^[0-9a-f]{12}$/);
   assert.equal(trace.harnessConfig.config.decomposition.landingState, 'ai-proposition');
 });
+
+async function readOnlyTrace(projectPath: string) {
+  const traceDir = path.join(projectPath, '.bowman', 'runtime', 'traces');
+  const files = await fs.readdir(traceDir).catch(() => [] as string[]);
+  return files.length === 1 ? JSON.parse(await fs.readFile(path.join(traceDir, files[0]!), 'utf8')) : files.length;
+}
+
+test('budgets: a priced cycle records its cost, the token budget stops before the next stage, the daily budget skips the cycle', async () => {
+  const leaf = () => fakeGraph([idea('leaf', 'open')], 'leaf');
+  const executionDone = ['submit_execution', { outcome: 'done', summary: 'fixed', evidence: 'ok', commands: [] }] as [string, unknown];
+  // Each mock call uses 10 input and 5 output tokens.
+  const prices = { mock: { inputPerMTok: 1_000_000, outputPerMTok: 2_000_000 } };
+
+  const priced = leaf();
+  const pricedContext = await cycleContext(priced.graph, submittingModel([executionDone, ['submit_verdict', { verdict: 'failed', reasons: 'no' }]]).model);
+  await fs.writeFile(path.join(pricedContext.projectPath, '.bowman', 'harness.json'), JSON.stringify({ prices }));
+  await runCycle(pricedContext);
+  assert.equal((await readOnlyTrace(pricedContext.projectPath)).costUsd, 40, 'two stages at $10 input + $10 output each');
+
+  const limited = leaf();
+  const scripted = submittingModel([executionDone, ['submit_verdict', { verdict: 'verified', reasons: 'ok' }]]);
+  const limitedContext = await cycleContext(limited.graph, scripted.model);
+  await fs.writeFile(path.join(limitedContext.projectPath, '.bowman', 'harness.json'), JSON.stringify({ budgets: { maxTokensPerCycle: 15 } }));
+  await runCycle(limitedContext);
+  assert.equal(scripted.toolSets.length, 1, 'verify never started');
+  const limitedTrace = await readOnlyTrace(limitedContext.projectPath);
+  assert.ok(limitedTrace.notes.includes('token budget of 15 reached before verify'));
+  assert.equal(limitedTrace.costUsd, null, 'no price configured');
+  assert.equal(limited.writes.length, 0, 'an unverified idea keeps its status');
+
+  const broke = leaf();
+  const brokeModel = submittingModel([executionDone]);
+  const brokeContext = await cycleContext(broke.graph, brokeModel.model);
+  await fs.writeFile(path.join(brokeContext.projectPath, '.bowman', 'harness.json'), JSON.stringify({ budgets: { maxUsdPerDay: 1 } }));
+  const traceDir = path.join(brokeContext.projectPath, '.bowman', 'runtime', 'traces');
+  await fs.mkdir(traceDir, { recursive: true });
+  const today = new Date().toISOString().slice(0, 10);
+  await fs.writeFile(path.join(traceDir, `${today}T00-00-00-000Z-earlier0.json`), JSON.stringify({ costUsd: 1.5 }));
+  await runCycle(brokeContext);
+  assert.equal(brokeModel.toolSets.length, 0, 'no model call once the daily budget is spent');
+  assert.equal((await fs.readdir(traceDir)).length, 1, 'no new trace');
+});
