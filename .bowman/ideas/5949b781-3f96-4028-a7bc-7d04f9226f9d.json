@@ -110,9 +110,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Plan created 2026-11-08 with Felix; children are the implementation slices.",
-    "date": 1794158080633
+    "state": "partially",
+    "comment": "Harness built 2026-11-08 (slices ce5055e5, e6bd3fd6, 2d5a9e4a, 9c767469, 07009022, 49bc4383, 4ba40b58, 26a632c9, bcaa3189 implemented). First real end-to-end cycle, on a throwaway git project served by the dev backend: idea 'Fix sum() so that node sum.test.js passes' → Claude Code (Haiku) executor fixed sum.js in 10 s → harness re-ran the claimed command (receipt exit 0, 'sum ok') → z-ai/glm-5.3-flash on NVIDIA (different model family) verified independently (re-ran the test, checked it was unmodified) in 643 s on the free tier → harness wrote implemented with evidence + verifier reasons; trace with both stages and receipt written; cost 'unknown' because glm-5.3-flash has no price in harness.json (intended). Remaining: decomposition quality evaluation (4a5e0b10, running on NVIDIA), pluggable external verifier (17dff50a, after the 13/17 Nov calls). To run it on this repo: set a live model for the Default loop in .bowman/runtime/loops.json (z-ai/glm-5.2 is end-of-life), optionally roles.verifier and .bowman/harness.json executor.backend.",
+    "date": 1794163319058
   },
   "intrinsicValue": 0,
   "cost": 2,
