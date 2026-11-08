@@ -194,9 +194,9 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "The core discover→plan→execute→verify→reflect loop and its supporting capabilities are implemented or awaiting review. Remaining frontier work requires human product decisions, external-system selection/authorization, credentials, or a real compatibility experiment.\n\nStatus reconciliation on 2026-07-30 confirmed no autonomous implementation leaf remains under the core loop: children are done/review or explicitly human-dependent after reconciling stale partial statuses. Reclassified the parent from partially to human-dependent to prevent rebuilding an already-operational loop.\n\nOutcome: Three kinds of blocker found. (1) False: 'cannot be tested in sandbox' (clean-clone 0e5cce7e, ee7781d4) — the agent runs on the real machine; testing found and fixed a real first-run bug (0ee4507). (2) Stale external waits: Build Week jury (40463a0c) had been public since ~25 Aug; recorded as not selected. (3) Genuine: founder legal/eligibility facts, credentials and payments, outreach to named people, product/UX judgment, starting autonomous agents or servers. Effectiveness: High for kinds 1 and 2: one real bug fixed and one idea closed with evidence, in about an hour. Kind 3 cannot be reduced further by the agent. Lesson: A blocker written in a past environment ('sandbox', 'expected date X') goes stale. When the queue is empty, re-check old human-dependent comments against the current environment and calendar before asking the human. Pattern: stale-blocker audit",
-    "date": 1785399233858
+    "state": "partially",
+    "comment": "No longer waiting on a human (reviewed 2026-11-08): the harness 5949b781 now runs this loop in the loop-worker — orient → decompose (containers, too-large leaves) | execute (built-in, Claude Code or Codex) → verify (receipts + cross-model verdict) → reflect → record, with budgets, versioned config and traces; self-correction = failed verdicts return the idea to open with the objection, too_large triggers decomposition. Remaining under 5949b781: decomposition quality evaluation (4a5e0b10, running), external verifiers (17dff50a, after the 13/17 Nov calls). Earlier comment: the July machinery was implemented in the wrapped-session path; the frontier then needed human-provided effectors.",
+    "date": 1794162751155
   },
   "intrinsicValue": 0,
   "cost": 1,

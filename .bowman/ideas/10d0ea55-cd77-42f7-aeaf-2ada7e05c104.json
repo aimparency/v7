@@ -18,13 +18,13 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Requires an OpenRouter API key and authorization to incur model costs.",
+    "comment": "Still needs an OpenRouter key and spending authorization for Kimi K3. Note 2026-11-08: Kimi K2.6 (moonshotai/kimi-k2.6) is served on the existing NVIDIA key at no extra cost, and the harness now has per-role models (loops.json roles) and per-cycle traces for exactly this comparison. Question for Felix: is K2.6 on NVIDIA a good enough proxy to run the comparison now, or is K3 specifically the point?",
     "date": 1784737973822
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }
