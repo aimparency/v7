@@ -24,6 +24,15 @@
       "weight": 1,
       "hypothesis": "Receipts from commands the harness ran itself make 'verified' depend on observed exit codes, not on the executor's or verifier's word; refuted if, in the traces, receipts never change a verdict the verifier model would have given anyway.",
       "reflection": "Unclear yet: the mechanism works in tests, but whether receipts change real verdicts can only be read from traces of real-model cycles."
+    },
+    {
+      "ideaId": "370bd773-7d4b-4b69-8c4b-518c069a6cee",
+      "relativePosition": [
+        -1.21,
+        3.55
+      ],
+      "weight": 1,
+      "hypothesis": "Showing two verifier builders our concrete evidence bundle tells within one call each whether an external verifier backend is buildable with our data, before any adapter code."
     }
   ],
   "supportedIdeas": [

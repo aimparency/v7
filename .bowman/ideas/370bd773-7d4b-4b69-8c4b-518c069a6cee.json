@@ -1,0 +1,29 @@
+{
+  "id": "370bd773-7d4b-4b69-8c4b-518c069a6cee",
+  "text": "Verifier conversations: Raul / ThoughtProof (Fri 13 Nov 14:00) and Tiago / recompute-kit (Tue 17 Nov 10:00) — can their verifier take our evidence bundle?",
+  "description": "Prepared brief. Distinct from 43166d16 (the adapter proposition, waiting on these answers).\n\nWHAT WE HAVE NOW (show, don't pitch): the harness verify stage hands a verifier exactly this bundle (from a real cycle on 2026-11-08, Claude Code executor, NVIDIA verifier):\n- claim: idea text + acceptance ('node sum.test.js prints sum ok and exits 0'), executor summary and evidence\n- receipts: each command the executor claimed, re-run by the harness itself: '$ node sum.test.js  exit 0 | sum ok'\n- git status + diff of the working tree ('- a - b' -> '+ a + b')\n- verdict contract: verified | failed | unverifiable + reasons; a failing receipt overrules 'verified' in code\n- every cycle leaves a JSON trace (.bowman/runtime/traces) with config version, prompts, tool calls, receipts, verdict, cost.\n\nQUESTIONS FOR BOTH: 1) What do you count as evidence — is idea + diff + re-run receipts enough input, or do you need the environment (repo checkout, container)? 2) Your output contract — does it map onto verified/failed/unverifiable, and what does a 'repair' look like? 3) Latency and cost per check — can a check be async? 4) Can it run on a local repo (Aimparency is local-first), or only hosted? 5) Would you try your verifier on 10 of our traces as a joint experiment?\n\nRAUL-SPECIFIC: ThoughtProof blocks a proposal with a structured objection — our failed verdict already sends the idea back to open with the objection; is his objection format richer than free text (which claim, which evidence missing)?\nTIAGO-SPECIFIC: recompute-kit re-checks agent actions — our receipts are a weak recompute; does recompute-kit replay in a clean environment, and can it consume our trace format?\n\nRecord after each call: answers to 1-5, and whether the adapter (43166d16) is worth building.",
+  "archived": false,
+  "color": "#61272d",
+  "tags": [
+    "relationship",
+    "human-action",
+    "conversation-prep",
+    "harness"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "17dff50a-a917-4acd-bd46-9db81dd9d3c8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Brief prepared in the description. Felix holds the calls (13 Nov 14:00, 17 Nov 10:00); afterwards record the answers here and decide on 43166d16 (currently ai-proposition).",
+    "date": 1794162703045
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
