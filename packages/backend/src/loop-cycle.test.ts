@@ -136,11 +136,11 @@ async function waitForInstance(instanceId: string, done: (instance: LoopInstance
   throw new Error(`instance stayed ${instance?.status}: ${JSON.stringify(instance?.messages.slice(-3))}\n${log}`);
 }
 
-test('a cycle executes the model\'s tool call through the backend and the phase_done policy ends the instance', async () => {
+test('a cycle runs execute and verify stages, the harness writes the verdict, and the phase_done policy ends the instance', async () => {
   const { ideaId, instanceId } = await setUpLoop();
   script = [
-    { toolCall: { name: 'update_idea', arguments: { ideaId, status: { state: 'implemented', comment: 'fixed by the fake model' } } } },
-    { text: 'Marked the idea implemented.' }
+    { toolCall: { name: 'submit_execution', arguments: { outcome: 'done', summary: 'fixed the race', evidence: 'test passes 50/50 runs', commands: ['pnpm test'] } } },
+    { toolCall: { name: 'submit_verdict', arguments: { verdict: 'verified', reasons: 're-ran the test' } } }
   ];
 
   await caller.loop.startInstance({ projectPath, instanceId });
@@ -148,12 +148,16 @@ test('a cycle executes the model\'s tool call through the backend and the phase_
 
   const idea = await caller.idea.get({ projectPath, ideaId });
   assert.equal(idea.status.state, 'implemented');
-  assert.equal(idea.status.comment, 'fixed by the fake model');
+  assert.match(idea.status.comment, /test passes 50\/50 runs[\s\S]*re-ran the test/);
   assert.ok(instance.messages.some((message) => message.content.includes('Target phase done: Now')));
-  // The model got the graph tools, with projectPath filled in by the worker.
+  // The executor reads the graph but never writes it; the worker fills in projectPath.
   const offered = new Map((modelRequests[0].tools ?? []).map((tool: any) => [tool.function.name, tool.function]));
-  assert.ok(offered.has('get_prioritized_ideas') && offered.has('update_idea'));
-  assert.equal((offered.get('update_idea') as any).parameters.properties.projectPath, undefined);
+  assert.ok(offered.has('get_idea_context') && offered.has('submit_execution'));
+  assert.ok(!offered.has('update_idea'));
+  assert.equal((offered.get('get_idea_context') as any).parameters.properties.projectPath, undefined);
+  // The verifier is a separate request that sees the claim, not the executor's conversation.
+  assert.match(JSON.stringify(modelRequests[1].messages), /test passes 50\/50 runs/);
+  assert.ok(new Set((modelRequests[1].tools ?? []).map((tool: any) => tool.function.name)).has('submit_verdict'));
 }, 60_000);
 
 test('a rejected API key ends the instance in error with a hint where the key lives', async () => {
@@ -171,8 +175,8 @@ test('human_action_required pauses the instance until the human answers, then th
   const { ideaId, instanceId } = await setUpLoop();
   script = [
     { toolCall: { name: 'human_action_required', arguments: { message: 'Which test runner should I use?' } } },
-    { toolCall: { name: 'update_idea', arguments: { ideaId, status: { state: 'implemented', comment: 'used vitest as told' } } } },
-    { text: 'Done.' }
+    { toolCall: { name: 'submit_execution', arguments: { outcome: 'done', summary: 'used vitest as told', evidence: 'vitest green', commands: [] } } },
+    { toolCall: { name: 'submit_verdict', arguments: { verdict: 'verified', reasons: 'vitest green' } } }
   ];
 
   await caller.loop.startInstance({ projectPath, instanceId });
@@ -183,7 +187,7 @@ test('human_action_required pauses the instance until the human answers, then th
   await caller.loop.sendHumanMessage({ projectPath, instanceId, content: 'vitest' });
   await waitForInstance(instanceId, (candidate) => candidate.status === 'done');
 
-  assert.equal((await caller.idea.get({ projectPath, ideaId })).status.comment, 'used vitest as told');
+  assert.equal((await caller.idea.get({ projectPath, ideaId })).status.state, 'implemented');
   // The answer reached the model as the tool result.
   assert.match(JSON.stringify(modelRequests[1].messages), /vitest/);
 }, 60_000);

@@ -15,3 +15,13 @@ test('turns streamed provider errors into a failed cycle', () => {
   assert.doesNotThrow(() => throwIfStreamFailed([]));
   assert.throws(() => throwIfStreamFailed(['Unauthorized']), /Unauthorized/);
 });
+
+test('a target container is worked on through its highest-ranked descendant', () => {
+  const ideaById = new Map([
+    ['target', { id: 'target', supportingConnections: [{ ideaId: 'middle' }] }],
+    ['middle', { id: 'middle', supportingConnections: [{ ideaId: 'deep-leaf' }] }]
+  ]) as any;
+  const prioritized = ['unrelated', 'deep-leaf'].map((id) => ({ idea: { id } })) as any;
+  assert.equal(selectCycleTarget(prioritized, 'target', ideaById)?.idea.id, 'deep-leaf');
+  assert.equal(selectCycleTarget(prioritized, 'elsewhere', ideaById)?.idea.id, 'unrelated');
+});

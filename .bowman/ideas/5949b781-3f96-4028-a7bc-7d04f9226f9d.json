@@ -31,7 +31,8 @@
         -2.88
       ],
       "weight": 2,
-      "hypothesis": "Explicit stages with validated outputs make each part of the loop testable and replaceable, and stop one long free-form model run from skipping verification or reflection."
+      "hypothesis": "Explicit stages with validated outputs make each part of the loop testable and replaceable, and stop one long free-form model run from skipping verification or reflection.",
+      "reflection": "Held: the stage split made the other slices small; verify, reflect and a basic decompose fell out of it in the same change."
     },
     {
       "ideaId": "4a5e0b10-19c1-464b-ba07-55da82574e64",

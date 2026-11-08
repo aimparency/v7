@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158150291
+    "state": "implemented",
+    "comment": "loop-worker runCycle is now a stage machine (packages/loop-worker/src/cycle.ts, transitions in stages.ts): orient → decompose (containers) | execute (open leaves) → verify → reflect → record; execute 'too_large' decomposes in the same cycle once. Each stage ends with a zod-validated submit_* tool call (stage-runner.ts; works on any tool-calling provider, one retry turn with only the submit tool if the model stops without submitting). Stages get their own tool subsets and step budgets; models never get graph-write tools, the harness applies results through the MCP handlers (graph-writes.ts). Stage transitions are loop events and the activity line. Evidence: loop-worker tests 16/16 (stages, runner with MockLanguageModelV3, full cycle with fake graph), backend loop-cycle e2e 3/3 (real backend + spawned worker + fake HTTP model incl. human-wait), backend 159/159, knip clean. Still one model for all stages until the role registry (e6bd3fd6).",
+    "date": 1794160115888
   },
   "intrinsicValue": 0,
   "cost": 4,

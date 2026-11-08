@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158150945
+    "state": "partially",
+    "comment": "Done: after a verified verdict the reflect stage gets each parent edge's hypothesis plus outcome/evidence/verifier reasons and returns held/did_not_hold/unclear per edge; the harness writes 'Held: …' etc. to the edge (only real parents; tested in cycle.test.ts). Missing: reflecting one level up when all children of a parent settle.",
+    "date": 1794160116246
   },
   "intrinsicValue": 0,
   "cost": 2,

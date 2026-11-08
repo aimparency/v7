@@ -1,0 +1,276 @@
+import type { LanguageModel } from 'ai';
+import {
+  appendLoopEvent,
+  drainInbox,
+  gitDiff,
+  gitStatus,
+  maybeFindAssociation,
+  readLoopRuntimeState,
+  type GraphTools,
+  type LoopDefinition,
+  type LoopInboxMessage,
+  type PrioritizedIdea
+} from 'agent-tools';
+import type { Idea } from 'shared';
+import { filterToolsByCapabilities } from './capabilities.js';
+import { applyDecomposition, applyReflections, applyStatus } from './graph-writes.js';
+import { selectCycleTarget } from './runtime-policy.js';
+import { runStage, type StageUsage } from './stage-runner.js';
+import {
+  decompositionSchema,
+  executionSchema,
+  MAX_CHILDREN_PER_DECOMPOSITION,
+  nextStage,
+  reflectionSchema,
+  STAGE_STEP_BUDGETS,
+  statusAfter,
+  verificationSchema,
+  workStageFor,
+  type Decomposition,
+  type Execution,
+  type Stage,
+  type StageOutcome,
+  type Verification
+} from './stages.js';
+import { buildWorkerTools } from './worker-tools.js';
+import { errorMessage, markLoopPhase } from './worker-state.js';
+
+/** Which of the worker tools each model stage gets. Graph writes are never among them: the harness applies results. */
+const READ_GRAPH = ['get_idea_context', 'search_ideas_semantic'];
+const READ_CODE = ['list_files', 'search_files', 'read_file', 'git_status', 'git_diff', 'code_intelligence'];
+export const STAGE_TOOL_NAMES = {
+  decompose: [...READ_GRAPH, ...READ_CODE],
+  execute: [
+    ...READ_GRAPH, ...READ_CODE,
+    'run_command', 'propose_patch', 'apply_patch', 'str_replace', 'line_replace',
+    'experiment', 'status_report', 'human_action_required', 'external_action_required'
+  ],
+  verify: [...READ_CODE, 'run_command'],
+  reflect: [] as string[]
+};
+
+/** Where decomposition children land. ai-proposition would gate them on a human. */
+const DECOMPOSITION_LANDING_STATE = 'open';
+
+type CycleContext = {
+  projectPath: string;
+  instanceId: string;
+  loop: LoopDefinition;
+  graph: GraphTools;
+  signal: AbortSignal;
+  /** The model for every stage until per-role models exist. */
+  model: LanguageModel;
+};
+
+export async function runCycle(ctx: CycleContext) {
+  const { projectPath, instanceId, loop, graph, signal } = ctx;
+  const executionPath = loop.worktreePath || projectPath;
+  const { model } = ctx;
+  const allTools = filterToolsByCapabilities(
+    buildWorkerTools({ projectPath, instanceId, executionPath, graph, signal }),
+    loop.capabilities
+  );
+  const toolsFor = (stage: keyof typeof STAGE_TOOL_NAMES) =>
+    Object.fromEntries(STAGE_TOOL_NAMES[stage].flatMap((name) => allTools[name] ? [[name, allTools[name]]] : []));
+
+  // orient
+  await markLoopPhase(projectPath, instanceId, 'orient: picking an idea');
+  const instance = (await readLoopRuntimeState(projectPath)).instances.find((candidate) => candidate.id === instanceId);
+  const ideas = await graph.listIdeas();
+  const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
+  const prioritized = await graph.getPrioritizedIdeas(instance?.targetIdeaId ? Number.MAX_SAFE_INTEGER : 5, instance?.targetPhaseId);
+  const target = selectCycleTarget(prioritized, instance?.targetIdeaId, ideaById);
+  if (!target) throw new Error('No open prioritized idea found in the active phase.');
+  const idea = target.idea;
+  const work = workStageFor(idea, ideaById);
+  await logStage(ctx, `orient → ${work}: ${idea.text}`);
+
+  const shared = await sharedPromptSections(ctx, target, ideaById);
+  const baseSystem = [
+    loop.systemPrompt,
+    '',
+    'You are one stage of the aimparency harness. The harness picked the idea, owns the loop and writes all results to the idea graph; you work on this one idea and finish by calling the submit tool.'
+  ].join('\n');
+
+  const usage: StageUsage = { inputTokens: 0, outputTokens: 0 };
+  const addUsage = (stageUsage: StageUsage) => {
+    usage.inputTokens += stageUsage.inputTokens;
+    usage.outputTokens += stageUsage.outputTokens;
+  };
+  let decomposition: Decomposition | null = null;
+  let execution: Execution | null = null;
+  let verification: Verification | null = null;
+  let decomposed = false;
+  const notes: string[] = [];
+  let stage: Stage = nextStage({ stage: 'orient', work }, decomposed);
+
+  while (stage !== 'record' && !signal.aborted) {
+    await markLoopPhase(projectPath, instanceId, `${stage}: ${idea.text}`);
+    let outcome: StageOutcome;
+    if (stage === 'decompose') {
+      const run = await runStage({
+        ...stageBase(ctx, model, 'decompose'),
+        system: `${baseSystem}\n\nStage: decompose. Split the idea into 2-${MAX_CHILDREN_PER_DECOMPOSITION} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`,
+        prompt: shared.full,
+        tools: toolsFor('decompose'),
+        submit: { name: 'submit_decomposition', description: 'Submit the children for this idea.', schema: decompositionSchema },
+        maxSteps: STAGE_STEP_BUDGETS.decompose
+      });
+      addUsage(run.usage);
+      decomposition = run.result;
+      decomposed = true;
+      if (decomposition && decomposition.children.length > 0) {
+        const applied = await applyDecomposition(graph, projectPath, idea.id, decomposition, shared.linkableIds, DECOMPOSITION_LANDING_STATE);
+        notes.push(`decomposed into ${applied.created.length} new and ${applied.linked.length} linked children`);
+      } else {
+        notes.push(decomposition ? `no decomposition: ${decomposition.rationale}` : 'decompose stage submitted nothing');
+      }
+      outcome = { stage: 'decompose', result: decomposition };
+    } else if (stage === 'execute') {
+      const run = await runStage({
+        ...stageBase(ctx, model, 'execute'),
+        system: `${baseSystem}\n\nStage: execute. Achieve the idea and produce its acceptance evidence. Before editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused. A separate verifier will check your claimed evidence against the diff, so claim only what you observed. If the idea is too large for one cycle, submit too_large instead of starting.`,
+        prompt: shared.full,
+        tools: toolsFor('execute'),
+        submit: { name: 'submit_execution', description: 'Submit the outcome of this work cycle.', schema: executionSchema },
+        maxSteps: STAGE_STEP_BUDGETS.execute
+      });
+      addUsage(run.usage);
+      execution = run.result;
+      notes.push(execution ? `execute: ${execution.outcome} — ${execution.summary}` : 'execute stage submitted nothing');
+      outcome = { stage: 'execute', result: execution };
+    } else if (stage === 'verify') {
+      const [status, diff] = await Promise.all([
+        describeOrError(() => gitStatus(executionPath)),
+        describeOrError(() => gitDiff(executionPath, { limitChars: 20000 }))
+      ]);
+      const run = await runStage({
+        ...stageBase(ctx, model, 'verify'),
+        system: `${baseSystem}\n\nStage: verify. You did not do this work. Decide from the idea, the diff and the claimed evidence whether the idea is achieved. Re-run the claimed commands or tests where possible; do not edit files. verified: the evidence holds and covers the idea. failed: it does not hold or the work is wrong. unverifiable: you cannot check it from here. The diff is of the whole working tree and may contain unrelated changes by others.`,
+        prompt: [
+          `Idea:\n${idea.text}\n\n${idea.description ?? ''}`,
+          `Executor summary:\n${execution?.summary ?? ''}`,
+          `Claimed evidence:\n${execution?.evidence ?? ''}`,
+          `Commands the executor ran:\n${(execution?.commands ?? []).join('\n') || '(none)'}`,
+          `Working tree status (new files show as ??; read them):\n${status}`,
+          `Working tree diff:\n${diff}`
+        ].join('\n\n'),
+        tools: toolsFor('verify'),
+        submit: { name: 'submit_verdict', description: 'Submit the verdict.', schema: verificationSchema },
+        maxSteps: STAGE_STEP_BUDGETS.verify
+      });
+      addUsage(run.usage);
+      verification = run.result ?? { verdict: 'unverifiable', reasons: 'The verifier submitted no verdict.' };
+      notes.push(`verify: ${verification.verdict} — ${verification.reasons}`);
+      outcome = { stage: 'verify', result: verification };
+    } else {
+      const parentEdges = (idea.supportedIdeas ?? []).flatMap((parentId) => {
+        const parent = ideaById.get(parentId);
+        const edge = parent?.supportingConnections?.find((connection) => connection.ideaId === idea.id);
+        return parent && edge?.hypothesis ? [{ parentId, parentText: parent.text, hypothesis: edge.hypothesis }] : [];
+      });
+      if (parentEdges.length > 0) {
+        const run = await runStage({
+          ...stageBase(ctx, model, 'reflect'),
+          system: `${baseSystem}\n\nStage: reflect. The idea is settled. For each parent edge, say whether its hypothesis held, given the outcome and evidence.`,
+          prompt: [
+            `Idea:\n${idea.text}`,
+            `Outcome:\n${execution?.summary ?? ''}\n\nEvidence:\n${execution?.evidence ?? ''}\n\nVerifier:\n${verification?.reasons ?? ''}`,
+            `Parent edges:\n${JSON.stringify(parentEdges, null, 2)}`
+          ].join('\n\n'),
+          tools: toolsFor('reflect'),
+          submit: { name: 'submit_reflections', description: 'Submit one reflection per parent edge.', schema: reflectionSchema },
+          maxSteps: STAGE_STEP_BUDGETS.reflect
+        });
+        addUsage(run.usage);
+        const written = run.result
+          ? await applyReflections(graph, projectPath, idea.id, run.result, new Set(parentEdges.map((edge) => edge.parentId)))
+          : 0;
+        notes.push(`reflect: ${written} parent edge(s)`);
+      }
+      outcome = { stage: 'reflect' };
+    }
+    const next = nextStage(outcome, decomposed);
+    await logStage(ctx, `${stage} → ${next}`);
+    stage = next;
+  }
+
+  // record
+  const change = statusAfter(execution, verification);
+  if (change && !signal.aborted) await applyStatus(graph, projectPath, idea.id, change);
+  await appendLoopEvent(projectPath, instanceId, {
+    role: 'tool',
+    kind: 'status',
+    content: [
+      `Cycle on "${idea.text}": ${notes.join('; ') || 'no stage result'}.`,
+      change ? `Status → ${change.state}.` : 'Status unchanged.',
+      `Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out.`
+    ].join(' ')
+  });
+}
+
+async function describeOrError(read: () => Promise<unknown>): Promise<string> {
+  try {
+    const value = await read();
+    return typeof value === 'string' ? value : JSON.stringify(value, null, 2);
+  } catch (error) {
+    return `(unavailable: ${errorMessage(error).split('\n')[0]})`;
+  }
+}
+
+function stageBase(ctx: CycleContext, model: LanguageModel, stage: string) {
+  return { stage, model, loop: ctx.loop, projectPath: ctx.projectPath, instanceId: ctx.instanceId, signal: ctx.signal };
+}
+
+async function logStage(ctx: CycleContext, content: string) {
+  await appendLoopEvent(ctx.projectPath, ctx.instanceId, { role: 'system', kind: 'event', content: `Stage ${content}` });
+}
+
+/** The prompt the decompose and execute stages share (the context compiler will replace this). */
+async function sharedPromptSections(ctx: CycleContext, target: PrioritizedIdea, ideaById: Map<string, Idea>) {
+  const { projectPath, instanceId, loop, graph } = ctx;
+  const idea = target.idea;
+  const context = await graph.getIdeaContext(idea.id);
+  const related = (await graph.searchIdeas(`${idea.text} ${idea.description ?? ''}`, 8)).filter((candidate) => candidate.id !== idea.id);
+  const pendingHumanMessages = await drainInbox(projectPath, instanceId);
+  const instance = (await readLoopRuntimeState(projectPath)).instances.find((candidate) => candidate.id === instanceId);
+  const recentState = (instance?.messages ?? []).slice(-12).map((message) => `${message.kind}: ${message.content}`).join('\n');
+  const association = await maybeFindAssociation(projectPath, graph.listIdeas, recentState, loop.associationChance ?? 0.1, [idea.id]);
+
+  const ancestors = ancestorIds(idea.id, ideaById);
+  const linkableIds = new Set(related.map((candidate) => candidate.id).filter((id) => !ancestors.has(id)));
+  const full = [
+    `Current idea:\n${JSON.stringify({
+      id: idea.id,
+      text: idea.text,
+      description: idea.description,
+      status: idea.status,
+      priority: target.priority,
+      value: target.value,
+      cost: target.cost,
+      phase: target.phase.name
+    }, null, 2)}`,
+    `Idea context:\n${JSON.stringify(context, null, 2)}`,
+    `Similar ideas:\n${JSON.stringify(related, null, 2)}`,
+    association ? `Association surfaced from recent loop state messages:\n${JSON.stringify(association, null, 2)}` : '',
+    pendingHumanMessages.length > 0 ? `Pending human messages:\n${summarizeInbox(pendingHumanMessages)}` : ''
+  ].filter(Boolean).join('\n\n');
+  return { full, linkableIds };
+}
+
+function ancestorIds(ideaId: string, ideaById: Map<string, Idea>): Set<string> {
+  const seen = new Set<string>([ideaId]);
+  const stack = [ideaId];
+  while (stack.length > 0) {
+    for (const parentId of ideaById.get(stack.pop()!)?.supportedIdeas ?? []) {
+      if (seen.has(parentId)) continue;
+      seen.add(parentId);
+      stack.push(parentId);
+    }
+  }
+  return seen;
+}
+
+function summarizeInbox(messages: LoopInboxMessage[]): string {
+  return messages.map((message) => `Human (${new Date(message.timestamp).toISOString()}): ${message.content}`).join('\n');
+}

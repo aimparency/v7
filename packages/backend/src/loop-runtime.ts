@@ -78,7 +78,7 @@ export const pickDefaultLoopTarget = async (rawProjectPath: string, preferredPha
   const phase = explicitPhase ?? cursorPhase ?? activePhase ?? phases[0] ?? null;
   if (!phase) return { targetPhaseId: null, targetIdeaId: null };
 
-  // Same actionable leaves the loop-worker and MCP rank; containers are no target.
+  // The default target is the top actionable leaf; without one the worker decomposes the top container itself.
   const { scope, candidates } = selectWorkCandidates(ideas, phase);
   const { priorities } = calculateIdeaValues(ideas, defaultIdeaCost(meta));
   const targetIdea = scope === 'mission-containers-exploration'

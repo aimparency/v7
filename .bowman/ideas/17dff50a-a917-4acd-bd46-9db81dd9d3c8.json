@@ -22,9 +22,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158150793
+    "state": "partially",
+    "comment": "Done: verify stage sees only idea, executor summary, claimed evidence, claimed commands, git status and diff; tools are read-only code tools + run_command; verdict mapping verified→implemented (evidence + verifier reasons in comment), failed→open with the objection, unverifiable→review; missing verdict counts as unverifiable. Missing: a different model family (needs role registry e6bd3fd6) and a pluggable external verifier backend.",
+    "date": 1794160116512
   },
   "intrinsicValue": 0,
   "cost": 3,

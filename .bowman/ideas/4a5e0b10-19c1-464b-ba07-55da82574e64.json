@@ -21,9 +21,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158150452
+    "state": "partially",
+    "comment": "Done (basic): decompose stage for containers and too-large leaves returns up to 7 children with description/acceptance, hypothesis, weight, cost; a child may name an existing similar idea to link instead of creating (only ideas shown to it, never the idea or its ancestors); children land as open via create_idea's two-step flow, tagged harness. Missing: landing in ai-proposition for high-value parents, depth/new-idea limits per cycle beyond 7, and the evaluation against real children of implemented parents.",
+    "date": 1794160116530
   },
   "intrinsicValue": 0,
   "cost": 4,

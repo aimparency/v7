@@ -44,9 +44,9 @@ export function connectGraph(projectPath: string) {
     ]);
     const phase = resolveWorkPhase(phases, phaseId);
     if (!phase) return [];
-    const { scope, candidates } = selectWorkCandidates(ideas, phase);
-    // Exploration candidates are containers to decompose, not work to execute.
-    if (scope === 'mission-containers-exploration') return [];
+    // Without an open leaf anywhere, the candidates are the phase's open
+    // containers: the harness decomposes those instead of executing them.
+    const { candidates } = selectWorkCandidates(ideas, phase);
     const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(ideas, defaultIdeaCost(meta));
     return candidates
       .map((idea) => ({
