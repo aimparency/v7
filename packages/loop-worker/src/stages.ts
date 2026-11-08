@@ -139,3 +139,5 @@ export function stageSystemBase(loopSystemPrompt: string): string {
 export function decomposeInstructions(maxChildren: number): string {
   return `Stage: decompose. Split the idea into 2-${maxChildren} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`;
 }
+
+export const EXECUTE_INSTRUCTIONS = 'Stage: execute. Achieve the idea and produce its acceptance evidence. A separate verifier will re-run your claimed commands and check your evidence against the diff, so claim only what you observed. If the idea is too large for one cycle, submit too_large instead of starting; if it needs a human decision or action, submit blocked with the exact question.';

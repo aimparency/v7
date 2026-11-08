@@ -19,6 +19,8 @@ export type StageTrace = {
   text: string;
   result: unknown;
   usage: StageUsage;
+  /** Set when the backend reports its own cost (e.g. Claude Code); otherwise priced from harness.json. */
+  costUsd?: number | null;
   durationMs: number;
 };
 

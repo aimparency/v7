@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158150604
+    "state": "partially",
+    "comment": "Done: harness.json executor.backend = builtin (AI SDK tool loop, default) | claude-code. packages/loop-worker/src/claude-code-executor.ts runs `claude -p` in the loop's execution path with the compiled context as prompt, --json-schema = the execution result schema (structured_output becomes the stage result), --strict-mcp-config (no graph tools: the harness alone writes the graph), --setting-sources user + AIMPARENCY_ALLOW_STOP=1 (the repo's continuation hook cannot trap it), --permission-mode acceptEdits with a configurable allowedTools list, --max-budget-usd, optional --model, own timeout. Its reported total_cost_usd flows into the cycle cost; the harness verifier (receipts + cross-model verdict) checks its work as for the built-in executor. Evidence: claude-code-executor.test (flags, env, cwd, usage/cost, error/invalid/missing binary -> no result; spawn-failure hang found and fixed), cycle.test with the claude-code backend (Claude Code executes, harness verifies and writes implemented, cost 0.3 combined), loop-worker 33/33; real CLI probe with Haiku in a scratch dir returned a valid structured result ($0.005). Missing: Codex backend (codex exec --json) and running in a disposable worktree (needs deps installed there; today it uses loop.worktreePath like the built-in executor).",
+    "date": 1794162280864
   },
   "intrinsicValue": 0,
   "cost": 4,

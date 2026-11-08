@@ -8,6 +8,7 @@ import { MockLanguageModelV3 } from 'ai/test';
 import type { GraphTools, LoopDefinition } from 'agent-tools';
 import { runCycle } from './cycle.js';
 import type { RoleModels } from './models.js';
+import { fakeClaude } from './fake-claude.js';
 
 const usage = { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } };
 
@@ -226,4 +227,29 @@ test('budgets: a priced cycle records its cost, the token budget stops before th
   await runCycle(brokeContext);
   assert.equal(brokeModel.toolSets.length, 0, 'no model call once the daily budget is spent');
   assert.equal((await fs.readdir(traceDir)).length, 1, 'no new trace');
+});
+
+test('with the claude-code backend, Claude Code executes and the harness still verifies, writes the graph and adds up the cost', async () => {
+  const fake = await fakeClaude({
+    is_error: false,
+    structured_output: { outcome: 'done', summary: 'cached it', evidence: 'echo ok printed ok', commands: ['echo ok'] },
+    total_cost_usd: 0.3,
+    usage: { input_tokens: 100, output_tokens: 20 }
+  });
+  const { graph, writes } = fakeGraph([idea('leaf', 'open')], 'leaf');
+  const { model, toolSets } = submittingModel([['submit_verdict', { verdict: 'verified', reasons: 'receipt exit 0' }]]);
+  const context = await cycleContext(graph, model);
+  await fs.writeFile(path.join(context.projectPath, '.bowman', 'harness.json'), JSON.stringify({
+    executor: { backend: 'claude-code', claudeCode: { command: fake.command } },
+    prices: { mock: { inputPerMTok: 0, outputPerMTok: 0 } }
+  }));
+  await runCycle(context);
+
+  assert.equal(toolSets.length, 1, 'only the verifier ran on the harness model');
+  assert.ok(toolSets[0]!.includes('submit_verdict'));
+  assert.equal(writes.find(([kind]) => kind === 'update')?.[1].idea.status.state, 'implemented');
+  const trace = await readOnlyTrace(context.projectPath);
+  assert.equal(trace.stages[0].stage, 'execute (claude-code)');
+  assert.equal(trace.costUsd, 0.3);
+  assert.equal(trace.receipts[0].exitCode, 0);
 });

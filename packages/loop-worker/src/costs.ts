@@ -8,13 +8,14 @@ import { tracesDir, type CycleTrace } from './traces.js';
 // the model that ran it. A stage on a model without a price makes the cycle
 // unpriced (null) rather than silently cheaper.
 
-export function stageCostUsd(stage: Pick<StageTrace, 'model' | 'usage'>, prices: HarnessConfig['prices']): number | null {
+export function stageCostUsd(stage: Pick<StageTrace, 'model' | 'usage' | 'costUsd'>, prices: HarnessConfig['prices']): number | null {
+  if (stage.costUsd !== undefined) return stage.costUsd;
   const price = prices[stage.model.model];
   if (!price) return null;
   return (stage.usage.inputTokens * price.inputPerMTok + stage.usage.outputTokens * price.outputPerMTok) / 1_000_000;
 }
 
-export function cycleCostUsd(stages: Pick<StageTrace, 'model' | 'usage'>[], prices: HarnessConfig['prices']): number | null {
+export function cycleCostUsd(stages: Pick<StageTrace, 'model' | 'usage' | 'costUsd'>[], prices: HarnessConfig['prices']): number | null {
   let total = 0;
   for (const stage of stages) {
     const cost = stageCostUsd(stage, prices);
@@ -24,8 +25,8 @@ export function cycleCostUsd(stages: Pick<StageTrace, 'model' | 'usage'>[], pric
   return total;
 }
 
-export function unpricedModels(stages: Pick<StageTrace, 'model'>[], prices: HarnessConfig['prices']): string[] {
-  return [...new Set(stages.map((stage) => stage.model.model).filter((model) => !prices[model]))];
+export function unpricedModels(stages: Pick<StageTrace, 'model' | 'costUsd'>[], prices: HarnessConfig['prices']): string[] {
+  return [...new Set(stages.filter((stage) => stage.costUsd == null).map((stage) => stage.model.model).filter((model) => !prices[model]))];
 }
 
 /** USD spent by priced cycles that started today (UTC), read from the trace store. */

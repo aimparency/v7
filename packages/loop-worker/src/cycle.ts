@@ -19,6 +19,7 @@ import { applyDecomposition, applyReflections, applyStatus } from './graph-write
 import { selectCycleTarget } from './runtime-policy.js';
 import { runStage, type StageTrace, type StageUsage } from './stage-runner.js';
 import { writeCycleTrace } from './traces.js';
+import { runClaudeCodeExecutor } from './claude-code-executor.js';
 import { cycleCostUsd, spentTodayUsd, tokensUsed, unpricedModels } from './costs.js';
 import {
   decompositionSchema,
@@ -26,6 +27,7 @@ import {
   applyReceipts,
   formatReceipts,
   decomposeInstructions,
+  EXECUTE_INSTRUCTIONS,
   stageSystemBase,
   nextStage,
   reflectionSchema,
@@ -153,14 +155,23 @@ export async function runCycle(ctx: CycleContext) {
       }
       outcome = { stage: 'decompose', result: decomposition };
     } else if (stage === 'execute') {
-      const run = await runStage({
-        ...stageBase(ctx, 'executor', 'execute'),
-        system: `${baseSystem}\n\nStage: execute. Achieve the idea and produce its acceptance evidence. Before editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused. A separate verifier will check your claimed evidence against the diff, so claim only what you observed. If the idea is too large for one cycle, submit too_large instead of starting.`,
-        prompt: await stageContext(ctx, gathered.input, 'execute', config.contextBudgetChars),
-        tools: toolsFor('execute'),
-        submit: { name: 'submit_execution', description: 'Submit the outcome of this work cycle.', schema: executionSchema },
-        maxSteps: config.stepBudgets.execute
-      });
+      const executePrompt = await stageContext(ctx, gathered.input, 'execute', config.contextBudgetChars);
+      const run = config.executor.backend === 'claude-code'
+        ? await runClaudeCodeExecutor({
+            executionPath,
+            system: `${baseSystem}\n\n${EXECUTE_INSTRUCTIONS}\nUse your own tools to read, edit and test.`,
+            prompt: executePrompt,
+            config: config.executor.claudeCode,
+            signal
+          })
+        : await runStage({
+            ...stageBase(ctx, 'executor', 'execute'),
+            system: `${baseSystem}\n\n${EXECUTE_INSTRUCTIONS}\nBefore editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused.`,
+            prompt: executePrompt,
+            tools: toolsFor('execute'),
+            submit: { name: 'submit_execution', description: 'Submit the outcome of this work cycle.', schema: executionSchema },
+            maxSteps: config.stepBudgets.execute
+          });
       addUsage(run.usage);
       stageTraces.push(run.trace);
       execution = run.result;

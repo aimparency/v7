@@ -31,6 +31,23 @@ export const harnessConfigSchema = z.object({
     maxCommands: z.number().int().min(0).max(20).default(5),
     timeoutMs: z.number().int().min(1000).max(600_000).default(120_000)
   }).default({}),
+  /** Who does the execute stage: the built-in tool loop on the executor role model, or a headless Claude Code. */
+  executor: z.object({
+    backend: z.enum(['builtin', 'claude-code']).default('builtin'),
+    claudeCode: z.object({
+      command: z.string().default('claude'),
+      /** Model alias or id for claude --model; omitted means Claude Code's default. */
+      model: z.string().optional(),
+      maxBudgetUsd: z.number().positive().default(2),
+      timeoutMs: z.number().int().min(10_000).default(1_800_000),
+      /** Tools it may use without asking; anything else is denied (nobody answers prompts headless). */
+      allowedTools: z.array(z.string()).default([
+        'Read', 'Edit', 'Write', 'Glob', 'Grep',
+        'Bash(git status:*)', 'Bash(git diff:*)', 'Bash(pnpm test:*)', 'Bash(pnpm -s test:*)',
+        'Bash(pnpm -s typecheck:*)', 'Bash(pnpm typecheck:*)', 'Bash(npx tsx --test:*)', 'Bash(npx vitest run:*)'
+      ])
+    }).strict().default({})
+  }).strict().default({}),
   /** USD per million tokens, keyed by model id as configured in loops.json. */
   prices: z.record(z.string(), z.object({
     inputPerMTok: z.number().min(0),
