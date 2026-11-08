@@ -1,3 +1,4 @@
+import path from 'path';
 import {
   appendLoopEvent,
   drainInbox,
@@ -14,7 +15,8 @@ import { compileContext, type ContextInput } from './context.js';
 import { filterToolsByCapabilities } from './capabilities.js';
 import { applyDecomposition, applyReflections, applyStatus } from './graph-writes.js';
 import { selectCycleTarget } from './runtime-policy.js';
-import { runStage, type StageUsage } from './stage-runner.js';
+import { runStage, type StageTrace, type StageUsage } from './stage-runner.js';
+import { writeCycleTrace } from './traces.js';
 import {
   decompositionSchema,
   executionSchema,
@@ -100,6 +102,9 @@ export async function runCycle(ctx: CycleContext) {
   let verification: Verification | null = null;
   let decomposed = false;
   const notes: string[] = [];
+  const stageTraces: StageTrace[] = [];
+  const startedAt = Date.now();
+  let verifiedDiff: { status: string; diff: string } | undefined;
   let stage: Stage = nextStage({ stage: 'orient', work }, decomposed);
 
   while (stage !== 'record' && !signal.aborted) {
@@ -115,6 +120,7 @@ export async function runCycle(ctx: CycleContext) {
         maxSteps: STAGE_STEP_BUDGETS.decompose
       });
       addUsage(run.usage);
+      stageTraces.push(run.trace);
       decomposition = run.result;
       decomposed = true;
       if (decomposition && decomposition.children.length > 0) {
@@ -134,6 +140,7 @@ export async function runCycle(ctx: CycleContext) {
         maxSteps: STAGE_STEP_BUDGETS.execute
       });
       addUsage(run.usage);
+      stageTraces.push(run.trace);
       execution = run.result;
       notes.push(execution ? `execute: ${execution.outcome} — ${execution.summary}` : 'execute stage submitted nothing');
       outcome = { stage: 'execute', result: execution };
@@ -142,6 +149,7 @@ export async function runCycle(ctx: CycleContext) {
         describeOrError(() => gitStatus(executionPath)),
         describeOrError(() => gitDiff(executionPath, { limitChars: 20000 }))
       ]);
+      verifiedDiff = { status, diff };
       const run = await runStage({
         ...stageBase(ctx, 'verifier', 'verify'),
         system: `${baseSystem}\n\nStage: verify. You did not do this work. Decide from the idea, the diff and the claimed evidence whether the idea is achieved. Re-run the claimed commands or tests where possible; do not edit files. verified: the evidence holds and covers the idea. failed: it does not hold or the work is wrong. unverifiable: you cannot check it from here. The diff is of the whole working tree and may contain unrelated changes by others.`,
@@ -158,6 +166,7 @@ export async function runCycle(ctx: CycleContext) {
         maxSteps: STAGE_STEP_BUDGETS.verify
       });
       addUsage(run.usage);
+      stageTraces.push(run.trace);
       verification = run.result ?? { verdict: 'unverifiable', reasons: 'The verifier submitted no verdict.' };
       notes.push(`verify: ${verification.verdict} — ${verification.reasons}`);
       outcome = { stage: 'verify', result: verification };
@@ -181,6 +190,7 @@ export async function runCycle(ctx: CycleContext) {
           maxSteps: STAGE_STEP_BUDGETS.reflect
         });
         addUsage(run.usage);
+        stageTraces.push(run.trace);
         const written = run.result
           ? await applyReflections(graph, projectPath, idea.id, run.result, new Set(parentEdges.map((edge) => edge.parentId)))
           : 0;
@@ -196,13 +206,27 @@ export async function runCycle(ctx: CycleContext) {
   // record
   const change = statusAfter(execution, verification);
   if (change && !signal.aborted) await applyStatus(graph, projectPath, idea.id, change);
+  const tracePath = await writeCycleTrace(projectPath, {
+    instanceId,
+    startedAt,
+    finishedAt: Date.now(),
+    ideaId: idea.id,
+    ideaText: idea.text,
+    loop: { id: loop.id, name: loop.name, provider: loop.provider, model: loop.model, baseUrl: loop.baseUrl, roles: loop.roles, capabilities: loop.capabilities, systemPrompt: loop.systemPrompt },
+    stages: stageTraces,
+    verifiedDiff,
+    statusChange: change,
+    notes,
+    usage
+  });
   await appendLoopEvent(projectPath, instanceId, {
     role: 'tool',
     kind: 'status',
     content: [
       `Cycle on "${idea.text}": ${notes.join('; ') || 'no stage result'}.`,
       change ? `Status → ${change.state}.` : 'Status unchanged.',
-      `Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out.`
+      `Tokens: ${usage.inputTokens} in / ${usage.outputTokens} out.`,
+      `Trace: ${path.basename(tracePath)}.`
     ].join(' ')
   });
 }

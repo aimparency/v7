@@ -92,7 +92,18 @@ test('a leaf goes execute → verify → reflect → record, and the harness wri
     ['submit_verdict', { verdict: 'verified', reasons: 're-ran pnpm bench' }],
     ['submit_reflections', { reflections: [{ parentId: 'parent', held: 'held', reflection: 'twice as fast' }, { parentId: 'stranger', held: 'held', reflection: 'x' }] }]
   ]);
-  await runCycle(await cycleContext(graph, model));
+  const context = await cycleContext(graph, model);
+  await runCycle(context);
+
+  const traceDir = path.join(context.projectPath, '.bowman', 'runtime', 'traces');
+  const [traceFile] = await fs.readdir(traceDir);
+  const trace = JSON.parse(await fs.readFile(path.join(traceDir, traceFile!), 'utf8'));
+  assert.deepEqual(trace.stages.map((stage: any) => stage.stage), ['execute (executor)', 'verify (verifier)', 'reflect (reflector)']);
+  assert.equal(trace.stages[0].toolCalls[0].name, 'submit_execution');
+  assert.match(trace.stages[0].prompt, /## idea\nidea leaf/);
+  assert.ok(trace.verifiedDiff, 'the trace keeps what the verifier saw');
+  assert.equal(trace.statusChange.state, 'implemented');
+  assert.deepEqual(trace.usage, { inputTokens: 30, outputTokens: 15 });
 
   assert.equal(toolSets.length, 3);
   assert.ok(toolSets[0]!.includes('str_replace') && !toolSets[0]!.includes('update_idea'), 'the executor codes but never writes the graph');

@@ -97,7 +97,8 @@
         -2.14
       ],
       "weight": 1,
-      "hypothesis": "Without stored traces no harness change can be evaluated except by rerunning live, which is too slow and expensive to iterate on."
+      "hypothesis": "Without stored traces no harness change can be evaluated except by rerunning live, which is too slow and expensive to iterate on.",
+      "reflection": "Held: the stage runner already had all the pieces, so a full trace per cycle cost one small module; it is now the data source for cost accounting and memory-usefulness measurement."
     }
   ],
   "supportedIdeas": [

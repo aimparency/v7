@@ -20,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158151357
+    "state": "implemented",
+    "comment": "packages/loop-worker/src/traces.ts: every cycle writes .bowman/runtime/traces/<start>-<idea8>.json (gitignored; newest 200 kept) with loop config incl. role models and system prompt, per stage: role model, system, compiled prompt, tool calls with inputs/outputs/errors, text, submitted result, usage, duration; plus the git status+diff the verifier saw, the status the harness wrote, cycle notes and summed usage. The cycle's status event names the trace file. Evidence: cycle.test.ts asserts stages, tool calls, compiled prompt, verifiedDiff, statusChange and usage in the written trace; traces.test.ts naming + pruning; loop-worker 21/21; backend loop-cycle e2e 3/3. Replay tooling itself is not built yet; the data is there.",
+    "date": 1794160515805
   },
   "intrinsicValue": 0,
   "cost": 2,

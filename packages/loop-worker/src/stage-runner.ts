@@ -7,7 +7,22 @@ import { errorMessage } from './worker-state.js';
 
 export type StageUsage = { inputTokens: number; outputTokens: number };
 
-export type StageRun<T> = { result: T | null; text: string; usage: StageUsage };
+export type ToolCallTrace = { name: string; input: unknown; output?: string; error?: string };
+
+/** Everything a stage did, for the cycle trace (replay, A/B comparison, evaluation). */
+export type StageTrace = {
+  stage: string;
+  model: RoleModelSpec;
+  system: string;
+  prompt: string;
+  toolCalls: ToolCallTrace[];
+  text: string;
+  result: unknown;
+  usage: StageUsage;
+  durationMs: number;
+};
+
+export type StageRun<T> = { result: T | null; text: string; usage: StageUsage; trace: StageTrace };
 
 type StageSpec<T> = {
   stage: string;
@@ -32,6 +47,7 @@ type StageSpec<T> = {
  * turn with only the submit tool.
  */
 export async function runStage<T>(spec: StageSpec<T>): Promise<StageRun<T>> {
+  const startedAt = Date.now();
   let result: T | null = null;
   const submitTool = tool({
     description: spec.submit.description,
@@ -61,7 +77,23 @@ export async function runStage<T>(spec: StageSpec<T>): Promise<StageRun<T>> {
     tools: { ...spec.tools, [spec.submit.name]: submitTool },
     stopWhen: [stepCountIs(spec.maxSteps), hasToolCall(spec.submit.name)]
   });
-  if (result !== null || spec.signal.aborted) return { result, text: first.text, usage: first.usage };
+  const finish = (text: string, usage: StageUsage, toolCalls: ToolCallTrace[]): StageRun<T> => ({
+    result,
+    text,
+    usage,
+    trace: {
+      stage: spec.stage,
+      model: spec.modelSpec,
+      system: spec.system,
+      prompt: spec.prompt,
+      toolCalls,
+      text,
+      result,
+      usage,
+      durationMs: Date.now() - startedAt
+    }
+  });
+  if (result !== null || spec.signal.aborted) return finish(first.text, first.usage, first.toolCalls);
 
   const messages: ModelMessage[] = [
     { role: 'user', content: spec.prompt },
@@ -75,14 +107,14 @@ export async function runStage<T>(spec: StageSpec<T>): Promise<StageRun<T>> {
     toolChoice: 'required',
     stopWhen: stepCountIs(1)
   });
-  return {
-    result,
-    text: `${first.text}${retry.text}`,
-    usage: {
+  return finish(
+    `${first.text}${retry.text}`,
+    {
       inputTokens: first.usage.inputTokens + retry.usage.inputTokens,
       outputTokens: first.usage.outputTokens + retry.usage.outputTokens
-    }
-  };
+    },
+    [...first.toolCalls, ...retry.toolCalls]
+  );
 }
 
 async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknown>) {
@@ -94,6 +126,8 @@ async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknow
   let lastFlushAt = Date.now();
   let sawPart = false;
   const errors: string[] = [];
+  const toolCalls: ToolCallTrace[] = [];
+  const callsById = new Map<string, ToolCallTrace>();
   const flushText = async (force: boolean) => {
     const pending = text.slice(flushedLength);
     if (!pending.trim()) return;
@@ -114,6 +148,9 @@ async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknow
       text += part.text;
       await flushText(false);
     } else if (part.type === 'tool-call') {
+      const call: ToolCallTrace = { name: String(part.toolName), input: part.input };
+      toolCalls.push(call);
+      callsById.set(part.toolCallId, call);
       await flushText(true);
       await setLoopActivity(projectPath, instanceId, `${spec.stage}: ${String(part.toolName)}`);
       await appendLoopEvent(projectPath, instanceId, {
@@ -122,12 +159,16 @@ async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknow
         content: `Calling tool: ${String(part.toolName)}\n${truncate(part.input)}`
       });
     } else if (part.type === 'tool-result') {
+      const call = callsById.get(part.toolCallId);
+      if (call) call.output = truncate(part.output);
       await appendLoopEvent(projectPath, instanceId, {
         role: 'system',
         kind: 'event',
         content: `Tool result: ${String(part.toolName)}\n${truncate(part.output)}`
       });
     } else if (part.type === 'tool-error') {
+      const call = callsById.get(part.toolCallId);
+      if (call) call.error = errorMessage(part.error);
       // The model sees the failure as the tool result and can correct itself (e.g. an invalid submit).
       await appendLoopEvent(projectPath, instanceId, {
         role: 'system',
@@ -146,6 +187,7 @@ async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknow
   const [response, usage] = await Promise.all([stream.response, stream.totalUsage]);
   return {
     text,
+    toolCalls,
     messages: response.messages as ModelMessage[],
     usage: { inputTokens: usage.inputTokens ?? 0, outputTokens: usage.outputTokens ?? 0 }
   };
