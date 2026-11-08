@@ -63,18 +63,18 @@ Run the installer from the Aimparency repository:
 When the coding assistant attempts to stop normally, the hook blocks the stop event and instructs the assistant to:
 1. Call \`get_prioritized_ideas\`
 2. Orient with \`get_idea_context\`
-3. Implement and verify the selected actionable idea
+3. Advance the selected idea: implement and verify it, or, when it waits on the human, prepare the human's step (draft, one-pager, checklist, decision options) so the human only has to send or pick
 4. Record status and evidence (status comment) with \`update_idea\`, reflect on each parent connection's hypothesis, and commit the code with the \`.bowman\` idea files it changed in one commit
 5. Reprioritize and continue
 
-Every Aimparency MCP tool may be run in the loop except the continue-hook toggles, e.g. \`major_hypothesis_loop\` when the priority list runs thin.
+Work is not only code. Research and ideation under the root and major ideas (\`major_hypothesis_loop\`, outside research, new hypotheses as sub ideas) are regular work, not a fallback: a session should not end without fresh outside research against the root idea. Every Aimparency MCP tool may be run in the loop except the continue-hook toggles.
 
-An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for a human action) with the exact question in its status comment; it leaves the priority list and the loop moves on.
+An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for a human action) with the exact question and the prepared material in its status comment; it leaves the priority list and the loop moves on. Asking the human is right only once the major ideas got fresh hypotheses and every waiting idea has its step prepared.
 
 ### Two-Stage Human-Wait Protocol
 If the assistant determines human intervention (credentials, explicit authorization, human judgment) is indispensable:
 1. The assistant states the exact blocker and ends its response with \`[AIMPARENCY_REQUEST_HUMAN]\`.
-2. The hook challenges the assistant once: stepping back to check graph hygiene, decompose abstract ideas, or find safe reversible work.
+2. The hook challenges the assistant once: fresh research and hypotheses on the major ideas, a prepared step for every waiting idea, graph hygiene, decomposing abstract ideas, safe reversible work.
 3. If human action is still strictly required, the assistant re-states the request and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
 ### Enable / Disable
