@@ -130,3 +130,12 @@ export function applyReceipts(verification: Verification, receipts: Receipt[]): 
   const commands = failing.map((receipt) => `\`${receipt.command}\` exited ${receipt.exitCode}`).join(', ');
   return { verdict: 'failed', reasons: `${verification.reasons}\nOverruled by the harness: re-run of the claimed command ${commands}.` };
 }
+
+/** The system text every stage starts with: the loop's own prompt, then the harness contract. */
+export function stageSystemBase(loopSystemPrompt: string): string {
+  return `${loopSystemPrompt}\n\nYou are one stage of the aimparency harness. The harness picked the idea, owns the loop and writes all results to the idea graph; you work on this one idea and finish by calling the submit tool.`;
+}
+
+export function decomposeInstructions(maxChildren: number): string {
+  return `Stage: decompose. Split the idea into 2-${maxChildren} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`;
+}

@@ -25,6 +25,8 @@ import {
   executionSchema,
   applyReceipts,
   formatReceipts,
+  decomposeInstructions,
+  stageSystemBase,
   nextStage,
   reflectionSchema,
   statusAfter,
@@ -105,11 +107,7 @@ export async function runCycle(ctx: CycleContext) {
   await logStage(ctx, `orient → ${work}: ${idea.text}`);
 
   const gathered = await gatherContextInput(ctx, target, ideas, ideaById);
-  const baseSystem = [
-    loop.systemPrompt,
-    '',
-    'You are one stage of the aimparency harness. The harness picked the idea, owns the loop and writes all results to the idea graph; you work on this one idea and finish by calling the submit tool.'
-  ].join('\n');
+  const baseSystem = stageSystemBase(loop.systemPrompt);
 
   const usage: StageUsage = { inputTokens: 0, outputTokens: 0 };
   const addUsage = (stageUsage: StageUsage) => {
@@ -137,7 +135,7 @@ export async function runCycle(ctx: CycleContext) {
     if (stage === 'decompose') {
       const run = await runStage({
         ...stageBase(ctx, 'planner', 'decompose'),
-        system: `${baseSystem}\n\nStage: decompose. Split the idea into 2-${config.decomposition.maxChildren} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`,
+        system: `${baseSystem}\n\n${decomposeInstructions(config.decomposition.maxChildren)}`,
         prompt: await stageContext(ctx, gathered.input, 'decompose', config.contextBudgetChars),
         tools: toolsFor('decompose'),
         submit: { name: 'submit_decomposition', description: 'Submit the children for this idea.', schema: decompositionSchema },
