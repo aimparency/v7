@@ -7,10 +7,10 @@ import {
   readLoopRuntimeState,
   type GraphTools,
   type LoopDefinition,
-  type LoopInboxMessage,
   type PrioritizedIdea
 } from 'agent-tools';
-import type { Idea } from 'shared';
+import { calculateIdeaValues, missionPathsToRoot, type Idea } from 'shared';
+import { compileContext, type ContextInput } from './context.js';
 import { filterToolsByCapabilities } from './capabilities.js';
 import { applyDecomposition, applyReflections, applyStatus } from './graph-writes.js';
 import { selectCycleTarget } from './runtime-policy.js';
@@ -83,7 +83,7 @@ export async function runCycle(ctx: CycleContext) {
   const work = workStageFor(idea, ideaById);
   await logStage(ctx, `orient → ${work}: ${idea.text}`);
 
-  const shared = await sharedPromptSections(ctx, target, ideaById);
+  const gathered = await gatherContextInput(ctx, target, ideas, ideaById);
   const baseSystem = [
     loop.systemPrompt,
     '',
@@ -109,7 +109,7 @@ export async function runCycle(ctx: CycleContext) {
       const run = await runStage({
         ...stageBase(ctx, 'planner', 'decompose'),
         system: `${baseSystem}\n\nStage: decompose. Split the idea into 2-${MAX_CHILDREN_PER_DECOMPOSITION} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`,
-        prompt: shared.full,
+        prompt: await stageContext(ctx, gathered.input, 'decompose'),
         tools: toolsFor('decompose'),
         submit: { name: 'submit_decomposition', description: 'Submit the children for this idea.', schema: decompositionSchema },
         maxSteps: STAGE_STEP_BUDGETS.decompose
@@ -118,7 +118,7 @@ export async function runCycle(ctx: CycleContext) {
       decomposition = run.result;
       decomposed = true;
       if (decomposition && decomposition.children.length > 0) {
-        const applied = await applyDecomposition(graph, projectPath, idea.id, decomposition, shared.linkableIds, DECOMPOSITION_LANDING_STATE);
+        const applied = await applyDecomposition(graph, projectPath, idea.id, decomposition, gathered.linkableIds, DECOMPOSITION_LANDING_STATE);
         notes.push(`decomposed into ${applied.created.length} new and ${applied.linked.length} linked children`);
       } else {
         notes.push(decomposition ? `no decomposition: ${decomposition.rationale}` : 'decompose stage submitted nothing');
@@ -128,7 +128,7 @@ export async function runCycle(ctx: CycleContext) {
       const run = await runStage({
         ...stageBase(ctx, 'executor', 'execute'),
         system: `${baseSystem}\n\nStage: execute. Achieve the idea and produce its acceptance evidence. Before editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused. A separate verifier will check your claimed evidence against the diff, so claim only what you observed. If the idea is too large for one cycle, submit too_large instead of starting.`,
-        prompt: shared.full,
+        prompt: await stageContext(ctx, gathered.input, 'execute'),
         tools: toolsFor('execute'),
         submit: { name: 'submit_execution', description: 'Submit the outcome of this work cycle.', schema: executionSchema },
         maxSteps: STAGE_STEP_BUDGETS.execute
@@ -225,36 +225,45 @@ async function logStage(ctx: CycleContext, content: string) {
   await appendLoopEvent(ctx.projectPath, ctx.instanceId, { role: 'system', kind: 'event', content: `Stage ${content}` });
 }
 
-/** The prompt the decompose and execute stages share (the context compiler will replace this). */
-async function sharedPromptSections(ctx: CycleContext, target: PrioritizedIdea, ideaById: Map<string, Idea>) {
+/** What the context compiler needs, gathered once per cycle. */
+async function gatherContextInput(ctx: CycleContext, target: PrioritizedIdea, ideas: Idea[], ideaById: Map<string, Idea>) {
   const { projectPath, instanceId, loop, graph } = ctx;
   const idea = target.idea;
-  const context = await graph.getIdeaContext(idea.id);
-  const related = (await graph.searchIdeas(`${idea.text} ${idea.description ?? ''}`, 8)).filter((candidate) => candidate.id !== idea.id);
-  const pendingHumanMessages = await drainInbox(projectPath, instanceId);
+  const similar = (await graph.searchIdeas(`${idea.text} ${idea.description ?? ''}`, 12)).filter((candidate) => candidate.id !== idea.id);
+  const humanMessages = await drainInbox(projectPath, instanceId);
   const instance = (await readLoopRuntimeState(projectPath)).instances.find((candidate) => candidate.id === instanceId);
-  const recentState = (instance?.messages ?? []).slice(-12).map((message) => `${message.kind}: ${message.content}`).join('\n');
-  const association = await maybeFindAssociation(projectPath, graph.listIdeas, recentState, loop.associationChance ?? 0.1, [idea.id]);
+  const recentEvents = (instance?.messages ?? []).filter((message) => message.kind !== 'text').slice(-12)
+    .map((message) => `${message.kind}: ${message.content.split('\n')[0]!.slice(0, 300)}`);
+  const association = await maybeFindAssociation(projectPath, graph.listIdeas, recentEvents.join('\n'), loop.associationChance ?? 0.1, [idea.id]);
+  const { pathToRoot } = missionPathsToRoot(ideaById, idea, calculateIdeaValues(ideas).flowValues);
 
   const ancestors = ancestorIds(idea.id, ideaById);
-  const linkableIds = new Set(related.map((candidate) => candidate.id).filter((id) => !ancestors.has(id)));
-  const full = [
-    `Current idea:\n${JSON.stringify({
-      id: idea.id,
-      text: idea.text,
-      description: idea.description,
-      status: idea.status,
-      priority: target.priority,
-      value: target.value,
-      cost: target.cost,
-      phase: target.phase.name
-    }, null, 2)}`,
-    `Idea context:\n${JSON.stringify(context, null, 2)}`,
-    `Similar ideas:\n${JSON.stringify(related, null, 2)}`,
-    association ? `Association surfaced from recent loop state messages:\n${JSON.stringify(association, null, 2)}` : '',
-    pendingHumanMessages.length > 0 ? `Pending human messages:\n${summarizeInbox(pendingHumanMessages)}` : ''
-  ].filter(Boolean).join('\n\n');
-  return { full, linkableIds };
+  const input: ContextInput = {
+    idea,
+    ideaById,
+    missionPath: pathToRoot.map((step) => step.id),
+    similarIds: similar.map((candidate) => candidate.id),
+    recentEvents,
+    humanMessages: humanMessages.map((message) => `Human (${new Date(message.timestamp).toISOString()}): ${message.content}`),
+    facts: {
+      priority: target.priority.toFixed(4),
+      value: target.value.toFixed(2),
+      phase: target.phase.name,
+      ...(association ? { 'association from recent loop events': JSON.stringify(association) } : {})
+    }
+  };
+  return { input, linkableIds: new Set(similar.map((candidate) => candidate.id).filter((id) => !ancestors.has(id))) };
+}
+
+/** Compiles a stage's context and logs what it holds. */
+async function stageContext(ctx: CycleContext, input: ContextInput, stage: 'decompose' | 'execute') {
+  const compiled = compileContext(input, stage);
+  await appendLoopEvent(ctx.projectPath, ctx.instanceId, {
+    role: 'system',
+    kind: 'event',
+    content: `Context for ${stage}: ${compiled.chars} chars; ${compiled.included.join(', ')}${compiled.dropped.length ? `; dropped: ${compiled.dropped.join(', ')}` : ''}`
+  });
+  return compiled.text;
 }
 
 function ancestorIds(ideaId: string, ideaById: Map<string, Idea>): Set<string> {
@@ -268,8 +277,4 @@ function ancestorIds(ideaId: string, ideaById: Map<string, Idea>): Set<string> {
     }
   }
   return seen;
-}
-
-function summarizeInbox(messages: LoopInboxMessage[]): string {
-  return messages.map((message) => `Human (${new Date(message.timestamp).toISOString()}): ${message.content}`).join('\n');
 }

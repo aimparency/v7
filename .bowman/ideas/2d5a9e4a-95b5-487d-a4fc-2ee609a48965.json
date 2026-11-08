@@ -29,9 +29,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158150117
+    "state": "implemented",
+    "comment": "packages/loop-worker/src/context.ts compileContext(input, stage, budgetChars): pure, sections idea (+ status comment, cost, facts, the bet on each parent), human messages, mission path root-first with each edge's 'because' hypothesis, children with bets and outcomes, cancelled/failed lookalikes with their reasons, siblings, lessons (hypothesis + reflection on similar ideas' edges), other similar ideas, recent loop events. Ranked per stage (decompose puts siblings early, execute late), the crossing section is cut and the rest dropped, budget default 48k chars. Replaces the JSON dump in cycle.ts for decompose and execute; each stage logs context size, included and dropped sections. Verify keeps its narrow idea+claim+status+diff prompt. Code pointers are left to the code_intelligence tool. Evidence: context.test.ts (content and budget/ranking), loop-worker 20/20; compiled on the real graph for this idea via the dev backend: 5216 chars, mission path with hypotheses and the stage-machine reflection as a lesson.",
+    "date": 1794160411778
   },
   "intrinsicValue": 0,
   "cost": 3,

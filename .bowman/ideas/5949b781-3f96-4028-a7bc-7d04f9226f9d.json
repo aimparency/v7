@@ -23,7 +23,8 @@
         -2.93
       ],
       "weight": 2,
-      "hypothesis": "Injecting the right graph context up front replaces several orientation tool calls per cycle and makes weaker or cheaper models usable, because they no longer have to find the context themselves."
+      "hypothesis": "Injecting the right graph context up front replaces several orientation tool calls per cycle and makes weaker or cheaper models usable, because they no longer have to find the context themselves.",
+      "reflection": "Held so far: on the real graph the compiled context is ~5k chars and carries the bets and outcomes that the old JSON dump buried; whether it makes cheaper models usable is untested until a real-model run."
     },
     {
       "ideaId": "ce5055e5-3625-4375-8e72-06bde8522e58",
