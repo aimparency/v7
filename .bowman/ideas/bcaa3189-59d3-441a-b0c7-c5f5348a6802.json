@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Done: after a verified verdict the reflect stage gets each parent edge's hypothesis plus outcome/evidence/verifier reasons and returns held/did_not_hold/unclear per edge; the harness writes 'Held: …' etc. to the edge (only real parents; tested in cycle.test.ts). Missing: reflecting one level up when all children of a parent settle.",
-    "date": 1794160116246
+    "state": "implemented",
+    "comment": "Per-edge reflection after a verified verdict is in the reflect stage (cycle.ts; harness writes 'Held: …' / 'Did not hold: …' / 'Unclear: …' on real parent edges only). 'One level up' needs no extra stage: when the last child of a parent settles, the parent has no ongoing child, so it is an open leaf (workStageFor/isOpenLeaf, tested in stages.test 'settled children do not make a container'); the next orient executes it with its children's outcomes and bets in the compiled context (context.ts children section), the verifier checks it, and the reflect stage then writes reflections on the parent's own parent edges. Evidence: stages.test, cycle.test (reflection written, non-parents dropped), context.test (children outcomes in context); loop-worker 27/27.",
+    "date": 1794161771979
   },
   "intrinsicValue": 0,
   "cost": 2,

@@ -70,7 +70,8 @@
         -3.59
       ],
       "weight": 1,
-      "hypothesis": "Reflections written by the harness on every settle, instead of left to the agent's discretion, fill the hypothesis/reflection record that later decompositions learn from."
+      "hypothesis": "Reflections written by the harness on every settle, instead of left to the agent's discretion, fill the hypothesis/reflection record that later decompositions learn from.",
+      "reflection": "Held: reflections now happen as a side effect of every verified cycle, and the recursion up the graph needed no separate mechanism."
     },
     {
       "ideaId": "4ba40b58-685b-4e2a-94cf-27080dcbcf83",
