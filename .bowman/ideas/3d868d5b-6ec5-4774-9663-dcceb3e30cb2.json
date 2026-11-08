@@ -294,6 +294,15 @@
       ],
       "weight": 1,
       "hypothesis": "Investors fund human approval of agent actions; an approval channel for agent intent, tied to a human's mission graph, is the same demand one level up and makes Aimparency the place where humans keep final authority over many agents, not only its own harness. Refuted if outside builders only want action-level gates."
+    },
+    {
+      "ideaId": "303558d5-1d91-4396-868e-ab4b1a6c5d54",
+      "relativePosition": [
+        0.37,
+        3.73
+      ],
+      "weight": 1,
+      "hypothesis": "Two outside people who think about explicit claims and human judgment can tell within one conversation whether the idea graph's hypotheses/reflections are a format others can use, which no internal test can show."
     }
   ],
   "supportedIdeas": [

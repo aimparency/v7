@@ -1,0 +1,28 @@
+{
+  "id": "303558d5-1d91-4396-868e-ab4b1a6c5d54",
+  "text": "Monday 9 Nov conversations: Alexey (10:00) and Fisayo — learn whether their models fit the idea graph",
+  "description": "Prepared brief (read before 10:00).\n\nALEXEY KANSTANTSINAU — explicit, machine-readable actors / frames / assumptions / claims.\nMapping to show him: an idea = a change to the system; a connection's hypothesis = an assumption ('this child will have that effect on the parent'), stated so it can fail; a reflection = the evidence after the child settled ('held / did not hold, because…'); status comment = the claim of done with its evidence; cancelled/failed ideas with reasons = refuted assumptions the harness now shows to every new decision (context compiler, 2d5a9e4a). Actors are implicit today (git author, wrapped agent account, ai-proposition = proposed by an AI).\nQuestions: 1) In your format, is an assumption tied to the claim it supports, or free-floating? 2) Do you record when an assumption was refuted, and by what evidence? 3) What would you need to read an aimparency graph as your format — is a JSON export of ideas + hypotheses + reflections enough? 4) Are 'frames' something like our mission paths (why this matters, root-first)?\nPossible joint experiment: export this repo's hypotheses/reflections (~hundreds of edges) in his format and see whether his tooling finds contradictions or missing actors.\n\nFISAYO — AI skipped the human-computer symbiosis step; assistive product that leaves judgment with the person.\nShow: ai-proposition (AI proposes, human accepts/rejects), review state, the human-wait challenge in the continuation hook, the harness verifier (judgment on evidence, not on the agent's word).\nQuestions: 1) Where in your product does the person's judgment enter — before an action, or before an intent? (this tests f5fc53cb: intent-level approval) 2) What did builders in your research conversations say they distrust most about agents? 3) Would you want to run one of your research conversations about the idea graph?\n\nRecord after each call: what they said that confirms or refutes f5fc53cb and any joint next step.",
+  "archived": false,
+  "color": "#2d4766",
+  "tags": [
+    "relationship",
+    "human-action",
+    "conversation-prep"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Prepared brief in the description. Felix holds both conversations on Mon 9 Nov; afterwards record what each said and the next step here.",
+    "date": 1794160703018
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
