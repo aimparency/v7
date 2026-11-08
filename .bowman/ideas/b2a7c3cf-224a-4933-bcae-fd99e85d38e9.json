@@ -4,7 +4,17 @@
   "description": "Maintain an inspectable, economically interpretable priority model that conserves graph value, attributes shared cost without duplication, discounts delayed returns, and presents a positive discounted-value/cost profitability ratio. Core mechanics now use strict positive real-idea costs, non-negative days-until-return, annual discounting, informational backward-compatible variance fields, SCC-condensed cyclic cost propagation, and a logarithmic break-even-centered color scale. Remaining work after acceptance is empirical calibration against authoritative observations from real deliveries: estimated versus actual duration, founder time, model/integration cost, external outcome, revenue, and prediction error. Do not auto-mutate human-set intrinsic value from activity counts or simulated credits.",
   "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "4ba40b58-685b-4e2a-94cf-27080dcbcf83",
+      "relativePosition": [
+        0.82,
+        3.66
+      ],
+      "weight": 2,
+      "hypothesis": "Measured actual cost per idea gives the calibration the 30+ estimate/actual pairs it is waiting for within weeks instead of months."
+    }
+  ],
   "supportedIdeas": [
     "895ec1c1-c8b3-4258-b7be-62831819bf86",
     "3253bc9e-14fe-4c9b-9849-588620518517"

@@ -1,0 +1,116 @@
+{
+  "id": "5949b781-3f96-4028-a7bc-7d04f9226f9d",
+  "text": "Build the aimparency harness: a model-agnostic loop that autonomously breaks down and achieves high-level ideas",
+  "description": "Grow packages/loop-worker (already: AI SDK + openai-compatible providers nvidia/openrouter, one idea per cycle, MCP graph tools in-process, 10 steps, coding/experiment tools) into a proper harness. Advantage over driving Claude Code/Codex through MCP: the harness owns context (injects mission path, hypotheses, reflections, similar/cancelled ideas deterministically instead of the model spending tool calls to find them), owns the loop (explicit stages, budgets, stop rules), works with any model (cheap models for decomposition, strong ones for execution, a different family for verification), and is versioned config + code, so it can be measured on benchmarks and improved.\n\nStages per cycle: orient (pick idea by priority) → if not a leaf: decompose (propose children with hypothesis, weight, cost; dedupe) → if leaf: execute (built-in tools or delegate to a CLI agent in a worktree) → verify (different model, verdict verified/failed/unverifiable) → reflect (on parent edges) → record cost → reprioritize. Not a new planning subsystem (see cancelled f6af0b7a): all strategy stays in the graph; the harness is only the runtime that reads and writes it.",
+  "archived": false,
+  "color": "#66322d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "e6bd3fd6-7fd1-44c5-9631-5f3259ad42be",
+      "relativePosition": [
+        3,
+        2.25
+      ],
+      "weight": 1,
+      "hypothesis": "Per-role models make verification by a different model family possible and cut cost by using cheap models where judgment matters less."
+    },
+    {
+      "ideaId": "2d5a9e4a-95b5-487d-a4fc-2ee609a48965",
+      "relativePosition": [
+        2.34,
+        -2.93
+      ],
+      "weight": 2,
+      "hypothesis": "Injecting the right graph context up front replaces several orientation tool calls per cycle and makes weaker or cheaper models usable, because they no longer have to find the context themselves."
+    },
+    {
+      "ideaId": "ce5055e5-3625-4375-8e72-06bde8522e58",
+      "relativePosition": [
+        2.41,
+        -2.88
+      ],
+      "weight": 2,
+      "hypothesis": "Explicit stages with validated outputs make each part of the loop testable and replaceable, and stop one long free-form model run from skipping verification or reflection."
+    },
+    {
+      "ideaId": "4a5e0b10-19c1-464b-ba07-55da82574e64",
+      "relativePosition": [
+        -2.76,
+        -2.53
+      ],
+      "weight": 3,
+      "hypothesis": "Recursive decomposition into ideas with falsifiable hypotheses is what lets the loop make progress on high-level ideas instead of stopping at an empty frontier of containers (the current state of this graph)."
+    },
+    {
+      "ideaId": "26a632c9-dedc-48f2-95bf-f52f785b41e3",
+      "relativePosition": [
+        -3.72,
+        0.48
+      ],
+      "weight": 2,
+      "hypothesis": "Delegating code changes to the best available coding agent keeps execution quality high while the harness stays model-agnostic."
+    },
+    {
+      "ideaId": "17dff50a-a917-4acd-bd46-9db81dd9d3c8",
+      "relativePosition": [
+        -1.27,
+        3.53
+      ],
+      "weight": 2,
+      "hypothesis": "An independent verifier from another model family catches claimed-but-not-done work that self-reports miss, so autonomous completions can be trusted without Felix reviewing each one."
+    },
+    {
+      "ideaId": "bcaa3189-59d3-441a-b0c7-c5f5348a6802",
+      "relativePosition": [
+        1.07,
+        -3.59
+      ],
+      "weight": 1,
+      "hypothesis": "Reflections written by the harness on every settle, instead of left to the agent's discretion, fill the hypothesis/reflection record that later decompositions learn from."
+    },
+    {
+      "ideaId": "4ba40b58-685b-4e2a-94cf-27080dcbcf83",
+      "relativePosition": [
+        -3.71,
+        -0.56
+      ],
+      "weight": 1,
+      "hypothesis": "Hard budgets make autonomous runs safe to leave unattended."
+    },
+    {
+      "ideaId": "49bc4383-5675-404e-8f23-575959c28f94",
+      "relativePosition": [
+        -3.71,
+        0.55
+      ],
+      "weight": 1,
+      "hypothesis": "Config as a versioned file lets LLMs tune the harness and lets every change be diffed, reverted and compared on a benchmark."
+    },
+    {
+      "ideaId": "9c767469-d527-4746-8724-f9e2647f6117",
+      "relativePosition": [
+        -3.08,
+        -2.14
+      ],
+      "weight": 1,
+      "hypothesis": "Without stored traces no harness change can be evaluated except by rerunning live, which is too slow and expensive to iterate on."
+    }
+  ],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d",
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Plan created 2026-11-08 with Felix; children are the implementation slices.",
+    "date": 1794158080633
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

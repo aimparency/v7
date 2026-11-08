@@ -1,6 +1,6 @@
 import { AIMPARENCY_DIR_NAME } from 'shared';
 
-export const IDEA_STATES_DESCRIPTION = `Idea status: open (todo), partially (in progress), implemented (complete — put the verification evidence in the status comment), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), archived. Don't leave completed or blocked work as open.`;
+export const IDEA_STATES_DESCRIPTION = `Idea status: open (todo), partially (in progress), implemented (complete — put the verification evidence in the status comment), cancelled, failed, unclear (needs a human decision — explain in comment), human-dependent (blocked on a human action), ai-proposition (proposed by an AI, waiting for a human to accept it as open or reject it as cancelled; never worked on), archived. Don't leave completed or blocked work as open.`;
 
 export const PROJECT_PATH_DESCRIPTION = `Absolute path of the project root`
 

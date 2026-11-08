@@ -94,6 +94,15 @@
       ],
       "weight": 1,
       "hypothesis": "Folding finished subtrees into cached summaries keeps agent context small without hiding what was learned."
+    },
+    {
+      "ideaId": "ee2642c5-c396-4e68-8538-831fe581d1bd",
+      "relativePosition": [
+        -3.72,
+        -0.5
+      ],
+      "weight": 1,
+      "hypothesis": "Seeing how similar bets turned out at creation time reduces repeated failed approaches."
     }
   ],
   "supportedIdeas": [

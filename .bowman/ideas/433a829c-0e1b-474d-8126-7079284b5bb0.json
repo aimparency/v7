@@ -1,0 +1,25 @@
+{
+  "id": "433a829c-0e1b-474d-8126-7079284b5bb0",
+  "text": "Benchmark the aimparency harness against a plain coding agent on an external long-horizon benchmark",
+  "description": "Research cycle 2026-11-08 (Multi-step SWE: 69 tasks, each 5-15 dependent steps on one codebase; Beyond Final Scores, arXiv 2608.13417; Terminal-Bench). Same model, two conditions: plain CLI agent with the task vs the aimparency harness (decompose, context, verify, reflect). Start with ~20 tasks to control cost; pre-register metrics (verified completion, cost, rework). Distinct from 8ac03697 (which tested graph context in a wrapped agent on self-made single-session tasks and found a ceiling) and complementary to 926212fd: this tests the harness on an outside benchmark built for long chains. Reuse the paired-run contract ae0e65f3.",
+  "archived": false,
+  "color": "#288f3d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7634e681-d234-48fa-ad82-876ef97460ca",
+    "926212fd-e642-472f-bb7c-53bd6cb53af4"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-08 research cycle. Needs the harness stage machine first.",
+    "date": 1794158204720
+  },
+  "intrinsicValue": 0,
+  "cost": 6,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

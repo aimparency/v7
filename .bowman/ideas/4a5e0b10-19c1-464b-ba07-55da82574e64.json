@@ -1,0 +1,34 @@
+{
+  "id": "4a5e0b10-19c1-464b-ba07-55da82574e64",
+  "text": "Harness: decomposition stage that proposes children with hypothesis, weight and cost until leaves fit one cycle",
+  "description": "For a non-leaf or too-large open idea, the planner model returns 2-7 children: text, description with acceptance evidence, hypothesis (claim that could fail), weight, cost estimate, and 'executable in one cycle?' flag. Harness dedupes each against semantic search (reuse/link existing instead of creating), then creates them. Limits: max depth per cycle, max new ideas per cycle, stop decomposing when a child is executable. Children of high-value ideas can land as ai-proposition instead of open (see the human-gated decomposition proposition). Evaluate on existing graph: for implemented parents, compare proposed children with the real ones.",
+  "archived": false,
+  "color": "#6c3a2f",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5e431a84-a979-4a7e-9a26-71d1951fcdcc",
+      "relativePosition": [
+        -3.22,
+        -1.92
+      ],
+      "weight": 1,
+      "hypothesis": "Gating only strategy-level decompositions keeps the human as final authority on direction without making them review every small step."
+    }
+  ],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158150452
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

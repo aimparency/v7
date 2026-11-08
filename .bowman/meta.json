@@ -42,6 +42,10 @@
     {
       "key": "human-dependent",
       "color": "#bf409f"
+    },
+    {
+      "key": "ai-proposition",
+      "color": "#c4a7e7"
     }
   ],
   "phaseCursors": {

@@ -1,0 +1,42 @@
+{
+  "id": "2d5a9e4a-95b5-487d-a4fc-2ee609a48965",
+  "text": "Harness: context compiler that injects mission path, hypotheses, reflections and similar or cancelled ideas into the prompt",
+  "description": "One pure function compileContext(ideaId, stage, tokenBudget) -> prompt sections, replacing the ad-hoc promptText assembly in loop-worker runCycle. Sections, ranked and trimmed to budget: the idea; mission path to root with each edge's hypothesis; siblings and their states; children briefs; semantically similar ideas, cancelled/failed ones with their reasons first; reflections on connections of similar ideas ('this kind of bet held/failed'); recent loop events and human messages. Stage-specific: decompose gets siblings and cancelled lookalikes, execute gets code pointers and the acceptance evidence, verify gets only idea + diff + claimed evidence. Unit-testable without a model.",
+  "archived": false,
+  "color": "#663d2b",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "ee2642c5-c396-4e68-8538-831fe581d1bd",
+      "relativePosition": [
+        -1.28,
+        -3.53
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "0ef53e0f-7e6d-4e06-a4b4-8ad7c27911ca",
+      "relativePosition": [
+        3.34,
+        1.71
+      ],
+      "weight": 1,
+      "hypothesis": "As memory grows, similarity alone fills the context budget with items that never helped; usefulness weighting keeps the context small and effective."
+    }
+  ],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158150117
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,24 @@
+{
+  "id": "43166d16-3781-4886-b82d-2bf87832f464",
+  "text": "External verifier backends for the harness: recompute-kit, ThoughtProof",
+  "description": "From the 2026-11-08 research + Boardy intros: Tiago Merlini's recompute-kit independently re-checks agent actions and returns verified/failed/unverifiable (call Tue 17 Nov); Raul Jaeger's ThoughtProof blocks a proposal with a structured objection until repaired (call Fri 13 Nov). Both match the verifier stage interface. First step is conversational: ask both what evidence their verifier needs and whether an aimparency idea + diff + commands is enough input. Only then build an adapter.",
+  "archived": false,
+  "color": "#613625",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "17dff50a-a917-4acd-bd46-9db81dd9d3c8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude. Talk to Raul (13 Nov) and Tiago (17 Nov) before building anything.",
+    "date": 1794158205019
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

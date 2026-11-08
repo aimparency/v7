@@ -115,6 +115,33 @@
       ],
       "weight": 1,
       "hypothesis": "Multi-session tasks are where durable graph context can show an effect that easy single-session tasks hid."
+    },
+    {
+      "ideaId": "83a19266-4023-43c6-8d8f-91281395ccfa",
+      "relativePosition": [
+        0.74,
+        3.68
+      ],
+      "weight": 1,
+      "hypothesis": "Tells whether the hypothesis/reflection record is real learning or just storage; if it does not change decisions, memory work should stop."
+    },
+    {
+      "ideaId": "433a829c-0e1b-474d-8126-7079284b5bb0",
+      "relativePosition": [
+        3.46,
+        1.43
+      ],
+      "weight": 2,
+      "hypothesis": "An outside long-horizon benchmark gives evidence others accept; dependent multi-step chains are where decomposition and verification should beat a plain agent."
+    },
+    {
+      "ideaId": "5e7df03b-5591-4dca-bb75-1eb58db52b79",
+      "relativePosition": [
+        -0.8,
+        3.66
+      ],
+      "weight": 2,
+      "hypothesis": "Measured, reversible harness changes are a safe form of recursive self-improvement: capability grows without touching model weights and every step is auditable."
     }
   ],
   "supportedIdeas": [

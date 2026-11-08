@@ -1,0 +1,24 @@
+{
+  "id": "9b16b26b-7908-4b62-ad45-a8391907f1ae",
+  "text": "Suggest likely parents in the 'contributes to' picker when creating an idea",
+  "description": "Felix 2026-11-08. When the parent picker (IdeaSearchPicker via pickSupportedIdea) opens with an empty query, show ranked parent suggestions instead of nothing (today: IdeaSearchPicker.vue performSearch returns [] for an empty query). Offline eval on this graph (766 ideas with parents, leave-one-out, script in the 2026-11-08 session): plain cosine top-5 38%; parent = own vector + children centroid (as in suggest_reparents b0fb3242) + log(1+child count) prior: top-1 37%, top-3 58%, top-5 68%, top-10 78%. Expect lower with title-only text at creation time. Build: backend suggestParents(text, contextIds) embedding the new text raw (no bge query prefix, unlike searchSemantic), reusing the centroid scoring, plus a boost for the current selection and its ancestors. Local, no LLM, fast. Felix prefers explicit linking plus suggestions over slow AI calls.",
+  "archived": false,
+  "color": "#53662d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "da74d69e-b275-4412-b186-0ccc7a0d0440"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-08 after the eval; estimated 1-2 days.",
+    "date": 1794159275931
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

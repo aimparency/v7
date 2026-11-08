@@ -46,7 +46,10 @@ export const INITIAL_STATES: IdeaState[] = [
   { key: 'cancelled', color: '#e57373', ongoing: false, promptsReflection: true },
   { key: 'failed', color: '#ba68c8', ongoing: false, promptsReflection: true },
   { key: 'unclear', color: '#90a4ae', ongoing: false },
-  { key: 'human-dependent', color: '#bf409f', ongoing: true }
+  { key: 'human-dependent', color: '#bf409f', ongoing: true },
+  // Proposed by an AI, waiting for a human to accept (→ open) or reject (→ cancelled).
+  // Not ongoing: a proposal neither counts as work nor turns its parent into a container.
+  { key: 'ai-proposition', color: '#c4a7e7', ongoing: false }
 ];
 
 

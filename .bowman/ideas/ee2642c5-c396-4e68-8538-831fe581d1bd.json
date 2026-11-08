@@ -1,0 +1,25 @@
+{
+  "id": "ee2642c5-c396-4e68-8538-831fe581d1bd",
+  "text": "Show reflections of similar ideas' connections in create_idea's review step",
+  "description": "Research cycle 2026-11-08 (EXG: Self-Evolving Agents with Experience Graphs, arXiv 2605.17721). create_idea's first call already returns up to 8 related active/cancelled ideas. Add a short warning block from their parent connections, kept lean against information overload (Felix 2026-11-08):\n- only reflections that did NOT hold or are unclear (failures warn; successes add little),\n- at most 3, from the most similar related ideas, above a similarity threshold,\n- one line each: similar bet \"<hypothesis>\" -> did not hold: <first sentence of reflection>,\n- omit the block entirely when nothing qualifies, so most calls are unchanged.\nSmall change in packages/mcp/src/tools/ideas.ts review step; the harness context compiler can reuse the same selection.",
+  "archived": false,
+  "color": "#632d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "6ad092fc-a69e-475d-8870-30f994a7f6a5",
+    "2d5a9e4a-95b5-487d-a4fc-2ee609a48965"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-08 research cycle. Felix worried about information overload; scoped down to max 3 one-line warnings from failed/unclear bets, omitted when none qualify.",
+    "date": 1794158204432
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

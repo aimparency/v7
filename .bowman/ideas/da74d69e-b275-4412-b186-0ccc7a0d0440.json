@@ -31,6 +31,15 @@
       ],
       "weight": 1,
       "hypothesis": "The command makes idea capture and graph connection a repeatable session workflow."
+    },
+    {
+      "ideaId": "9b16b26b-7908-4b62-ad45-a8391907f1ae",
+      "relativePosition": [
+        3.62,
+        -0.99
+      ],
+      "weight": 1,
+      "hypothesis": "With the true parent in the top 5 about two times out of three, picking a parent becomes one keystroke more often, so fewer ideas end up floating or under catch-alls."
     }
   ],
   "supportedIdeas": [

@@ -32,6 +32,15 @@
       ],
       "weight": 1,
       "hypothesis": "Knowing which person or agent worked on an idea tells the human whom to ask and whose work to check."
+    },
+    {
+      "ideaId": "17dff50a-a917-4acd-bd46-9db81dd9d3c8",
+      "relativePosition": [
+        3.75,
+        -0.17
+      ],
+      "weight": 1,
+      "hypothesis": "Only unverifiable or failed work reaches the human, which shrinks the review backlog that is the current bottleneck."
     }
   ],
   "supportedIdeas": [

@@ -9,7 +9,16 @@
     "evidence",
     "hypothesis"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "433a829c-0e1b-474d-8126-7079284b5bb0",
+      "relativePosition": [
+        3.22,
+        1.92
+      ],
+      "weight": 1
+    }
+  ],
   "supportedIdeas": [
     "7634e681-d234-48fa-ad82-876ef97460ca"
   ],

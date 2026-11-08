@@ -1,0 +1,25 @@
+{
+  "id": "1bc19167-d118-4dd6-9662-8c7cd2619016",
+  "text": "Occasional LLM pass that proposes missing contributes-to links for human review",
+  "description": "Felix 2026-11-08: keep linking explicit at creation, and occasionally run an LLM to find links that were not obvious. On demand (MCP tool or prompt), not in the creation path: for floating ideas and ideas with weak parents, take the top embedding candidates (suggestParents) and let an LLM judge 'does A contribute to B, and why' with a one-line hypothesis. Output is a list of proposed links for the human to accept or reject; never auto-applied. Answers the 'missing connections' part of 1e2a1220 without automatic merges. Note cancelled c968f026: an LLM scorer must earn its cost; measure acceptance rate of proposals.",
+  "archived": false,
+  "color": "#2d5e66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "1e2a1220-df04-4791-bc06-92d0f1466a7a",
+    "c561dd26-86c5-45c2-96a3-4b4f90e448a3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-08.",
+    "date": 1794159276100
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

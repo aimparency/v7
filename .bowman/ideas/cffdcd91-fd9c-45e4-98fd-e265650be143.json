@@ -175,6 +175,15 @@
       ],
       "weight": 0.8,
       "hypothesis": "The application process is also a live demonstration that the idea graph can preserve human intent and direct replaceable autonomous AI executors across a long-running task."
+    },
+    {
+      "ideaId": "5949b781-3f96-4028-a7bc-7d04f9226f9d",
+      "relativePosition": [
+        -3.17,
+        -2
+      ],
+      "weight": 2,
+      "hypothesis": "Autonomy becomes measurable and improvable once the loop is our own versioned code rather than prompt text inside third-party agents."
     }
   ],
   "supportedIdeas": [

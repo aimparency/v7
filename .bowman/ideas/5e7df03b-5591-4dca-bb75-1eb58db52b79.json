@@ -1,0 +1,25 @@
+{
+  "id": "5e7df03b-5591-4dca-bb75-1eb58db52b79",
+  "text": "Harness self-improvement: agent proposes harness config changes, kept only if a benchmark subset improves",
+  "description": "Research cycle 2026-11-08 (harness evolution as self-improvement without weight updates: Recuris arXiv 2608.24876, Hierarchical Self-Improvement arXiv 2608.08466, Recursive self-improvement of AI research agents arXiv 2609.26457). Loop: read failed/unverifiable traces -> attribute the failure to one harness component (context section, stage prompt, budget, decomposition limit) -> propose one bounded change to the versioned harness config -> rerun a frozen benchmark subset -> keep if better and no regression, else revert. Every kept change is a commit with before/after numbers. Builds on 13d74766 (three bounded cycles, done on evaluator code) but targets the harness itself.",
+  "archived": false,
+  "color": "#288f53",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7634e681-d234-48fa-ad82-876ef97460ca",
+    "49bc4383-5675-404e-8f23-575959c28f94"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-08 research cycle. Needs harness config file, traces and a benchmark subset first.",
+    "date": 1794158204867
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -18,6 +18,15 @@
       ],
       "weight": 1,
       "hypothesis": "The session should surface candidate duplicates, missing links, and conflicts for human review as new aims are recorded."
+    },
+    {
+      "ideaId": "1bc19167-d118-4dd6-9662-8c7cd2619016",
+      "relativePosition": [
+        0.19,
+        3.75
+      ],
+      "weight": 1,
+      "hypothesis": "An on-demand LLM link proposal, judged by the human, finds non-obvious contributions that embeddings miss, while keeping link decisions human."
     }
   ],
   "supportedIdeas": [

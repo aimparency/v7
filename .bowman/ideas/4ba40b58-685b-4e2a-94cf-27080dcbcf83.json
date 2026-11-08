@@ -1,0 +1,25 @@
+{
+  "id": "4ba40b58-685b-4e2a-94cf-27080dcbcf83",
+  "text": "Harness: record actual tokens, money and time per idea as its realized cost",
+  "description": "Every stage reports provider usage (tokens in/out, $ from a per-model price table, wall time). Sum per idea and per cycle; store on the idea as actual cost next to the estimate. Enforce a per-cycle and per-day budget in the harness. This is exactly the data the priority-model calibration (b2a7c3cf) is waiting for: estimated vs actual cost on 30+ ideas.",
+  "archived": false,
+  "color": "#61322f",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d",
+    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158151077
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

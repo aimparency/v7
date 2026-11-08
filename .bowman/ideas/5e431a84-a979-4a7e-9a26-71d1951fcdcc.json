@@ -1,0 +1,25 @@
+{
+  "id": "5e431a84-a979-4a7e-9a26-71d1951fcdcc",
+  "text": "AI decompositions of high-value ideas land as ai-proposition for human acceptance",
+  "description": "Human-in-the-loop rule for the harness decomposition stage: children proposed under ideas above a value threshold (strategy level) are created in state ai-proposition, so the loop does not act on them until Felix accepts (-> open) or rejects (-> cancelled, with reason, which then feeds the cancelled-lookalike context). Below the threshold, children are created open and the loop proceeds. Threshold in harness config. Needs a fast accept/reject view (filter by state ai-proposition already works in search).",
+  "archived": false,
+  "color": "#663229",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "4a5e0b10-19c1-464b-ba07-55da82574e64",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude, 2026-11-08.",
+    "date": 1794158205112
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

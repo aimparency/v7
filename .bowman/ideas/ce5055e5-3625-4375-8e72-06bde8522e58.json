@@ -1,0 +1,24 @@
+{
+  "id": "ce5055e5-3625-4375-8e72-06bde8522e58",
+  "text": "Harness: explicit stage machine in loop-worker with structured output per stage",
+  "description": "Split runCycle (one streamText with 10 steps) into stages: orient -> decompose | execute -> verify -> reflect -> record. Each stage: own role model, own compiled context, own tool set, own step budget, and a zod-validated result (generateObject) that the harness applies to the graph itself, so graph writes are deterministic code, not model tool calls. Leaf test decides decompose vs execute (open leaf with estimated cost under the per-cycle budget -> execute). Stage transitions are logged as loop events so the loop panel shows where a cycle is. Learned from f3231c4c: once a decision is settled, do not ask a model to re-decide it.",
+  "archived": false,
+  "color": "#612932",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158150291
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

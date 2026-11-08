@@ -1,0 +1,24 @@
+{
+  "id": "d383d28f-1a99-4239-a27d-1d4d2521fa96",
+  "text": "Modeling guidance: ideas are changes to a system; recurring practices are system state, their instances link to their context",
+  "description": "From Felix's life graph, 2026-11-08 (example: Pizza backen, done often, in different contexts). Worldview: life is a system, ideas are changes to it. Guidance: a one-time change ('learn good pizza', 'make pizza weekly') is an idea and contributes to a stable need (Ernaehrung). Once established, the practice is system state, not an idea per repetition. A specific instance is an idea only when its context matters, and it links to that context ('pizza for X's birthday' -> Freundschaften), not to the practice, otherwise the practice becomes a mega-parent (which graph_hygiene flags). Use: in the idea-session prompt, in the decomposition stage and in suggestions for where a recurring item belongs.",
+  "archived": false,
+  "color": "#532d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-08 conversation.",
+    "date": 1794159276248
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

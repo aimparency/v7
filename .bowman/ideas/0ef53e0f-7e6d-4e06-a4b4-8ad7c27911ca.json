@@ -1,0 +1,24 @@
+{
+  "id": "0ef53e0f-7e6d-4e06-a4b4-8ad7c27911ca",
+  "text": "Rank memory in context by measured usefulness, not just similarity",
+  "description": "Research cycle 2026-11-08 (Memory-Centric Continual Learning arXiv 2610.29357; MemRL; Modular Memory arXiv 2603.01761). The context compiler ranks reflections, cancelled lookalikes and dream memory by similarity today. Add a usefulness score per memory item: incremented when it was in context and the stage got a verified verdict, decremented when in context and the result failed. Rank by similarity x usefulness; items that never help sink out of the budget. Depends on traces and on the reflection-usefulness measurement.",
+  "archived": false,
+  "color": "#6f3834",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2d5a9e4a-95b5-487d-a4fc-2ee609a48965"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-08 research cycle. Only worth it if the reflection-usefulness hypothesis holds.",
+    "date": 1794158205223
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

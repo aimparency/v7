@@ -1,0 +1,33 @@
+{
+  "id": "9c767469-d527-4746-8724-f9e2647f6117",
+  "text": "Harness: per-cycle trace store for replay and evaluation",
+  "description": "Persist per cycle: harness config version, compiled context per stage, model outputs, tool calls, diff, verdict, usage. Stored under .bowman/runtime/traces (gitignored, size-bounded). Enables replaying a stage with another model or config, offline A/B comparison, and the memory-usefulness measurement (did a reflection in context change the decision?).",
+  "archived": false,
+  "color": "#734037",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "83a19266-4023-43c6-8d8f-91281395ccfa",
+      "relativePosition": [
+        -3.16,
+        2.02
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158151357
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

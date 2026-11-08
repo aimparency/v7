@@ -1,0 +1,33 @@
+{
+  "id": "49bc4383-5675-404e-8f23-575959c28f94",
+  "text": "Harness: config in a versioned file, hot reloaded, stages shown live in the loop panel",
+  "description": "Harness configuration (role models, budgets, stage prompts, limits for decomposition, which states children land in) lives in a versioned file in the repo (e.g. .bowman/harness.json or a .ts config), edited by LLMs or by hand, reloaded live by the worker. The LoopPanel becomes a view-only live view: current stage, compiled context size, verdicts, cost so far; no config forms. Versioned config is also what harness self-improvement experiments change and compare.",
+  "archived": false,
+  "color": "#69412a",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5e7df03b-5591-4dca-bb75-1eb58db52b79",
+      "relativePosition": [
+        -0.36,
+        -3.73
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158151218
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

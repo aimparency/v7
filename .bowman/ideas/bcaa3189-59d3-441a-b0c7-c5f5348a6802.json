@@ -1,0 +1,24 @@
+{
+  "id": "bcaa3189-59d3-441a-b0c7-c5f5348a6802",
+  "text": "Harness: reflection stage that writes reflections on parent connections after an idea settles",
+  "description": "When verify settles an idea (implemented/failed/cancelled), the reflector role gets each parent edge's hypothesis plus the outcome and evidence, and returns one reflection per edge ('held / did not hold / unclear, because...'). Harness writes them via the connection's reflection field. Also: when all children of a parent settle, prompt a reflection one level up. Keeps the experience graph growing as a side effect of normal work.",
+  "archived": false,
+  "color": "#723c2e",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158150945
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

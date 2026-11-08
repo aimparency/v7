@@ -268,6 +268,23 @@
       "weight": 1,
       "hypothesis": "Humans stay final authority only if no one but the operator can make the machine run code; one exposed port undoes every model-side safeguard.",
       "reflection": "Held as a diagnosis: the exposed ports (all interfaces, any website via localhost WebSockets) were real and would have bypassed every model-side safeguard. Closing them took loopback defaults, one origin rule and one admin gate. Authority now sits with whoever the operator makes admin, so the warning on admin creation carries the rest."
+    },
+    {
+      "ideaId": "5e431a84-a979-4a7e-9a26-71d1951fcdcc",
+      "relativePosition": [
+        3.7,
+        -0.6
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "d383d28f-1a99-4239-a27d-1d4d2521fa96",
+      "relativePosition": [
+        2.62,
+        2.68
+      ],
+      "weight": 0.5,
+      "hypothesis": "A clear rule for recurring vs one-time items makes personal graphs (life, not just code) stay readable, which is where human needs are expressed."
     }
   ],
   "supportedIdeas": [

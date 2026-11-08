@@ -1,0 +1,24 @@
+{
+  "id": "26a632c9-dedc-48f2-95bf-f52f785b41e3",
+  "text": "Harness: executor backends - built-in tool loop, or delegate coding leaves to Claude Code / Codex in a worktree",
+  "description": "Executor interface: execute(idea, compiledContext, worktree, budget) -> {diff, commands run, claimed evidence, usage}. Backend 1: the existing AI SDK tool loop (read/search/str_replace/run_command). Backend 2: headless CLI agents (claude -p / codex exec --json) in a disposable git worktree; reuse the Codex adapter with authoritative telemetry from 02e512d5. The harness, not the CLI agent, writes results to the graph. Lets strong coding agents do the code while the harness keeps the loop, context and verification.",
+  "archived": false,
+  "color": "#61272f",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158150604
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

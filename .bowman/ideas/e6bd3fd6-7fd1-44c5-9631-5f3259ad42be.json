@@ -1,0 +1,24 @@
+{
+  "id": "e6bd3fd6-7fd1-44c5-9631-5f3259ad42be",
+  "text": "Harness: per-role model registry (planner, executor, verifier) across providers",
+  "description": "Today a loop definition has one provider/model/baseUrl (nvidia, openrouter, openai-compatible). Extend LoopDefinition (shared/src/loop-state.ts) to a map role -> {provider, model, baseUrl, keyName}: planner (decompose), executor, verifier, reflector. Add an Anthropic provider (@ai-sdk/anthropic) next to openai-compatible, so a cheap open model can plan and a different family can verify. Keys stay in the existing secrets file. Backward compatible: a single model fills all roles.",
+  "archived": false,
+  "color": "#72452d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794158149911
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
