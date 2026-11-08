@@ -14,6 +14,16 @@
       ],
       "weight": 1,
       "hypothesis": "A verifier built by someone else is independent by construction and makes 'verified' claims credible to outside users."
+    },
+    {
+      "ideaId": "07009022-ea48-462a-9015-08b3a61fa7e2",
+      "relativePosition": [
+        3.56,
+        1.17
+      ],
+      "weight": 1,
+      "hypothesis": "Receipts from commands the harness ran itself make 'verified' depend on observed exit codes, not on the executor's or verifier's word; refuted if, in the traces, receipts never change a verdict the verifier model would have given anyway.",
+      "reflection": "Unclear yet: the mechanism works in tests, but whether receipts change real verdicts can only be read from traces of real-model cycles."
     }
   ],
   "supportedIdeas": [

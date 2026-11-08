@@ -139,7 +139,7 @@ async function waitForInstance(instanceId: string, done: (instance: LoopInstance
 test('a cycle runs execute and verify stages, the harness writes the verdict, and the phase_done policy ends the instance', async () => {
   const { ideaId, instanceId } = await setUpLoop();
   script = [
-    { toolCall: { name: 'submit_execution', arguments: { outcome: 'done', summary: 'fixed the race', evidence: 'test passes 50/50 runs', commands: ['pnpm test'] } } },
+    { toolCall: { name: 'submit_execution', arguments: { outcome: 'done', summary: 'fixed the race', evidence: 'test passes 50/50 runs', commands: ['node --version'] } } },
     { toolCall: { name: 'submit_verdict', arguments: { verdict: 'verified', reasons: 're-ran the test' } } }
   ];
 
@@ -157,6 +157,8 @@ test('a cycle runs execute and verify stages, the harness writes the verdict, an
   assert.equal((offered.get('get_idea_context') as any).parameters.properties.projectPath, undefined);
   // The verifier is a separate request that sees the claim, not the executor's conversation.
   assert.match(JSON.stringify(modelRequests[1].messages), /test passes 50\/50 runs/);
+  // The harness re-ran the claimed command and handed the receipt to the verifier.
+  assert.match(JSON.stringify(modelRequests[1].messages), /\$ node --version\\n  exit 0/);
   assert.ok(new Set((modelRequests[1].tools ?? []).map((tool: any) => tool.function.name)).has('submit_verdict'));
 }, 60_000);
 

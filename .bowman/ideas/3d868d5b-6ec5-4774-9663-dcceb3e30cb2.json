@@ -285,6 +285,15 @@
       ],
       "weight": 0.5,
       "hypothesis": "A clear rule for recurring vs one-time items makes personal graphs (life, not just code) stay readable, which is where human needs are expressed."
+    },
+    {
+      "ideaId": "f5fc53cb-4b3b-4024-b272-07e02ca75475",
+      "relativePosition": [
+        -3.42,
+        1.53
+      ],
+      "weight": 1,
+      "hypothesis": "Investors fund human approval of agent actions; an approval channel for agent intent, tied to a human's mission graph, is the same demand one level up and makes Aimparency the place where humans keep final authority over many agents, not only its own harness. Refuted if outside builders only want action-level gates."
     }
   ],
   "supportedIdeas": [

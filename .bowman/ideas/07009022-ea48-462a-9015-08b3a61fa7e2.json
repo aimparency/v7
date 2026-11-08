@@ -1,0 +1,28 @@
+{
+  "id": "07009022-ea48-462a-9015-08b3a61fa7e2",
+  "text": "Harness verify: re-run the executor's claimed commands deterministically and give the verifier the receipts",
+  "description": "Before the verifier model runs, the harness itself re-runs each command the executor claims (through the guarded runCommand, with a time limit) and records exit code and output tail as receipts. The verifier sees the receipts next to the diff; a 'verified' verdict whose receipts include a failing command is downgraded to failed by code. RESEARCHED: arXiv 2605.18747 frames autonomous SE capability as the model-harness-environment system producing a verifiably correct change with harness-mediated evidence (https://arxiv.org/html/2605.18747); VeriHarness accepts only on receipts from deterministic checks (https://pypi.org/project/hoh/). OBSERVED: our own lesson in dfa5df09 — once a check is settled, model invocation adds variance without judgment. Distinct from 43166d16 (external verifier services): this is the in-harness deterministic layer those would sit on. Acceptance: unit tests for receipt collection and the downgrade rule; traces contain the receipts.",
+  "archived": false,
+  "color": "#6d2a28",
+  "tags": [
+    "harness",
+    "hypothesis",
+    "major-hypothesis-loop"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "17dff50a-a917-4acd-bd46-9db81dd9d3c8"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "cycle.ts collectReceipts re-runs up to 5 claimed commands through the guarded runCommand (120s limit) before the verifier; receipts (command, exit code, refused reason, 1.5k output tail) replace the bare command list in the verifier prompt and are stored in the cycle trace. stages.ts applyReceipts: a verified verdict with any failing non-refused receipt becomes failed with 'Overruled by the harness: re-run of the claimed command `…` exited N'; refused commands don't count; other verdicts stay. Evidence: stages.test (rule), cycle.test (receipt in trace and verifier prompt; `process.exit(3)` overrules verified -> idea stays open, no reflection), loop-worker 23/23; backend loop-cycle e2e 3/3 asserts the receipt reaches the real verifier request.",
+    "date": 1794160671780
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

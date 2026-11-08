@@ -3,7 +3,7 @@ import path from 'path';
 import type { LoopDefinition } from 'agent-tools';
 import { toBowmanPath } from 'shared';
 import type { StageTrace, StageUsage } from './stage-runner.js';
-import type { StatusChange } from './stages.js';
+import type { Receipt, StatusChange } from './stages.js';
 
 // Per-cycle traces under .bowman/runtime/traces (gitignored): the loop config,
 // every stage's compiled context, tool calls and result, the diff the verifier
@@ -21,6 +21,7 @@ export type CycleTrace = {
   loop: Pick<LoopDefinition, 'id' | 'name' | 'provider' | 'model' | 'baseUrl' | 'roles' | 'capabilities' | 'systemPrompt'>;
   stages: StageTrace[];
   verifiedDiff?: { status: string; diff: string };
+  receipts: Receipt[];
   statusChange: StatusChange | null;
   notes: string[];
   usage: StageUsage;

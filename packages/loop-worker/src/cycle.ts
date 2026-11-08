@@ -4,6 +4,7 @@ import {
   drainInbox,
   gitDiff,
   gitStatus,
+  runCommand,
   maybeFindAssociation,
   readLoopRuntimeState,
   type GraphTools,
@@ -21,6 +22,9 @@ import {
   decompositionSchema,
   executionSchema,
   MAX_CHILDREN_PER_DECOMPOSITION,
+  MAX_RECEIPT_COMMANDS,
+  applyReceipts,
+  formatReceipts,
   nextStage,
   reflectionSchema,
   STAGE_STEP_BUDGETS,
@@ -29,6 +33,7 @@ import {
   workStageFor,
   type Decomposition,
   type Execution,
+  type Receipt,
   type Stage,
   type StageOutcome,
   type Verification
@@ -105,6 +110,7 @@ export async function runCycle(ctx: CycleContext) {
   const stageTraces: StageTrace[] = [];
   const startedAt = Date.now();
   let verifiedDiff: { status: string; diff: string } | undefined;
+  let receipts: Receipt[] = [];
   let stage: Stage = nextStage({ stage: 'orient', work }, decomposed);
 
   while (stage !== 'record' && !signal.aborted) {
@@ -149,15 +155,16 @@ export async function runCycle(ctx: CycleContext) {
         describeOrError(() => gitStatus(executionPath)),
         describeOrError(() => gitDiff(executionPath, { limitChars: 20000 }))
       ]);
+      receipts = await collectReceipts(executionPath, execution?.commands ?? []);
       verifiedDiff = { status, diff };
       const run = await runStage({
         ...stageBase(ctx, 'verifier', 'verify'),
-        system: `${baseSystem}\n\nStage: verify. You did not do this work. Decide from the idea, the diff and the claimed evidence whether the idea is achieved. Re-run the claimed commands or tests where possible; do not edit files. verified: the evidence holds and covers the idea. failed: it does not hold or the work is wrong. unverifiable: you cannot check it from here. The diff is of the whole working tree and may contain unrelated changes by others.`,
+        system: `${baseSystem}\n\nStage: verify. You did not do this work. Decide from the idea, the diff, the claimed evidence and the receipts whether the idea is achieved. The receipts are the executor's claimed commands, re-run by the harness just now; a failing receipt overrules a verified verdict. Run further checks where useful; do not edit files. verified: the evidence holds and covers the idea. failed: it does not hold or the work is wrong. unverifiable: you cannot check it from here. The diff is of the whole working tree and may contain unrelated changes by others.`,
         prompt: [
           `Idea:\n${idea.text}\n\n${idea.description ?? ''}`,
           `Executor summary:\n${execution?.summary ?? ''}`,
           `Claimed evidence:\n${execution?.evidence ?? ''}`,
-          `Commands the executor ran:\n${(execution?.commands ?? []).join('\n') || '(none)'}`,
+          `Receipts (claimed commands re-run by the harness):\n${formatReceipts(receipts)}`,
           `Working tree status (new files show as ??; read them):\n${status}`,
           `Working tree diff:\n${diff}`
         ].join('\n\n'),
@@ -167,7 +174,7 @@ export async function runCycle(ctx: CycleContext) {
       });
       addUsage(run.usage);
       stageTraces.push(run.trace);
-      verification = run.result ?? { verdict: 'unverifiable', reasons: 'The verifier submitted no verdict.' };
+      verification = applyReceipts(run.result ?? { verdict: 'unverifiable', reasons: 'The verifier submitted no verdict.' }, receipts);
       notes.push(`verify: ${verification.verdict} — ${verification.reasons}`);
       outcome = { stage: 'verify', result: verification };
     } else {
@@ -215,6 +222,7 @@ export async function runCycle(ctx: CycleContext) {
     loop: { id: loop.id, name: loop.name, provider: loop.provider, model: loop.model, baseUrl: loop.baseUrl, roles: loop.roles, capabilities: loop.capabilities, systemPrompt: loop.systemPrompt },
     stages: stageTraces,
     verifiedDiff,
+    receipts,
     statusChange: change,
     notes,
     usage
@@ -229,6 +237,17 @@ export async function runCycle(ctx: CycleContext) {
       `Trace: ${path.basename(tracePath)}.`
     ].join(' ')
   });
+}
+
+/** Re-runs the executor's claimed commands (guarded, time-limited) so verification rests on observed exit codes. */
+async function collectReceipts(executionPath: string, commands: string[]): Promise<Receipt[]> {
+  const receipts: Receipt[] = [];
+  for (const command of commands.slice(0, MAX_RECEIPT_COMMANDS)) {
+    const result = await runCommand(executionPath, { command, timeoutMs: 120_000 });
+    const output = `${result.stdout}${result.stderr ? `\n${result.stderr}` : ''}`.trim();
+    receipts.push({ command, exitCode: result.exitCode, refused: result.refused, outputTail: output.slice(-1500) });
+  }
+  return receipts;
 }
 
 async function describeOrError(read: () => Promise<unknown>): Promise<string> {

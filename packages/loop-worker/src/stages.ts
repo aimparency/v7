@@ -118,3 +118,24 @@ export function formatReflection(entry: Reflection['reflections'][number]): stri
   const verdict = { held: 'Held', did_not_hold: 'Did not hold', unclear: 'Unclear' }[entry.held];
   return `${verdict}: ${entry.reflection}`;
 }
+
+/** A claimed command the harness re-ran itself before verification. */
+export type Receipt = { command: string; exitCode: number; refused?: string; outputTail: string };
+
+export const MAX_RECEIPT_COMMANDS = 5;
+
+export function formatReceipts(receipts: Receipt[]): string {
+  if (receipts.length === 0) return '(the executor claimed no commands)';
+  return receipts.map((receipt) => receipt.refused
+    ? `$ ${receipt.command}\n  not run: ${receipt.refused}`
+    : `$ ${receipt.command}\n  exit ${receipt.exitCode}\n${receipt.outputTail.replace(/^/gm, '  | ')}`
+  ).join('\n\n');
+}
+
+/** Code overrules the verifier: a claimed command that fails when re-run cannot be verified work. */
+export function applyReceipts(verification: Verification, receipts: Receipt[]): Verification {
+  const failing = receipts.filter((receipt) => !receipt.refused && receipt.exitCode !== 0);
+  if (verification.verdict !== 'verified' || failing.length === 0) return verification;
+  const commands = failing.map((receipt) => `\`${receipt.command}\` exited ${receipt.exitCode}`).join(', ');
+  return { verdict: 'failed', reasons: `${verification.reasons}\nOverruled by the harness: re-run of the claimed command ${commands}.` };
+}

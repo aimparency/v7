@@ -88,7 +88,7 @@ test('a leaf goes execute → verify → reflect → record, and the harness wri
   ];
   const { graph, writes } = fakeGraph(ideas, 'leaf');
   const { model, toolSets } = submittingModel([
-    ['submit_execution', { outcome: 'done', summary: 'added cache', evidence: 'bench 2x faster', commands: ['pnpm bench'] }],
+    ['submit_execution', { outcome: 'done', summary: 'added cache', evidence: 'bench 2x faster', commands: ['echo bench ok'] }],
     ['submit_verdict', { verdict: 'verified', reasons: 're-ran pnpm bench' }],
     ['submit_reflections', { reflections: [{ parentId: 'parent', held: 'held', reflection: 'twice as fast' }, { parentId: 'stranger', held: 'held', reflection: 'x' }] }]
   ]);
@@ -103,6 +103,8 @@ test('a leaf goes execute → verify → reflect → record, and the harness wri
   assert.match(trace.stages[0].prompt, /## idea\nidea leaf/);
   assert.ok(trace.verifiedDiff, 'the trace keeps what the verifier saw');
   assert.equal(trace.statusChange.state, 'implemented');
+  assert.deepEqual(trace.receipts.map((receipt: any) => [receipt.command, receipt.exitCode, receipt.outputTail]), [['echo bench ok', 0, 'bench ok']]);
+  assert.match(trace.stages[1].prompt, /Receipts[\s\S]*\$ echo bench ok\n  exit 0/);
   assert.deepEqual(trace.usage, { inputTokens: 30, outputTokens: 15 });
 
   assert.equal(toolSets.length, 3);
@@ -151,4 +153,17 @@ test('a container is decomposed: new children are created under it, a shown simi
   assert.equal(connect?.[1].parentIdeaId, 'container');
   const link = writes.find(([kind, input]) => kind === 'update' && input.ideaId === 'container');
   assert.ok(link?.[1].idea.supportingConnections.some((connection: any) => connection.ideaId === 'similar'));
+});
+
+test('a claimed command that fails when the harness re-runs it overrules a verified verdict', async () => {
+  const { graph, writes } = fakeGraph([idea('leaf', 'open')], 'leaf');
+  const { model, toolSets } = submittingModel([
+    ['submit_execution', { outcome: 'done', summary: 'fixed', evidence: 'tests pass', commands: ['node -e "process.exit(3)"'] }],
+    ['submit_verdict', { verdict: 'verified', reasons: 'looks right' }]
+  ]);
+  await runCycle(await cycleContext(graph, model));
+  assert.equal(toolSets.length, 2, 'no reflection after an overruled verdict');
+  const statusUpdate = writes.find(([kind]) => kind === 'update');
+  assert.equal(statusUpdate?.[1].idea.status.state, 'open');
+  assert.match(statusUpdate?.[1].idea.status.comment, /Overruled by the harness: re-run of the claimed command `node -e "process.exit\(3\)"` exited 3/);
 });

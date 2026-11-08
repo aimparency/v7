@@ -1,0 +1,28 @@
+{
+  "id": "f5fc53cb-4b3b-4024-b272-07e02ca75475",
+  "text": "Offer the ai-proposition/review queue as an intent-approval endpoint other agent stacks call",
+  "description": "RESEARCHED (2026, press/aggregator sources, amounts unverified): money is moving into human approval layers for agents — HumanLayer (API/SDK for human approval steps, https://www.caplight.com/company/humanlayer), Barndoor ($13.6M seed, human approval for AI actions, https://briefglance.com/articles/barndoors-vennai-an-ai-co-pilot-that-actually-does-your-job-safely), Crux Labs (>$6M, human judgment in enterprise agents, https://aifunding.me/companies/crux-labs), ChatSee.ai ($6.5M, agent failures, https://parsers.vc/news/260615-ai-reliability-imperative--chatsee-ai/). INFERRED: they gate single actions; Aimparency gates intent — what an AI proposes to pursue (ai-proposition) and what it claims is done (review), with the mission path and hypothesis attached. Distinct from the internal proposal UI (683f0e5a, 074f9ba4): this opens the queue to agents outside Aimparency. Smallest experiment: an MCP tool / HTTP endpoint 'propose_to_human' that any agent uses to file a proposal with a hypothesis under a mission idea and later reads the accept/reject decision; dogfood it with the harness decompose stage (5e431a84). Stop if no outside agent builder wants intent-level rather than action-level approval after 3 conversations (Fisayo, Mario B./MUTX are natural first asks).",
+  "archived": false,
+  "color": "#2f662d",
+  "tags": [
+    "hypothesis",
+    "major-hypothesis-loop",
+    "cooperation"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-08 major hypothesis loop (second pass). Question for Felix: is intent-level approval for other people's agents a direction you want, or should ai-proposition stay internal to Aimparency? Prepared for the Fisayo and Mario B. conversations: 'Would your users rather approve what an agent intends to pursue (with the goal it serves and the bet behind it) than each action it takes?'",
+    "date": 1794160583528
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

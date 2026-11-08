@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import type { Idea } from 'shared';
-import { formatReflection, nextStage, statusAfter, workStageFor, type Execution } from './stages.js';
+import { applyReceipts, formatReceipts, formatReflection, nextStage, statusAfter, workStageFor, type Execution } from './stages.js';
 
 const idea = (id: string, state: string, childIds: string[] = []) => ({
   id,
@@ -50,4 +50,17 @@ test('the verdict decides the status: verified → implemented, failed → open 
 
 test('a reflection starts with whether the hypothesis held', () => {
   assert.equal(formatReflection({ parentId: 'p', held: 'did_not_hold', reflection: 'no effect on recall' }), 'Did not hold: no effect on recall');
+});
+
+test('receipts: a failing re-run overrules verified, a refused command does not, other verdicts stay', () => {
+  const ok = { command: 'pnpm test', exitCode: 0, outputTail: 'ok' };
+  const failing = { command: 'pnpm lint', exitCode: 1, outputTail: 'error' };
+  const refused = { command: 'rm -rf x', exitCode: 126, refused: 'destructive', outputTail: '' };
+  const verified = { verdict: 'verified' as const, reasons: 'fine' };
+  assert.deepEqual(applyReceipts(verified, [ok, refused]), verified);
+  assert.equal(applyReceipts(verified, [ok, failing]).verdict, 'failed');
+  assert.match(applyReceipts(verified, [failing]).reasons, /`pnpm lint` exited 1/);
+  assert.equal(applyReceipts({ verdict: 'unverifiable', reasons: '' }, [failing]).verdict, 'unverifiable');
+  assert.match(formatReceipts([refused]), /not run: destructive/);
+  assert.equal(formatReceipts([]), '(the executor claimed no commands)');
 });
