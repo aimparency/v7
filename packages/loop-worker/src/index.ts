@@ -1,6 +1,5 @@
 import fs from 'fs-extra';
 import path from 'path';
-import { createOpenAICompatible } from '@ai-sdk/openai-compatible';
 import {
   appendLoopEvent,
   connectGraph,
@@ -13,7 +12,7 @@ import {
 } from 'agent-tools';
 import { isOngoingState } from 'shared';
 import { runCycle } from './cycle.js';
-import { apiKeyName, describeProviderError } from './stage-runner.js';
+import { createRoleModels, roleModelSpec } from './models.js';
 import { errorMessage, markInstanceStatus, markLoopPhase, readLoopAndInstance, sleep } from './worker-state.js';
 
 function parseArgs() {
@@ -33,12 +32,11 @@ function parseArgs() {
   return { projectPath: normalizeBowmanPath(projectPath), instanceId };
 }
 
-async function readApiKey(projectPath: string, loop: LoopDefinition): Promise<string | undefined> {
+async function readSecrets(projectPath: string): Promise<Record<string, string | undefined>> {
   try {
-    const secrets = await fs.readJson(path.join(projectPath, 'secrets.json')) as Record<string, string | undefined>;
-    return secrets[apiKeyName(loop)];
+    return await fs.readJson(path.join(projectPath, 'secrets.json'));
   } catch {
-    return undefined;
+    return {};
   }
 }
 
@@ -113,7 +111,12 @@ async function main() {
   await markInstanceStatus(projectPath, instanceId, 'running');
   const startupLoop = (await readLoopAndInstance(projectPath, instanceId)).loop;
   const executionNote = startupLoop.worktreePath ? ` Coding tools use worktree ${startupLoop.worktreePath}.` : '';
-  await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: `Loop worker started (pid ${process.pid}).${executionNote}` });
+  const verifier = roleModelSpec(startupLoop, 'verifier');
+  const executor = roleModelSpec(startupLoop, 'executor');
+  const verifierNote = verifier.provider === executor.provider && verifier.model === executor.model
+    ? ' The verifier runs on the executor\'s model; set roles.verifier in loops.json to another model family for independent verification.'
+    : ` Verifier: ${verifier.provider} / ${verifier.model}.`;
+  await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: `Loop worker started (pid ${process.pid}).${executionNote}${verifierNote}` });
   await markLoopPhase(projectPath, instanceId, 'started');
 
   const heartbeat = setInterval(() => {
@@ -141,10 +144,8 @@ async function main() {
         await markInstanceStatus(projectPath, instanceId, 'running');
       }
       await markLoopPhase(projectPath, instanceId, 'running cycle');
-      const apiKey = await readApiKey(projectPath, loop);
-      if (!apiKey) throw new Error(`Missing API key for provider ${loop.provider}.`);
-      const model = createOpenAICompatible({ name: loop.provider, baseURL: loop.baseUrl, apiKey })(loop.model);
-      await runCycle({ projectPath, instanceId, loop, graph, signal: abortController.signal, model });
+      const models = createRoleModels(loop, await readSecrets(projectPath));
+      await runCycle({ projectPath, instanceId, loop, graph, signal: abortController.signal, models });
       const nextState = await readWorkerState(projectPath, instanceId);
       if (nextState?.stopRequested || abortController.signal.aborted) break;
       const { instance: refreshedInstance } = await readLoopAndInstance(projectPath, instanceId);
@@ -173,13 +174,8 @@ async function main() {
       await appendLoopEvent(projectPath, instanceId, { role: 'system', kind: 'event', content: finalMessage });
     }
   } catch (error) {
-    let message = errorMessage(error);
-    try {
-      const { loop } = await readLoopAndInstance(projectPath, instanceId);
-      message = describeProviderError(error, loop);
-    } catch {
-      // Keep the generic message if loop config cannot be read.
-    }
+    // Provider errors were already described by the stage that hit them, with its role's model.
+    const message = errorMessage(error);
     await markInstanceStatus(projectPath, instanceId, abortController.signal.aborted ? 'stopped' : 'error');
     await patchWorkerState(projectPath, instanceId, {
       status: abortController.signal.aborted ? 'stopped' : 'error',

@@ -1,6 +1,7 @@
 import { hasToolCall, stepCountIs, streamText, tool, type LanguageModel, type ModelMessage } from 'ai';
 import type { z } from 'zod';
-import { appendLoopEvent, setLoopActivity, type LoopDefinition } from 'agent-tools';
+import { appendLoopEvent, setLoopActivity } from 'agent-tools';
+import { apiKeyName, type RoleModelSpec } from './models.js';
 import { throwIfStreamFailed } from './runtime-policy.js';
 import { errorMessage } from './worker-state.js';
 
@@ -11,7 +12,8 @@ export type StageRun<T> = { result: T | null; text: string; usage: StageUsage };
 type StageSpec<T> = {
   stage: string;
   model: LanguageModel;
-  loop: LoopDefinition;
+  /** Which provider and model `model` is, for the log and error hints. */
+  modelSpec: RoleModelSpec;
   system: string;
   prompt: string;
   tools: Record<string, any>;
@@ -43,7 +45,7 @@ export async function runStage<T>(spec: StageSpec<T>): Promise<StageRun<T>> {
     role: 'system',
     kind: 'event',
     content: [
-      `Stage ${spec.stage}: request to ${spec.loop.provider} / ${spec.loop.model}`,
+      `Stage ${spec.stage}: request to ${spec.modelSpec.provider} / ${spec.modelSpec.model}`,
       '',
       '[system]',
       spec.system,
@@ -102,7 +104,7 @@ async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknow
     await appendLoopEvent(projectPath, instanceId, { role: 'assistant', kind: 'text', content: pending });
   };
 
-  await setLoopActivity(projectPath, instanceId, `${spec.stage}: waiting for ${spec.loop.provider} / ${spec.loop.model}`);
+  await setLoopActivity(projectPath, instanceId, `${spec.stage}: waiting for ${spec.modelSpec.provider} / ${spec.modelSpec.model}`);
   for await (const part of stream.fullStream) {
     if (!sawPart) {
       sawPart = true;
@@ -133,7 +135,7 @@ async function streamToLog(spec: StageSpec<unknown>, call: Record<string, unknow
         content: `Tool failed: ${String(part.toolName)}\n${errorMessage(part.error)}`
       });
     } else if (part.type === 'error') {
-      errors.push(describeProviderError(part.error, spec.loop));
+      errors.push(describeProviderError(part.error, spec.modelSpec));
     }
   }
   await flushText(true);
@@ -154,17 +156,7 @@ function truncate(output: unknown): string {
   return text.length > 1200 ? `${text.slice(0, 1200)}\n...[truncated ${text.length - 1200} chars]` : text;
 }
 
-const API_KEY_NAMES: Record<LoopDefinition['provider'], string> = {
-  nvidia: 'NVIDIA_API_KEY',
-  openrouter: 'OPENROUTER_API_KEY',
-  'openai-compatible': 'LOOP_API_KEY'
-};
-
-export function apiKeyName(loop: LoopDefinition): string {
-  return API_KEY_NAMES[loop.provider];
-}
-
-export function describeProviderError(error: unknown, loop: LoopDefinition): string {
+export function describeProviderError(error: unknown, loop: RoleModelSpec): string {
   const message = errorMessage(error);
   const details = error && typeof error === 'object' ? error as Record<string, unknown> : {};
   const statusCode = details.statusCode ?? details.status ?? details.code;
@@ -176,7 +168,7 @@ export function describeProviderError(error: unknown, loop: LoopDefinition): str
   ];
   if (statusCode) lines.push(`status/code: ${String(statusCode)}`);
   if (/unauthorized|401|invalid.?api.?key|authentication/i.test(message)) {
-    lines.push(`likely cause: ${apiKeyName(loop)} is missing, invalid, expired, or not accepted by this endpoint/model.`);
+    lines.push(`likely cause: ${apiKeyName(loop.provider)} is missing, invalid, expired, or not accepted by this endpoint/model.`);
     lines.push('Check the loop configuration and .bowman/secrets.json for this project.');
   }
   return lines.join('\n');

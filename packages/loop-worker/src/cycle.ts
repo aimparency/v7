@@ -1,4 +1,3 @@
-import type { LanguageModel } from 'ai';
 import {
   appendLoopEvent,
   drainInbox,
@@ -33,6 +32,7 @@ import {
   type Verification
 } from './stages.js';
 import { buildWorkerTools } from './worker-tools.js';
+import type { RoleModels } from './models.js';
 import { errorMessage, markLoopPhase } from './worker-state.js';
 
 /** Which of the worker tools each model stage gets. Graph writes are never among them: the harness applies results. */
@@ -58,14 +58,12 @@ type CycleContext = {
   loop: LoopDefinition;
   graph: GraphTools;
   signal: AbortSignal;
-  /** The model for every stage until per-role models exist. */
-  model: LanguageModel;
+  models: RoleModels;
 };
 
 export async function runCycle(ctx: CycleContext) {
   const { projectPath, instanceId, loop, graph, signal } = ctx;
   const executionPath = loop.worktreePath || projectPath;
-  const { model } = ctx;
   const allTools = filterToolsByCapabilities(
     buildWorkerTools({ projectPath, instanceId, executionPath, graph, signal }),
     loop.capabilities
@@ -109,7 +107,7 @@ export async function runCycle(ctx: CycleContext) {
     let outcome: StageOutcome;
     if (stage === 'decompose') {
       const run = await runStage({
-        ...stageBase(ctx, model, 'decompose'),
+        ...stageBase(ctx, 'planner', 'decompose'),
         system: `${baseSystem}\n\nStage: decompose. Split the idea into 2-${MAX_CHILDREN_PER_DECOMPOSITION} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`,
         prompt: shared.full,
         tools: toolsFor('decompose'),
@@ -128,7 +126,7 @@ export async function runCycle(ctx: CycleContext) {
       outcome = { stage: 'decompose', result: decomposition };
     } else if (stage === 'execute') {
       const run = await runStage({
-        ...stageBase(ctx, model, 'execute'),
+        ...stageBase(ctx, 'executor', 'execute'),
         system: `${baseSystem}\n\nStage: execute. Achieve the idea and produce its acceptance evidence. Before editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused. A separate verifier will check your claimed evidence against the diff, so claim only what you observed. If the idea is too large for one cycle, submit too_large instead of starting.`,
         prompt: shared.full,
         tools: toolsFor('execute'),
@@ -145,7 +143,7 @@ export async function runCycle(ctx: CycleContext) {
         describeOrError(() => gitDiff(executionPath, { limitChars: 20000 }))
       ]);
       const run = await runStage({
-        ...stageBase(ctx, model, 'verify'),
+        ...stageBase(ctx, 'verifier', 'verify'),
         system: `${baseSystem}\n\nStage: verify. You did not do this work. Decide from the idea, the diff and the claimed evidence whether the idea is achieved. Re-run the claimed commands or tests where possible; do not edit files. verified: the evidence holds and covers the idea. failed: it does not hold or the work is wrong. unverifiable: you cannot check it from here. The diff is of the whole working tree and may contain unrelated changes by others.`,
         prompt: [
           `Idea:\n${idea.text}\n\n${idea.description ?? ''}`,
@@ -171,7 +169,7 @@ export async function runCycle(ctx: CycleContext) {
       });
       if (parentEdges.length > 0) {
         const run = await runStage({
-          ...stageBase(ctx, model, 'reflect'),
+          ...stageBase(ctx, 'reflector', 'reflect'),
           system: `${baseSystem}\n\nStage: reflect. The idea is settled. For each parent edge, say whether its hypothesis held, given the outcome and evidence.`,
           prompt: [
             `Idea:\n${idea.text}`,
@@ -218,8 +216,9 @@ async function describeOrError(read: () => Promise<unknown>): Promise<string> {
   }
 }
 
-function stageBase(ctx: CycleContext, model: LanguageModel, stage: string) {
-  return { stage, model, loop: ctx.loop, projectPath: ctx.projectPath, instanceId: ctx.instanceId, signal: ctx.signal };
+function stageBase(ctx: CycleContext, role: keyof RoleModels, stage: string) {
+  const { model, spec } = ctx.models[role];
+  return { stage: `${stage} (${role})`, model, modelSpec: spec, projectPath: ctx.projectPath, instanceId: ctx.instanceId, signal: ctx.signal };
 }
 
 async function logStage(ctx: CycleContext, content: string) {

@@ -111,6 +111,7 @@ export const loopRouter = t.router({
           associationChance: 0.1,
           worktreePath: null,
           capabilities: ['coding', 'experiments', 'code-intelligence'],
+          roles: {},
           createdAt: now,
           updatedAt: now
         });

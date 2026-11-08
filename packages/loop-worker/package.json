@@ -12,6 +12,7 @@
     "test": "tsx --test \"src/**/*.test.ts\""
   },
   "dependencies": {
+    "@ai-sdk/anthropic": "3.0.129",
     "@ai-sdk/openai-compatible": "^2.0.56",
     "@huggingface/transformers": "^4.3.1",
     "@trpc/client": "^11.19.0",

@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158149911
+    "state": "implemented",
+    "comment": "LoopDefinition.roles (shared/src/loop-state.ts): planner/executor/verifier/reflector -> {provider, model, baseUrl?}; providers nvidia, openrouter, openai-compatible and now anthropic (@ai-sdk/anthropic), default endpoints filled in. Unset roles use the loop's model (backward compatible; existing loops.json parse with roles: {}). Keys from .bowman/secrets.json incl. new ANTHROPIC_API_KEY (backend secrets schema keeps it). packages/loop-worker/src/models.ts resolves all role models before a cycle and fails naming the role and missing key; stages map decompose->planner, execute->executor, verify->verifier, reflect->reflector; logs and provider error hints name the role's model. Worker start logs the verifier model, or a note when it equals the executor's. Configured by editing loops.json (no UI form, per config-in-files). Evidence: models.test.ts (role fallback, default endpoints, missing-key error), loop-worker 18/18, backend loop-cycle e2e 3/3, typecheck of loop-worker/backend/shared, knip clean.",
+    "date": 1794160285603
   },
   "intrinsicValue": 0,
   "cost": 2,

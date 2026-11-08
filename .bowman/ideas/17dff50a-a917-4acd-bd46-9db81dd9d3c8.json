@@ -23,7 +23,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Done: verify stage sees only idea, executor summary, claimed evidence, claimed commands, git status and diff; tools are read-only code tools + run_command; verdict mapping verified→implemented (evidence + verifier reasons in comment), failed→open with the objection, unverifiable→review; missing verdict counts as unverifiable. Missing: a different model family (needs role registry e6bd3fd6) and a pluggable external verifier backend.",
+    "comment": "Done: verify stage sees only idea, executor summary, claimed evidence and commands, git status and diff; read-only code tools + run_command; verified->implemented (evidence + reasons), failed->open with the objection, unverifiable->review; a missing verdict counts as unverifiable. A different model family is now configurable via loops.json roles.verifier (e6bd3fd6), and the worker warns when it equals the executor. Missing: a pluggable external verifier backend (recompute-kit, ThoughtProof; see 43166d16 and the meetings on 13 and 17 Nov).",
     "date": 1794160116512
   },
   "intrinsicValue": 0,

@@ -233,6 +233,9 @@ importers:
 
   packages/loop-worker:
     dependencies:
+      '@ai-sdk/anthropic':
+        specifier: 3.0.129
+        version: 3.0.129(zod@3.25.76)
       '@ai-sdk/openai-compatible':
         specifier: ^2.0.56
         version: 2.0.81(zod@3.25.76)

@@ -7,6 +7,15 @@ import { toBowmanPath } from './project-path.js';
 // .bowman/runtime/loops.json and .bowman/runtime/loop-instances/<id>/.
 
 export const loopProviderSchema = z.enum(['nvidia', 'openrouter', 'openai-compatible']);
+// A stage role can run on its own model, e.g. a cheap planner and a verifier
+// from another model family than the executor. Unset roles use the loop's model.
+export const loopRoleSchema = z.enum(['planner', 'executor', 'verifier', 'reflector']);
+export const loopRoleModelSchema = z.object({
+  provider: z.enum([...loopProviderSchema.options, 'anthropic']),
+  model: z.string(),
+  /** Defaults to the provider's endpoint; needed for openai-compatible. */
+  baseUrl: z.string().optional()
+});
 export const loopCapabilitySchema = z.enum(['coding', 'experiments', 'code-intelligence']);
 
 export const loopMessageSchema = z.object({
@@ -30,6 +39,7 @@ export const loopDefinitionSchema = z.object({
   associationChance: z.number().min(0).max(1).default(0.1),
   worktreePath: z.string().nullable().default(null),
   capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
+  roles: z.record(loopRoleSchema, loopRoleModelSchema).default({}),
   createdAt: z.number(),
   updatedAt: z.number()
 });
@@ -83,6 +93,8 @@ export const loopInboxMessageSchema = z.object({
 
 export type LoopRuntimeState = z.infer<typeof loopRuntimeStateSchema>;
 export type LoopDefinition = z.infer<typeof loopDefinitionSchema>;
+export type LoopRole = z.infer<typeof loopRoleSchema>;
+export type LoopRoleModel = z.infer<typeof loopRoleModelSchema>;
 export type LoopInstance = z.infer<typeof loopInstanceSchema>;
 export type LoopMessage = z.infer<typeof loopMessageSchema>;
 export type LoopWorkerState = z.infer<typeof loopWorkerStateSchema>;

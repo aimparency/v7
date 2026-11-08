@@ -36,7 +36,8 @@ const LOOP_WORKER_DIR = path.join(REPO_ROOT, 'packages', 'loop-worker');
 export const loopSecretsSchema = z.object({
   NVIDIA_API_KEY: z.string().optional(),
   OPENROUTER_API_KEY: z.string().optional(),
-  LOOP_API_KEY: z.string().optional()
+  LOOP_API_KEY: z.string().optional(),
+  ANTHROPIC_API_KEY: z.string().optional()
 }).default({});
 export const loopConfigSchema = z.object({
   provider: loopProviderSchema.default('nvidia'),

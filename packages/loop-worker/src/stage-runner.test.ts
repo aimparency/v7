@@ -5,7 +5,6 @@ import path from 'node:path';
 import test from 'node:test';
 import { jsonSchema, simulateReadableStream, tool } from 'ai';
 import { MockLanguageModelV3 } from 'ai/test';
-import type { LoopDefinition } from 'agent-tools';
 import { runStage } from './stage-runner.js';
 import { verificationSchema } from './stages.js';
 
@@ -38,7 +37,7 @@ async function stageSpec(model: MockLanguageModelV3, tools: Record<string, any> 
   return {
     stage: 'verify',
     model,
-    loop: { provider: 'openai-compatible', model: 'mock', baseUrl: 'http://mock' } as LoopDefinition,
+    modelSpec: { provider: 'openai-compatible' as const, model: 'mock', baseUrl: 'http://mock' },
     system: 'system',
     prompt: 'prompt',
     tools,

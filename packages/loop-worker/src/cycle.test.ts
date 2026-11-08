@@ -7,6 +7,7 @@ import { simulateReadableStream } from 'ai';
 import { MockLanguageModelV3 } from 'ai/test';
 import type { GraphTools, LoopDefinition } from 'agent-tools';
 import { runCycle } from './cycle.js';
+import type { RoleModels } from './models.js';
 
 const usage = { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } };
 
@@ -75,7 +76,9 @@ async function cycleContext(graph: GraphTools, model: MockLanguageModelV3) {
     provider: 'openai-compatible', model: 'mock', baseUrl: 'http://mock', systemPrompt: 'test loop',
     associationChance: 0, worktreePath: null, capabilities: ['coding', 'experiments', 'code-intelligence']
   } as unknown as LoopDefinition;
-  return { projectPath, instanceId: 'instance', loop, graph, signal: new AbortController().signal, model };
+  const spec = { provider: 'openai-compatible' as const, model: 'mock', baseUrl: 'http://mock' };
+  const models = Object.fromEntries(['planner', 'executor', 'verifier', 'reflector'].map((role) => [role, { spec, model }])) as unknown as RoleModels;
+  return { projectPath, instanceId: 'instance', loop, graph, signal: new AbortController().signal, models };
 }
 
 test('a leaf goes execute → verify → reflect → record, and the harness writes the status and the reflection', async () => {

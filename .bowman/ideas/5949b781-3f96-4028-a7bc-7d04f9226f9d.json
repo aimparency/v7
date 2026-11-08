@@ -13,7 +13,8 @@
         2.25
       ],
       "weight": 1,
-      "hypothesis": "Per-role models make verification by a different model family possible and cut cost by using cheap models where judgment matters less."
+      "hypothesis": "Per-role models make verification by a different model family possible and cut cost by using cheap models where judgment matters less.",
+      "reflection": "Held: one roles map was enough to make the verifier independent of the executor; no change to the stage machine was needed."
     },
     {
       "ideaId": "2d5a9e4a-95b5-487d-a4fc-2ee609a48965",
