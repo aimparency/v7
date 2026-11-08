@@ -37,7 +37,7 @@ function graph(): ContextInput {
 }
 
 test('the compiled context carries the bets: mission path hypotheses, parent bet, children outcomes, lessons and cancelled reasons', () => {
-  const { text, dropped } = compileContext(graph(), 'execute');
+  const { text, dropped } = compileContext(graph(), 'execute', 48_000);
   assert.deepEqual(dropped, []);
   assert.match(text, /## idea\ntarget text[\s\S]*phase: Now[\s\S]*bet on parent "mission text": target speeds up the mission/);
   assert.match(text, /## mission path\n- root text\n  - mission text\n    because: mission serves root/);
@@ -50,7 +50,7 @@ test('the compiled context carries the bets: mission path hypotheses, parent bet
 
 test('stages rank sections differently, and the budget cuts the crossing section and drops the rest', () => {
   const input = graph();
-  const order = (stage: 'decompose' | 'execute') => compileContext(input, stage).included;
+  const order = (stage: 'decompose' | 'execute') => compileContext(input, stage, 48_000).included;
   assert.ok(order('decompose').indexOf('siblings') < order('decompose').indexOf('recent loop events'));
   assert.ok(order('execute').indexOf('siblings') > order('execute').indexOf('recent loop events'));
 

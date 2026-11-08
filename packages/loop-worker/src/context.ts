@@ -25,9 +25,6 @@ export type CompiledContext = { text: string; included: string[]; dropped: strin
 
 type Section = { name: string; body: string };
 
-/** Roughly 4 characters per token. */
-export const DEFAULT_CONTEXT_BUDGET_CHARS = 48_000;
-
 const SECTION_ORDER: Record<ContextStage, string[]> = {
   decompose: ['idea', 'human messages', 'mission path', 'children', 'cancelled or failed lookalikes', 'siblings', 'lessons from similar ideas', 'similar ideas', 'recent loop events'],
   execute: ['idea', 'human messages', 'mission path', 'children', 'cancelled or failed lookalikes', 'lessons from similar ideas', 'similar ideas', 'recent loop events', 'siblings']
@@ -35,7 +32,8 @@ const SECTION_ORDER: Record<ContextStage, string[]> = {
 
 const SETTLED_BADLY = new Set(['cancelled', 'failed']);
 
-export function compileContext(input: ContextInput, stage: ContextStage, budgetChars = DEFAULT_CONTEXT_BUDGET_CHARS): CompiledContext {
+/** `budgetChars`: roughly 4 characters per token (harness.json contextBudgetChars). */
+export function compileContext(input: ContextInput, stage: ContextStage, budgetChars: number): CompiledContext {
   const sections = new Map(buildSections(input).map((section) => [section.name, section]));
   const included: string[] = [];
   const dropped: string[] = [];

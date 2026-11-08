@@ -2,6 +2,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import type { LoopDefinition } from 'agent-tools';
 import { toBowmanPath } from 'shared';
+import type { LoadedHarnessConfig } from 'shared/harness-config';
 import type { StageTrace, StageUsage } from './stage-runner.js';
 import type { Receipt, StatusChange } from './stages.js';
 
@@ -19,6 +20,7 @@ export type CycleTrace = {
   ideaId: string;
   ideaText: string;
   loop: Pick<LoopDefinition, 'id' | 'name' | 'provider' | 'model' | 'baseUrl' | 'roles' | 'capabilities' | 'systemPrompt'>;
+  harnessConfig: LoadedHarnessConfig;
   stages: StageTrace[];
   verifiedDiff?: { status: string; diff: string };
   receipts: Receipt[];

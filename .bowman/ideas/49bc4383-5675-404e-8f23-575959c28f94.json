@@ -20,9 +20,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794158151218
+    "state": "implemented",
+    "comment": "Config: .bowman/harness.json (versioned with the graph; optional, defaults when missing), schema in packages/shared/src/harness-config.ts (strict: a misspelled field fails loudly): stepBudgets per stage, contextBudgetChars, decomposition.maxChildren (<=7) and landingState (open | ai-proposition), receipts.maxCommands/timeoutMs. The loop-worker reads it at the start of every cycle, so edits apply from the next cycle without restart; each trace records the config and its version (12-char content hash). The worker's hard-coded budgets/limits are gone. Documented in the .bowman README template. Live view: no new UI or forms — the loop panel already shows the current stage in its activity line and stage transitions, context sizes, verdicts, token counts and trace file in the event stream. Model roles stay in loops.json (e6bd3fd6). Evidence: harness-config.test 3/3 (defaults, partial override + version, strict errors), cycle.test proves harness.json changes landing state and child cap and lands in the trace; loop-worker 24/24, shared 118/118, backend project + loop-cycle 5/5, knip clean.",
+    "date": 1794160872271
   },
   "intrinsicValue": 0,
   "cost": 2,

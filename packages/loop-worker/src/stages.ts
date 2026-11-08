@@ -7,15 +7,8 @@ import { isOngoingState, type Idea } from 'shared';
 
 export type Stage = 'orient' | 'decompose' | 'execute' | 'verify' | 'reflect' | 'record';
 
-/** Step budget per model stage (tool calls + the final submit call). */
-export const STAGE_STEP_BUDGETS = {
-  decompose: 8,
-  execute: 20,
-  verify: 10,
-  reflect: 2
-} as const;
-
-export const MAX_CHILDREN_PER_DECOMPOSITION = 7;
+/** Hard ceiling; harness.json decomposition.maxChildren can only lower it. */
+const MAX_CHILDREN = 7;
 
 export const decompositionSchema = z.object({
   children: z.array(z.object({
@@ -26,7 +19,7 @@ export const decompositionSchema = z.object({
     hypothesis: z.string().describe('A claim that could fail: the effect this child should have on the parent'),
     weight: z.number().positive().describe('Relative contribution to the parent, 1 = normal'),
     cost: z.number().positive().describe('Estimated direct cost in the project cost unit')
-  })).max(MAX_CHILDREN_PER_DECOMPOSITION),
+  })).max(MAX_CHILDREN),
   rationale: z.string().describe('Why these children cover the parent, or why no decomposition is needed')
 });
 
@@ -121,8 +114,6 @@ export function formatReflection(entry: Reflection['reflections'][number]): stri
 
 /** A claimed command the harness re-ran itself before verification. */
 export type Receipt = { command: string; exitCode: number; refused?: string; outputTail: string };
-
-export const MAX_RECEIPT_COMMANDS = 5;
 
 export function formatReceipts(receipts: Receipt[]): string {
   if (receipts.length === 0) return '(the executor claimed no commands)';

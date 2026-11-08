@@ -12,6 +12,7 @@ import {
   type PrioritizedIdea
 } from 'agent-tools';
 import { calculateIdeaValues, missionPathsToRoot, type Idea } from 'shared';
+import { loadHarnessConfig, type HarnessConfig } from 'shared/harness-config';
 import { compileContext, type ContextInput } from './context.js';
 import { filterToolsByCapabilities } from './capabilities.js';
 import { applyDecomposition, applyReflections, applyStatus } from './graph-writes.js';
@@ -21,13 +22,10 @@ import { writeCycleTrace } from './traces.js';
 import {
   decompositionSchema,
   executionSchema,
-  MAX_CHILDREN_PER_DECOMPOSITION,
-  MAX_RECEIPT_COMMANDS,
   applyReceipts,
   formatReceipts,
   nextStage,
   reflectionSchema,
-  STAGE_STEP_BUDGETS,
   statusAfter,
   verificationSchema,
   workStageFor,
@@ -56,8 +54,6 @@ export const STAGE_TOOL_NAMES = {
   reflect: [] as string[]
 };
 
-/** Where decomposition children land. ai-proposition would gate them on a human. */
-const DECOMPOSITION_LANDING_STATE = 'open';
 
 type CycleContext = {
   projectPath: string;
@@ -77,6 +73,10 @@ export async function runCycle(ctx: CycleContext) {
   );
   const toolsFor = (stage: keyof typeof STAGE_TOOL_NAMES) =>
     Object.fromEntries(STAGE_TOOL_NAMES[stage].flatMap((name) => allTools[name] ? [[name, allTools[name]]] : []));
+
+  // Read every cycle, so an edit to .bowman/harness.json applies from the next cycle on.
+  const harnessConfig = loadHarnessConfig(projectPath);
+  const { config } = harnessConfig;
 
   // orient
   await markLoopPhase(projectPath, instanceId, 'orient: picking an idea');
@@ -119,18 +119,18 @@ export async function runCycle(ctx: CycleContext) {
     if (stage === 'decompose') {
       const run = await runStage({
         ...stageBase(ctx, 'planner', 'decompose'),
-        system: `${baseSystem}\n\nStage: decompose. Split the idea into 2-${MAX_CHILDREN_PER_DECOMPOSITION} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`,
-        prompt: await stageContext(ctx, gathered.input, 'decompose'),
+        system: `${baseSystem}\n\nStage: decompose. Split the idea into 2-${config.decomposition.maxChildren} children that together achieve it, each small enough for one work cycle, with acceptance evidence in its description. Reuse a shown similar idea via existingIdeaId instead of duplicating it. Avoid what cancelled or failed lookalikes already disproved. Submit no children if the idea needs none.`,
+        prompt: await stageContext(ctx, gathered.input, 'decompose', config.contextBudgetChars),
         tools: toolsFor('decompose'),
         submit: { name: 'submit_decomposition', description: 'Submit the children for this idea.', schema: decompositionSchema },
-        maxSteps: STAGE_STEP_BUDGETS.decompose
+        maxSteps: config.stepBudgets.decompose
       });
       addUsage(run.usage);
       stageTraces.push(run.trace);
       decomposition = run.result;
       decomposed = true;
       if (decomposition && decomposition.children.length > 0) {
-        const applied = await applyDecomposition(graph, projectPath, idea.id, decomposition, gathered.linkableIds, DECOMPOSITION_LANDING_STATE);
+        const applied = await applyDecomposition(graph, projectPath, idea.id, { ...decomposition, children: decomposition.children.slice(0, config.decomposition.maxChildren) }, gathered.linkableIds, config.decomposition.landingState);
         notes.push(`decomposed into ${applied.created.length} new and ${applied.linked.length} linked children`);
       } else {
         notes.push(decomposition ? `no decomposition: ${decomposition.rationale}` : 'decompose stage submitted nothing');
@@ -140,10 +140,10 @@ export async function runCycle(ctx: CycleContext) {
       const run = await runStage({
         ...stageBase(ctx, 'executor', 'execute'),
         system: `${baseSystem}\n\nStage: execute. Achieve the idea and produce its acceptance evidence. Before editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused. A separate verifier will check your claimed evidence against the diff, so claim only what you observed. If the idea is too large for one cycle, submit too_large instead of starting.`,
-        prompt: await stageContext(ctx, gathered.input, 'execute'),
+        prompt: await stageContext(ctx, gathered.input, 'execute', config.contextBudgetChars),
         tools: toolsFor('execute'),
         submit: { name: 'submit_execution', description: 'Submit the outcome of this work cycle.', schema: executionSchema },
-        maxSteps: STAGE_STEP_BUDGETS.execute
+        maxSteps: config.stepBudgets.execute
       });
       addUsage(run.usage);
       stageTraces.push(run.trace);
@@ -155,7 +155,7 @@ export async function runCycle(ctx: CycleContext) {
         describeOrError(() => gitStatus(executionPath)),
         describeOrError(() => gitDiff(executionPath, { limitChars: 20000 }))
       ]);
-      receipts = await collectReceipts(executionPath, execution?.commands ?? []);
+      receipts = await collectReceipts(executionPath, execution?.commands ?? [], config.receipts);
       verifiedDiff = { status, diff };
       const run = await runStage({
         ...stageBase(ctx, 'verifier', 'verify'),
@@ -170,7 +170,7 @@ export async function runCycle(ctx: CycleContext) {
         ].join('\n\n'),
         tools: toolsFor('verify'),
         submit: { name: 'submit_verdict', description: 'Submit the verdict.', schema: verificationSchema },
-        maxSteps: STAGE_STEP_BUDGETS.verify
+        maxSteps: config.stepBudgets.verify
       });
       addUsage(run.usage);
       stageTraces.push(run.trace);
@@ -194,7 +194,7 @@ export async function runCycle(ctx: CycleContext) {
           ].join('\n\n'),
           tools: toolsFor('reflect'),
           submit: { name: 'submit_reflections', description: 'Submit one reflection per parent edge.', schema: reflectionSchema },
-          maxSteps: STAGE_STEP_BUDGETS.reflect
+          maxSteps: config.stepBudgets.reflect
         });
         addUsage(run.usage);
         stageTraces.push(run.trace);
@@ -220,6 +220,7 @@ export async function runCycle(ctx: CycleContext) {
     ideaId: idea.id,
     ideaText: idea.text,
     loop: { id: loop.id, name: loop.name, provider: loop.provider, model: loop.model, baseUrl: loop.baseUrl, roles: loop.roles, capabilities: loop.capabilities, systemPrompt: loop.systemPrompt },
+    harnessConfig,
     stages: stageTraces,
     verifiedDiff,
     receipts,
@@ -240,10 +241,10 @@ export async function runCycle(ctx: CycleContext) {
 }
 
 /** Re-runs the executor's claimed commands (guarded, time-limited) so verification rests on observed exit codes. */
-async function collectReceipts(executionPath: string, commands: string[]): Promise<Receipt[]> {
+async function collectReceipts(executionPath: string, commands: string[], limits: HarnessConfig['receipts']): Promise<Receipt[]> {
   const receipts: Receipt[] = [];
-  for (const command of commands.slice(0, MAX_RECEIPT_COMMANDS)) {
-    const result = await runCommand(executionPath, { command, timeoutMs: 120_000 });
+  for (const command of commands.slice(0, limits.maxCommands)) {
+    const result = await runCommand(executionPath, { command, timeoutMs: limits.timeoutMs });
     const output = `${result.stdout}${result.stderr ? `\n${result.stderr}` : ''}`.trim();
     receipts.push({ command, exitCode: result.exitCode, refused: result.refused, outputTail: output.slice(-1500) });
   }
@@ -299,8 +300,8 @@ async function gatherContextInput(ctx: CycleContext, target: PrioritizedIdea, id
 }
 
 /** Compiles a stage's context and logs what it holds. */
-async function stageContext(ctx: CycleContext, input: ContextInput, stage: 'decompose' | 'execute') {
-  const compiled = compileContext(input, stage);
+async function stageContext(ctx: CycleContext, input: ContextInput, stage: 'decompose' | 'execute', budgetChars: number) {
+  const compiled = compileContext(input, stage, budgetChars);
   await appendLoopEvent(ctx.projectPath, ctx.instanceId, {
     role: 'system',
     kind: 'event',

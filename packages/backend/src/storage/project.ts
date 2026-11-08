@@ -21,6 +21,8 @@ Plain JSON, versioned by git, made with [Aimparency](https://github.com/aimparen
 - **Agents** work on it through Aimparency's MCP server.
 - **By hand** works too, but Aimparency migrates the files between data model
   versions ([format](https://github.com/aimparency/v7/tree/main/protocol)).
+- \`harness.json\` (optional) tunes the background loop's harness: step budgets,
+  context size, decomposition and verification limits. Read at every cycle.
 - \`runtime/\` and the other gitignored files are local to one machine.
 `;
 // Older projects may still list vectors.json, cache.db and semantic-graph.json

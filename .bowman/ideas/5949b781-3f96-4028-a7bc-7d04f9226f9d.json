@@ -88,7 +88,8 @@
         0.55
       ],
       "weight": 1,
-      "hypothesis": "Config as a versioned file lets LLMs tune the harness and lets every change be diffed, reverted and compared on a benchmark."
+      "hypothesis": "Config as a versioned file lets LLMs tune the harness and lets every change be diffed, reverted and compared on a benchmark.",
+      "reflection": "Held: with config versioned and recorded in every trace, harness self-improvement experiments (5e7df03b) now have a knob to change and a version to compare by."
     },
     {
       "ideaId": "9c767469-d527-4746-8724-f9e2647f6117",

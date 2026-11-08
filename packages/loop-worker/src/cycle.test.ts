@@ -167,3 +167,21 @@ test('a claimed command that fails when the harness re-runs it overrules a verif
   assert.equal(statusUpdate?.[1].idea.status.state, 'open');
   assert.match(statusUpdate?.[1].idea.status.comment, /Overruled by the harness: re-run of the claimed command `node -e "process.exit\(3\)"` exited 3/);
 });
+
+test('.bowman/harness.json steers the cycle: children land as ai-proposition, capped, and the trace names the config version', async () => {
+  const ideas = [idea('container', 'open', [{ ideaId: 'running-child' }]), idea('running-child', 'partially', [], ['container'])];
+  const { graph, writes } = fakeGraph(ideas, 'container');
+  const child = (text: string) => ({ text, description: 'done when tested', hypothesis: 'it helps', weight: 1, cost: 2 });
+  const { model } = submittingModel([['submit_decomposition', { children: [child('first'), child('second')], rationale: 'covers it' }]]);
+  const context = await cycleContext(graph, model);
+  await fs.writeFile(path.join(context.projectPath, '.bowman', 'harness.json'), JSON.stringify({ decomposition: { maxChildren: 1, landingState: 'ai-proposition' } }));
+  await runCycle(context);
+
+  const created = writes.filter(([kind]) => kind === 'create').map(([, input]) => [input.idea.text, input.idea.status.state]);
+  assert.deepEqual(created, [['first', 'ai-proposition']]);
+  const traceDir = path.join(context.projectPath, '.bowman', 'runtime', 'traces');
+  const [traceFile] = await fs.readdir(traceDir);
+  const trace = JSON.parse(await fs.readFile(path.join(traceDir, traceFile!), 'utf8'));
+  assert.match(trace.harnessConfig.version, /^[0-9a-f]{12}$/);
+  assert.equal(trace.harnessConfig.config.decomposition.landingState, 'ai-proposition');
+});
