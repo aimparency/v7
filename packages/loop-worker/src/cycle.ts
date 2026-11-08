@@ -19,7 +19,7 @@ import { applyDecomposition, applyReflections, applyStatus } from './graph-write
 import { selectCycleTarget } from './runtime-policy.js';
 import { runStage, type StageTrace, type StageUsage } from './stage-runner.js';
 import { writeCycleTrace } from './traces.js';
-import { runClaudeCodeExecutor } from './claude-code-executor.js';
+import { runClaudeCodeExecutor, runCodexExecutor } from './cli-executors.js';
 import { cycleCostUsd, spentTodayUsd, tokensUsed, unpricedModels } from './costs.js';
 import {
   decompositionSchema,
@@ -156,14 +156,11 @@ export async function runCycle(ctx: CycleContext) {
       outcome = { stage: 'decompose', result: decomposition };
     } else if (stage === 'execute') {
       const executePrompt = await stageContext(ctx, gathered.input, 'execute', config.contextBudgetChars);
+      const cliSpec = { executionPath, system: `${baseSystem}\n\n${EXECUTE_INSTRUCTIONS}\nUse your own tools to read, edit and test.`, prompt: executePrompt, signal };
       const run = config.executor.backend === 'claude-code'
-        ? await runClaudeCodeExecutor({
-            executionPath,
-            system: `${baseSystem}\n\n${EXECUTE_INSTRUCTIONS}\nUse your own tools to read, edit and test.`,
-            prompt: executePrompt,
-            config: config.executor.claudeCode,
-            signal
-          })
+        ? await runClaudeCodeExecutor({ ...cliSpec, config: config.executor.claudeCode })
+        : config.executor.backend === 'codex'
+        ? await runCodexExecutor({ ...cliSpec, config: config.executor.codex })
         : await runStage({
             ...stageBase(ctx, 'executor', 'execute'),
             system: `${baseSystem}\n\n${EXECUTE_INSTRUCTIONS}\nBefore editing, inspect git_status and read the relevant files; prefer str_replace or line_replace for small edits; run tests or typechecks with run_command. Destructive commands are refused.`,

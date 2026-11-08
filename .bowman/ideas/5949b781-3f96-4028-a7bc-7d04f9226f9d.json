@@ -52,7 +52,8 @@
         0.48
       ],
       "weight": 2,
-      "hypothesis": "Delegating code changes to the best available coding agent keeps execution quality high while the harness stays model-agnostic."
+      "hypothesis": "Delegating code changes to the best available coding agent keeps execution quality high while the harness stays model-agnostic.",
+      "reflection": "Held: strong coding agents now do the code under the harness's loop, context, receipts and verification, with no graph access of their own; switching backends is one line in harness.json."
     },
     {
       "ideaId": "17dff50a-a917-4acd-bd46-9db81dd9d3c8",

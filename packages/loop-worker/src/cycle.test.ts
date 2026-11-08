@@ -8,7 +8,7 @@ import { MockLanguageModelV3 } from 'ai/test';
 import type { GraphTools, LoopDefinition } from 'agent-tools';
 import { runCycle } from './cycle.js';
 import type { RoleModels } from './models.js';
-import { fakeClaude } from './fake-claude.js';
+import { fakeClaude } from './fake-cli.js';
 
 const usage = { inputTokens: { total: 10, noCache: 10, cacheRead: 0, cacheWrite: 0 }, outputTokens: { total: 5, text: 5, reasoning: 0 } };
 
