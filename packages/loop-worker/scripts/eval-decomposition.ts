@@ -2,7 +2,9 @@
 // src/decomposition-eval.ts). Read-only on the graph; costs one planner call
 // per sampled parent. Needs the backend running and a key for the planner role.
 //
-//   npx tsx scripts/eval-decomposition.ts [--project <repo>] [--samples 8] [--model <id>]
+//   npx tsx scripts/eval-decomposition.ts [--project <repo>] [--samples 8] [--model <id>] [--resume <proposals.jsonl>]
+// Proposals are appended per parent to runtime/evals/*.proposals.jsonl; --resume
+// skips parents already in that file, so a slow or interrupted run loses nothing.
 // --model overrides the first loop's model (same provider) without touching loops.json.
 import fs from 'fs-extra';
 import path from 'path';
@@ -48,8 +50,24 @@ try {
   const parents = selectEvalParents(ideas, samples);
   console.log(`Planner ${planner.spec.provider} / ${planner.spec.model}, harness config ${version}, ${parents.length} parents.`);
 
+  const outDir = path.join(projectPath, 'runtime', 'evals');
+  await fs.ensureDir(outDir);
+  const resumeFile = argument('resume', '');
+  const proposalsFile = resumeFile || path.join(outDir, `decomposition-${new Date().toISOString().replace(/[:.]/g, '-')}.proposals.jsonl`);
+  type Saved = { parentId: string; proposed: { text: string; description: string }[]; usage: { inputTokens: number; outputTokens: number } };
+  const saved = new Map<string, Saved>(
+    (await fs.readFile(proposalsFile, 'utf8').catch(() => '')).split('\n').filter(Boolean)
+      .map((line) => JSON.parse(line) as Saved).map((entry) => [entry.parentId, entry])
+  );
+
   const results = [];
   for (const parent of parents) {
+    const real = realChildren(parent, ideaById);
+    const done = saved.get(parent.id);
+    if (done) {
+      results.push({ parent, real, proposed: done.proposed, usage: done.usage });
+      continue;
+    }
     const { masked, hiddenIds } = maskChildren(ideaById, parent);
     const maskedParent = masked.get(parent.id)!;
     const similar = (await graph.searchIdeas(`${parent.text} ${parent.description ?? ''}`, 16))
@@ -81,8 +99,8 @@ try {
       signal: new AbortController().signal
     });
     const proposed = run.result?.children ?? [];
-    const real = realChildren(parent, ideaById);
     results.push({ parent, real, proposed, usage: run.usage });
+    await fs.appendFile(proposalsFile, `${JSON.stringify({ parentId: parent.id, proposed, usage: run.usage })}\n`);
     console.log(`- ${parent.id.slice(0, 8)} ${parent.text.slice(0, 70)}: ${real.length} real, ${proposed.length} proposed`);
   }
 
@@ -114,9 +132,7 @@ try {
     noSubmission: results.filter((result) => result.proposed.length === 0).length
   };
 
-  const outDir = path.join(projectPath, 'runtime', 'evals');
-  await fs.ensureDir(outDir);
-  const outFile = path.join(outDir, `decomposition-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+  const outFile = proposalsFile.replace(/\.proposals\.jsonl$/, '.json');
   await fs.writeJson(outFile, { planner: planner.spec, harnessConfigVersion: version, summary, scored }, { spaces: 2 });
   console.log(JSON.stringify(summary, null, 2));
   console.log(`Written: ${outFile}`);
