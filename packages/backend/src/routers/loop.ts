@@ -4,6 +4,7 @@ import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 import { normalizeProjectPath } from '../project-path.js';
 import { t, delayedProcedure } from '../trpc.js';
+import { DEFAULT_LOOP_MODEL } from 'shared';
 import { getLoopInstanceDir, loopCapabilitySchema, loopProviderSchema } from 'shared/loop-state';
 import {
   loopConfigSchema,
@@ -105,7 +106,7 @@ export const loopRouter = t.router({
           name: input.name?.trim() || 'New loop',
           systemPrompt: 'Continuously advance the highest-value mission. Verify real outcomes, record them, and reprioritize.',
           provider: 'nvidia',
-          model: 'z-ai/glm-5.2',
+          model: DEFAULT_LOOP_MODEL,
           baseUrl: 'https://integrate.api.nvidia.com/v1',
           intervalSeconds: 60,
           associationChance: 0.1,

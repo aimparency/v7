@@ -5,7 +5,7 @@ import { createRoleModels, roleModelSpec } from './models.js';
 
 const loop = {
   provider: 'nvidia',
-  model: 'z-ai/glm-5.2',
+  model: 'z-ai/glm-5.3-flash',
   baseUrl: 'https://integrate.api.nvidia.com/v1',
   roles: {
     verifier: { provider: 'anthropic', model: 'claude-sonnet-5-5' },
@@ -14,7 +14,7 @@ const loop = {
 } as unknown as LoopDefinition;
 
 test('an unset role runs on the loop model, a set role on its own provider with its default endpoint', () => {
-  assert.deepEqual(roleModelSpec(loop, 'executor'), { provider: 'nvidia', model: 'z-ai/glm-5.2', baseUrl: 'https://integrate.api.nvidia.com/v1' });
+  assert.deepEqual(roleModelSpec(loop, 'executor'), { provider: 'nvidia', model: 'z-ai/glm-5.3-flash', baseUrl: 'https://integrate.api.nvidia.com/v1' });
   assert.deepEqual(roleModelSpec(loop, 'verifier'), { provider: 'anthropic', model: 'claude-sonnet-5-5', baseUrl: 'https://api.anthropic.com/v1' });
   assert.equal(roleModelSpec(loop, 'planner').baseUrl, 'https://openrouter.ai/api/v1');
   const custom = { ...loop, roles: { reflector: { provider: 'openai-compatible', model: 'local' } } } as unknown as LoopDefinition;

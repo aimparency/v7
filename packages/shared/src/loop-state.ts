@@ -1,6 +1,7 @@
 import path from 'path';
 import { z } from 'zod';
 import { toBowmanPath } from './project-path.js';
+import { DEFAULT_LOOP_MODEL } from './constants.js';
 
 // On-disk format of background loops, shared by the backend (which manages
 // loops) and the loop-worker (which runs one instance):
@@ -33,7 +34,7 @@ export const loopDefinitionSchema = z.object({
   name: z.string(),
   systemPrompt: z.string(),
   provider: loopProviderSchema.default('nvidia'),
-  model: z.string().default('z-ai/glm-5.2'),
+  model: z.string().default(DEFAULT_LOOP_MODEL),
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60),
   associationChance: z.number().min(0).max(1).default(0.1),

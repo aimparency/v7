@@ -2,7 +2,7 @@ import { z } from 'zod';
 import fs from 'fs-extra';
 import path from 'path';
 import { v4 as uuidv4 } from 'uuid';
-import { calculateIdeaValues, defaultIdeaCost, selectWorkCandidates } from 'shared';
+import { calculateIdeaValues, DEFAULT_LOOP_MODEL, defaultIdeaCost, selectWorkCandidates } from 'shared';
 import { nodeEntryArgs, packageRoot, withProcessFileLock } from 'shared/node-entry';
 import { spawn, type ChildProcess } from 'child_process';
 import { emitChange } from './change-events.js';
@@ -41,7 +41,7 @@ export const loopSecretsSchema = z.object({
 }).default({});
 export const loopConfigSchema = z.object({
   provider: loopProviderSchema.default('nvidia'),
-  model: z.string().default('z-ai/glm-5.2'),
+  model: z.string().default(DEFAULT_LOOP_MODEL),
   baseUrl: z.string().default('https://integrate.api.nvidia.com/v1'),
   intervalSeconds: z.number().int().min(5).max(3600).default(60)
 });
@@ -144,7 +144,7 @@ export const makeDefaultLoopRuntimeState = () => {
         'Keep status reports brief.'
       ].join('\n'),
       provider: 'nvidia',
-      model: 'z-ai/glm-5.2',
+      model: DEFAULT_LOOP_MODEL,
       baseUrl: 'https://integrate.api.nvidia.com/v1',
       intervalSeconds: 60,
       associationChance: 0.1,

@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
 import { trpc } from '../trpc'
+import { DEFAULT_LOOP_MODEL } from 'shared'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { useUIModalStore } from '../stores/ui/modal-store'
@@ -62,7 +63,7 @@ const loopNameDraft = ref('')
 const systemPromptDraft = ref('')
 const configDirty = ref(false)
 const provider = ref<LoopProvider>('nvidia')
-const model = ref('z-ai/glm-5.2')
+const model = ref(DEFAULT_LOOP_MODEL)
 const baseUrl = ref('https://integrate.api.nvidia.com/v1')
 const intervalSeconds = ref(60)
 const associationChancePercent = ref(10)
@@ -171,7 +172,7 @@ const hydrate = async () => {
       loopNameDraft.value = selectedLoop.value?.name ?? ''
       systemPromptDraft.value = selectedLoop.value?.systemPrompt ?? ''
       provider.value = selectedLoop.value?.provider ?? 'nvidia'
-      model.value = selectedLoop.value?.model ?? 'z-ai/glm-5.2'
+      model.value = selectedLoop.value?.model ?? DEFAULT_LOOP_MODEL
       baseUrl.value = selectedLoop.value?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
       intervalSeconds.value = selectedLoop.value?.intervalSeconds ?? 60
       associationChancePercent.value = Math.round((selectedLoop.value?.associationChance ?? 0.1) * 100)
@@ -248,7 +249,7 @@ const duplicateLoop = async () => {
   loopNameDraft.value = duplicated?.name ?? ''
   systemPromptDraft.value = duplicated?.systemPrompt ?? ''
   provider.value = duplicated?.provider ?? 'nvidia'
-  model.value = duplicated?.model ?? 'z-ai/glm-5.2'
+  model.value = duplicated?.model ?? DEFAULT_LOOP_MODEL
   baseUrl.value = duplicated?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
   intervalSeconds.value = duplicated?.intervalSeconds ?? 60
   associationChancePercent.value = Math.round((duplicated?.associationChance ?? 0.1) * 100)
@@ -465,10 +466,10 @@ const handleLogKeydown = (event: KeyboardEvent) => {
 
 watch(provider, () => {
   if (provider.value === 'nvidia') {
-    if (!model.value || model.value.includes('claude')) model.value = 'z-ai/glm-5.2'
+    if (!model.value || model.value.includes('claude')) model.value = DEFAULT_LOOP_MODEL
     baseUrl.value = 'https://integrate.api.nvidia.com/v1'
   } else if (provider.value === 'openrouter') {
-    if (!model.value || model.value === 'z-ai/glm-5.2') model.value = 'anthropic/claude-sonnet-4.6'
+    if (!model.value || model.value === DEFAULT_LOOP_MODEL) model.value = 'anthropic/claude-sonnet-4.6'
     baseUrl.value = 'https://openrouter.ai/api/v1'
   }
 })
@@ -477,7 +478,7 @@ watch(selectedLoopId, () => {
   loopNameDraft.value = selectedLoop.value?.name ?? ''
   systemPromptDraft.value = selectedLoop.value?.systemPrompt ?? ''
   provider.value = selectedLoop.value?.provider ?? 'nvidia'
-  model.value = selectedLoop.value?.model ?? 'z-ai/glm-5.2'
+  model.value = selectedLoop.value?.model ?? DEFAULT_LOOP_MODEL
   baseUrl.value = selectedLoop.value?.baseUrl ?? 'https://integrate.api.nvidia.com/v1'
   intervalSeconds.value = selectedLoop.value?.intervalSeconds ?? 60
   associationChancePercent.value = Math.round((selectedLoop.value?.associationChance ?? 0.1) * 100)

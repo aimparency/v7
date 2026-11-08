@@ -57,3 +57,7 @@ export const INITIAL_STATES: IdeaState[] = [
 export const DISCOUNT_RATE = 0.05; // 5% discount per cost unit (legacy, for backward compat)
 export const ANNUAL_DISCOUNT_RATE = 0.10; // 10% annual discount rate (cost of capital)
 export const DAILY_DISCOUNT_RATE = Math.pow(1 + ANNUAL_DISCOUNT_RATE, 1/365) - 1; // ~0.026% per day
+
+// Default model of a new background loop (NVIDIA endpoint). z-ai/glm-5.2 reached
+// end of life there on 2026-08-21; check https://integrate.api.nvidia.com/v1/models.
+export const DEFAULT_LOOP_MODEL = 'z-ai/glm-5.3-flash';
