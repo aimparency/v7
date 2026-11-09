@@ -27,6 +27,9 @@ app.use(cors());
 
 // Store transports by session ID
 const transports = new Map<string, SSEServerTransport>();
+// Each session holds a backend connection: enough for a team's clients, not
+// for one caller to exhaust the server.
+const MAX_SESSIONS = Number(process.env.MCP_MAX_SESSIONS || 50);
 
 // The UI's "Copy MCP link" carries the account's token as ?token=; clients that
 // can set headers may send it as a bearer instead. Each session talks to the
@@ -38,6 +41,10 @@ function tokenOf(req: express.Request): string | undefined {
 }
 
 app.get(`${basePath}/sse`, async (req, res) => {
+  if (transports.size >= MAX_SESSIONS) {
+    res.status(503).send("Too many MCP sessions");
+    return;
+  }
   console.log(`New SSE connection`);
   const backend = createBackendClient(tokenOf(req));
   const server = createMcpServer(backend.trpc);

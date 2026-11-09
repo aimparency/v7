@@ -52,6 +52,9 @@ const appRouter = t.router({
 export { appRouter };
 export type AppRouter = typeof appRouter;
 
+// Largest request or WebSocket message: a bulk undo of many ideas fits easily;
+// without a cap one request could fill the server's memory.
+const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
 const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
 const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
 // An explicit interface (e.g. the Tailscale IP from `pnpm dev:host`); unset means
@@ -89,7 +92,7 @@ function closeOnSigterm(server: { close(): unknown }, wss: WebSocketServer) {
 function startHostedServer(project: string) {
   const port = parseInt(process.env.PORT || '4000');
   const mcpPort = parseInt(process.env.PORT_MCP || '3005');
-  const trpcHandler = createHTTPHandler({ router: appRouter, createContext, basePath: '/trpc/' });
+  const trpcHandler = createHTTPHandler({ router: appRouter, createContext, basePath: '/trpc/', maxBodySize: MAX_REQUEST_BYTES });
   const frontendDist = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../frontend/dist');
   // sirv indexes the build when created, so without one the API still runs.
   const serveFrontend: http.RequestListener = existsSync(frontendDist)
@@ -122,7 +125,7 @@ function startHostedServer(project: string) {
     }
     serveFrontend(req, res);
   });
-  const wss = new WebSocketServer({ noServer: true });
+  const wss = new WebSocketServer({ noServer: true, maxPayload: MAX_REQUEST_BYTES });
   applyWSSHandler({ wss, router: appRouter, createContext });
   logConnections(wss);
   server.on('upgrade', async (req, socket, head) => {
@@ -165,7 +168,7 @@ export function startServer() {
   if (project) return startHostedServer(project);
 
   const host = resolveBindHost(BIND_HOST);
-  const trpcHandler = createHTTPHandler({ router: appRouter, createContext });
+  const trpcHandler = createHTTPHandler({ router: appRouter, createContext, maxBodySize: MAX_REQUEST_BYTES });
   const server = http.createServer((req, res) => {
     if (!allowedOrigin(req)) {
       res.writeHead(403, { 'content-type': 'text/plain' });
@@ -177,6 +180,7 @@ export function startServer() {
   const wss = new WebSocketServer({
     port: WS_PORT,
     host,
+    maxPayload: MAX_REQUEST_BYTES,
     verifyClient: ({ req }: { req: http.IncomingMessage }) => allowedOrigin(req),
   });
 

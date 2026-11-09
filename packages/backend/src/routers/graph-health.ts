@@ -258,7 +258,7 @@ export const graphHealthRouter = t.router({
     .input(z.object({
       projectPath: z.string(),
       threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
-      limit: z.number().int().positive().optional(),   // default 50
+      limit: z.number().int().positive().max(500).optional(),   // default 50
     }))
     .query(async ({ input }) => {
       const threshold = input.threshold ?? 0.92;
@@ -316,7 +316,7 @@ export const graphHealthRouter = t.router({
       projectPath: z.string(),
       parentIdeaId: z.string(),                              // the catch-all parent
       candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
-      limit: z.number().int().positive().optional(),        // default 200
+      limit: z.number().int().positive().max(500).optional(),        // default 200
     }))
     .query(async ({ input }) => {
       const limit = input.limit ?? 200;
@@ -431,7 +431,7 @@ export const graphHealthRouter = t.router({
       projectPath: z.string(),
       megaParentThreshold: z.number().int().positive().optional(), // default 25
       duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
-      limit: z.number().int().positive().optional(),               // per-section cap, default 30
+      limit: z.number().int().positive().max(500).optional(),               // per-section cap, default 30
     }))
     .query(async ({ input }) => {
       const megaParentThreshold = input.megaParentThreshold ?? 25;

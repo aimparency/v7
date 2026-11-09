@@ -23,6 +23,9 @@ import { generateEmbedding, generateQueryEmbedding, saveEmbedding, removeEmbeddi
 import { ensureSearchIndex } from '../search-index.js';
 import { generateIdeaProposal } from '../idea-proposal-generator.js';
 
+// Search text is scanned or embedded per request, so it is bounded.
+const MAX_QUERY_CHARS = 2000;
+
 const newIdeaInputSchema = z.object({
   text: z.string(),
   description: z.string().optional(),
@@ -914,7 +917,7 @@ export const ideaRouter = t.router({
   search: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      query: z.string(),
+      query: z.string().max(MAX_QUERY_CHARS),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional(),
       limit: z.number().optional(),
@@ -1018,7 +1021,7 @@ export const ideaRouter = t.router({
   searchSemantic: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      query: z.string(),
+      query: z.string().max(MAX_QUERY_CHARS),
       limit: z.number().optional(),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional()

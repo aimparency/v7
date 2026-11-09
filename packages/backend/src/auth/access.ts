@@ -25,12 +25,16 @@ const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'system', 'voice', 'mark
 const LOCAL_ONLY = new Set([
   'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions'
 ]);
-// Derived state, nothing checked in; or a viewer's own login.
+// Nothing checked in: viewer state, or a viewer's own login.
 const READ_MUTATIONS = new Set([
-  'project.buildSearchIndex', 'phase.setCursor', 'activity.record', 'auth.login', 'auth.logout', 'auth.issueToken', 'auth.changeOwnPassword'
+  'phase.setCursor', 'auth.login', 'auth.logout', 'auth.issueToken', 'auth.changeOwnPassword'
 ]);
 const WRITE_ROUTERS = new Set(['idea', 'phase']);
-const WRITE_MUTATIONS = new Set(['history.restore', 'graphHealth.fixConsistency', 'project.setLayoutSettings']);
+// Also derived state that costs the server (re-indexing) or is shown to every
+// viewer (activity): not for anonymous readers.
+const WRITE_MUTATIONS = new Set([
+  'history.restore', 'graphHealth.fixConsistency', 'project.setLayoutSettings', 'project.buildSearchIndex', 'activity.record'
+]);
 // Every other mutation needs an admin, so a new one is closed until listed.
 
 export function neededRole(path: string, type: string): Need {

@@ -66,6 +66,10 @@ test('a hosted instance lets anyone read, account holders write and admins manag
     writable: false, reason: 'This project is open read-only here: log in to edit.', user: null, role: 'read'
   });
   await assert.rejects(guest.idea.update({ projectPath, ideaId: idea.id, idea: { text: 'Guest edit' } }), /open read-only/);
+  // Re-indexing costs the server and activity is shown to every viewer: not for guests.
+  await assert.rejects(guest.project.buildSearchIndex({ projectPath }), /open read-only/);
+  await assert.rejects(guest.activity.record({ projectPath, ideaIds: [idea.id], kind: 'read' }), /open read-only/);
+  await assert.rejects(guest.idea.searchSemantic({ projectPath, query: 'x'.repeat(2001) }));
 
   const { token: writerToken } = await guest.auth.login({ name: 'writer', password: 'writer password' });
   const writer = as(writerToken);
