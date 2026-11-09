@@ -1363,7 +1363,7 @@ test('an unreadable idea is reported and fixConsistency keeps every link to it',
 
   const check = await caller.graphHealth.checkConsistency({ projectPath: testProjectPath });
   assert.deepStrictEqual(check.issues.map((issue: any) => issue.code), ['idea_unreadable']);
-  assert.match(check.issues[0]!.message, /cost: Number must be greater than 0/);
+  assert.match(check.issues[0]!.message, /cost: Too small: expected number to be >0/);
 
   await caller.graphHealth.fixConsistency({ projectPath: testProjectPath });
   const parentAfter = await caller.idea.get({ projectPath: testProjectPath, ideaId: parent.id });
@@ -1389,7 +1389,7 @@ test('history.restore applies nothing when one snapshot is invalid', async () =>
         { type: 'idea', id: second.id, expected: secondStored, target: { ...secondStored, cost: 0 } }
       ]
     }),
-    new RegExp(`Nothing restored, invalid snapshot: idea ${second.id}: cost: Number must be greater than 0`)
+    new RegExp(`Nothing restored, invalid snapshot: idea ${second.id}: cost: Too small: expected number to be >0`)
   );
   assert.deepStrictEqual(await fs.readJson(firstFile), firstStored);
   assert.deepStrictEqual(await fs.readJson(secondFile), secondStored);
@@ -1424,7 +1424,7 @@ test('loadIdeas returns the readable ideas and what a broken file still says', a
   assert.deepStrictEqual(unreadable, [{
     id: parent.id,
     file: `ideas/${parent.id}.json`,
-    error: 'cost: Number must be greater than 0',
+    error: 'cost: Too small: expected number to be >0',
     text: 'Parent',
     supportingIdeaIds: [child.id]
   }]);

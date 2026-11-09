@@ -17,7 +17,8 @@
         -3.38
       ],
       "weight": 1,
-      "hypothesis": "Removes the last high-severity advisory on the hosted surface; refuted if the advisory turns out not to apply to v3 (then close this as not needed)."
+      "hypothesis": "Removes the last high-severity advisory on the hosted surface; refuted if the advisory turns out not to apply to v3 (then close this as not needed).",
+      "reflection": "Held for the hosted surface: no zod 3 is left on backend, MCP or broker; the advisory survives only in the optional voice-bridge via openai@4."
     }
   ],
   "supportedIdeas": [

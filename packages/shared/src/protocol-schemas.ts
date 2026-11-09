@@ -1,8 +1,7 @@
 // Builds the published JSON Schemas of the .bowman format (protocol/schemas)
 // from the zod schemas the code uses, so the spec cannot drift from the code.
 // Written by `pnpm protocol:schemas`; bowman-validate.test.ts fails on drift.
-import type { ZodTypeAny } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { z } from 'zod';
 import { CURRENT_DATA_MODEL_VERSION } from './constants.js';
 import { IdeaSchema, PhaseSchema, ProjectMetaSchema } from './types.js';
 
@@ -10,13 +9,24 @@ export { PROTOCOL_SCHEMA_DIR } from './bowman-validate.js';
 
 type JsonSchema = Record<string, any>;
 
-const describe = (fileName: string, title: string, description: string, schema: ZodTypeAny): JsonSchema => ({
+const describe = (fileName: string, title: string, description: string, schema: z.ZodType): JsonSchema => ({
   $schema: 'http://json-schema.org/draft-07/schema#',
   $id: `https://github.com/aimparency/v7/blob/main/protocol/schemas/${fileName}`,
   title,
   description: `${description} Data model version ${CURRENT_DATA_MODEL_VERSION}.`,
-  ...withoutSchemaKeyword(zodToJsonSchema(schema as any, { target: 'jsonSchema7', $refStrategy: 'none' }) as JsonSchema)
+  // io 'input': what a file may contain (defaults filled in on read are optional).
+  ...closeObjects(withoutSchemaKeyword(z.toJSONSchema(schema, { target: 'draft-7', io: 'input', unrepresentable: 'any' }) as JsonSchema))
 });
+
+// The published format lists every field it knows: other tools should not
+// invent new ones (the readers here drop unknown fields).
+function closeObjects(node: any): any {
+  if (Array.isArray(node)) return node.map(closeObjects);
+  if (!node || typeof node !== 'object') return node;
+  const closed = Object.fromEntries(Object.entries(node).map(([key, value]) => [key, closeObjects(value)]));
+  if (closed.type === 'object' && closed.properties && closed.additionalProperties === undefined) closed.additionalProperties = false;
+  return closed;
+}
 
 function withoutSchemaKeyword({ $schema: _ignored, ...rest }: JsonSchema): JsonSchema {
   return rest;

@@ -40,7 +40,7 @@ export const loopDefinitionSchema = z.object({
   associationChance: z.number().min(0).max(1).default(0.1),
   worktreePath: z.string().nullable().default(null),
   capabilities: z.array(loopCapabilitySchema).default(['coding', 'experiments', 'code-intelligence']),
-  roles: z.record(loopRoleSchema, loopRoleModelSchema).default({}),
+  roles: z.partialRecord(loopRoleSchema, loopRoleModelSchema).default({}),
   createdAt: z.number(),
   updatedAt: z.number()
 });

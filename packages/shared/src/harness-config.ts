@@ -18,19 +18,19 @@ export const harnessConfigSchema = z.object({
     execute: stepBudget.default(20),
     verify: stepBudget.default(10),
     reflect: stepBudget.default(2)
-  }).default({}),
+  }).prefault({}),
   /** Characters of compiled context per stage (roughly 4 per token). */
   contextBudgetChars: z.number().int().min(2000).default(48_000),
   decomposition: z.object({
     maxChildren: z.number().int().min(1).max(7).default(7),
     /** Where new children land; ai-proposition waits for a human to accept them. */
     landingState: z.enum(['open', 'ai-proposition']).default('open')
-  }).default({}),
+  }).prefault({}),
   receipts: z.object({
     /** Claimed commands the harness re-runs before verification. */
     maxCommands: z.number().int().min(0).max(20).default(5),
     timeoutMs: z.number().int().min(1000).max(600_000).default(120_000)
-  }).default({}),
+  }).prefault({}),
   /** Who does the execute stage: the built-in tool loop on the executor role model, or a headless coding CLI. */
   executor: z.object({
     backend: z.enum(['builtin', 'claude-code', 'codex']).default('builtin'),
@@ -46,14 +46,14 @@ export const harnessConfigSchema = z.object({
         'Bash(git status:*)', 'Bash(git diff:*)', 'Bash(pnpm test:*)', 'Bash(pnpm -s test:*)',
         'Bash(pnpm -s typecheck:*)', 'Bash(pnpm typecheck:*)', 'Bash(npx tsx --test:*)', 'Bash(npx vitest run:*)'
       ])
-    }).strict().default({}),
+    }).strict().prefault({}),
     /** codex exec in a workspace-write sandbox; priced from `prices` by its model id. */
     codex: z.object({
       command: z.string().default('codex'),
       model: z.string().optional(),
       timeoutMs: z.number().int().min(10_000).default(1_800_000)
-    }).strict().default({})
-  }).strict().default({}),
+    }).strict().prefault({})
+  }).strict().prefault({}),
   /** USD per million tokens, keyed by model id as configured in loops.json. */
   prices: z.record(z.string(), z.object({
     inputPerMTok: z.number().min(0),
@@ -64,7 +64,7 @@ export const harnessConfigSchema = z.object({
     maxTokensPerCycle: z.number().int().positive().optional(),
     /** Once today's priced cycles (UTC) cost this much, cycles are skipped until tomorrow. */
     maxUsdPerDay: z.number().positive().optional()
-  }).strict().default({})
+  }).strict().prefault({})
 }).strict();
 
 export type HarnessConfig = z.infer<typeof harnessConfigSchema>;

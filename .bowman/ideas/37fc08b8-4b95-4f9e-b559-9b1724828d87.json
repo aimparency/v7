@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Split out of bb34c22a; not started on purpose (major upgrade touching stored-data validation).",
-    "date": 1794220979900
+    "state": "implemented",
+    "comment": "zod ^4.6.7 in backend, shared, agent-tools, loop-worker, mcp, real-world and the broker; @modelcontextprotocol/sdk 1.24 -> ^1.32.2 (accepts zod 3 or 4). Code changes: object defaults `.default({})` -> `.prefault({})` in harness-config (v4 defaults skip parsing), loop roles z.record(enum) -> z.partialRecord (v4 records over an enum are exhaustive), protocol schemas generated with v4's z.toJSONSchema (draft-7, io input) instead of zod-to-json-schema (removed), with additionalProperties:false restored on every object so the published spec stays as strict as before; the only spec change is v4's strict RFC uuid pattern on ids. Checked first: all 925 stored files here have RFC-valid ids; pnpm validate:bowman on this repo: 878 ideas, 10 archived, 37 phases valid. Error wording changed ('cost: Too small: expected number to be >0'); tests updated. Evidence: pnpm check 25/25. pnpm audit --prod: the zod high advisory remains only via voice-bridge's openai@4 SDK (peer zod ^3; optional package, not on the hosted surface; needs an openai major upgrade), plus a moderate uuid in voice-bridge's Google TTS chain.",
+    "date": 1794221713959
   },
   "intrinsicValue": 0,
   "cost": 3,

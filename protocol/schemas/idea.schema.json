@@ -7,7 +7,8 @@
   "properties": {
     "id": {
       "type": "string",
-      "format": "uuid"
+      "format": "uuid",
+      "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
     },
     "text": {
       "type": "string"
@@ -16,8 +17,8 @@
       "type": "string"
     },
     "archived": {
-      "type": "boolean",
-      "default": false
+      "default": false,
+      "type": "boolean"
     },
     "color": {
       "anyOf": [
@@ -31,25 +32,29 @@
       ]
     },
     "tags": {
+      "default": [],
       "type": "array",
       "items": {
         "type": "string"
-      },
-      "default": []
+      }
     },
     "supportingConnections": {
+      "default": [],
       "type": "array",
       "items": {
         "type": "object",
         "properties": {
           "ideaId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "relativePosition": {
+            "default": [
+              0,
+              0
+            ],
             "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
             "items": [
               {
                 "type": "number"
@@ -58,14 +63,13 @@
                 "type": "number"
               }
             ],
-            "default": [
-              0,
-              0
-            ]
+            "additionalItems": false,
+            "minItems": 2,
+            "maxItems": 2
           },
           "weight": {
-            "type": "number",
-            "default": 1
+            "default": 1,
+            "type": "number"
           },
           "hypothesis": {
             "type": "string"
@@ -78,8 +82,7 @@
           "ideaId"
         ],
         "additionalProperties": false
-      },
-      "default": []
+      }
     },
     "supportingRepos": {
       "type": "array",
@@ -88,12 +91,15 @@
         "properties": {
           "repoId": {
             "type": "string",
-            "format": "uuid"
+            "format": "uuid",
+            "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
           },
           "relativePosition": {
+            "default": [
+              0,
+              0
+            ],
             "type": "array",
-            "minItems": 2,
-            "maxItems": 2,
             "items": [
               {
                 "type": "number"
@@ -102,14 +108,13 @@
                 "type": "number"
               }
             ],
-            "default": [
-              0,
-              0
-            ]
+            "additionalItems": false,
+            "minItems": 2,
+            "maxItems": 2
           },
           "weight": {
-            "type": "number",
-            "default": 1
+            "default": 1,
+            "type": "number"
           },
           "hypothesis": {
             "type": "string"
@@ -128,21 +133,24 @@
       "type": "array",
       "items": {
         "type": "string",
-        "format": "uuid"
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
       }
     },
     "supportedIdeas": {
       "type": "array",
       "items": {
         "type": "string",
-        "format": "uuid"
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
       }
     },
     "committedIn": {
       "type": "array",
       "items": {
         "type": "string",
-        "format": "uuid"
+        "format": "uuid",
+        "pattern": "^([0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-8][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}|00000000-0000-0000-0000-000000000000|ffffffff-ffff-ffff-ffff-ffffffffffff)$"
       }
     },
     "status": {
@@ -169,9 +177,9 @@
       "additionalProperties": false
     },
     "intrinsicValue": {
+      "default": 0,
       "type": "number",
-      "minimum": 0,
-      "default": 0
+      "minimum": 0
     },
     "valueRationale": {
       "type": "string"
@@ -181,21 +189,21 @@
       "exclusiveMinimum": 0
     },
     "selfWeight": {
-      "type": "number",
-      "default": 0
+      "default": 0,
+      "type": "number"
     },
     "duration": {
+      "default": 1,
       "type": "number",
-      "minimum": 0,
-      "default": 1
+      "minimum": 0
     },
     "costVariance": {
-      "type": "number",
-      "default": 0
+      "default": 0,
+      "type": "number"
     },
     "valueVariance": {
-      "type": "number",
-      "default": 0
+      "default": 0,
+      "type": "number"
     },
     "calculatedValue": {
       "type": "number"

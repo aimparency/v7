@@ -170,7 +170,7 @@ export type SearchIdeaResult = Idea & {
   };
 };
 
-// Zod issues as one readable line ("cost: Number must be greater than 0").
+// Zod issues as one readable line ("cost: Too small: expected number to be >0").
 // Duck-typed: callers may hold an error from a different zod copy.
 export function describeSchemaError(error: unknown): string {
   const issues = (error as { issues?: Array<{ path: Array<string | number>; message: string }> }).issues;
