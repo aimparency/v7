@@ -5,7 +5,17 @@
   "archived": false,
   "color": "#663229",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "d8ddcccc-bfd3-4924-807c-a80d34303a25",
+      "relativePosition": [
+        1.8,
+        -3.29
+      ],
+      "weight": 1,
+      "hypothesis": "Bounding the ai-proposition queue by size and age keeps each proposition fresh enough to get a real judgment instead of a reflexive accept; refuted if the throttle never fires over two weeks of harness runs."
+    }
+  ],
   "supportedIdeas": [
     "4a5e0b10-19c1-464b-ba07-55da82574e64",
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"

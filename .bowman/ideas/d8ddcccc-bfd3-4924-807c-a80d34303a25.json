@@ -1,0 +1,30 @@
+{
+  "id": "d8ddcccc-bfd3-4924-807c-a80d34303a25",
+  "text": "Harness throttles decomposition by the human queue: pause new ai-propositions while the oldest pending one is stale or rejection rate is near zero",
+  "description": "RESEARCHED: WorkOS, 'Curating queues beats approving actions' (https://workos.com/blog/curating-queues-beats-approving-actions) — for continuously running agents, the human curates a queue of candidates (claim, rationale, evidence) instead of approving each action; generate in small batches (~8), keep rejects, and watch two metrics: rejection rate (near 0% = rubber-stamping) and age of the oldest item (growing = throttle generation). OBSERVED: 5e431a84 (ai-proposition) would let the harness decompose stage file children of high-value parents as ai-proposition; nothing limits how many pile up. INFERRED: without a throttle the harness repeats the old 197-item review backlog (3ebec4b7 premise). Proposal: before the decompose stage creates ai-propositions, the harness reads pending ai-propositions; if count >= N (config, default 8) or the oldest is older than D days (default 7), it skips decomposition of high-value parents that cycle and emits a status event naming the queue state. Log acceptance/rejection rate per cycle into the trace. Acceptance: cycle.test case where 8 pending propositions make decompose a no-op with the event; trace carries queue size, oldest age, accept/reject counts. Depends on 5e431a84 being accepted. Refuted if Felix drains ai-propositions faster than the harness creates them over two weeks (then the throttle never fires and is dead weight).",
+  "archived": false,
+  "color": "#614029",
+  "tags": [
+    "hypothesis",
+    "major-hypothesis-loop",
+    "harness",
+    "cooperation"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "5e431a84-a979-4a7e-9a26-71d1951fcdcc",
+    "90cf0309-023f-486c-b7a0-322ee2910d46"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the 2026-11-09 major hypothesis loop. Only meaningful once 5e431a84 is accepted; accept both together or reject both.",
+    "date": 1794212313413
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
