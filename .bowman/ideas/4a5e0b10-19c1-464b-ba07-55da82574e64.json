@@ -14,6 +14,15 @@
       ],
       "weight": 1,
       "hypothesis": "Gating only strategy-level decompositions keeps the human as final authority on direction without making them review every small step."
+    },
+    {
+      "ideaId": "bcc9755a-6a1f-4a76-8a10-f1402893b037",
+      "relativePosition": [
+        -3.24,
+        -1.89
+      ],
+      "weight": 1,
+      "hypothesis": "Asking one well-chosen question before decomposing an ambiguous parent yields children closer to the human's intent than guessing; testable on the decomposition eval by masking parts of parent descriptions."
     }
   ],
   "supportedIdeas": [
@@ -22,7 +31,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Done (basic): decompose stage for containers and too-large leaves returns up to 7 children with description/acceptance, hypothesis, weight, cost; a child may name an existing similar idea to link instead of creating (only ideas shown to it, never the idea or its ancestors); children land as open via create_idea's two-step flow, tagged harness. Missing: landing in ai-proposition for high-value parents, depth/new-idea limits per cycle beyond 7, and the evaluation against real children of implemented parents.",
+    "comment": "Done (basic): decompose stage for containers and too-large leaves returns up to config.decomposition.maxChildren (default 7, max 7) children with description/acceptance, hypothesis, weight, cost; a child may name an existing similar idea to link instead of creating; children land via create_idea's two-step flow, tagged harness. Re-checked 2026-11-09 in packages/loop-worker/src/cycle.ts: limits are already enforced — one decompose per cycle (the `decomposed` flag stops a second), so depth per cycle is 1 and new ideas per cycle <= maxChildren; and harness.json decomposition.landingState ('open' | 'ai-proposition') already lands all children as ai-proposition when set. Missing: (1) a value threshold so only high-value parents land as ai-proposition (5e431a84, waits on Felix's accept) and queue throttle (d8ddcccc, same); (2) the evaluation against real children of implemented parents — resumed 2026-11-09 with --resume on decomposition-glm53.proposals.jsonl (4/8 parents done before), result to be recorded here.",
     "date": 1794160116530
   },
   "intrinsicValue": 0,

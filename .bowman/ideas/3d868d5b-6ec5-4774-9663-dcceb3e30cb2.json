@@ -312,6 +312,15 @@
       ],
       "weight": 1,
       "hypothesis": "ARIA names 'requirement capture' and 'users' preferences' as missing agent infrastructure, which is the cooperation engine's core claim stated by an outside funder; a reviewer's response tests whether outsiders see the idea graph that way."
+    },
+    {
+      "ideaId": "bcc9755a-6a1f-4a76-8a10-f1402893b037",
+      "relativePosition": [
+        -2.11,
+        3.1
+      ],
+      "weight": 1,
+      "hypothesis": "The cooperation engine's distinctive move is eliciting intent, not only approving actions; information-gain-ranked questions make each human answer worth more, which is the scarce input."
     }
   ],
   "supportedIdeas": [
