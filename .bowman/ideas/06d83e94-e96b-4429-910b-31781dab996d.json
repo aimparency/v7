@@ -1,0 +1,25 @@
+{
+  "id": "06d83e94-e96b-4429-910b-31781dab996d",
+  "text": "Read-only hosting: a public view that pulls from git when someone opens it",
+  "description": "Felix 2026-11-09: a read-only mode for hosting, e.g. a company makes its graph visible to everyone. It pulls updates from git on open, with checks debounced to ~3 s. Builds on hosting (af701cd6: anyone reads, accounts write), the 5-minute fast-forward pull (b008055a), opening a Git URL read-only (9ed9e7df) and the read-only UI (f32a74fd). 9beb3725 had left a hosted public viewer out of scope 'unless decided separately': this is that decision.",
+  "archived": false,
+  "color": "#2e4661",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b008055a-a42a-4133-9987-3d07bf0e65b1",
+    "250fb1aa-f0a7-4ef8-870c-0abad9b98892"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Asked Felix 2026-11-09 before building: (1) Is read-only mode a hosting option with no accounts or login at all, so changes arrive only via git? Or keep accounts and just add pull-on-open? (2) Serve from a Git URL as a throwaway clone (fetch + reset --hard, like openGitRepository), so it never gets stuck on uncommitted edits or diverged history? (3) Pull on open (page load / connection, debounced 3 s across viewers): does it replace the 5-minute timer, or keep a slow timer as well for long-open tabs? (4) Keep the MCP on a public instance (read-only), or turn it off? (5) OK to work on v7's main while another agent commits there?\n\nEntry-point analysis (2026-11-09, from backend/src/auth/access.ts, trpc.ts, server.ts): a separate entry point adds no safety, because enforcement is already server-side on every call. Hosted mode (AIMPARENCY_HOSTED + AIMPARENCY_PROJECT) runs one tRPC middleware for every call, MCP included (the MCP is a tRPC client too). An anonymous viewer gets role 'read'; unlisted mutations need admin (closed by default); loop, watchdog, system, voice, market and spinOff are refused outright; agents are off unless AIMPARENCY_AGENTS. A separate UI build would only hide buttons; the API stays callable. Recommended instead: one flag (e.g. AIMPARENCY_READ_ONLY=true) that caps every viewer at 'read' whatever the token (no login, no accounts), forbids AIMPARENCY_AGENTS, and lets the UI drop its login button. Gaps to close for an anonymous public instance: the 'read mutations' project.buildSearchIndex (CPU cost, anyone can trigger it), activity.record and phase.setCursor; pull-on-open debounced 3 s (today only a 5-minute timer).",
+    "date": 1794212705757
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -54,6 +54,15 @@
       ],
       "weight": 1,
       "hypothesis": "Read-only edit attempts need a non-blocking way to say 'not possible'; a toast is that channel."
+    },
+    {
+      "ideaId": "06d83e94-e96b-4429-910b-31781dab996d",
+      "relativePosition": [
+        3.21,
+        -1.93
+      ],
+      "weight": 1,
+      "hypothesis": "A hosted read-only link lets anyone see a real graph without installing Aimparency, which the local ?repo= link could not."
     }
   ],
   "supportedIdeas": [

@@ -10,7 +10,17 @@
     "git",
     "backend"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "06d83e94-e96b-4429-910b-31781dab996d",
+      "relativePosition": [
+        3.25,
+        1.87
+      ],
+      "weight": 1,
+      "hypothesis": "Pulling when someone opens the page keeps a public view current within seconds, without a fixed timer fetching for nobody."
+    }
+  ],
   "supportedIdeas": [
     "101cc131-b51e-45d9-ad8e-63d138338dc4",
     "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
