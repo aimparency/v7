@@ -9,7 +9,17 @@
     "hosting",
     "read-only"
   ],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "37fc08b8-4b95-4f9e-b559-9b1724828d87",
+      "relativePosition": [
+        1.63,
+        -3.38
+      ],
+      "weight": 1,
+      "hypothesis": "Removes the last high-severity advisory on the hosted surface; refuted if the advisory turns out not to apply to v3 (then close this as not needed)."
+    }
+  ],
   "supportedIdeas": [
     "06d83e94-e96b-4429-910b-31781dab996d"
   ],
