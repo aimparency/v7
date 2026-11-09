@@ -43,7 +43,8 @@
         -2.53
       ],
       "weight": 3,
-      "hypothesis": "Recursive decomposition into ideas with falsifiable hypotheses is what lets the loop make progress on high-level ideas instead of stopping at an empty frontier of containers (the current state of this graph)."
+      "hypothesis": "Recursive decomposition into ideas with falsifiable hypotheses is what lets the loop make progress on high-level ideas instead of stopping at an empty frontier of containers (the current state of this graph).",
+      "reflection": "Held in part: the harness can now break containers and too-large leaves into hypothesis-bearing children autonomously, and an offline eval shows its proposals land in the right area (0.687 vs 0.555 control) on 8 real parents. It does not yet reproduce the human's split (5% near-matches), which is why high-value decompositions should pass through the human (5e431a84) or ask first (bcc9755a)."
     },
     {
       "ideaId": "26a632c9-dedc-48f2-95bf-f52f785b41e3",
