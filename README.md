@@ -142,10 +142,6 @@ own Aimparency MCP edits the graph as the account `wrapped-agents` (write),
 whose token is replaced on every start; remove that account to make them
 read-only.
 
-> **Known issue:** readers can currently also see commit diffs of the served
-> repository, code included. Until that is fixed, serve only a repository whose
-> full history you are fine to show.
-
 - **Accounts.** Admins add people in the UI (header: Accounts), or on the
   server with `pnpm accounts add <name> <read|write|admin>`,
   `pnpm accounts role|password|remove <name>` and `pnpm accounts list`. Accounts

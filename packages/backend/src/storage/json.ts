@@ -1,6 +1,16 @@
 import fs from 'fs-extra';
 import path from 'path';
 
+// Ids come from requests and from files pulled through git; one that could
+// leave its directory (`../x`, `a/b`) must never become a path.
+const ENTITY_ID = /^[\w-]+$/;
+
+/** The file of an idea or phase: `<projectPath>/<dir>/<id>.json`, refusing unsafe ids. */
+export function entityFile(projectPath: string, dir: string, id: string): string {
+  if (!ENTITY_ID.test(id)) throw new Error(`Invalid id: ${JSON.stringify(id).slice(0, 80)}`);
+  return path.join(projectPath, dir, `${id}.json`);
+}
+
 export async function readJsonOrNull(filePath: string): Promise<any | null> {
   try {
     return await fs.readJson(filePath);

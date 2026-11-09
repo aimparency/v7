@@ -6,6 +6,7 @@ import { createHash } from 'node:crypto';
 import { DEFAULT_IDEA_COST, IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
+import { hostedProject } from '../auth/access.js';
 import { getIdeaCommitEvidence, getIdeaContributors, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
 import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, updateIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
@@ -37,9 +38,9 @@ const newIdeaInputSchema = z.object({
   cost: z.number().finite().positive('Estimated direct cost must be greater than 0').optional(),
   duration: z.number().finite().nonnegative('Days until return must be 0 or greater').optional(),
   selfWeight: z.number().optional(),
-  supportedIdeas: z.array(z.string()).optional(),
+  supportedIdeas: z.array(z.string().uuid()).optional(),
   supportingConnections: z.array(z.object({
-    ideaId: z.string(),
+    ideaId: z.string().uuid(),
     weight: z.number().optional(),
     relativePosition: z.tuple([z.number(), z.number()]).optional(),
     hypothesis: z.string().optional()
@@ -190,7 +191,8 @@ export const ideaRouter = t.router({
       hash: z.string().regex(/^[0-9a-f]{7,40}$/i)
     }))
     .query(async ({ input }) => {
-      return getCommitDiff(normalizeProjectPath(input.projectPath), input.hash);
+      const bowmanPath = normalizeProjectPath(input.projectPath);
+      return getCommitDiff(bowmanPath, input.hash, hostedProject() ? bowmanPath : undefined);
     }),
 
   get: delayedProcedure

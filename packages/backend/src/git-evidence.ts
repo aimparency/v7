@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import fs from 'node:fs/promises';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import type { Idea } from 'shared';
@@ -131,11 +132,15 @@ export function parseCommitPatch(stdout: string): CommitFileDiff[] {
     });
 }
 
-export async function getCommitDiff(anyPathInRepository: string, hash: string): Promise<CommitFileDiff[]> {
+// `onlyWithin` (a directory in the repository) limits the diff to files there,
+// e.g. a hosted instance shows its readers changes to the graph, not the code.
+export async function getCommitDiff(anyPathInRepository: string, hash: string, onlyWithin?: string): Promise<CommitFileDiff[]> {
   if (!/^[0-9a-f]{7,40}$/i.test(hash)) throw new Error('Invalid commit hash');
   const repositoryPath = await getRepositoryRoot(anyPathInRepository);
+  const pathspec = onlyWithin === undefined ? [] : ['--', path.relative(repositoryPath, await fs.realpath(onlyWithin)) || '.'];
+  // ^{commit}: a blob or tree id is refused instead of printing its content.
   // First-parent diff; for the root commit git show diffs against the empty tree.
-  return parseCommitPatch(await gitStdout(repositoryPath, ['show', '--format=', '--patch', '-M', hash]));
+  return parseCommitPatch(await gitStdout(repositoryPath, ['show', '--format=', '--patch', '-M', `${hash}^{commit}`, ...pathspec]));
 }
 
 export type IdeaContributor = {

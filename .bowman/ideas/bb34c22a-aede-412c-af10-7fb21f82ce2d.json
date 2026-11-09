@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Findings recorded; no code changed yet. Fixes 1, 3, 4 and 6 are unambiguous; 2 needs limits chosen (body size, query length, sessions, rate limit), 5 folds into Felix's read-only-flag decision on 06d83e94.",
-    "date": 1794214240437
+    "state": "partially",
+    "comment": "Fixed 2026-11-09:\n#1 commitDiff: git show `<hash>^{commit}` (a blob/tree id is refused instead of printed) and, on a hosted instance, a pathspec limited to the served .bowman (git-evidence.ts getCommitDiff onlyWithin; routers/idea.ts). Local use keeps full code diffs.\n#3 path traversal: one guard, storage/json.ts entityFile(projectPath, dir, id) refuses ids outside [\\w-]+, used by every idea/phase file path (readIdea incl. legacy aims lookup, writeIdea, updateIdea lock, deleteIdeaCompletely, readPhase, writePhase, updatePhase, phase delete, history.restore entity files). Found during the fix: history.restore (write role) took a free-string id and could write or delete any *.json the process can reach; now covered by the same guard. Schemas: idea.create supportedIdeas / supportingConnections[].ideaId and activity.record ideaIds are uuid.\n#4 stack traces: tRPC isDev is false when hosted or NODE_ENV=production (trpc.ts).\n#6 plus a wider local finding: mcp/src/sse.ts listened on all interfaces with open CORS whenever MCP_BIND_HOST was unset, which includes local `pnpm dev:full` and `dev:host`, while acting with the local backend's full rights (any LAN host or any website open in the browser could drive it). Now it binds MCP_BIND_HOST || BIND_HOST || 127.0.0.1 and refuses browser origins other than loopback/BIND_HOST (shared isAllowedClientOrigin; MCP clients send no Origin); hosted keeps its backend-proxied same-origin path.\nREADME's hosted known-issue note removed.\nEvidence: git-evidence.test (hosted diff shows only .bowman/ideas/..., blob id rejected), storage/json.test (../meta, ../../etc/passwd, a/b, a\\b, ., .., '', x.json refused), backend 161/161, pnpm check 25/25, pnpm validate:local-runtime PASS.\n\nRemaining: #2 resource limits (body size, query length, MCP session cap, rate limit, dependency updates for body-parser/zod) needs Felix to pick limits; #5 activity spoofing folds into the read-only flag (06d83e94); low path leaks (git.status repositoryPath, linkedRepo localPath) and the sparse .bowman-only clone for hosting are not done.",
+    "date": 1794220569026
   },
   "intrinsicValue": 0,
   "cost": 3,

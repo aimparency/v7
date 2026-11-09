@@ -51,6 +51,13 @@ describe('idea status history and commit diffs', () => {
     const diff = await getCommitDiff(bowman, history[1]!.commit.hash);
     expect(diff.map((file) => file.path).sort()).toEqual(['.bowman/ideas/11111111-2222-3333-4444-555555555555.json', 'code.ts']);
     expect(diff.find((file) => file.path === 'code.ts')!.patch).toContain('+export const x = 1');
+
+    // Hosted readers see the graph's part of a commit, never the code...
+    const graphOnly = await getCommitDiff(bowman, history[1]!.commit.hash, bowman);
+    expect(graphOnly.map((file) => file.path)).toEqual(['.bowman/ideas/11111111-2222-3333-4444-555555555555.json']);
+    // ...and a blob id is not a commit, so its content is never printed.
+    const blob = git(repo, 'rev-parse', `${history[1]!.commit.hash}:code.ts`).trim();
+    await expect(getCommitDiff(bowman, blob)).rejects.toThrow();
   });
 
   it('follows an idea across the aim→idea layout migration without a spurious status change', async () => {

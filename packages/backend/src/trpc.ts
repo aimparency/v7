@@ -20,7 +20,11 @@ export const createContext = (opts?: ContextOptions): Context => {
   };
 };
 
-export const t = initTRPC.context<Context>().create();
+// isDev puts stack traces (server paths, code) into error responses: never for
+// a hosted instance's readers, whatever NODE_ENV says.
+export const t = initTRPC.context<Context>().create({
+  isDev: process.env.NODE_ENV !== 'production' && process.env.AIMPARENCY_HOSTED !== 'true'
+});
 
 const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, next }) => {
   const viewer = await viewerFor(ctx.token);

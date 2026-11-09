@@ -9,6 +9,7 @@ import { emitChange } from '../change-events.js';
 import { readPhase, listPhases, writePhase, updatePhase } from '../storage/phases.js';
 import { readProjectMeta, updateProjectMeta } from '../storage/project.js';
 import { normalizeProjectPath } from '../project-path.js';
+import { entityFile } from '../storage/json.js';
 import { cleanupCommitments } from '../storage/commitments.js';
 import { addPhaseToIndex, updatePhaseInIndex, removePhaseFromIndex, searchPhases } from '../search.js';
 import { ensureSearchIndex } from '../search-index.js';
@@ -180,7 +181,7 @@ export const phaseRouter = t.router({
         await updatePhase(input.projectPath, childId, (child) => ({ ...child, parent: phase.parent ?? null })).catch(() => null);
       }
       await updateSiblingIds(input.projectPath, phase.parent ?? null, spliceChildren);
-      const phasePath = path.join(projectPath, 'phases', `${input.phaseId}.json`);
+      const phasePath = entityFile(projectPath, 'phases', input.phaseId);
       const previous = await fs.readJson(phasePath).catch(() => null);
       await assertWritableBowman(projectPath);
       await fs.remove(phasePath);

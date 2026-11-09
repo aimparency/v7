@@ -7,7 +7,7 @@ import { normalizeProjectPath } from '../project-path.js';
 import { emitChange } from '../change-events.js';
 import { removeIdeaFromIndex } from '../search.js';
 import { removeEmbedding } from '../embeddings.js';
-import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
+import { entityFile, readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
 import { ensureProjectStructure, migrateProject } from './project.js';
 
 export async function writeIdea(rawProjectPath: string, idea: Idea): Promise<void> {
@@ -19,8 +19,8 @@ export async function writeIdea(rawProjectPath: string, idea: Idea): Promise<voi
   const targetDir = isArchived ? 'archived-ideas' : 'ideas';
   const sourceDir = isArchived ? 'ideas' : 'archived-ideas';
   
-  const ideaPath = path.join(projectPath, targetDir, `${idea.id}.json`);
-  const oldPath = path.join(projectPath, sourceDir, `${idea.id}.json`);
+  const ideaPath = entityFile(projectPath, targetDir, idea.id);
+  const oldPath = entityFile(projectPath, sourceDir, idea.id);
   
   // Strip calculated values before saving
   const { calculatedValue, calculatedCost, ...ideaToSave } = placeUnplacedConnections(idea);
@@ -106,10 +106,9 @@ export class IdeaNotFoundError extends Error {
 
 export async function readIdea(rawProjectPath: string, ideaId: string): Promise<Idea> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const file = `${ideaId}.json`;
   const ideaPath = async () => {
     for (const dir of ['ideas', 'archived-ideas']) {
-      const candidate = path.join(projectPath, dir, file);
+      const candidate = entityFile(projectPath, dir, ideaId);
       if (await fs.pathExists(candidate)) return candidate;
     }
     return null;
@@ -117,7 +116,7 @@ export async function readIdea(rawProjectPath: string, ideaId: string): Promise<
 
   let found = await ideaPath();
   // Only an idea in the legacy layout (e.g. back through git) justifies a migration.
-  if (!found && (await fs.pathExists(path.join(projectPath, 'aims', file)) || await fs.pathExists(path.join(projectPath, 'archived-aims', file)))) {
+  if (!found && (await fs.pathExists(entityFile(projectPath, 'aims', ideaId)) || await fs.pathExists(entityFile(projectPath, 'archived-aims', ideaId)))) {
     await migrateProject(projectPath, { force: true });
     found = await ideaPath();
   }
@@ -130,7 +129,7 @@ export async function readIdea(rawProjectPath: string, ideaId: string): Promise<
 // Read-modify-write of one idea file under its lock (see updatePhase).
 export async function updateIdea(rawProjectPath: string, ideaId: string, update: (idea: Idea) => Idea | null): Promise<Idea | null> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  return withFileLock(path.join(projectPath, 'ideas', `${ideaId}.json`), async () => {
+  return withFileLock(entityFile(projectPath, 'ideas', ideaId), async () => {
     const idea = update(await readIdea(projectPath, ideaId));
     if (idea) await writeIdea(projectPath, idea);
     return idea;
@@ -291,7 +290,7 @@ export async function deleteIdeaCompletely(rawProjectPath: string, ideaId: strin
   await assertWritableBowman(projectPath);
   let previous: unknown = null;
   for (const dirName of ['ideas', 'archived-ideas']) {
-    const ideaPath = path.join(projectPath, dirName, `${ideaId}.json`);
+    const ideaPath = entityFile(projectPath, dirName, ideaId);
     previous ??= await readJsonOrNull(ideaPath);
     await fs.remove(ideaPath);
   }

@@ -3,14 +3,26 @@ import express from "express";
 import cors from "cors";
 import { createMcpServer } from "./factory.js";
 import { createBackendClient } from "./client.js";
+import { isAllowedClientOrigin, resolveBindHost } from "shared";
 
 const port = Number(process.env.PORT_MCP || 3005);
 // A hosted instance proxies /mcp/* here, so the paths keep that prefix.
 const basePath = process.env.MCP_BASE_PATH ?? "";
-// Hosted, only the backend's proxy needs to reach this server.
-const host = process.env.MCP_BIND_HOST || undefined;
+// Loopback unless named: hosted, only the backend's proxy needs to reach this
+// server (MCP_BIND_HOST); `pnpm dev:host` opens it to BIND_HOST like the rest.
+const configuredHost = process.env.MCP_BIND_HOST || process.env.BIND_HOST || undefined;
+const host = resolveBindHost(configuredHost);
+// Locally every session acts with the full rights of this machine's backend, so
+// a browser page from anywhere else must not reach it (MCP clients send no
+// Origin). Hosted, requests arrive through the instance's own origin and the
+// backend checks each caller's role.
+const hosted = process.env.AIMPARENCY_HOSTED === "true";
 const app = express();
 
+app.use((req, res, next) => {
+  if (hosted || isAllowedClientOrigin(req.headers.origin, configuredHost)) return next();
+  res.status(403).send("Origin not allowed");
+});
 app.use(cors());
 
 // Store transports by session ID
@@ -55,6 +67,4 @@ app.post(`${basePath}/messages`, async (req, res) => {
   await transport.handlePostMessage(req, res);
 });
 
-const listening = () => console.log(`Aimparency MCP Server running on SSE/HTTP at http://${host ?? 'localhost'}:${port}${basePath}/sse`);
-if (host) app.listen(port, host, listening);
-else app.listen(port, listening);
+app.listen(port, host, () => console.log(`Aimparency MCP Server running on SSE/HTTP at http://${host}:${port}${basePath}/sse`));

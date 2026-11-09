@@ -13,6 +13,7 @@ import { normalizeProjectPath } from '../project-path.js';
 import { writeIdea } from '../storage/ideas.js';
 import { writePhase } from '../storage/phases.js';
 import { writeProjectMeta } from '../storage/project.js';
+import { entityFile } from '../storage/json.js';
 
 const EntityChangeSchema = z.object({
   type: z.enum(['idea', 'phase', 'project']),
@@ -32,9 +33,9 @@ type EntityChange = z.infer<typeof EntityChangeSchema>;
  */
 const entityFiles = (projectPath: string, change: EntityChange) => {
   if (change.type === 'idea') {
-    return ['ideas', 'archived-ideas'].map((dir) => path.join(projectPath, dir, `${change.id}.json`));
+    return ['ideas', 'archived-ideas'].map((dir) => entityFile(projectPath, dir, change.id));
   }
-  if (change.type === 'phase') return [path.join(projectPath, 'phases', `${change.id}.json`)];
+  if (change.type === 'phase') return [entityFile(projectPath, 'phases', change.id)];
   return [path.join(projectPath, 'meta.json')];
 };
 

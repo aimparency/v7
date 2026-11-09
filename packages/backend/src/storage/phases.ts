@@ -4,7 +4,7 @@ import type { Phase } from 'shared';
 import { assertWritableBowman } from 'shared/bowman-migration';
 import { normalizeProjectPath } from '../project-path.js';
 import { emitChange } from '../change-events.js';
-import { readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
+import { entityFile, readJsonOrNull, withFileLock, writeJsonAtomic } from './json.js';
 import { compareLegacyPhaseOrder, deriveLegacySiblingIds, normalizePhase } from './phase-files.js';
 import { ensureProjectStructure, readProjectMeta, writeProjectMeta } from './project.js';
 
@@ -30,7 +30,7 @@ function sameIds(left: string[] | undefined, right: string[]): boolean {
 
 export async function readPhase(rawProjectPath: string, phaseId: string): Promise<Phase> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  const phasePath = path.join(projectPath, 'phases', `${phaseId}.json`);
+  const phasePath = entityFile(projectPath, 'phases', phaseId);
 
   try {
     const data = await fs.readJson(phasePath);
@@ -50,7 +50,7 @@ export async function writePhase(rawProjectPath: string, phase: Phase): Promise<
   const projectPath = normalizeProjectPath(rawProjectPath);
   await ensureProjectStructure(projectPath);
   await assertWritableBowman(projectPath);
-  const phasePath = path.join(projectPath, 'phases', `${phase.id}.json`);
+  const phasePath = entityFile(projectPath, 'phases', phase.id);
   const previous = await readJsonOrNull(phasePath);
   await writeJsonAtomic(phasePath, phase);
   emitChange({ type: 'phase', id: phase.id, projectPath, entity: phase, previous });
@@ -60,7 +60,7 @@ export async function writePhase(rawProjectPath: string, phase: Phase): Promise<
 // the same phase apply one after another. Returning null skips the write.
 export async function updatePhase(rawProjectPath: string, phaseId: string, update: (phase: Phase) => Phase | null): Promise<Phase | null> {
   const projectPath = normalizeProjectPath(rawProjectPath);
-  return withFileLock(path.join(projectPath, 'phases', `${phaseId}.json`), async () => {
+  return withFileLock(entityFile(projectPath, 'phases', phaseId), async () => {
     const phase = update(await readPhase(projectPath, phaseId));
     if (phase) await writePhase(projectPath, phase);
     return phase;
@@ -85,7 +85,7 @@ export async function reconcilePhaseTree(rawProjectPath: string): Promise<string
 
   for (const phase of phases) {
     const reconciled = reconcileSiblingIds(phase.childPhaseIds, derivedIds(phase.id));
-    const raw = await readJsonOrNull(path.join(projectPath, 'phases', `${phase.id}.json`));
+    const raw = await readJsonOrNull(entityFile(projectPath, 'phases', phase.id));
     if (!Array.isArray(raw?.childPhaseIds) || !sameIds(raw.childPhaseIds, reconciled)) {
       await writePhase(projectPath, { ...phase, childPhaseIds: reconciled });
       fixes.push(`Reconciled child phases of Phase ${phase.id}`);
