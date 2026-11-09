@@ -43,6 +43,8 @@ html {
   --control-h: 1.6rem;
   /* Faint pill background used to keep control clusters legible after they wrap. */
   --toolbar-group-bg: #ffffff14;
+  /* App accent: primary buttons, focus, progress. */
+  --accent: #007acc;
 }
 
 body {
@@ -71,7 +73,7 @@ textarea {
 }
 
 .btn-primary {
-  background: #007acc;
+  background: var(--accent);
   color: white;
   &:hover:not(:disabled) { background: #005a99; }
   &:disabled { background: #444; color: #666; cursor: not-allowed; }

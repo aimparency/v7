@@ -89,7 +89,7 @@ onUnmounted(() => window.removeEventListener('keydown', takeKeydown, { capture: 
   /* Transforms only: the compositor keeps these moving while a mount blocks the page. */
   & .fill {
     height: 100%;
-    background: var(--status-open);
+    background: var(--accent);
     transform-origin: left;
     transition: transform 0.2s linear;
 
