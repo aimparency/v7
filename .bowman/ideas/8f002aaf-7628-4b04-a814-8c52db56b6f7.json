@@ -72,6 +72,15 @@
       ],
       "weight": 1,
       "hypothesis": "A registry listing in the spec/planning category brings the first outside installs without outreach. Refuted if the listing yields no GitHub stars, issues or clones from strangers within six weeks."
+    },
+    {
+      "ideaId": "0ce0b7ca-dd5d-4380-85af-038ed39fdec7",
+      "relativePosition": [
+        3.14,
+        2.04
+      ],
+      "weight": 1,
+      "hypothesis": "Setting it up side by side with one person shows what blocks outside developers, which no internal test reveals."
     }
   ],
   "supportedIdeas": [

@@ -322,6 +322,15 @@
       ],
       "weight": 1,
       "hypothesis": "The cooperation engine's distinctive move is eliciting intent, not only approving actions; information-gain-ranked questions make each human answer worth more, which is the scarce input."
+    },
+    {
+      "ideaId": "0ce0b7ca-dd5d-4380-85af-038ed39fdec7",
+      "relativePosition": [
+        2.45,
+        2.84
+      ],
+      "weight": 1,
+      "hypothesis": "Fisayo thinks about keeping human judgment in assistive AI; working with the idea graph on his own projects tests whether it serves someone else's intentions, not only Felix's."
     }
   ],
   "supportedIdeas": [

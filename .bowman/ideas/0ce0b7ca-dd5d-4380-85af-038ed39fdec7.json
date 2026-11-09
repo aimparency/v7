@@ -1,0 +1,30 @@
+{
+  "id": "0ce0b7ca-dd5d-4380-85af-038ed39fdec7",
+  "text": "Cooperate with Fisayo: second session where Felix walks him through setting up Aimparency on his computer",
+  "description": "Felix 2026-11-09, during the call with Fisayo: the idea of cooperating, starting with a second session in which Felix walks Fisayo through setting up the project on his own computer.\n\nSetup checklist for the session (from the README): Node.js 22.13+ and git; `git clone https://github.com/aimparency/v7.git && cd v7 && corepack enable && pnpm install`; `pnpm dev` and open http://localhost:4000; first browse v7's own graph, then `pnpm dev <path to one of his repos>` to create its .bowman; optionally connect his coding agent through the MCP (packages/mcp/README.md). Note what is unclear or breaks for him: that is the first outside-user feedback (8f002aaf).",
+  "archived": false,
+  "color": "#2f4767",
+  "tags": [
+    "relationship",
+    "human-action",
+    "outside-users"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "303558d5-1d91-4396-868e-ab4b1a6c5d54",
+    "8f002aaf-7628-4b04-a814-8c52db56b6f7",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Felix: agree a date for the second session with Fisayo; setup checklist in the description.",
+    "date": 1794233103815
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
