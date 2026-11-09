@@ -190,10 +190,15 @@ WantedBy=multi-user.target
 
 Then `sudo systemctl enable --now aimparency` and follow it with `journalctl -u aimparency -f`.
 
-Behind nginx with TLS, one location is enough:
+Behind nginx with TLS, one location is enough; the rate limit keeps a single
+client from flooding a public instance:
 
 ```nginx
+# in the http block
+limit_req_zone $binary_remote_addr zone=aimparency:10m rate=20r/s;
+
 location / {
+    limit_req zone=aimparency burst=200 nodelay;
     proxy_pass http://127.0.0.1:4000;
     proxy_http_version 1.1;
     proxy_set_header Upgrade $http_upgrade;
