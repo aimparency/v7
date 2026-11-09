@@ -1,0 +1,28 @@
+{
+  "id": "bb34c22a-aede-412c-af10-7fb21f82ce2d",
+  "text": "Close the security findings of the 2026-11-09 read-only hosting audit before any public instance",
+  "description": "Audit 2026-11-09 of everything an anonymous visitor reaches on a hosted instance (37 read-role procedures computed from appRouter + neededRole, /mcp proxy, HTTP routes, frontend sinks, pnpm audit).\n\nHIGH 1. idea.commitDiff (anonymous) runs `git show --patch <hex>` on the whole repository: full diffs of any commit in the server clone's history, code and any secret ever committed included. Verified: getCommitDiff(.bowman, bf5933d9) returns packages/frontend/... files. commitEvidence hands out the hashes. Fix: host a sparse .bowman-only clone (as openGitRepository already does) AND restrict the diff to `-- <bowman dir>`; also covers reconcile_code_presence (MCP git grep over code = oracle on private code).\n\nMEDIUM 2. Anonymous resource exhaustion, no rate limit anywhere: tRPC HTTP has no maxBodySize, ws maxPayload default 100 MiB; idea.searchSemantic unbounded query string -> local embedding CPU; project.buildSearchIndex (read-role mutation) re-indexes + backfills embeddings; graphHealth.findDuplicates/graphHygiene accept threshold 0 (n^2 pairs); activity.record takes arbitrary strings (not uuids, 5000 per call, unlimited calls) into memory and runtime/idea-activity.json; MCP /mcp/sse has unlimited sessions, each opening a backend WebSocket. pnpm audit: body-parser DoS (high) in the MCP SDK's express, exposed via /mcp/messages; zod oversized-collection memory exhaustion (high, advisory <4.6.6, backend on 3.25.76).\nMEDIUM 3 (accounts with write role only). Path traversal: idea.create supportedIdeas[] and supportingConnections[].ideaId are z.string(), reach connectIdeasInternal -> readIdea -> path.join(dir, `${id}.json`); writeIdea writes to `${idea.id}.json`. Fix: uuid in every id schema plus an id-format guard inside readIdea/writeIdea.\nLOW 4. NODE_ENV is unset in the hosted launch, so tRPC error responses carry stack traces; git.status returns the server's repositoryPath; linkedRepo.list/resolve return server localPaths.\nLOW 5. activity.record lets anonymous viewers broadcast fake agent/edit activity to every viewer.\nLOW 6. mcp/src/sse.ts listens on all interfaces when MCP_BIND_HOST is unset (the launcher sets 127.0.0.1; the code default should be loopback too).\n\nVERIFIED SOLID: every procedure passes accessMiddleware (no t.procedure bypass); unlisted mutations need admin; loop/watchdog/system/voice/market/spinOff refused hosted; projectPath must equal the hosted project exactly (toBowmanPath does not resolve `..`, no bypass); MCP calls carry the caller's token through the same middleware, and its git tools run only after a backend call with the same projectPath succeeded; read-path ids are uuid-validated (suggestReparents' free string is only a map lookup); no v-html/innerHTML sinks in the frontend; scrypt + timingSafeEqual; agent cookie HttpOnly + SameSite=Strict + origin check; launcher binds MCP and broker to loopback; sirv serves only frontend/dist.\nNOT COVERED: nginx/TLS config, the wrapped-agents broker (off unless AIMPARENCY_AGENTS), local non-hosted mode beyond loopback binding.",
+  "archived": false,
+  "color": "#345468",
+  "tags": [
+    "security",
+    "hosting",
+    "read-only"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "06d83e94-e96b-4429-910b-31781dab996d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Findings recorded; no code changed yet. Fixes 1, 3, 4 and 6 are unambiguous; 2 needs limits chosen (body size, query length, sessions, rate limit), 5 folds into Felix's read-only-flag decision on 06d83e94.",
+    "date": 1794214240437
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

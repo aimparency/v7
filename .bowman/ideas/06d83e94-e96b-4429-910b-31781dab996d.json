@@ -5,7 +5,17 @@
   "archived": false,
   "color": "#2e4661",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "bb34c22a-aede-412c-af10-7fb21f82ce2d",
+      "relativePosition": [
+        2.25,
+        3
+      ],
+      "weight": 1,
+      "hypothesis": "A public read-only instance is only acceptable if an anonymous visitor can read nothing beyond the graph and cannot exhaust the server; refuted if a re-audit after these fixes still finds a path to code, server files or unbounded work."
+    }
+  ],
   "supportedIdeas": [
     "b008055a-a42a-4133-9987-3d07bf0e65b1",
     "250fb1aa-f0a7-4ef8-870c-0abad9b98892"
