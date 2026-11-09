@@ -1,31 +1,20 @@
 # Aimparency
 
-> OpenAI Build Week 2026: see [BUILD_WEEK_2026.md](BUILD_WEEK_2026.md) for the
-> Developer Tools entry, the exact hackathon extension, and its verification
-> path. This project is not affiliated with or endorsed by OpenAI.
+Aimparency is an open-source, local-first interface for communicating human intention to AI systems. It runs as a browser app on your machine and keeps a graph of ideas in a `.bowman` directory inside the repository it describes, versioned by git like the code.
 
-Aimparency is a local-first tool for cartographing ideas next to real repositories.
+## What it is for
 
-It runs as a browser app on your machine, stores project state in a `.bowman` directory inside the repo or workspace you point it at, and can start local agent sessions through the broker. The current data model still uses the word `idea` in many places, but the broader point is optional ideas: things people or agents may want to realize, explore, defer, split, merge, or abandon.
+Aimparency pursues two aims.
 
-The longer-term vision is bigger than a single repo planner. Aimparency is intended to become a graph for breaking ideas down into realizable steps, with project-local state by default and cross-repository references over time. That can grow from software planning into a general interface for mapping how complex projects get realized, while still keeping ownership and control inside ordinary repositories.
+1. **An interface for human intention.** People state what they want as ideas. A connection says how one idea serves another and carries a hypothesis that can turn out wrong. Value flows down the graph, so priorities follow from what people care about rather than from a schedule. AI systems read the graph to know what matters and why. They propose new ideas, which wait for a human to accept them, and they report back with evidence. The human stays the final authority.
+2. **An open-ended experiment.** Let AI venture into the future in an endless loop: pick the most valuable idea, break it down, work on it, verify the result, reflect on whether the hypotheses held, and form new hypotheses and ideas of its own. The graph is the loop's memory and the record of the experiment.
 
-Git is a large part of why this model is attractive:
+Git is a large part of why this works:
 
-- permissions come from the repositories and workflows teams already use
-- version control comes for free because ideas, ideas, phases, and code can live in the same history
-- code changes and graph/status updates can be committed together, making it much easier to see what changed and why
-- that paired history may also become useful training material for intent, hypothesis, planning, and execution loops in future LLM systems
-
-## Direction
-
-Aimparency is built around three possible long-term outcomes for AI integration:
-
-1. People use AI to realize their ideas, including large physical or organizational projects. The graph exists to break ideas into steps that can actually be carried out.
-2. AI develops greater autonomy, forms its own ideas and hypotheses, and uses the graph as part of its own planning and execution loop.
-3. AI learns to read the needs of human individuals and help realize them, as long as those paths do not conflict too heavily with other people's ideas.
-
-In that sense, the graph is not only for tasks. It is a coordination surface between human intention, machine planning, and the real constraints of the world.
+- permissions come from the repositories and workflows people already use
+- version control comes for free, because ideas, phases and code share one history
+- code changes and the idea updates behind them can be committed together, so the history shows what changed and why
+- that paired history of intent, hypothesis and outcome may become training material for future AI systems
 
 ## Philosophy
 
@@ -35,155 +24,76 @@ In that sense, the graph is not only for tasks. It is a coordination surface bet
 - priority matters more than rigid schedules
 - all ideas are optional, and priorities can shift
 
-## What This Repo Contains
-
-- `packages/frontend`: main UI
-- `packages/backend`: tRPC backend and project-state persistence
-- `packages/wrapped-agents/broker`: session broker for Claude, Gemini, and Codex workers
-- `packages/mcp`: optional MCP server
-- `packages/voice-bridge`: optional voice integration
-- `packages/shared`: shared types and logic
-
-## Prerequisites
-
-- Node.js 20+
-- pnpm (`corepack enable` picks the version pinned in `package.json`)
-
-Optional:
-
-- [ripgrep](https://github.com/BurntSushi/ripgrep) (`rg`) for the agent coding tools' file search
-- Claude CLI for Claude-backed sessions
-- Gemini tooling for Gemini-backed sessions
-- Codex tooling for Codex-backed sessions
-
-The core app still starts without those agent CLIs. They are only needed when you want to launch that session type.
-
 ## Quickstart
+
+You need Node.js 22.13+ and git; `corepack enable` provides the pnpm version pinned in `package.json`.
 
 ```bash
 pnpm install
 pnpm dev
 ```
 
-Then open:
+Then open `http://localhost:4000` and enter the path of this repository (the folder, not its `.bowman`). Its graph is not sample data: it holds the goals, hypotheses and reflections that shaped Aimparency itself.
 
-```text
-http://localhost:4000
-```
+To work on your own repository, pass its path: `pnpm dev ~/code/my-repo` prints a link that opens it directly and creates its `.bowman` on first open. A Git URL instead of a path opens that repository read-only.
 
-For the best first look, enter the path of this cloned `v7` repository and
-explore its own graph. The graph is not sample data: it contains the goals,
-dependencies, implementation ideas, reflections, and Build Week submission path
-that shaped the repository itself.
+Agent sessions run the coding-agent CLI you pick for them (Claude Code, Codex, Gemini, Grok, Agy). Install only the ones you want to use; the app runs without any of them.
 
-To work on your own repository, pass its path: `pnpm dev ~/code/my-repo`
-prints a link that opens it directly (a `.bowman` directory is created there on
-first open). A Git URL instead of a path opens that repository read-only.
+## Run Modes
 
-`4000` is the default frontend port in a fresh checkout. If you want custom ports, copy `.env.example` to `.env` and override them there.
+| Command | What it does |
+|---|---|
+| `pnpm dev` | Frontend, backend and broker from source, no build step; moves to free ports if the defaults are taken |
+| `pnpm dev:full` | Also the MCP server over SSE, the broker inspector and the voice bridge |
+| `pnpm dev:host` | Like `dev`, but reachable from `LAN_BIND_HOST` (or the Tailscale IP) instead of loopback only |
+| `pnpm start` | Builds, then runs the built bundles; uses exactly the configured ports (`--port <n>` for one run) |
+| `pnpm start:fast` | `start` without rebuilding |
+| `pnpm build` / `pnpm build:optional` | Build the core packages / also the MCP server and voice bridge |
 
-`pnpm dev` starts the core local stack from source (no build step): frontend, backend, and broker. The broker spawns wrapped-agent sessions on demand. `pnpm start` builds bundles and runs those instead.
+Ports and other settings go in `.env` (see `.env.example`). The first `pnpm start` in a terminal asks which repository to open and whether to host it for other people, and saves the answers there; `pnpm start --setup` asks again. Voice is opt-in: set `AIMPARENCY_ENABLE_VOICE=true`.
 
-If you need optional integrations too, use:
+Backend, broker and agent sessions listen on `127.0.0.1` only and answer only pages served from this machine, since they can start agents. The launcher prints the resolved ports and writes them to `packages/frontend/public/runtime-config.json`. `pnpm validate:local-runtime` checks the port handling without starting the stack.
 
-```bash
-pnpm dev:full
-```
+## The Loop
 
-Use `dev:full` when trying the complete agent/MCP workflow demonstrated by the
-Build Week entry. The app remains self-hosted and opens on
-`http://localhost:4000` by default.
+The loop is the second aim in code: a model-agnostic harness in `packages/loop-worker` that works through the graph on its own. Each cycle orients on the highest-priority idea, decomposes it if it is too large, executes it if it is a leaf, has a model from a different family verify the claimed result, writes reflections on the connections it served, and records the cost.
 
-That also starts the dev-only broker inspector, MCP server, and voice bridge.
+- Models per role (planner, executor, verifier, reflector) are set in `.bowman/runtime/loops.json`; providers are NVIDIA, OpenRouter, Anthropic and any OpenAI-compatible endpoint.
+- API keys go in `.bowman/secrets.json` (gitignored), e.g. `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`.
+- Stages, budgets and the executor backend (built-in tools, or Claude Code / Codex as a headless CLI) are set in `.bowman/harness.json`, which is versioned with the graph.
+- The built-in file search uses ripgrep (`rg`).
 
-Voice remains opt-in in the browser UI. To expose it in launcher-based runs, set `AIMPARENCY_ENABLE_VOICE=true` before `pnpm dev` or `pnpm start`. If you run the frontend directly, use `VITE_ENABLE_VOICE=true`.
+Start and watch loops from the Loop panel in the UI.
 
-For a lighter build-mode local stack:
+## Agents and MCP
 
-```bash
-pnpm start
-```
-
-The first `pnpm start` in a terminal asks which repository to open and whether
-other people should reach it (see [Hosting It for a Group](#hosting-it-for-a-group));
-the answers go to `.env`, and `pnpm start --setup` asks again. `pnpm start` uses
-exactly the configured ports and stops if one is taken; `--port <n>` picks
-another frontend port for one run. `pnpm dev` still moves to free ports.
-
-If you already built everything and want to skip rebuilding:
-
-```bash
-pnpm start:fast
-```
-
-If you want to build without starting the stack:
-
-```bash
-pnpm build
-```
-
-For optional integrations too:
-
-```bash
-pnpm build:optional
-```
-
-The main visible URL is the frontend, usually `http://localhost:4000`. Backend, broker, and session ports stay in the background: they listen on `127.0.0.1` only and answer only pages served from this machine, since they can start agents. `pnpm dev:host` opens them to `LAN_BIND_HOST` (or the Tailscale IP). The launcher prints the resolved ports at startup and writes them to `packages/frontend/public/runtime-config.json`.
-
-To validate the local launcher and runtime-config fallback behavior without starting the full stack, run:
-
-```bash
-pnpm validate:local-runtime
-```
-
-That script checks that `dev` moves to free ports, that `start` refuses occupied ones, and the hosted mode's single port.
-
-## Local Workflow
-
-Point Aimparency at a local repo or workspace. In the UI, enter the project base folder path, not the `.bowman` path itself.
-
-Example:
-
-- repo root: `/home/user/my-repo`
-- Aimparency data directory inside it: `/home/user/my-repo/.bowman`
-
-The backend normalizes the path and creates `.bowman` if needed. That directory becomes the local storage root for ideas represented as ideas, phases, metadata, and generated search artifacts.
-
-This keeps the workflow git-friendly:
-
-- Aimparency state lives next to the code it describes
-- the checked-in shape is plain files
-- generated vector/cache artifacts are ignored inside `.bowman/.gitignore`
+Coding agents read and change the graph through the Aimparency MCP server: ideas, priorities, context paths, hypotheses and reflections, phases. See [`packages/mcp/README.md`](packages/mcp/README.md) for connecting Claude Code, Codex or another MCP client.
 
 ## `.bowman` Layout
-
-Aimparency writes project data into a `.bowman` directory in the target repo or workspace.
-
-Typical structure:
 
 ```text
 my-project/
   .bowman/
-    ideas/
-    archived-ideas/
-    phases/
-    meta.json
-    .gitignore
-    runtime/
-    cache/
+    ideas/            active ideas, one JSON file each
+    archived-ideas/   archived ideas
+    phases/           phases
+    meta.json         project name, color, statuses, data model version, linked repositories
+    harness.json      loop harness configuration (optional)
+    memory/           session notes of wrapped agents
+    README.md         a short note for people who find the folder
+    .gitignore        what stays out of git (kept up to date by the backend)
+    secrets.json      API keys (gitignored)
+    runtime/          machine-local state: loops, accounts, activity (gitignored)
+    cache/            embeddings, search index, values; safe to delete (gitignored)
 ```
 
-What each part is for:
+The format is specified with JSON Schemas in [`protocol/`](protocol/README.md), so other tools can read and write it. Check a project with `pnpm validate:bowman <path>`. Each repository gets its own `.bowman`; Aimparency never merges projects on disk.
 
-- `ideas/`: active ideas stored as JSON files
-- `archived-ideas/`: archived ideas stored as JSON files
-- `phases/`: phase definitions stored as JSON files
-- `meta.json`: project name, color, and available statuses
-- `.gitignore`: generated `.bowman` artifacts that should not be committed
-- `runtime/`: machine-local runtime state
-- `cache/`: generated data (embeddings, semantic neighbours, idea values), safe to delete
+## Git Workflow
 
-The format is specified in [`protocol/`](protocol/README.md) with JSON Schemas, so other tools can read and write it. Check a project with `pnpm validate:bowman <path>`.
+Ideas, phases and `meta.json` are plain files meant to be committed, ideally in the same commit as the code they describe. A commit that implements an idea names its id (the first 8 characters), so the idea shows the commits that realized it.
+
+One feature writes outside `.bowman`: injecting agent instructions updates `CLAUDE.md`, `.gemini/GEMINI.md` and `.cursorrules` at the repository root. Review and commit those like any other file.
 
 ## Starting From Existing Issues
 
@@ -203,7 +113,7 @@ Aimparency clones only that repository's `.bowman` into `~/.cache/aimparency/rep
 
 One server can host a project's graph for a whole group: anyone may read it,
 people with an account may edit it, and admins manage the accounts. On the
-server (Node.js 20+ and git; an https clone needs no GitHub account):
+server (Node.js 22.13+ and git; an https clone needs no GitHub account):
 
 ```bash
 git clone https://github.com/aimparency/v7.git aimparency
@@ -222,8 +132,8 @@ pnpm start
 
 From then on `pnpm start` (for example from a systemd unit) serves that one
 project on that one port: the UI, the API under `/trpc`, and an MCP server under
-`/mcp/sse`. Loops stay off on a hosted instance, and nothing outside the
-project can be opened. Wrapped agents (the watchdog) are off too unless you
+`/mcp/sse`. Loops stay off on a hosted instance, and no other project can be
+opened. Wrapped agents (the watchdog) are off too unless you
 answer yes to "Let admins run wrapped agents?" (`AIMPARENCY_AGENTS=true`):
 then admins, and only admins, get them in the UI. The broker and the agent
 sessions listen on `127.0.0.1`; the one port lets a request through to them
@@ -231,6 +141,10 @@ only with an admin's login and from the instance's own origin. The agents'
 own Aimparency MCP edits the graph as the account `wrapped-agents` (write),
 whose token is replaced on every start; remove that account to make them
 read-only.
+
+> **Known issue:** readers can currently also see commit diffs of the served
+> repository, code included. Until that is fixed, serve only a repository whose
+> full history you are fine to show.
 
 - **Accounts.** Admins add people in the UI (header: Accounts), or on the
   server with `pnpm accounts add <name> <read|write|admin>`,
@@ -295,66 +209,30 @@ location / {
 }
 ```
 
-## Git Workflow
+## Repository Layout
 
-Aimparency is designed so the important project state can live next to the code it describes.
+- `packages/frontend`: the UI
+- `packages/backend`: tRPC backend and `.bowman` persistence
+- `packages/shared`: types, the value model and the data model migrations
+- `packages/loop-worker`: the loop harness
+- `packages/agent-tools`: graph and coding tools the loop's models use
+- `packages/mcp`: the MCP server
+- `packages/wrapped-agents`: the broker and one session package per agent CLI; `client` is a dev-only broker inspector
+- `packages/voice-bridge`: optional voice integration
+- `packages/mobile`: experimental Android voice client
+- `packages/real-world`: experimental agent that acts on prioritized ideas through external tools (Composio)
+- `protocol/`: the `.bowman` format specification
 
-In the intended workflow, code edits and planning updates travel together. A commit can contain both the implementation and the corresponding idea changes, status changes, comments, or reflections. That gives you a much clearer history of intent, execution, and outcome than code diffs alone.
-
-In normal use, these files are user-authored project state and are reasonable to commit:
-
-- `.bowman/ideas/*.json`
-- `.bowman/archived-ideas/*.json`
-- `.bowman/phases/*.json`
-- `.bowman/meta.json`
-- `.bowman/.gitignore`
-
-These files are generated runtime/search artifacts and should usually stay uncommitted:
-
-- `.bowman/runtime/`
-- `.bowman/cache/`
-
-The backend keeps those generated artifacts listed in `.bowman/.gitignore` automatically.
-
-One exception to the “everything stays in `.bowman`” rule is agent-instruction injection. If you use that feature, Aimparency may also update repo-root agent config files such as:
-
-- `CLAUDE.md`
-- `.gemini/GEMINI.md`
-- `.cursorrules`
-
-Those files are normal repository files, not generated cache output. Review and commit them intentionally if you want the injected instructions to travel with the repo.
-
-If you use one Aimparency instance with multiple repos or workspaces, each target gets its own separate `.bowman` directory. Aimparency does not merge those project states together on disk.
-
-## Optional Integrations
-
-- MCP: `packages/mcp/README.md`
-- Voice UI/runtime flag: set `AIMPARENCY_ENABLE_VOICE=true` for launcher-based runs or `VITE_ENABLE_VOICE=true` when running the frontend directly
-- Frontend package notes: `packages/frontend/README.md`
-- Backend package notes: `packages/backend/README.md`
-- Broker package notes: `packages/wrapped-agents/broker/README.md`
-- Experimental mobile notes: `packages/mobile/README.md`
+Other top-level folders (`meta/`, `math/`, `education/`, `ideas/`, `q-and-a/`, `sketches/`) hold notes and explorations, not the product. Package details are in each package's README.
 
 ## Troubleshooting
 
-Common local startup failures are usually one of these:
+- **The UI cannot reach the backend or broker.** The launcher prints the frontend URL and the resolved backend and broker ports. If a service crashed during startup, fix it and start again.
+- **`pnpm start` fails on missing `dist/` output.** Run `pnpm build` once, or `pnpm build:optional` when debugging the MCP server or voice.
+- **The browser connects to the wrong host or port.** Delete `packages/frontend/public/runtime-config.json`, rerun the launcher and reload the page. That file is generated and not committed.
+- **An agent session type does not start.** That session type needs its CLI installed and working on your machine.
+- **Semantic search looks stale or weak.** Delete `.bowman/cache/` and reopen the project; the backend regenerates the embeddings.
 
-- `pnpm start` shows the frontend but the UI cannot reach the backend or broker:
-  Check the terminal output from the launcher. It should print the frontend URL and the resolved backend and broker ports. If a background service crashed during startup, fix that service first and rerun `pnpm start`.
-- Build-mode startup fails with missing `dist/` output:
-  Run `pnpm build` once from the repo root, then retry `pnpm start`. That builds only the core local runtime packages. If you are debugging MCP or voice specifically, use `pnpm build:optional`.
-- The browser keeps trying to connect to the wrong host or port:
-  Remove `packages/frontend/public/runtime-config.json`, rerun the launcher, and reload the page. That file is generated runtime state and should not be committed.
-- You want to verify the launcher's port fallback behavior directly:
-  Run `pnpm validate:local-runtime`. It performs a dry-run validation of runtime-config generation for both free and occupied preferred ports.
-- A wrapped-agent session type does not start:
-  The core UI can run without Claude, Gemini, or Codex CLIs, but launching that specific session type still requires the corresponding local tooling to be installed and working on your machine.
-- Semantic search looks stale or unexpectedly weak:
-  Delete `.bowman/cache/`, then rerun `project.buildSearchIndex` or reload the project so the backend regenerates local embeddings.
+## License
 
-## Repository Notes
-
-- `subdev/` contains related experiments and side projects; it is not part of the main onboarding path. See `subdev/README.md`.
-- `packages/wrapped-agents/client` is a dev-only broker inspector, not the main product UI.
-- `packages/mobile` is an experimental Android voice client, not part of the main local-first release path.
-- Top-level folders such as `education/`, `ideas/`, `thoughts/`, `q-and-a/`, `real-world-entry/`, and `scheduled-claude/` contain notes, experiments, or archived exploration rather than the core shipped product.
+ISC, see [LICENSE](LICENSE).
