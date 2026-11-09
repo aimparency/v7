@@ -303,6 +303,15 @@
       ],
       "weight": 1,
       "hypothesis": "Two outside people who think about explicit claims and human judgment can tell within one conversation whether the idea graph's hypotheses/reflections are a format others can use, which no internal test can show."
+    },
+    {
+      "ideaId": "1754d0d8-ea03-4eea-be82-5925dbbb6b6d",
+      "relativePosition": [
+        3.61,
+        1
+      ],
+      "weight": 1,
+      "hypothesis": "ARIA names 'requirement capture' and 'users' preferences' as missing agent infrastructure, which is the cooperation engine's core claim stated by an outside funder; a reviewer's response tests whether outsiders see the idea graph that way."
     }
   ],
   "supportedIdeas": [

@@ -1,0 +1,30 @@
+{
+  "id": "1754d0d8-ea03-4eea-be82-5925dbbb6b6d",
+  "text": "Apply to ARIA Scaling Trust Track 2 (Tooling) with the idea graph as open-source requirement capture and verifiable reporting for agents",
+  "description": "RESEARCHED (checked 2026-11-09 on aria.org.uk/funding-opportunities and .../scaling-trust/funding): ARIA Scaling Trust (£49.8m, PD Alex Obadia) Track 2 Tooling funds 4-6 teams £200k-£2m for 'open-source agents and reusable components' spanning 'requirement capture, negotiation, security reasoning, and verifiable reporting', usable in the Scaling Trust Arena. Rolling, reviewed in quarterly batches; the 31 Oct 2026 cutoff has passed, later submissions go to the next cycle (dates not yet published). Individuals are explicitly welcome; non-UK eligibility is not stated on the page. Call PDF: https://aria.org.uk/media/t5mku5xx/scaling-trust-call-for-proposals.pdf.\n\nMAPPING (OBSERVED in code/graph): requirement capture = the idea graph (human intent as ideas with hypotheses, ai-proposition for AI-proposed intent, human as final authority); verifiable reporting = harness verify stage (different model family, receipts re-run claimed commands, verdict + evidence in the status comment, traces with cost) 17dff50a/5949b781; security reasoning = loopback-only + admin gate (101cc131), frozen corrigibility suite with zero critical failures (986410a0). All MIT/open source, local-first.\n\nDRAFT ONE-PARAGRAPH PITCH: 'Agents acting for people need to know what their principal actually wants and to report back in a form the principal can check. Aimparency is an open-source, local-first intent layer: a person's goals live as a graph of ideas whose connections carry falsifiable hypotheses; agents propose new intent (held until the human accepts), execute leaves, and return claims that an independent verifier of a different model family re-checks against re-run evidence. We propose to package the intent graph and the verification/receipt format as a reusable component and an MCP/A2A interface any Arena agent can call to capture requirements from its human and report verifiable outcomes.'\n\nOPEN RISKS: non-UK applicant rules; whether ARIA accepts substantially AI-written proposals (NLnet did not, 28ddbcb0); fit with the Arena's adversarial negotiation focus may be weaker than with requirement capture.",
+  "archived": false,
+  "color": "#47662d",
+  "tags": [
+    "funding",
+    "major-hypothesis-loop",
+    "hypothesis",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3253bc9e-14fe-4c9b-9849-588620518517",
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Prepared and checked against the call PDF (10 Feb 2026 v1.0, read 2026-11-09). Best fit is Track 2.2 Components, 'Requirement gathering': 'Security policy elicitation protocols – interactive methods that extract missing details, resolve ambiguities and help user discover their goals' — this is what the idea graph + ai-proposition does. Format: one detailed proposal, max 10 pages. All Track 2 software must be permissively open-source (Aimparency already is). Individuals welcome. Hard part: non-UK applicants are funded only 'if we believe it can boost the net impact of a programme in the UK'; the strongest cases spend >50% of costs in the UK. The call's AI-use conditions are in a separate linked document (reviewers may use AI); not yet checked. Next cycle: after the 31 Oct cutoff, date not published. Felix decides: (a) pursue — then say whether you could run part of the work through a UK partner or UK presence, and as individual or entity; I draft the 10-page proposal around the elicitation component; (b) drop.",
+    "date": 1794212424582
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
