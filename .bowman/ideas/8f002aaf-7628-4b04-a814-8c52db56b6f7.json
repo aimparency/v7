@@ -35,7 +35,8 @@
         2.5
       ],
       "weight": 1,
-      "hypothesis": "Personal conversations with about five maintainers are how the first outside users and their feedback arrive (Felix, per the relationship principle)."
+      "hypothesis": "Personal conversations with about five maintainers are how the first outside users and their feedback arrive (Felix, per the relationship principle).",
+      "reflection": "Not pursued: grant targeting dropped 2026-11-09. Outside users still come through personal conversations (8f002aaf), independent of any application."
     },
     {
       "ideaId": "ddc44bbc-2ede-4501-a90a-5a0fa6e9c6fe",

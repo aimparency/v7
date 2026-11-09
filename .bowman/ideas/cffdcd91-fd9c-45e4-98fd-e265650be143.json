@@ -184,6 +184,15 @@
       ],
       "weight": 2,
       "hypothesis": "Autonomy becomes measurable and improvable once the loop is our own versioned code rather than prompt text inside third-party agents."
+    },
+    {
+      "ideaId": "2531df25-0426-47ad-ab89-5e3e28458504",
+      "relativePosition": [
+        -2.22,
+        -3.02
+      ],
+      "weight": 1,
+      "hypothesis": "Running the harness on the project's own graph, with a verifier of another model family and human-gated strategy, is the smallest real instance of aim B; refuted if it cannot complete one verified leaf in 10 cycles."
     }
   ],
   "supportedIdeas": [

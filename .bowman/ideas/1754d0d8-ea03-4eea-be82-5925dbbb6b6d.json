@@ -17,9 +17,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Prepared and checked against the call PDF (10 Feb 2026 v1.0, read 2026-11-09). Best fit is Track 2.2 Components, 'Requirement gathering': 'Security policy elicitation protocols – interactive methods that extract missing details, resolve ambiguities and help user discover their goals' — this is what the idea graph + ai-proposition does. Format: one detailed proposal, max 10 pages. All Track 2 software must be permissively open-source (Aimparency already is). Individuals welcome. Hard part: non-UK applicants are funded only 'if we believe it can boost the net impact of a programme in the UK'; the strongest cases spend >50% of costs in the UK. The call's AI-use conditions are in a separate linked document (reviewers may use AI); not yet checked. Next cycle: after the 31 Oct cutoff, date not published. Felix decides: (a) pursue — then say whether you could run part of the work through a UK partner or UK presence, and as individual or entity; I draft the 10-page proposal around the elicitation component; (b) drop.",
-    "date": 1794212424582
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go. The research (call PDF facts, fit to requirement elicitation) stays in the description as context.",
+    "date": 1794221825634
   },
   "intrinsicValue": 0,
   "cost": 5,

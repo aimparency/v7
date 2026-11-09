@@ -60,7 +60,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Updated 2026-11-02: deployment architecture (3ea51517), publishability (e2c26776), protocol v0 (e207bec5) and read-only public-repo viewing (250fb1aa) are implemented; clean-clone startup was confirmed on the Commons Hub server. Remaining: outside users (8f002aaf), which waits on Felix's Commons Hub trial.",
+    "comment": "Felix 2026-11-09: fully open source now; hackathon and grant targeting dropped. README rewritten accordingly (74b742f6, BUILD_WEEK_2026.md removed); license ISC. Implemented before: deployment architecture (3ea51517), publishability (e2c26776), protocol v0 (e207bec5), read-only public-repo viewing (250fb1aa); hosted surface hardened (bb34c22a). Remaining: outside users (8f002aaf), which waits on Felix's Commons Hub trial. Open question for Felix: delete the grant/hackathon drafts in meta/ (meta/applications/, *-projektskizze-draft.md, grant-application-draft.md, eic-*, funding-landscape-2026-07-22.md, german-eu-grants-2026.md) or keep them as history?",
     "date": 1784895724839
   },
   "intrinsicValue": 0,

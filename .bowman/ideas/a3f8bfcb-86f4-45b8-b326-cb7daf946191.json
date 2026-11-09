@@ -18,14 +18,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Felix must disclose the real legal/founder situation and book the official qualification call.\n\nResearched current official IFB program pages and prepared a qualification email in meta/founder-actions-ai-transformation.md. InnoFounder and InnoRampUp appear potentially relevant, but eligibility depends on real legal/company facts and must be confirmed with IFB.",
-    "date": 1784740547558
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go.",
+    "date": 1794221826071
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

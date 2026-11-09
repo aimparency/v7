@@ -78,7 +78,8 @@
         4.527351567322584
       ],
       "weight": 1.5,
-      "hypothesis": "Non-dilutive funding extends runway, while remaining secondary to recurring externally valued work."
+      "hypothesis": "Non-dilutive funding extends runway, while remaining secondary to recurring externally valued work.",
+      "reflection": "Did not hold in practice: no grant was won (NLnet ineligible for LLM-written work, others never submitted), and on 2026-11-09 Felix dropped grant targeting altogether."
     },
     {
       "ideaId": "0622adb1-e79d-483c-b894-199d92ca199d",
@@ -176,7 +177,8 @@
         -0.41
       ],
       "weight": 1,
-      "hypothesis": "A public research funder paying for open-source agent requirement-capture tooling can carry Aimparency's operating costs for 1-2 years without a commercial product; refuted if ARIA's call excludes non-UK individuals or rejects the fit at concept stage."
+      "hypothesis": "A public research funder paying for open-source agent requirement-capture tooling can carry Aimparency's operating costs for 1-2 years without a commercial product; refuted if ARIA's call excludes non-UK individuals or rejects the fit at concept stage.",
+      "reflection": "Not tested: dropped by Felix's decision to go fully open source without grant targeting (2026-11-09), before any application."
     }
   ],
   "supportedIdeas": [
@@ -186,7 +188,7 @@
   "committedIn": [],
   "status": {
     "state": "unclear",
-    "comment": "Felix 2026-10-16: neither entour.fyi nor Aimparency earns yet. NLnet, the last near-term money step, does not fit (28ddbcb0 cancelled: LLM-generated work is ineligible). The current direction is exposure, not money: plant Aimparency at Commons Hub. This mission waits on Felix's direction after that.",
+    "comment": "Felix 2026-10-16: neither entour.fyi nor Aimparency earns yet; the direction is exposure, not money (Commons Hub). Felix 2026-11-09: fully open source, hackathon and grant targeting dropped; the grant ideas under this mission were cancelled accordingly (1754d0d8, 4c027fd6, 26b7516b, a3f8bfcb, 826b4e21, 030805d1, 9d446f62, 8d174cd3). Kept, as not grant-specific: angel sprint b3866d9d, paid collaborations b42711f4, halted Q4 funding 80b53c24. Question for Felix: are investor and paid-collaboration paths (b3866d9d, b42711f4) still wanted, or does this mission wait purely on exposure?",
     "date": 1792137690644
   },
   "intrinsicValue": 0,

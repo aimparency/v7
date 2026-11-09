@@ -15,14 +15,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Draft preparation exists. Submission requires Felix to establish/confirm eligibility, create EU Login access, approve and record the pitch, and make representations through the EU Funding Portal.\n\nStatus reconciliation on 2026-07-30 converted the idea’s explicitly listed human actions into accurate state semantics. No credential-free autonomous submission step remains.",
-    "date": 1785399290576
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go.",
+    "date": 1794221826005
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

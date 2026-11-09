@@ -70,14 +70,14 @@
     "0e71547e-5d14-434f-957c-7ad2cd0b8de8"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Research and drafts are complete. Every remaining funding path requires founder eligibility/legal decisions, incorporation or credentials, outreach, and institutional submission.\n\nStatus reconciliation on 2026-07-30 found all five direct funding children human-dependent. The umbrella now reflects that gate.\n\nOutcome: Web search 2026-10-16. Best fit: the NLnet call (Open Internet Stack, successor of NGI Zero) closes 3 Nov 2026 12:00 CET. It funds open-source work by individuals in Europe with no institution needed; check which of its funds fits. Kulturstiftung des Bundes 'Kunst & KI': artistic engagement with AI; amounts and dates not found. Not fitting: Humanity AI (closes 21 Oct; US nonprofit must lead), AWS Agentic AI (closes 4 Nov; aimed at researchers under Amazon Research Award rules), Musikfonds STIP-6 (music only). Effectiveness: One realistic, near-term option (NLnet), without institutional overhead; the rest fail on eligibility. Lesson: For a solo open-source developer in Germany, NLnet is the natural fit: small grants, light process, open source as the whole requirement. Art funding needs an artistic framing, and Felix's credo might provide it.",
-    "date": 1785399345683
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go.",
+    "date": 1794221826441
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

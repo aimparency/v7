@@ -103,6 +103,15 @@
       "weight": 1,
       "hypothesis": "Without stored traces no harness change can be evaluated except by rerunning live, which is too slow and expensive to iterate on.",
       "reflection": "Held: the stage runner already had all the pieces, so a full trace per cycle cost one small module; it is now the data source for cost accounting and memory-usefulness measurement."
+    },
+    {
+      "ideaId": "2531df25-0426-47ad-ab89-5e3e28458504",
+      "relativePosition": [
+        -1.74,
+        3.32
+      ],
+      "weight": 1,
+      "hypothesis": "A run on a real graph exposes what the throwaway project and offline eval could not: context size, conflicting work in a shared repo, and verifier behaviour on real claims."
     }
   ],
   "supportedIdeas": [

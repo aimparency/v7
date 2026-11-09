@@ -1,0 +1,30 @@
+{
+  "id": "2531df25-0426-47ad-ab89-5e3e28458504",
+  "text": "First real run of the endless loop on Aimparency's own graph (aim B), with a cross-family verifier and human-gated decompositions",
+  "description": "Aim B (Felix 2026-11-09): let AI venture into the future in an endless loop with self-made hypotheses and ideas. The harness (5949b781) has run only on a throwaway project and an offline eval. This is the first run on v7 itself.\n\nREADINESS CHECK (2026-11-09, OBSERVED): .bowman/runtime/loops.json 'Default loop' = nvidia / z-ai/glm-5.3-flash, intervalSeconds 5, roles {} (so planner, executor, verifier and reflector are all glm: no cross-family verification), worktreePath null (it would edit the shared working tree where Felix and other agents commit), no .bowman/harness.json (defaults: executor builtin, decomposition.landingState open). secrets.json has NVIDIA_API_KEY only. The NVIDIA endpoint lists 84 models, including other families: deepseek-ai/deepseek-v4.1-flash, moonshotai/kimi-k2.6, mistralai/mistral-large-4-1t-a52b, nvidia/nemotron-3-super-120b-a12b, openai/gpt-oss-20b.\n\nPROPOSED CONFIG (not written):\n1. loops.json Default loop: roles.verifier = { provider: nvidia, model: deepseek-ai/deepseek-v4.1-flash }, roles.reflector the same; intervalSeconds 60; worktreePath = a separate git worktree of v7 (e.g. ../v7-loop on branch loop/main), merged by Felix or after verification.\n2. .bowman/harness.json: { decomposition: { landingState: 'ai-proposition', maxChildren: 5 }, budgets: { maxTokensPerCycle: 400000 } } so strategy-level children wait for Felix (5e431a84) while leaves under accepted ideas run.\n3. Stop rule for the first run: 10 cycles or 24 h, whichever first; then read traces (.bowman/runtime/loop-instances/<id>/), count verified/failed/unverifiable verdicts and ai-propositions created, and record them here.\n\nSuccess: at least one leaf verified by the cross-family verifier and committed with evidence; no edits outside the worktree; every created child carries a hypothesis. Refuted (for now) if most verdicts are unverifiable or the verifier rubber-stamps (accepts a deliberately broken claim in a spot check).",
+  "archived": false,
+  "color": "#2d4d66",
+  "tags": [
+    "loop",
+    "aim-b",
+    "experiment",
+    "human-action"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143",
+    "5949b781-3f96-4028-a7bc-7d04f9226f9d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "human-dependent",
+    "comment": "Prepared (config, checklist, stop rule in the description). Felix: say 'go' (I write the config, create the worktree and you press Start in the Loop panel), or change any of: verifier model, worktree vs shared tree, landingState.",
+    "date": 1794221786777
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -17,14 +17,14 @@
     "2cb2e798-c679-489e-b168-8c02c89f78cd"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Requires Felix outreach and interviews; the agent can prepare scripts and synthesize notes.\n\nOutcome: Prepared meta/applications/prototype-fund-2026/user-research-kit.md and user-research-tracker.csv: a neutral invitation, 11 event-focused interview questions, separate consent prompts, evidence-strength rubric, negative-evidence rule, synthesis protocol, five blank participant rows, and a non-binding pilot commitment template. Effectiveness: Preparation friction is removed without fabricating interviews, quotes, demand, or pilot commitments. The tracker has 18 consistent columns and git diff --check passes. Lesson: The autonomous loop can prepare the institutional interface, but externally valid evidence begins only when a real person agrees, speaks, and grants the relevant permissions.",
-    "date": 1784390978105
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go.",
+    "date": 1794221826146
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

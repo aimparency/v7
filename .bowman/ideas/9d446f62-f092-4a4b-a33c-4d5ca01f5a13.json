@@ -14,14 +14,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Felix must decide timing, Berlin versus Bavaria, ownership/Robin's role, and obtain legal/tax advice after checking individual-grant compatibility.",
-    "date": 1782854152141
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go; grant eligibility no longer constrains company timing.",
+    "date": 1794221826288
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

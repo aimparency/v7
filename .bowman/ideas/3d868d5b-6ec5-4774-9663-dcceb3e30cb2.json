@@ -311,7 +311,8 @@
         1
       ],
       "weight": 1,
-      "hypothesis": "ARIA names 'requirement capture' and 'users' preferences' as missing agent infrastructure, which is the cooperation engine's core claim stated by an outside funder; a reviewer's response tests whether outsiders see the idea graph that way."
+      "hypothesis": "ARIA names 'requirement capture' and 'users' preferences' as missing agent infrastructure, which is the cooperation engine's core claim stated by an outside funder; a reviewer's response tests whether outsiders see the idea graph that way.",
+      "reflection": "Not tested by a reviewer. What remains: an outside funder independently named intent/requirement elicitation for agents as missing infrastructure, which supports aim A as a direction; the elicitation idea bcc9755a carries it on without the grant."
     },
     {
       "ideaId": "bcc9755a-6a1f-4a76-8a10-f1402893b037",

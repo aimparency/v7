@@ -15,14 +15,14 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Blocked on the founder's Berlin-versus-Bavaria company-location decision; if Berlin is chosen, Felix must request the official IBB qualification call.",
-    "date": 1784745151315
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-09: Felix — fully open source now, temporary targeting of hackathons and grants can go.",
+    "date": 1794221826210
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }
