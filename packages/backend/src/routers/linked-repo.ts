@@ -3,6 +3,7 @@ import fs from 'fs-extra';
 import { LinkedRepoSchema } from 'shared';
 import type { LinkedRepo, LinkedRepoLocal } from 'shared';
 import { t, delayedProcedure } from '../trpc.js';
+import { seesServerPaths } from '../auth/access.js';
 import { resolveBowmanPath } from '../path-completion.js';
 import { readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { readLinkedRepoRegistry, writeLinkedRepoRegistry, resolveLinkedRepoLocalPath } from '../storage/linked-repos.js';
@@ -21,7 +22,8 @@ export const linkedRepoRouter = t.router({
   list: delayedProcedure
     .input(z.object({ projectPath: z.string() }))
     .output(z.array(LinkedRepoStatusSchema))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
+      const showPaths = seesServerPaths(ctx.viewer);
       const meta = await readProjectMeta(input.projectPath);
       const registry = await readLinkedRepoRegistry(input.projectPath);
       const localById = new Map(registry.map((r) => [r.repoId, r]));
@@ -29,7 +31,7 @@ export const linkedRepoRouter = t.router({
         const local = localById.get(link.repoId);
         return {
           ...link,
-          localPath: local?.localPath,
+          localPath: showPaths ? local?.localPath : undefined,
           access: local?.access,
           resolved: !!local, // false ⇒ linked but not checked out here
         };
@@ -102,10 +104,10 @@ export const linkedRepoRouter = t.router({
       localPath: z.string().optional(),
       resolved: z.boolean(),
     }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       const meta = await readProjectMeta(input.projectPath);
       const link = (meta.linkedRepos ?? []).find((l) => l.repoId === input.repoId);
       const localPath = await resolveLinkedRepoLocalPath(input.projectPath, input.repoId);
-      return { repoId: input.repoId, name: link?.name, localPath: localPath ?? undefined, resolved: !!localPath };
+      return { repoId: input.repoId, name: link?.name, localPath: (seesServerPaths(ctx.viewer) && localPath) || undefined, resolved: !!localPath };
     }),
 });

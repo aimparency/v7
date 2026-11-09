@@ -3,12 +3,18 @@ import { assertWritableBowman } from 'shared/bowman-migration';
 import { t, delayedProcedure } from '../trpc.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { commitPaths, readWorkingTreeStatus } from '../git-working-tree.js';
+import { seesServerPaths } from '../auth/access.js';
 
 // The project's .bowman as part of its repository's working tree.
 export const gitRouter = t.router({
   status: delayedProcedure
     .input(z.object({ projectPath: z.string() }))
-    .query(({ input }) => readWorkingTreeStatus(normalizeProjectPath(input.projectPath))),
+    .query(async ({ ctx, input }) => {
+      const status = await readWorkingTreeStatus(normalizeProjectPath(input.projectPath));
+      if (!status.isRepository || seesServerPaths(ctx.viewer)) return status;
+      const { repositoryPath: _hidden, ...rest } = status;
+      return rest;
+    }),
 
   commit: delayedProcedure
     .input(z.object({ projectPath: z.string(), paths: z.array(z.string()), message: z.string() }))

@@ -49,6 +49,12 @@ export function neededRole(path: string, type: string): Need {
 
 export type Viewer = { name: string | null; role: Role };
 
+// Where things live on the server is the operator's business: hosted, only
+// admins see filesystem paths.
+export function seesServerPaths(viewer: Viewer | undefined): boolean {
+  return !hostedProject() || viewer?.role === 'admin';
+}
+
 export async function viewerFor(token: string | undefined): Promise<Viewer> {
   const project = hostedProject();
   if (!project) return { name: null, role: 'admin' };
