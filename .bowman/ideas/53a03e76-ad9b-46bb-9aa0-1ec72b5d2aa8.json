@@ -1,0 +1,24 @@
+{
+  "id": "53a03e76-ad9b-46bb-9aa0-1ec72b5d2aa8",
+  "text": "Per-user git worktrees for hosted write accounts",
+  "description": "Felix 2026-11-10. On a hosted instance (Commons Hub), each write/admin account edits in its own git worktree (branch aimparency/<name>, sharing one .git) instead of the shared checkout. Guests read the shared main. No commit per action: people commit when they choose (CommitModal; git.commit needs write on one's own worktree). The UI hints when main moved ahead (\"3 new commits from Anna, pull?\") and warns when someone else already edited the same idea. Commits carry the account's author name and email; one server deploy key pushes for everyone (authorship is vouched for by the server login, not proven). The application admin is responsible for trusting write users. Write access must never allow terminal or agent spawning; keep that very secure. Prompt injection stays a risk to keep in mind: text written by write users is read by agents. Replaces af701cd6's 'an admin commits the shared checkout by hand'.",
+  "archived": false,
+  "color": "#612828",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "af701cd6-7c9d-4991-996b-e38d5e1c9dc7"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Open questions for Felix (2026-11-10), with defaults proposed: (1) Who merges into the shared main: write users their own branch (default) or an admin, PR-style? (2) Does 'someone else already edited' include other people's uncommitted worktree edits (live hint, default: yes, as a soft hint) or only commits on main? (3) Conflicts: per-field merge of idea JSON with a theirs/mine choice when the same field changed (default) or block with 'pull first'? (4) Push to the remote: an admin (default) or the server after each merge? (5) Hosted only for now (default)? Also undecided (57286a32): whether enterprise deployments should keep data in a database with users, with git only as backup.",
+    "date": 1794350800996
+  },
+  "intrinsicValue": 0,
+  "cost": 40,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

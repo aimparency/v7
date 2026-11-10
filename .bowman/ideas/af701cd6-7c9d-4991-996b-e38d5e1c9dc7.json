@@ -25,6 +25,15 @@
       "weight": 0.5,
       "hypothesis": "Admins can run agents on the shared graph from the browser, without an SSH session.",
       "reflection": "Possible now (with AIMPARENCY_AGENTS on), untested on the real server; the agents' own Aimparency MCP there still needs the hosted endpoint and a token."
+    },
+    {
+      "ideaId": "53a03e76-ad9b-46bb-9aa0-1ec72b5d2aa8",
+      "relativePosition": [
+        -3.7,
+        -0.6
+      ],
+      "weight": 1,
+      "hypothesis": "Own worktrees let several editors work at once without blocking the remote pull, and git shows who changed what"
     }
   ],
   "supportedIdeas": [

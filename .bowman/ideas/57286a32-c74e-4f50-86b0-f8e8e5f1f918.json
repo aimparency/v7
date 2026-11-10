@@ -11,13 +11,13 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Requires human discussion about architecture strategy",
+    "comment": "Felix 2026-11-10: git works very well for open-source projects, but enterprise deployments might need a non-git store: a database with users, with git only for backups. Not decided; came up while designing per-user worktrees for hosted write accounts. Needs a discussion when Felix is rested.",
     "date": 1774590259916
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }
