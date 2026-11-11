@@ -13,6 +13,7 @@ import { bowmanExists, completeDirectoryPath, resolveBowmanPath } from '../path-
 import { onChange, type ChangeEvent } from '../change-events.js';
 import { writeJsonAtomic } from '../storage/json.js';
 import { normalizeProjectPath } from '../project-path.js';
+import { hostedReadOnly, HOSTED_READ_ONLY_MESSAGE } from '../auth/access.js';
 import { openGitRepository } from '../git-repository-cache.js';
 import { ensureProjectStructure, readProjectMeta, updateProjectMeta } from '../storage/project.js';
 import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
@@ -119,7 +120,7 @@ export const projectRouter = t.router({
     .query(async ({ ctx, input }) => {
       const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
       const viewer = ctx.viewer ?? { name: null, role: 'admin' as const };
-      const reason = blocker?.message ?? (roleAtLeast(viewer.role, 'write') ? null
+      const reason = blocker?.message ?? (hostedReadOnly() ? HOSTED_READ_ONLY_MESSAGE : null) ?? (roleAtLeast(viewer.role, 'write') ? null
         : viewer.name ? `This project is open read-only for ${viewer.name}: ask an admin for write access.`
         : 'This project is open read-only here: log in to edit.');
       return { writable: reason === null, reason, user: viewer.name, role: viewer.role };

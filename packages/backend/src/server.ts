@@ -25,7 +25,7 @@ import { gitRouter } from './routers/git.js';
 import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { hostedProject } from './auth/access.js';
+import { hostedProject, hostedReadOnly } from './auth/access.js';
 
 const appRouter = t.router({
   idea: ideaRouter,
@@ -86,7 +86,7 @@ function startHostedServer(project: string) {
       res.writeHead(503, { 'content-type': 'text/plain' });
       res.end('The UI is not built: run `pnpm start` (it builds) or `pnpm build`.');
     };
-  const runtimeConfig = JSON.stringify({ sameOrigin: true, hosted: true, project, voiceEnabled: false });
+  const runtimeConfig = () => JSON.stringify({ sameOrigin: true, hosted: true, readOnly: hostedReadOnly(), project, voiceEnabled: false });
 
   const server = http.createServer((req, res) => {
     const url = req.url ?? '/';
@@ -94,7 +94,7 @@ function startHostedServer(project: string) {
     if (url.startsWith('/mcp/')) return proxy(req, res, mcpPort);
     if (url.startsWith('/runtime-config.json')) {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      return res.end(runtimeConfig);
+      return res.end(runtimeConfig());
     }
     serveFrontend(req, res);
   });

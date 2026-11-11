@@ -10,6 +10,8 @@ const DEFAULT_RUNTIME_CONFIG = {
   voiceEnabled: env.VITE_ENABLE_VOICE === 'true',
   // A hosted instance (one project, accounts) serves everything on its own origin.
   hosted: false,
+  // Hosted and read-only: the project changes through Git only, there is no login.
+  readOnly: false,
   project: '',
 }
 
@@ -76,6 +78,7 @@ function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
     processStartPort: readPort(value.processStartPort, DEFAULT_RUNTIME_CONFIG.processStartPort),
     voiceEnabled: readBoolean(value.voiceEnabled, DEFAULT_RUNTIME_CONFIG.voiceEnabled),
     hosted: readBoolean(value.hosted, false),
+    readOnly: readBoolean(value.readOnly, false),
     project: typeof value.project === 'string' ? value.project : '',
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : undefined,
   }

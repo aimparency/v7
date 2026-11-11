@@ -107,6 +107,8 @@ const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas
 const showIdeaProposalEntry = ref(false)
 // A hosted instance serves one project to many people: no agents, loops or project switching.
 const hosted = getRuntimeConfig().hosted
+// Read-only hosted: the project changes through Git only, so there is no login.
+const hostedReadOnly = getRuntimeConfig().readOnly
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
@@ -709,7 +711,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <LoginControl v-if="hosted" />
+        <LoginControl v-if="hosted && !hostedReadOnly" />
         <a v-else @click="closeProject" class="close-project">Switch Project</a>
       </div>
     </header>
