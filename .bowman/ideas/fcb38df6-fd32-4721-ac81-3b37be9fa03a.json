@@ -40,7 +40,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Accepted by Felix as direction on 2026-11-11; not designed or built. Needed in the data model, for a repository and for a URL alike: a list of people (humans and agents) in .bowman, an owner on each idea, a connection as offer (pitch, on the proposer's side) plus acceptance (weight, on the benefiting owner's side), and an actor on live activity. Today the hypothesis sits on the parent's side, a one-sided connection counts as an inconsistency, and live activity has no actor. Where a repository and a URL differ: identity is the commit author vs. a login; the owner rule can only be checked after the fact vs. refused at write time; live presence and immediate sync need a shared server.",
+    "comment": "Corrected by Felix 2026-11-11 (later): not accepted for both ways. Owners need permissions, so the owner model is probably necessary for any hosted version; in a repository, git and pull requests take that role. Not designed or built. Felix's sketch for hosted: guests are users without special rights; anyone can offer to work on an idea (or set it, with manage or write rights) and propose ideas that the benefiting idea's owner accepts; levels per idea: owner, manager, write, perhaps read or hidden ideas, which he notes goes against transparency. Missing in the code today: owner on ideas, a connection as offer plus acceptance, an actor on live activity.",
     "date": 1794401425834
   },
   "intrinsicValue": 0,

@@ -11,7 +11,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Felix 2026-11-11: accepted \"put the person into the idea\" (fcb38df6), which moves the question of who may change what out of storage and into the data model. He wants to keep both the repository-based way and a hosted URL. Still undecided: what a hosted instance stores its graph in (a repository or a database), whether any part gets a proprietary license, and whether per-user worktrees (53a03e76) are still needed once ideas have owners.",
+    "comment": "Felix 2026-11-11 (later): his doubt about two storage engines is that different capabilities lead to different features in the UI. Clean would be the same UI on different engines; it is not clean if proposing exists only on the hosted one. Enforcing a write hierarchy through git (signed commits, merge gate) felt cumbersome to him; he leans to git as is for open source and a hosted version with proper access management, where owners (fcb38df6) are probably necessary. Still undecided: whether the two may differ in features and how, what a hosted instance stores its graph in, whether any part gets a proprietary license, whether ideas can be hidden, and whether per-user worktrees (53a03e76) are still needed.",
     "date": 1774590259916
   },
   "intrinsicValue": 0,
