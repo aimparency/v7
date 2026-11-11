@@ -1,0 +1,24 @@
+{
+  "id": "698badcb-8f36-4393-a241-f74de65805f8",
+  "text": "Enforce idea permissions on the GitHub remote: required check on pull requests",
+  "description": "Felix 2026-11-11: constraints such as who is allowed to edit an idea could be enforced on the GitHub side, on the remote repository. People can still run Aimparency for themselves; if they want the permission system enforced, they do it this way. The UI allows an action only if the permissions are fine, and a GitHub App enforces that permissions were not exceeded.\n\nChecked against GitHub's documentation (2026-11-11):\n- github.com cannot run custom code at push time; pre-receive hooks exist only on GitHub Enterprise Server. A push cannot be rejected by a rule like \"this person may not edit this idea\".\n- Push rules (restrict file paths) are not per person, hold at most 200 entries and apply only to private and internal repositories.\n- What works: a ruleset on main that requires a pull request and a status check, with a specific GitHub App selected as the only accepted source of that check. The app compares the idea files a pull request changes with the author's rights and reports pass or fail.\n- Bypass list of a ruleset: roles, teams, GitHub Apps; so a hosted Aimparency acting as the app, and repository admins, can keep pushing directly.\n- CODEOWNERS with \"require review from code owners\" is a built-in form of \"the owner must approve\", per file, for people or teams with write access; file under 3 MB. It knows no manager or write levels.\n\nRequirement that follows: the check must read owners and levels from the target branch, not from the pull request, or people could grant themselves rights in the same change.",
+  "archived": false,
+  "color": "#572861",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "fcb38df6-fd32-4721-ac81-3b37be9fa03a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Explored on 2026-11-11, not decided. Feasible on github.com as a required pull-request check from a GitHub App; not feasible as a rejection of direct pushes. Depends on fcb38df6 (owners and levels stored in the idea files). Not checked: which GitHub plans allow rulesets on private repositories.",
+    "date": 1794421442262
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

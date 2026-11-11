@@ -32,6 +32,15 @@
       ],
       "weight": 1,
       "hypothesis": "An identity that is only a key in git works the same for a hosted URL and for signed commits."
+    },
+    {
+      "ideaId": "698badcb-8f36-4393-a241-f74de65805f8",
+      "relativePosition": [
+        -1.06,
+        3.6
+      ],
+      "weight": 1,
+      "hypothesis": "A required check on the remote gives a repository the same enforced owner rule as a hosted instance, so both ways can show the same people features in the UI."
     }
   ],
   "supportedIdeas": [
