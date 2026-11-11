@@ -6,6 +6,8 @@ import { normalizeProjectPath } from './project-path.js';
 
 // Who touched which idea lately, in memory only: a restart starts dark.
 const activityByProject = new Map<string, Map<string, IdeaActivity>>();
+// Anyone may report reads on a hosted instance: keep only the latest ideas.
+const MAX_IDEAS_PER_PROJECT = 20_000;
 const emitter = new EventEmitter();
 
 export function recordIdeaAccess(rawProjectPath: string, ideaIds: string[], kind: IdeaAccessKind, at = Date.now()): void {
@@ -13,7 +15,15 @@ export function recordIdeaAccess(rawProjectPath: string, ideaIds: string[], kind
   const projectPath = normalizeProjectPath(rawProjectPath);
   let activity = activityByProject.get(projectPath);
   if (!activity) activityByProject.set(projectPath, activity = new Map());
-  for (const ideaId of ideaIds) activity.set(ideaId, { ...activity.get(ideaId), [kind]: at });
+  for (const ideaId of ideaIds) {
+    const previous = activity.get(ideaId);
+    activity.delete(ideaId); // re-inserted last: the Map stays ordered oldest first
+    activity.set(ideaId, { ...previous, [kind]: at });
+  }
+  for (const oldest of activity.keys()) {
+    if (activity.size <= MAX_IDEAS_PER_PROJECT) break;
+    activity.delete(oldest);
+  }
   emitter.emit('access', { projectPath, ideaIds, kind, at } satisfies IdeaActivityEvent);
 }
 

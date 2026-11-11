@@ -71,3 +71,13 @@ test('a bearer token writes, no token only reads', async () => {
 test('the WebSocket carries the token in its connection params', () => {
   assert.equal(createContext({ info: { connectionParams: { clientId: 'tab', token: 'secret' } } }).token, 'secret');
 });
+
+test('errors carry no server stack trace', async () => {
+  const refused = await call('idea.createFloatingIdea', { projectPath: root, idea: { text: 'Anonymous' } });
+  assert.equal(refused.status, 403);
+  assert.equal(refused.body.error.data.stack, undefined);
+  const input = encodeURIComponent(JSON.stringify({ projectPath: root, phaseId: '../meta' }));
+  const invalid = await fetch(`${base}/trpc/phase.get?input=${input}`);
+  assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json() as any).error.data.stack, undefined);
+});

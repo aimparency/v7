@@ -12,7 +12,7 @@ export const activityRouter = t.router({
   record: delayedProcedure
     .input(z.object({
       projectPath: z.string(),
-      ideaIds: z.array(z.string()).max(5000),
+      ideaIds: z.array(z.string().uuid()).max(5000),
       kind: accessKind
     }))
     .mutation(({ input }) => {

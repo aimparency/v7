@@ -18,6 +18,17 @@ describe('idea activity', () => {
     expect(events).toHaveLength(2);
   });
 
+  it('keeps only the most recently touched ideas', () => {
+    const ids = Array.from({ length: 20_005 }, (_, index) => `idea-${index}`);
+    recordIdeaAccess('/tmp/activity-bounded', ids, 'found', 1000);
+    recordIdeaAccess('/tmp/activity-bounded', ['idea-0'], 'read', 2000);
+    const snapshot = ideaActivitySnapshot('/tmp/activity-bounded');
+    expect(Object.keys(snapshot)).toHaveLength(20_000);
+    expect(snapshot['idea-0']).toEqual({ read: 2000 }); // evicted, then recorded anew
+    expect(snapshot['idea-5']).toBeUndefined();
+    expect(snapshot['idea-20004']).toEqual({ found: 1000 });
+  });
+
   it('tells agent writes, agent status changes and manual edits apart', () => {
     const open = { status: { state: 'open' } };
     expect(ideaChangeAccessKind(undefined, open, { ...open, text: 'x' })).toBe('write');

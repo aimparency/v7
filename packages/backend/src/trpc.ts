@@ -1,7 +1,7 @@
 import { initTRPC } from '@trpc/server';
 import type { IncomingMessage } from 'node:http';
 import { runWithOrigin } from './change-origin.js';
-import { assertAllowed, viewerFor, type Viewer } from './auth/access.js';
+import { assertAllowed, hostedProject, viewerFor, type Viewer } from './auth/access.js';
 
 export type Context = { clientId?: string; token?: string; viewer?: Viewer };
 
@@ -20,7 +20,10 @@ export const createContext = (opts?: ContextOptions): Context => {
   };
 };
 
-export const t = initTRPC.context<Context>().create();
+export const t = initTRPC.context<Context>().create({
+  // Hosted, errors go to strangers: no server stack traces in them.
+  errorFormatter: ({ shape }) => hostedProject() ? { ...shape, data: { ...shape.data, stack: undefined } } : shape
+});
 
 const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, next }) => {
   const viewer = await viewerFor(ctx.token);
