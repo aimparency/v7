@@ -1,0 +1,24 @@
+{
+  "id": "fcb38df6-fd32-4721-ac81-3b37be9fa03a",
+  "text": "Put the person into the idea: owners, offers and acceptance",
+  "description": "Felix 2026-11-11, decided as direction:\n- Every idea has an owner. Owners are people and also non-human agents, which get an identity of their own.\n- Everyone can propose ideas.\n- To connect an idea to another one, the owner of the idea that allegedly benefits has to accept.\n- The hypothesis of a connection becomes the proposer's pitch.\n- It should be possible to work on another person's idea (tentative: \"maybe\"); it shows as \"A is working on that\".\n- Agents are shown on the ideas they work on while they work.\n- The MCP connects to one URL; one URL runs one project.\n- Wanted: keep the repository-based way as well (open-source spirit, ideas tracked with code changes in the same repo).\n\nEarlier, related: db47e131 (2026-10-16) derives \"Worked on by\" from git authors and co-authors, and already noted that any git user could change an owner field.",
+  "archived": false,
+  "color": "#642d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Accepted by Felix as direction on 2026-11-11; not designed or built. Needed in the data model, for a repository and for a URL alike: a list of people (humans and agents) in .bowman, an owner on each idea, a connection as offer (pitch, on the proposer's side) plus acceptance (weight, on the benefiting owner's side), and an actor on live activity. Today the hypothesis sits on the parent's side, a one-sided connection counts as an inconsistency, and live activity has no actor. Where a repository and a URL differ: identity is the commit author vs. a login; the owner rule can only be checked after the fact vs. refused at write time; live presence and immediate sync need a shared server.",
+    "date": 1794401425834
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

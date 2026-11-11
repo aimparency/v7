@@ -6,7 +6,7 @@ Aimparency is an open-source, local-first interface for communicating human inte
 
 Aimparency pursues two aims.
 
-1. **An interface for human intention.** People state what they want as ideas. A connection says how one idea serves another and carries a hypothesis that can turn out wrong. Value flows down the graph, so priorities follow from what people care about rather than from a schedule. AI systems read the graph to know what matters and why. They propose new ideas, which wait for a human to accept them, and they report back with evidence. The human stays the final authority.
+1. **An interface for human intention.** People state what they want as ideas. A connection says how one idea serves another and carries a hypothesis that can turn out wrong. Value flows down the graph, so priorities follow from what people care about rather than from a schedule. AI systems read the graph to know what matters and why. They propose new ideas, which wait for a human to accept them, and they report back with evidence.
 2. **An open-ended experiment.** Let AI venture into the future in an endless loop: pick the most valuable idea, break it down, work on it, verify the result, reflect on whether the hypotheses held, and form new hypotheses and ideas of its own. The graph is the loop's memory and the record of the experiment.
 
 Git is a large part of why this works:

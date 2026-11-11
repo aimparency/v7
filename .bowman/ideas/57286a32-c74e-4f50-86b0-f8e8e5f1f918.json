@@ -11,7 +11,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Felix 2026-11-11: undecided. Considered two storage engines behind one interface (open git engine for open-source and local use; proprietary, paid hosted engine without commit logic for organizations), then found it still feels like a compromise, as did server-side commits per person and per-user worktrees (53a03e76). Under discussion, proposed by Claude and not accepted: give every idea a holder (you change what is yours and can only attach to the rest), so that authority lives in the model and storage becomes a detail.",
+    "comment": "Felix 2026-11-11: accepted \"put the person into the idea\" (fcb38df6), which moves the question of who may change what out of storage and into the data model. He wants to keep both the repository-based way and a hosted URL. Still undecided: what a hosted instance stores its graph in (a repository or a database), whether any part gets a proprietary license, and whether per-user worktrees (53a03e76) are still needed once ideas have owners.",
     "date": 1774590259916
   },
   "intrinsicValue": 0,
