@@ -46,7 +46,7 @@ const call = async (procedure: string, input: unknown, token?: string) => {
 
 test('one port serves the runtime config, the API and the MCP proxy', async () => {
   const config = await (await fetch(`${base}/runtime-config.json`)).json();
-  assert.deepEqual(config, { sameOrigin: true, hosted: true, agents: false, project: path.join(root, '.bowman'), voiceEnabled: false });
+  assert.deepEqual(config, { sameOrigin: true, hosted: true, readOnly: false, agents: false, project: path.join(root, '.bowman'), voiceEnabled: false });
 
   const me = await (await fetch(`${base}/trpc/auth.me`)).json() as any;
   assert.equal(me.result.data.hosted, true);
@@ -70,4 +70,41 @@ test('a bearer token writes, no token only reads', async () => {
 
 test('the WebSocket carries the token in its connection params', () => {
   assert.equal(createContext({ info: { connectionParams: { clientId: 'tab', token: 'secret' } } }).token, 'secret');
+});
+
+test('errors carry no server stack trace', async () => {
+  const refused = await call('idea.createFloatingIdea', { projectPath: root, idea: { text: 'Anonymous' } });
+  assert.equal(refused.status, 403);
+  assert.equal(refused.body.error.data.stack, undefined);
+  const input = encodeURIComponent(JSON.stringify({ projectPath: root, phaseId: '../meta' }));
+  const invalid = await fetch(`${base}/trpc/phase.get?input=${input}`);
+  assert.equal(invalid.status, 400);
+  assert.equal((await invalid.json() as any).error.data.stack, undefined);
+});
+
+test('read-only: nobody writes, not even an admin, and the UI is told', async () => {
+  process.env.AIMPARENCY_READ_ONLY = 'true';
+  try {
+    await accounts.createUser(root, 'boss', 'admin', 'boss password');
+    const config = await (await fetch(`${base}/runtime-config.json`)).json() as any;
+    assert.equal(config.readOnly, true);
+    const { body: login } = await call('auth.login', { name: 'boss', password: 'boss password' });
+    const token = login.result.data.token;
+    for (const [procedure, input] of [
+      ['idea.createFloatingIdea', { projectPath: root, idea: { text: 'Edit' } }],
+      ['history.restore', { projectPath: root, changes: [] }],
+      ['auth.createUser', { name: 'friend', role: 'write', password: 'friend password' }]
+    ] as const) {
+      const refused = await call(procedure, input, token);
+      assert.equal(refused.status, 403, procedure);
+      assert.match(refused.body.error.message, /open read-only here: it changes through its Git repository/);
+    }
+    const input = encodeURIComponent(JSON.stringify({ projectPath: root }));
+    const access = await (await fetch(`${base}/trpc/project.getAccess?input=${input}`)).json() as any;
+    assert.equal(access.result.data.writable, false);
+    const ideas = await (await fetch(`${base}/trpc/idea.list?input=${input}`)).json() as any;
+    assert.ok(Array.isArray(ideas.result.data));
+  } finally {
+    delete process.env.AIMPARENCY_READ_ONLY;
+  }
 });

@@ -114,6 +114,8 @@ const showIdeaProposalEntry = ref(false)
 const hosted = getRuntimeConfig().hosted
 const agentsAllowed = computed(() =>
   !hosted || (getRuntimeConfig().agents && dataStore.access.user !== null && dataStore.access.role === 'admin'))
+// Read-only hosted: the project changes through Git only, so there is no login.
+const hostedReadOnly = getRuntimeConfig().readOnly
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
@@ -688,7 +690,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <LoginControl v-if="hosted" />
+        <LoginControl v-if="hosted && !hostedReadOnly" />
         <a v-else @click="closeProject" class="close-project">Switch Project</a>
       </div>
     </header>

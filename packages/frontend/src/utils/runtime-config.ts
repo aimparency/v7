@@ -12,6 +12,8 @@ const DEFAULT_RUNTIME_CONFIG = {
   hosted: false,
   // Hosted: admins may run wrapped agents (a shell on the server).
   agents: false,
+  // Hosted and read-only: the project changes through Git only, there is no login.
+  readOnly: false,
   project: '',
 }
 
@@ -79,6 +81,7 @@ function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
     voiceEnabled: readBoolean(value.voiceEnabled, DEFAULT_RUNTIME_CONFIG.voiceEnabled),
     hosted: readBoolean(value.hosted, false),
     agents: readBoolean(value.agents, false),
+    readOnly: readBoolean(value.readOnly, false),
     project: typeof value.project === 'string' ? value.project : '',
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : undefined,
   }

@@ -25,7 +25,7 @@ import { gitRouter } from './routers/git.js';
 import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { hostedAgents, hostedProject } from './auth/access.js';
+import { hostedAgents, hostedProject, hostedReadOnly } from './auth/access.js';
 import { followGitRemote } from './hosted-git-sync.js';
 import { agentRoute, isAdminRequest, issueAgentCookie, proxyAgentRequest, proxyAgentUpgrade, refuseUpgrade } from './hosted-agent-gateway.js';
 import { isAllowedClientOrigin, resolveBindHost } from 'shared';
@@ -106,7 +106,7 @@ function startHostedServer(project: string) {
     brokerWs: parseInt(process.env.PORT_BROKER_WS || '5001'),
     processStart: parseInt(process.env.PORT_PROCESS_START || '7000'),
   };
-  const runtimeConfig = JSON.stringify({ sameOrigin: true, hosted: true, agents, project, voiceEnabled: false });
+  const runtimeConfig = () => JSON.stringify({ sameOrigin: true, hosted: true, readOnly: hostedReadOnly(), agents, project, voiceEnabled: false });
 
   const server = http.createServer(async (req, res) => {
     const url = req.url ?? '/';
@@ -121,7 +121,7 @@ function startHostedServer(project: string) {
     if (url.startsWith('/mcp/')) return proxy(req, res, mcpPort);
     if (url.startsWith('/runtime-config.json')) {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
-      return res.end(runtimeConfig);
+      return res.end(runtimeConfig());
     }
     serveFrontend(req, res);
   });

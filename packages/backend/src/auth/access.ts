@@ -19,6 +19,15 @@ export function hostedAgents(): boolean {
   return process.env.AIMPARENCY_AGENTS === 'true';
 }
 
+// AIMPARENCY_READ_ONLY=true: the hosted project only changes through its Git
+// repository (pushed elsewhere, pulled here); nobody edits it on this server.
+export function hostedReadOnly(): boolean {
+  return hostedProject() !== null && process.env.AIMPARENCY_READ_ONLY === 'true';
+}
+
+// Keeps "open read-only", which the UI already recognises as "editing is off here".
+export const HOSTED_READ_ONLY_MESSAGE = 'This project is open read-only here: it changes through its Git repository.';
+
 // Agents, loops and server paths: things a shared server must not hand out.
 // The watchdog's runtime state goes to admins when agents are on.
 const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'system', 'voice', 'market', 'spinOff']);
@@ -70,6 +79,9 @@ export function assertAllowed(path: string, type: string, viewer: Viewer, input:
   const need = neededRole(path, type);
   if (need === 'local') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is not available on a hosted instance.` });
+  }
+  if (hostedReadOnly() && type === 'mutation' && need !== 'read') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: HOSTED_READ_ONLY_MESSAGE });
   }
   const projectPath = (input as { projectPath?: unknown } | undefined)?.projectPath;
   if (typeof projectPath === 'string' && normalizeProjectPath(projectPath) !== project) {

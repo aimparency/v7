@@ -22,7 +22,12 @@ const EntityChangeSchema = z.object({
   expected: z.any().nullable(),
   // ...and the content to write (null: delete it).
   target: z.any().nullable()
-});
+}).refine(
+  // The id names the file to read, write or delete: an idea or phase id must be
+  // a UUID, so it cannot point outside the project (../../...).
+  (change) => change.type === 'project' || z.string().uuid().safeParse(change.id).success,
+  { message: 'An idea or phase id is a UUID', path: ['id'] }
+);
 
 type EntityChange = z.infer<typeof EntityChangeSchema>;
 

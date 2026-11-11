@@ -59,6 +59,8 @@ function scheduleSave(projectPath: string): void {
 process.once('exit', () => {
   for (const projectPath of [...pendingSaves.keys()]) flush(projectPath);
 });
+// Anyone may report reads on a hosted instance: keep only the latest ideas.
+const MAX_IDEAS_PER_PROJECT = 20_000;
 const emitter = new EventEmitter();
 // Numbers every access, so clients can merge a snapshot with live events
 // without counting an access twice (activity adds up, see shared/idea-activity).
@@ -68,7 +70,15 @@ export function recordIdeaAccess(rawProjectPath: string, ideaIds: string[], kind
   if (ideaIds.length === 0) return;
   const projectPath = normalizeProjectPath(rawProjectPath);
   const activity = projectActivity(projectPath);
-  for (const ideaId of ideaIds) activity.set(ideaId, addAccess(activity.get(ideaId), kind, at));
+  for (const ideaId of ideaIds) {
+    const previous = activity.get(ideaId);
+    activity.delete(ideaId); // re-inserted last: the Map stays ordered oldest first
+    activity.set(ideaId, addAccess(previous, kind, at));
+  }
+  for (const oldest of activity.keys()) {
+    if (activity.size <= MAX_IDEAS_PER_PROJECT) break;
+    activity.delete(oldest);
+  }
   scheduleSave(projectPath);
   emitter.emit('access', { projectPath, ideaIds, kind, at, seq: ++seq } satisfies IdeaActivityEvent);
 }

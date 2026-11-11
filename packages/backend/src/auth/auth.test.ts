@@ -115,3 +115,25 @@ test('the wrapped agents write as their own account, and each start replaces the
   assert.ok(created);
   await assert.rejects(as(second).auth.createUser({ name: 'x', role: 'admin', password: 'long enough pw' }), /admins only/);
 });
+
+test('a writer cannot reach files outside the project through history.restore', async () => {
+  await accounts.createUser(projectPath, 'writer', 'write', 'writer password');
+  host();
+  const { token } = await as().auth.login({ name: 'writer', password: 'writer password' });
+  const outside = path.join(root, 'outside.json');
+  await fs.writeJson(outside, { keep: true });
+  await assert.rejects(as(token).history.restore({
+    projectPath,
+    changes: [{ type: 'idea', id: '../../outside', expected: { keep: true }, target: null }]
+  }), /UUID/);
+  assert.deepEqual(await fs.readJson(outside), { keep: true });
+});
+
+test('wrong passwords for one name pause its logins', async () => {
+  await accounts.createUser(projectPath, 'target', 'admin', 'the right password');
+  host();
+  const guesses = Array.from({ length: 10 }, (_, index) =>
+    assert.rejects(as().auth.login({ name: 'target', password: `guess ${index}` }), /Wrong name or password/));
+  await Promise.all(guesses);
+  await assert.rejects(as().auth.login({ name: 'target', password: 'the right password' }), /Too many wrong passwords/);
+});
