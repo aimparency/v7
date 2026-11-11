@@ -52,6 +52,15 @@
       "weight": 1,
       "hypothesis": "The Commons Hub server stays current with what members push, without anyone logging in to pull.",
       "reflection": "Pending: it takes effect on the server's next pnpm start; check the [git-sync] log line there (a private repo needs fetch credentials for the aimparency user)."
+    },
+    {
+      "ideaId": "34b3d747-a5fe-4658-b004-5aa603ad6c14",
+      "relativePosition": [
+        -3.63,
+        -0.93
+      ],
+      "weight": 1,
+      "hypothesis": "Event participants who can say \"I'd like to work on this\" and leave notes without login or git will use the graph to find and claim work."
     }
   ],
   "supportedIdeas": [

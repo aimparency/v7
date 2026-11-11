@@ -1,0 +1,25 @@
+{
+  "id": "34b3d747-a5fe-4658-b004-5aa603ad6c14",
+  "text": "Guest layer: visitors mark interest, leave notes and propose sub-ideas, kept uncommitted on the server",
+  "description": "Felix 2026-11-11, for the Hack the Hub event at Commons Hub:\n- The organizers prepare an idea graph that gives a rough structure of what could be done (in git, as today).\n- Participants want to find things they can work on: they view the graph and read ideas without login.\n- Ideally they can add \"I'd like to work on this\" to an idea and leave notes such as ideas or questions.\n- More involved participants can add their own sub-ideas.\n\nFelix's thought: an \"extended read-only mode\", still only git-based, with a layer of guest-added data that is not committed. Possibly the way out of the git-versus-hosted dilemma (57286a32).\n\nEarlier: af701cd6 planned \"propose for review, stored locally on the server (gitignored), never in the idea\"; a first attempt is parked in git stash (\"review-only access level + idea.proposeReview\").",
+  "archived": false,
+  "color": "#715b33",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
+    "fcb38df6-fd32-4721-ac81-3b37be9fa03a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Felix's proposal, raised as a question on 2026-11-11; not yet decided to build. Claude's assessment: it fits. Reading without login exists (hosted mode). New would be: guest items attached to an idea (interest, note or question, proposed sub-idea), stored in the gitignored runtime area and shown live; and adopting an item into the graph by someone who commits. To settle: who may write (writing open to anyone on the URL invites spam; an event code plus a self-chosen name keeps reading open), and that agents treat guest text as data, never as instructions.",
+    "date": 1794403482812
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

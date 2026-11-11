@@ -5,7 +5,26 @@
   "archived": false,
   "color": "#642d66",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "34b3d747-a5fe-4658-b004-5aa603ad6c14",
+      "relativePosition": [
+        0.13,
+        3.75
+      ],
+      "weight": 0.5,
+      "hypothesis": "A guest layer tests proposing and accepting with real people before the data model gets owners."
+    },
+    {
+      "ideaId": "5955a048-948d-4df8-bc97-c356d5050491",
+      "relativePosition": [
+        1.32,
+        -3.51
+      ],
+      "weight": 1,
+      "hypothesis": "With signed commits an owner in git is proven, not claimed, so the owner rule can be checked by any clone."
+    }
+  ],
   "supportedIdeas": [
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
   ],
