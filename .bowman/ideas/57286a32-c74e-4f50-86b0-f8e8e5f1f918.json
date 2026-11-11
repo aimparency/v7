@@ -11,7 +11,7 @@
   "committedIn": [],
   "status": {
     "state": "human-dependent",
-    "comment": "Felix 2026-11-11, direction (details open): two storage engines behind one clean interface. Git engine: open source and free, for open-source projects and for running Aimparency locally. Hosted engine: for organizations and companies maintaining a vision graph, with faster sync and no commit logic, under a proprietary license, paid. Still open: the license of the open part (ISC lets anyone sell their own hosted engine against the interface), where exactly the interface sits, and how Commons Hub starts. The per-user worktree design (53a03e76) no longer fits this direction.",
+    "comment": "Felix 2026-11-11: undecided. Considered two storage engines behind one interface (open git engine for open-source and local use; proprietary, paid hosted engine without commit logic for organizations), then found it still feels like a compromise, as did server-side commits per person and per-user worktrees (53a03e76). Under discussion, proposed by Claude and not accepted: give every idea a holder (you change what is yours and can only attach to the rest), so that authority lives in the model and storage becomes a detail.",
     "date": 1774590259916
   },
   "intrinsicValue": 0,
