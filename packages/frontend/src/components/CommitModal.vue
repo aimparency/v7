@@ -8,7 +8,7 @@ import { trpc } from '../trpc'
 import { changeKind, describeChange, type WorkingTreeChange } from '../utils/git-status'
 import { formatRelativeTime } from '../utils/relative-time'
 
-const props = defineProps<{ changes: WorkingTreeChange[]; lastCommitAt: number | null }>()
+const props = defineProps<{ changes: WorkingTreeChange[]; lastCommitAt: number | null; ahead: number | null }>()
 const emit = defineEmits<{ close: []; committed: [] }>()
 
 const dataStore = useDataStore()
@@ -20,6 +20,11 @@ const rows = computed(() => props.changes
   .sort((left, right) => Number(left.isGraph) - Number(right.isGraph) || left.label.localeCompare(right.label)))
 const chosen = ref(new Set(props.changes.map(change => change.path)))
 const message = ref('')
+// Opened with nothing to commit, it only pushes what is already committed.
+const pushOnly = props.changes.length === 0
+// Pushing needs an upstream branch; ahead is null without one.
+const canPush = props.ahead !== null
+const push = ref(canPush)
 const committing = ref(false)
 const error = ref('')
 const messageInput = ref<HTMLInputElement | null>(null)
@@ -33,16 +38,38 @@ const toggleAll = () => {
   chosen.value = chosen.value.size === rows.value.length ? new Set() : new Set(rows.value.map(row => row.path))
 }
 
+const ready = computed(() => pushOnly || (message.value.trim() !== '' && chosen.value.size > 0))
+const submitLabel = computed(() => {
+  if (pushOnly) return `Push ${props.ahead} ${props.ahead === 1 ? 'commit' : 'commits'}`
+  const files = `${chosen.value.size} ${chosen.value.size === 1 ? 'file' : 'files'}`
+  return push.value ? `Commit ${files} & push` : `Commit ${files}`
+})
+
 const commit = async () => {
-  if (committing.value || !message.value.trim() || chosen.value.size === 0) return
+  if (committing.value || !ready.value) return
   committing.value = true
   error.value = ''
+  const projectPath = projectStore.projectPath
+  let committed = pushOnly
   try {
-    const { commit } = await trpc.git.commit.mutate({ projectPath: projectStore.projectPath, paths: [...chosen.value], message: message.value })
-    useToastStore().info(`Committed ${commit}`)
+    if (!pushOnly) {
+      const { commit } = await trpc.git.commit.mutate({ projectPath, paths: [...chosen.value], message: message.value })
+      committed = true
+      useToastStore().info(`Committed ${commit}`)
+    }
+    if (pushOnly || push.value) {
+      const { pushed } = await trpc.git.push.mutate({ projectPath })
+      useToastStore().info(`Pushed ${pushed} ${pushed === 1 ? 'commit' : 'commits'}`)
+    }
     emit('committed')
   } catch (failure) {
-    error.value = errorMessage(failure)
+    // A failed push after a commit leaves the commit in place: report it and close.
+    if (committed && !pushOnly) {
+      useToastStore().error('Committed, but the push failed', failure)
+      emit('committed')
+    } else {
+      error.value = errorMessage(failure)
+    }
   } finally {
     committing.value = false
   }
@@ -58,13 +85,16 @@ onMounted(() => messageInput.value?.focus())
 </script>
 
 <template>
-  <FormModalShell :show="true" title="Commit" width="min(90vw, 48rem)" :close-on-escape="false" @request-close="emit('close')">
+  <FormModalShell :show="true" :title="pushOnly ? 'Push' : 'Commit'" width="min(90vw, 48rem)" :close-on-escape="false" @request-close="emit('close')">
     <form id="commit-dialog" @submit.prevent="commit" @keydown="handleKeydown">
-      <p class="summary">
+      <p v-if="pushOnly" class="summary">
+        {{ props.ahead }} unpushed {{ props.ahead === 1 ? 'commit' : 'commits' }} on this branch · last commit {{ props.lastCommitAt ? formatRelativeTime(props.lastCommitAt) : 'never' }}
+      </p>
+      <p v-else class="summary">
         {{ rows.length }} changed files · last commit {{ props.lastCommitAt ? formatRelativeTime(props.lastCommitAt) : 'never' }}
         <button type="button" class="link" @click="toggleAll">{{ chosen.size === rows.length ? 'none' : 'all' }}</button>
       </p>
-      <ul>
+      <ul v-if="!pushOnly">
         <li v-for="row in rows" :key="row.path" :title="row.path">
           <label>
             <input type="checkbox" :checked="chosen.has(row.path)" @change="toggle(row.path)" />
@@ -73,13 +103,14 @@ onMounted(() => messageInput.value?.focus())
           </label>
         </li>
       </ul>
-      <input ref="messageInput" v-model="message" placeholder="Commit message" />
+      <input v-if="!pushOnly" ref="messageInput" v-model="message" placeholder="Commit message" />
       <p v-if="error" class="error">{{ error }}</p>
       <div class="actions">
+        <label v-if="canPush && !pushOnly" class="push" :title="props.ahead ? `Also pushes ${props.ahead} earlier unpushed ${props.ahead === 1 ? 'commit' : 'commits'}` : ''">
+          <input v-model="push" type="checkbox" /> and push{{ props.ahead ? ` (+${props.ahead} earlier)` : '' }}
+        </label>
         <button type="button" class="btn-secondary" @click="emit('close')">Cancel</button>
-        <button type="submit" class="btn-primary" :disabled="committing || !message.trim() || chosen.size === 0">
-          Commit {{ chosen.size }} {{ chosen.size === 1 ? 'file' : 'files' }}
-        </button>
+        <button type="submit" class="btn-primary" :disabled="committing || !ready">{{ submitLabel }}</button>
       </div>
     </form>
   </FormModalShell>
@@ -118,6 +149,14 @@ onMounted(() => messageInput.value?.focus())
   }
 
   & .error { margin: 0; color: #e57373; }
-  & .actions { display: flex; justify-content: flex-end; gap: 0.5rem; }
+  & .actions {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 0.5rem;
+
+    & .push { margin-right: auto; display: flex; align-items: center; gap: 0.35rem; color: #aaa; cursor: pointer; }
+    & .push input { width: auto; }
+  }
 }
 </style>

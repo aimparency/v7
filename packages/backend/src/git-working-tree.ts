@@ -14,7 +14,14 @@ export type WorkingTreeChange = {
 
 export type WorkingTreeStatus =
   | { isRepository: false }
-  | { isRepository: true; repositoryPath: string; lastCommitAt: number | null; changes: WorkingTreeChange[] };
+  | {
+    isRepository: true;
+    repositoryPath: string;
+    lastCommitAt: number | null;
+    changes: WorkingTreeChange[];
+    /** Commits on the branch its upstream lacks; null without an upstream. */
+    ahead: number | null;
+  };
 
 // `git status --porcelain -z`: "XY path\0", renames and copies followed by "origin\0".
 export function parsePorcelainStatus(stdout: string): WorkingTreeChange[] {
@@ -40,12 +47,13 @@ export async function readWorkingTreeStatus(directory: string): Promise<WorkingT
   } catch {
     return { isRepository: false };
   }
-  const [status, lastCommit] = await Promise.all([
+  const [status, lastCommit, ahead] = await Promise.all([
     git(directory, ['status', '--porcelain', '-z', '--untracked-files=all', '--', '.']),
-    git(directory, ['log', '-1', '--format=%ct', '--', '.']).catch(() => '') // no commit yet
+    git(directory, ['log', '-1', '--format=%ct', '--', '.']).catch(() => ''), // no commit yet
+    git(directory, ['rev-list', '--count', '@{upstream}..HEAD']).then(count => Number(count.trim()), () => null)
   ]);
   const seconds = Number(lastCommit.trim());
-  return { isRepository: true, repositoryPath, lastCommitAt: seconds ? seconds * 1000 : null, changes: parsePorcelainStatus(status) };
+  return { isRepository: true, repositoryPath, lastCommitAt: seconds ? seconds * 1000 : null, changes: parsePorcelainStatus(status), ahead };
 }
 
 // Commits exactly the given changed paths inside `directory`. Agents share the
@@ -61,4 +69,24 @@ export async function commitPaths(directory: string, paths: string[], message: s
   await git(status.repositoryPath, ['add', '-A', '--', ...paths]);
   await git(status.repositoryPath, ['commit', '--only', '-m', message.trim(), '--', ...paths]);
   return (await git(status.repositoryPath, ['rev-parse', '--short', 'HEAD'])).trim();
+}
+
+// Pushes the branch to its upstream: the whole branch, so also commits made
+// outside this dialog. Never prompts for credentials; a server needs them set up.
+export async function pushToUpstream(directory: string): Promise<number> {
+  const status = await readWorkingTreeStatus(directory);
+  if (!status.isRepository) throw new Error('Not a git repository');
+  if (status.ahead === null) throw new Error('This branch has no upstream to push to');
+  if (status.ahead === 0) return 0;
+  try {
+    await execFileAsync('git', ['-C', status.repositoryPath, 'push', '--quiet'], {
+      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
+      timeout: 120_000,
+    });
+  } catch (error) {
+    const stderr = String((error as { stderr?: string }).stderr ?? '');
+    if (/\[rejected\]|non-fast-forward|fetch first/.test(stderr)) throw new Error('The remote has commits this clone lacks: pull them first');
+    throw new Error(stderr.split('\n').find(line => line.trim())?.replace(/^(fatal|error): /, '') ?? 'Push failed');
+  }
+  return status.ahead;
 }

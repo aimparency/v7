@@ -1,0 +1,24 @@
+{
+  "id": "c02e3a48-d9ed-440f-b333-0caf8be3a086",
+  "text": "Push from the commit dialog",
+  "description": "Felix 2026-11-11: Aimparency committed but never pushed, so commits made on a hosted server stayed there (the remote-follower then reported 'diverged'). The commit dialog gets an 'and push' option, and the header button shows unpushed commits (↑N) and opens a push-only dialog when nothing is left to commit. Pushes the whole branch to its upstream, never prompting for credentials.",
+  "archived": false,
+  "color": "#2d3d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "git status reports ahead (commits not on @{upstream}, null without one); pushToUpstream runs git push with GIT_TERMINAL_PROMPT=0 and a 120 s timeout, and reports a rejected push as 'pull them first'; git.push mutation (admin, writable .bowman only). CommitModal: 'and push (+N earlier)' checkbox, on by default when an upstream exists; with nothing to commit it becomes 'Push N commits'; when a push fails after a commit, the commit stays and a toast says so. Header button shows ↑N and is enabled when only unpushed commits remain. Evidence: git-working-tree test on a real bare remote (no upstream, ahead 1 → pushed, rejection after the remote moved on) 4/4; CommitModal spec 3/3; backend tsc and vue-tsc --build clean; pnpm check 24/25 before the spec fix (only the frontend typecheck failed, now green). Not clicked live.",
+    "date": 1794420330922
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

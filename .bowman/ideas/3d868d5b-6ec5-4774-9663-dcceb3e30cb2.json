@@ -340,6 +340,14 @@
       ],
       "weight": 1,
       "hypothesis": "When every idea has an owner and connections need acceptance, anyone can be allowed to propose, so a group can share one graph without a ladder of access roles."
+    },
+    {
+      "ideaId": "c02e3a48-d9ed-440f-b333-0caf8be3a086",
+      "relativePosition": [
+        -1.85,
+        3.26
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [

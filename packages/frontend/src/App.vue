@@ -134,7 +134,7 @@ const toggleContinueHook = async () => {
 }
 watch(() => projectStore.projectPath, refreshContinueHook, { immediate: true })
 // Uncommitted work of the project's repository; the header prompts a commit when it piles up.
-const workingTree = ref<{ changes: WorkingTreeChange[]; lastCommitAt: number | null } | null>(null)
+const workingTree = ref<{ changes: WorkingTreeChange[]; lastCommitAt: number | null; ahead: number | null } | null>(null)
 const showCommitDialog = ref(false)
 const refreshWorkingTree = async () => {
   const projectPath = projectStore.projectPath
@@ -149,8 +149,9 @@ const refreshWorkingTree = async () => {
 const commitPrompt = computed(() => workingTree.value !== null && needsCommit(workingTree.value.changes, workingTree.value.lastCommitAt))
 const workingTreeTitle = computed(() => {
   if (!workingTree.value) return ''
-  const { changes, lastCommitAt } = workingTree.value
-  return `${changes.length} uncommitted ${changes.length === 1 ? 'change' : 'changes'}, last commit ${lastCommitAt ? formatRelativeTime(lastCommitAt) : 'never'}. Click to commit.`
+  const { changes, lastCommitAt, ahead } = workingTree.value
+  const unpushed = ahead ? `, ${ahead} unpushed ${ahead === 1 ? 'commit' : 'commits'}` : ''
+  return `${changes.length} uncommitted ${changes.length === 1 ? 'change' : 'changes'}${unpushed}, last commit ${lastCommitAt ? formatRelativeTime(lastCommitAt) : 'never'}. Click to commit or push.`
 })
 watch(() => projectStore.projectPath, refreshWorkingTree, { immediate: true })
 const workingTreeTimer = setInterval(refreshWorkingTree, 30_000)
@@ -649,11 +650,11 @@ onUnmounted(() => {
             class="icon-btn commit-btn"
             :class="{ prompt: commitPrompt }"
             :title="workingTreeTitle"
-            :disabled="workingTree.changes.length === 0"
+            :disabled="workingTree.changes.length === 0 && !workingTree.ahead"
             @click="showCommitDialog = true"
             @mouseenter="refreshWorkingTree"
           >
-            <GitCommitHorizontal /> {{ workingTree.changes.length }}{{ commitPrompt ? ' · commit' : '' }}
+            <GitCommitHorizontal /> {{ workingTree.changes.length }}{{ workingTree.ahead ? ` ↑${workingTree.ahead}` : '' }}{{ commitPrompt ? ' · commit' : '' }}
           </button>
 
           <button
@@ -782,6 +783,7 @@ onUnmounted(() => {
       v-if="showCommitDialog && workingTree"
       :changes="workingTree.changes"
       :last-commit-at="workingTree.lastCommitAt"
+      :ahead="workingTree.ahead"
       @close="showCommitDialog = false"
       @committed="showCommitDialog = false; refreshWorkingTree()"
     />
