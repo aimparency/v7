@@ -1,7 +1,7 @@
 {
   "id": "fcb38df6-fd32-4721-ac81-3b37be9fa03a",
   "text": "Put the person into the idea: owners, offers and acceptance",
-  "description": "Felix 2026-11-11, decided as direction:\n- Put the person into the idea: every idea has an owner.\n- Everyone can propose ideas.\n- To connect an idea to another one, the owner of the idea that allegedly benefits has to accept.\n- The hypothesis of a connection becomes the proposer's pitch.\n- It should be possible to work on another person's idea (tentative: \"maybe\"); it shows as \"A is working on that\".\n- Agents are shown on the ideas they work on while they work, so non-human agents get a user identity too.\n- The MCP connects to one URL; one URL runs one project.\n- Wanted: keep the repository-based way as well (open-source spirit, ideas tracked with code changes in the same repo).\n\nNot said by Felix, open: whether an agent can also own ideas and accept connections.\n\nEarlier, related: db47e131 (2026-10-16) derives \"Worked on by\" from git authors and co-authors, and already noted that any git user could change an owner field and that a shared git account is probably not a good idea.",
+  "description": "Felix 2026-11-11, decided as direction:\n- Put the person into the idea: every idea has an owner.\n- Everyone can propose ideas.\n- To connect an idea to another one, the owner of the idea that allegedly benefits has to accept.\n- The hypothesis of a connection becomes the proposer's pitch.\n- It should be possible to work on another person's idea (tentative: \"maybe\"); it shows as \"A is working on that\".\n- Agents are shown on the ideas they work on while they work, so non-human agents get a user identity too.\n- The MCP connects to one URL; one URL runs one project.\n- Wanted: keep the repository-based way as well (open-source spirit, ideas tracked with code changes in the same repo).\n\nFelix 2026-11-11, later: what is normal in companies must be representable: one person oversees everything, grants others to oversee parts, and they may let people further down oversee certain things. Proposed by Claude, not accepted: you may change an idea if you own it or own an idea above it, so the hierarchy is the graph.\n\nNot said by Felix, open: whether an agent can also own ideas and accept connections.\n\nEarlier, related: db47e131 (2026-10-16) derives \"Worked on by\" from git authors and co-authors, and already noted that any git user could change an owner field and that a shared git account is probably not a good idea.",
   "archived": false,
   "color": "#642d66",
   "tags": [],
@@ -23,6 +23,15 @@
       ],
       "weight": 1,
       "hypothesis": "With signed commits an owner in git is proven, not claimed, so the owner rule can be checked by any clone."
+    },
+    {
+      "ideaId": "b9744739-c6ef-45ae-8d3e-67c987fc3f2b",
+      "relativePosition": [
+        -3.19,
+        -1.97
+      ],
+      "weight": 1,
+      "hypothesis": "An identity that is only a key in git works the same for a hosted URL and for signed commits."
     }
   ],
   "supportedIdeas": [

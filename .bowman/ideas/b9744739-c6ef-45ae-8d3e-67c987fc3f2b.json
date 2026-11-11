@@ -1,0 +1,25 @@
+{
+  "id": "b9744739-c6ef-45ae-8d3e-67c987fc3f2b",
+  "text": "Accounts are keys: invitation link, name and public key in git",
+  "description": "Felix 2026-11-11: maybe store the list of guests in git as public keys. Git maintainers create invitation links; using one creates that user in git, with a key. No crypto needed, just an invitation. A configurable \"how to get an account\" text can include a link that creates invitations automatically, for minimal friction. When using an invitation you set your name, which is stored next to the public key. Only the public key is stored in git; nobody else can restore an account.\n\nFelix's open points: is the invitation a one-time token? does the user make their own password, and where would a salt live? a recovery phrase? also support crypto wallets for people who have one. Other logins he mentioned: username and password, email.",
+  "archived": false,
+  "color": "#612a55",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "fcb38df6-fd32-4721-ac81-3b37be9fa03a",
+    "34b3d747-a5fe-4658-b004-5aa603ad6c14"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Proposed by Claude 2026-11-11, not accepted: the key pair is made in the guest's browser and git gets name and public key. The invitation is a one-time random token of which the server keeps only the hash and an expiry; a poster link is one with a limit on uses. Login is a signature on a fresh challenge. Recovery is a generated 12-word phrase, or a new invitation that replaces the key visibly in git. Never derive the key from a chosen password: with the public key in a public repo anyone could guess passwords offline, without limit. Wallets fit the same shape (address in place of key). Username/password and email need a secret or private data on the server, so they do not fit \"only public keys in git\". The same key can sign git commits (5955a048).",
+    "date": 1794404506275
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
