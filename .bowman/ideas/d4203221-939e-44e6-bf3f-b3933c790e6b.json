@@ -76,6 +76,15 @@
       ],
       "weight": 1,
       "hypothesis": "With these limits, opening a server to anyone does not put the server, its graphs or its agents at risk."
+    },
+    {
+      "ideaId": "e34b5ff1-77eb-48cf-baf2-eac4fa51d361",
+      "relativePosition": [
+        -1.04,
+        -3.6
+      ],
+      "weight": 1,
+      "hypothesis": "When a person can connect an agent to chosen graphs in one approval step, agents work on hosted graphs without receiving more rights than the task needs."
     }
   ],
   "supportedIdeas": [

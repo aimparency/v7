@@ -11,7 +11,8 @@
         1.6353720252468453,
         1.8909146831732073
       ],
-      "weight": 1
+      "weight": 1,
+      "reflection": "The discussion ended without a business model: Felix chose no split into a free and a paid part, and wants Aimparency to be the intent backbone for open source. Hosting is something anyone does for themselves or for others."
     },
     {
       "ideaId": "7032fa7f-1d8f-469d-8e2b-95d031742683",
@@ -41,8 +42,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 0
+  "valueVariance": 0
 }

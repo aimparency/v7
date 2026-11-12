@@ -10,9 +10,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "human-dependent",
-    "comment": "Decided by Felix 2026-11-12: people own graphs (d4203221). Every graph is a repo on an Aimparency server; rights are per graph and enforced by that server; graphs link across servers by host URL. Git stays the storage and the history everywhere, so there is no second storage engine and no database. Still undecided: whether any part gets a proprietary license.",
-    "date": 1774590259916
+    "state": "implemented",
+    "comment": "Discussion concluded by Felix on 2026-11-12. People own graphs (d4203221): every graph is a repo on an Aimparency server, rights are per graph and enforced by that server, graphs link across servers by host URL. Git stays the storage and the history everywhere; no second storage engine, no database. License: no split into a free and a paid part (\"I like that better! no split. just the intent backbone for open source\"). No private graphs, to limit complexity and for the \"parency\".",
+    "date": 1794517331998
   },
   "intrinsicValue": 0,
   "cost": 1,

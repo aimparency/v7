@@ -1,0 +1,24 @@
+{
+  "id": "e34b5ff1-77eb-48cf-baf2-eac4fa51d361",
+  "text": "Connect an MCP client through an authentication workflow, with permission for all graphs or a selection",
+  "description": "Felix 2026-11-12: for connecting MCPs, build an authenticate workflow with permission: all graphs, or just a selection of graphs (repos).\n\nThis is how an agent acts on a server: through a person's account, limited to the graphs that person chose. Felix 2026-11-11: non-human agents get a user identity too and are shown on the ideas they work on while they work.\n\nToday: the UI has \"Copy MCP link\", which carries the account's token in the address (?token=) or as a bearer header (mcp/src/sse.ts); the token has all rights of the account, on the one project the server hosts. af701cd6 had planned a login page opened by the MCP client, which was not built.\n\nNot designed: whether the agent appears under the person's name or under a name of its own tied to that person.",
+  "archived": false,
+  "color": "#2c652f",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12 at Felix's request; nothing built. Needs accounts (383e8949) and access per graph (8faf6a70).",
+    "date": 1794517348763
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
