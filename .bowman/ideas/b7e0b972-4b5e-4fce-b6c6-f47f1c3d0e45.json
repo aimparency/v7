@@ -1,0 +1,25 @@
+{
+  "id": "b7e0b972-4b5e-4fce-b6c6-f47f1c3d0e45",
+  "text": "Propose by dragging into empty space: create a new graph or offer one of yours, and the owner accepts",
+  "description": "Felix 2026-11-12: when you drag from an idea into empty space in a graph you cannot write to, it asks you: create a new graph (and then leads to the login), or propose one of your existing graphs. Everyone can make a proposal, which is their graph.\n\nFrom 2026-11-11, still valid here: the hypothesis of the connection is the proposer's pitch; the owner of the benefiting idea has to accept.\n\nToday: dragging from an idea into empty space creates a supporting idea in the same graph (c3a52342); a link to a whole graph is written on the benefiting idea only, by someone who may write there (supportingRepos, with weight and hypothesis).\n\nMissing: the offer (which graph offers to support which idea, with a pitch, by which account), showing it on the idea as not yet accepted, and accepting or declining it. Accepting writes the link with a weight into the benefiting graph.\n\nAssumed by Claude, not said by Felix: the offer is kept on the server of the benefiting graph, outside the tracked graph, like notes (34b3d747); who may make offers follows the graph's notes setting; the new graph is created on the server the person is using, and the dragged-out idea becomes its first idea.\n\nNot designed: an offer to a graph on another server.",
+  "archived": false,
+  "color": "#31612d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b",
+    "96e9fc41-b91f-405c-829c-2e5bf65c175c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12 at Felix's request; nothing built.",
+    "date": 1794511916523
+  },
+  "intrinsicValue": 0,
+  "cost": 6,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

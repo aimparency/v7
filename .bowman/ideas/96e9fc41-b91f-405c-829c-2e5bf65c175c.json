@@ -1,0 +1,79 @@
+{
+  "id": "96e9fc41-b91f-405c-829c-2e5bf65c175c",
+  "text": "Hack the Hub on the Commons Hub server: participants open the prepared graph, get an account automatically and propose their own graphs",
+  "description": "Felix 2026-11-11 and 2026-11-12, for the Hack the Hub event at Commons Hub:\n- The two organizers prepare an idea graph that gives a rough structure of what could be done.\n- Participants open it without a login, read ideas and find things they can work on.\n- It must be extraordinarily simple: an account is created automatically with a key in the browser.\n- A participant who wants to build something drags from an idea into empty space, creates their own graph and offers it to that idea; the organizers accept.\n- Participants can leave notes on ideas (34b3d747).\n\nThis is the first slice of \"people own graphs\" (d4203221) on one server, without links across servers.\n\nWhat it needs from the build: many graphs on one server, accounts with automatic login, access per graph, proposing with offer and acceptance, and the safety limits. What remains after the build is deployment on the Commons Hub server and preparing the graph, both for Felix and the co-organizer.\n\nNot known to Claude: the date of the event.",
+  "archived": false,
+  "color": "#614428",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "548c5b94-5451-4669-be0e-c4e3d2fc8585",
+      "relativePosition": [
+        -1.75,
+        3.32
+      ],
+      "weight": 1,
+      "hypothesis": "Participants need a place for their own graph next to the prepared one."
+    },
+    {
+      "ideaId": "383e8949-3888-40de-95e9-a1dbfac0cdb6",
+      "relativePosition": [
+        -3.02,
+        2.22
+      ],
+      "weight": 1,
+      "hypothesis": "An account without a form lets participants act within seconds."
+    },
+    {
+      "ideaId": "8faf6a70-d197-4fac-a6f9-3975d776c735",
+      "relativePosition": [
+        -3.47,
+        1.43
+      ],
+      "weight": 1,
+      "hypothesis": "The organizers keep control of the prepared graph while participants own theirs."
+    },
+    {
+      "ideaId": "b7e0b972-4b5e-4fce-b6c6-f47f1c3d0e45",
+      "relativePosition": [
+        -3.34,
+        -1.7
+      ],
+      "weight": 1,
+      "hypothesis": "Offering a graph to an idea is how participants say what they will work on."
+    },
+    {
+      "ideaId": "8a303626-d260-4675-a965-86a66de1030c",
+      "relativePosition": [
+        1.7,
+        3.34
+      ],
+      "weight": 1,
+      "hypothesis": "The server can be opened to all participants without risk."
+    },
+    {
+      "ideaId": "34b3d747-a5fe-4658-b004-5aa603ad6c14",
+      "relativePosition": [
+        3.29,
+        1.8
+      ],
+      "weight": 1,
+      "hypothesis": "Notes let participants ask questions and show interest without creating a graph."
+    }
+  ],
+  "supportedIdeas": [
+    "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12; waits on the parts it is supported by. The date of the event is not recorded.",
+    "date": 1794511934463
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

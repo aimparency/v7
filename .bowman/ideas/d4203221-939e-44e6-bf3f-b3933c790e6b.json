@@ -13,6 +13,69 @@
         0.35
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "548c5b94-5451-4669-be0e-c4e3d2fc8585",
+      "relativePosition": [
+        2.93,
+        2.34
+      ],
+      "weight": 1,
+      "hypothesis": "With many graphs on one server, a person gets a graph without setting up a repo or a server of their own."
+    },
+    {
+      "ideaId": "383e8949-3888-40de-95e9-a1dbfac0cdb6",
+      "relativePosition": [
+        -1.25,
+        -3.54
+      ],
+      "weight": 1,
+      "hypothesis": "When an account appears without a form, people act on a graph the moment they open it, and still can keep the account later."
+    },
+    {
+      "ideaId": "8faf6a70-d197-4fac-a6f9-3975d776c735",
+      "relativePosition": [
+        1.67,
+        3.36
+      ],
+      "weight": 1,
+      "hypothesis": "Rights per graph instead of per idea are enough for people to work together, and simple enough to understand without explanation."
+    },
+    {
+      "ideaId": "96d638bf-f034-43df-b8e6-3ee1b4ade3da",
+      "relativePosition": [
+        -3.27,
+        1.84
+      ],
+      "weight": 1,
+      "hypothesis": "A link by server address can be followed by anyone from anywhere, so graphs on different servers join into one."
+    },
+    {
+      "ideaId": "588568b7-aa5b-41ec-bdbf-10e3f10f2409",
+      "relativePosition": [
+        3.75,
+        -0.18
+      ],
+      "weight": 1,
+      "hypothesis": "When a linked graph opens in place, people experience the graphs of many owners on many servers as one graph."
+    },
+    {
+      "ideaId": "b7e0b972-4b5e-4fce-b6c6-f47f1c3d0e45",
+      "relativePosition": [
+        -2.38,
+        2.9
+      ],
+      "weight": 1,
+      "hypothesis": "When proposing is the same gesture as adding an idea, people who cannot write to a graph still contribute to it, with a graph of their own."
+    },
+    {
+      "ideaId": "8a303626-d260-4675-a965-86a66de1030c",
+      "relativePosition": [
+        -3.2,
+        -1.95
+      ],
+      "weight": 1,
+      "hypothesis": "With these limits, opening a server to anyone does not put the server, its graphs or its agents at risk."
     }
   ],
   "supportedIdeas": [

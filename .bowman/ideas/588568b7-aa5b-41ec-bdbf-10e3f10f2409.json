@@ -1,0 +1,24 @@
+{
+  "id": "588568b7-aa5b-41ec-bdbf-10e3f10f2409",
+  "text": "The web app follows links to other servers and expands linked graphs in place",
+  "description": "Felix 2026-11-12: servers allow requests from other origins, so that the web app can follow everywhere and expand sub-graphs to everywhere.\n\nThe browser loads a linked graph directly from the server hosting it; the server of the graph being viewed never fetches foreign graphs. Clicking the node of a linked graph expands its ideas in place, read-only unless the viewer has rights there.\n\nChanges the rule of 2026-09-20 (e81b11c3; a82b1530 was cancelled for it): a linked graph was one opaque node whose ideas are never drawn. Claude's reading, not confirmed by Felix: the stored link stays a link to the whole graph, and only the view opens it.\n\nSecurity: a server lets pages from other addresses read its public graphs; a login on one server gives no rights on another, and a foreign page must not be able to write in a visitor's name.\n\nAssumed by Claude: values and priorities are still calculated per graph (the linked graph stays a sink for value, 3023ebec); search across graphs is not part of this.\n\nRelated: bd1cefe0 (partial rendering, halted).",
+  "archived": false,
+  "color": "#35612c",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12 at Felix's request; nothing built. Needs the link by server address first.",
+    "date": 1794511916405
+  },
+  "intrinsicValue": 0,
+  "cost": 6,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

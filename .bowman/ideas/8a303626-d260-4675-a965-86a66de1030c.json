@@ -1,0 +1,25 @@
+{
+  "id": "8a303626-d260-4675-a965-86a66de1030c",
+  "text": "Keep a server safe when anyone can create accounts and graphs: limits, no terminals, foreign text is data",
+  "description": "Felix 2026-11-10: write access must never allow spawning a terminal; \"we have to make that very secure. And prompt injection is still a security issue we need to be aware of.\"\n\nWith open sign-up, automatic accounts and graphs created by strangers, a server needs:\n- limits per account and per address: number of graphs, their size, notes and offers per hour\n- a way for the server admin to remove graphs and accounts\n- terminals and agents stay off for everyone except what the server admin switches on for themselves (as today: local-only routers, AIMPARENCY_AGENTS)\n- text from notes, offers and other people's graphs reaches agents only as data, never as instructions\n- reading from other origins allowed, writing only with the account's own proof of login, never through cookies a foreign page could use\n\nBuilds on the audit of 2026-11-09 (bb34c22a), which covered one read-only graph per server.",
+  "archived": false,
+  "color": "#2a6228",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b",
+    "96e9fc41-b91f-405c-829c-2e5bf65c175c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12; nothing built. To be checked again once the many-graph server and accounts exist.",
+    "date": 1794511916709
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

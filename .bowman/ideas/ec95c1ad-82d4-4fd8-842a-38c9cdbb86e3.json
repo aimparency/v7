@@ -61,6 +61,15 @@
       ],
       "weight": 1,
       "hypothesis": "Event participants who can say \"I'd like to work on this\" and leave notes without login or git will use the graph to find and claim work."
+    },
+    {
+      "ideaId": "96e9fc41-b91f-405c-829c-2e5bf65c175c",
+      "relativePosition": [
+        1.56,
+        3.41
+      ],
+      "weight": 1,
+      "hypothesis": "An event where participants claim work and propose their own graphs is the first real use of Aimparency by people at Commons Hub and shows what they actually try to do."
     }
   ],
   "supportedIdeas": [

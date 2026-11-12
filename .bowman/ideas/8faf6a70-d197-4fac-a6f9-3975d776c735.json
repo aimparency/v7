@@ -1,0 +1,25 @@
+{
+  "id": "8faf6a70-d197-4fac-a6f9-3975d776c735",
+  "text": "Access per graph: its owner, accounts with write access, and who may add notes",
+  "description": "Felix 2026-11-12: configurable in the Aimparency server per graph: who may add notes (\"everyone\" or \"only selected accounts\"), and you can grant write access to accounts. Whoever creates a graph owns it.\n\nReplaces the roles of today's hosted mode, which apply to the whole server (read, write, admin in access.ts). Rights are per graph, not per idea: the owner and accounts with write access may change everything in the graph; everyone may read.\n\nNotes themselves (the guest layer) are idea 34b3d747.\n\nUnchanged from 2026-11-10: write access never allows starting a terminal or an agent on the server.\n\nAssumed by Claude, not said by Felix: the server admin is a separate role (adds local checkouts and mirrors, removes graphs and accounts); only the owner grants write access and changes the notes setting; a mirrored graph has no writers on the server.",
+  "archived": false,
+  "color": "#2c6a2b",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b",
+    "96e9fc41-b91f-405c-829c-2e5bf65c175c"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12 at Felix's request; nothing built.",
+    "date": 1794511916126
+  },
+  "intrinsicValue": 0,
+  "cost": 4,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

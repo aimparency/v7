@@ -1,0 +1,24 @@
+{
+  "id": "96d638bf-f034-43df-b8e6-3ee1b4ade3da",
+  "text": "A link to another graph points to the Aimparency server hosting it, not to a local checkout",
+  "description": "Felix 2026-11-12: checking out other people's graphs locally is the problem. A link points for sure to the Aimparency server hosting the graph, maybe also to the repo.\n\nToday (e81b11c3, 1585aa46): a linked repo is stored in meta.json as repoId, name and an optional url; where it is checked out is kept per machine in .bowman/runtime; without a local checkout the node is a grey stub.\n\nChange: the stored link carries the address of the graph on its Aimparency server; the repo address stays optional. No server path and no checkout are needed to follow it.\n\nThis changes the stored format, so it needs a migration (AGENTS.md: BOWMAN_MIGRATIONS, version bump, frozen fixture of the previous format).\n\nAssumed by Claude: links to locally checked-out repos keep working for self-hosting.",
+  "archived": false,
+  "color": "#426a32",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Planned 2026-11-12 at Felix's request; nothing built.",
+    "date": 1794511916271
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
