@@ -239,7 +239,8 @@
         2.49,
         0.21
       ],
-      "weight": 1
+      "weight": 1,
+      "reflection": "Built and tested but never used by a group. Thinking about its use at Commons Hub showed that one shared graph with roles for the whole server does not fit how people own ideas; it led to people owning graphs (d4203221)."
     },
     {
       "ideaId": "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",

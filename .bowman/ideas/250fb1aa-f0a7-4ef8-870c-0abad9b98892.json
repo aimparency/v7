@@ -62,7 +62,8 @@
         -1.93
       ],
       "weight": 1,
-      "hypothesis": "A hosted read-only link lets anyone see a real graph without installing Aimparency, which the local ?repo= link could not."
+      "hypothesis": "A hosted read-only link lets anyone see a real graph without installing Aimparency, which the local ?repo= link could not.",
+      "reflection": "Not tested with outside viewers. The aim holds and moves to the many-graph server, where a repo is mirrored and anyone can view it without installing Aimparency."
     }
   ],
   "supportedIdeas": [

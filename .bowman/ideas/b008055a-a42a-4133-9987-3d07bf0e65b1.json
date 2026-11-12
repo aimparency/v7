@@ -18,7 +18,8 @@
         1.87
       ],
       "weight": 1,
-      "hypothesis": "Pulling when someone opens the page keeps a public view current within seconds, without a fixed timer fetching for nobody."
+      "hypothesis": "Pulling when someone opens the page keeps a public view current within seconds, without a fixed timer fetching for nobody.",
+      "reflection": "Not tested. Pull on open was never built under this idea; how a mirrored graph stays current is now part of the many-graph server (548c5b94)."
     }
   ],
   "supportedIdeas": [

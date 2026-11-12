@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; not designed in detail, nothing built. Foundation for the other parts of d4203221.",
+    "comment": "Planned 2026-11-12 at Felix's request; nothing built. Foundation for the other parts of d4203221. Felix 2026-11-12: this supersedes today's hosted mode (af701cd6) and read-only mode (06d83e94); whoever has access to a graph has full access to its repo, so there are no worktrees per user (53a03e76 cancelled).",
     "date": 1794511915803
   },
   "intrinsicValue": 0,

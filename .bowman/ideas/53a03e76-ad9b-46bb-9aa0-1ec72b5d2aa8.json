@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Open questions for Felix (2026-11-10), with defaults proposed: (1) Who merges into the shared main: write users their own branch (default) or an admin, PR-style? (2) Does 'someone else already edited' include other people's uncommitted worktree edits (live hint, default: yes, as a soft hint) or only commits on main? (3) Conflicts: per-field merge of idea JSON with a theirs/mine choice when the same field changed (default) or block with 'pull first'? (4) Push to the remote: an admin (default) or the server after each merge? (5) Hosted only for now (default)? Also undecided (57286a32): whether enterprise deployments should keep data in a database with users, with git only as backup.",
-    "date": 1794350800996
+    "state": "cancelled",
+    "comment": "Cancelled by Felix 2026-11-12: \"I don't think we need worktrees. If users have access to a graph, they have full access to the repo.\" Replaced by people owning graphs (d4203221): rights are per graph. When the server commits and under which author is open in 548c5b94.",
+    "date": 1794514496252
   },
   "intrinsicValue": 0,
   "cost": 40,

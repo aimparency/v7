@@ -33,7 +33,8 @@
         -0.6
       ],
       "weight": 1,
-      "hypothesis": "Own worktrees let several editors work at once without blocking the remote pull, and git shows who changed what"
+      "hypothesis": "Own worktrees let several editors work at once without blocking the remote pull, and git shows who changed what",
+      "reflection": "Not tested, never built. The need went away: with one graph per owner, several people rarely edit the same repo, and whoever has access to a graph has full access to it."
     }
   ],
   "supportedIdeas": [
@@ -44,9 +45,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "Implemented in 7d73c932 with tests (auth, hosted server, validate-local-runtime, pnpm check). Waits on Felix's trial on the Commons Hub server.",
-    "date": 1793550911500
+    "state": "implemented",
+    "comment": "Built in 7d73c932 with tests (auth, hosted server, validate-local-runtime, pnpm check). The trial on the Commons Hub server it was waiting for is dropped: Felix decided on 2026-11-12 that the many-graph server (548c5b94) supersedes hosted mode and read-only mode. This code is the base that build starts from.",
+    "date": 1794514496545
   },
   "intrinsicValue": 0,
   "cost": 1,

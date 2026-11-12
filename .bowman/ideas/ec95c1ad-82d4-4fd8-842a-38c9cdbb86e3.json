@@ -80,9 +80,9 @@
     "9bbe1843-c297-4ab9-9e4c-61c1561e68ba"
   ],
   "status": {
-    "state": "human-dependent",
-    "comment": "All code children are done. What remains are steps on the Commons Hub server (system user aimparency, /srv/aimparency), for Felix:\n1. git pull in /srv/aimparency/aimparency, then pnpm start --setup once in a terminal. New questions: 'Let admins run wrapped agents?' (yes = every admin gets a shell as the aimparency user; answer no unless that is wanted).\n2. nginx + TLS in front with the README block, which now includes proxy_set_header X-Forwarded-Proto $scheme.\n3. The systemd unit from the README; sudo systemctl enable --now aimparency.\n4. Give the aimparency user fetch credentials for the served repository if it is private; journalctl should then show no '[git-sync] not pulling' line. Commit credentials are only needed if edits are committed on the server.\n5. Create the housemates' accounts (write for editors; admin only for people you would give SSH).\n6. Try login and the MCP link from one other device.",
-    "date": 1793611819170
+    "state": "open",
+    "comment": "Felix 2026-11-12: Commons Hub gets a many-graph Aimparency server that makes it easy for people to create accounts and graphs (548c5b94), first used at Hack the Hub in December 2026 (96e9fc41). This replaces the earlier plan of one hosted instance for one shared graph (af701cd6) and its deployment steps. Still true on the server: system user aimparency, /srv/aimparency; nginx with TLS in front (README block).",
+    "date": 1794514496717
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -13,7 +13,8 @@
         0.4
       ],
       "weight": 1,
-      "hypothesis": "A read-only tool surface lets anyone use the assistant without write access to the graph."
+      "hypothesis": "A read-only tool surface lets anyone use the assistant without write access to the graph.",
+      "reflection": "Holds in tests only: an anonymous or read account can use the read tools and is refused writes. No Commons Hub member has used it, because the instance was never put into use."
     }
   ],
   "supportedIdeas": [
