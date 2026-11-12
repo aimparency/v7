@@ -1,18 +1,27 @@
 {
   "id": "d4203221-939e-44e6-bf3f-b3933c790e6b",
   "text": "People own graphs: one-click graph on a host, links between graphs, one global graph across servers",
-  "description": "Felix 2026-11-12: \"that actually comes closest to the reality: People owning graphs. Everyone can make a proposal which is his graph. And then ideally the website would be able to access different servers (almost like federated).\" The hurdle to participate is too high today: you have to set up a repo. \"If we could make that simple and one-click, that'd be awesome. Then the result would really be a global ever expanding graph of ideas. aimparency. ideaparency. global. I'd love this.\"\n\nWhat led here (2026-11-11): every design that put all people into one graph needed rules for who may touch which idea (owners and levels per idea, signed commits, a GitHub check, a guest layer) and felt cumbersome or like a compromise. Here the unit of ownership is the graph: whoever owns a graph may change all of it.\n\nFits the standing decision of 2026-06-27 and 2026-09-20 (e81b11c3): links are to a whole graph, which stays a black box.\n\nExists today: an idea supported by a whole linked repo, drawn as one node with value flow (e81b11c3); opening any graph from a Git URL read-only in the normal UI, with a shareable link (250fb1aa, 9beb3725); spinning a branch off into its own graph (10a0561b); hosted mode with accounts for one project per server (af701cd6).\n\nMissing, not designed: a host that holds many graphs, each with its own address; creating a graph there in one click, without a repo; linking to a graph by address instead of a local checkout; the offer side of a link (a graph says which idea of another graph it supports, with a pitch) and its acceptance; the website opening a graph that lives on another server.",
+  "description": "Felix 2026-11-12: \"that actually comes closest to the reality: People owning graphs. Everyone can make a proposal which is his graph. And then ideally the website would be able to access different servers (almost like federated).\" The hurdle to participate is too high today: you have to set up a repo. \"If we could make that simple and one-click, that'd be awesome. Then the result would really be a global ever expanding graph of ideas. aimparency. ideaparency. global. I'd love this.\"\n\nFelix 2026-11-12, later, decided (\"I love love love how this is coming together\"):\n- Checking out other people's graphs locally is the problem. Everyone hosts their own graph or uses something that hosts it.\n- A link points for sure to the Aimparency server hosting the graph, maybe also to the repo.\n- Servers allow requests from other origins, so the web app can follow links everywhere and expand sub-graphs into other servers.\n- For Commons Hub: a server where people host their graphs or mirror GitHub repos (at least the .bowman part), so that people can view them.\n- The guest layer stays (34b3d747): people add notes; configurable in the Aimparency server per graph: everyone, or only selected accounts. Accounts can also be granted write access.\n\nWhat led here (2026-11-11): every design that put all people into one graph needed rules for who may touch which idea (owners and levels per idea, signed commits, a GitHub check) and felt cumbersome or like a compromise. Here the unit of ownership is the graph.\n\nRelation to the standing decision of 2026-06-27 and 2026-09-20 (e81b11c3, links only to a whole graph, which stays a black box): expanding a linked graph in the web app shows its ideas, which a82b1530 ruled out. Noted by Claude, not confirmed by Felix: the stored link can stay graph-level while the browser loads the other graph on demand from its own server.\n\nExists today: an idea supported by a whole linked repo, drawn as one node with value flow (e81b11c3); opening any graph from a Git URL read-only in the normal UI as a shallow clone of .bowman only (250fb1aa, 9beb3725); spinning a branch off into its own graph (10a0561b); hosted mode with read, write and admin accounts and a read-only mode, for one project per server (af701cd6).\n\nMissing, not designed: a server that holds many graphs, each with its own address and access settings, hosted or mirrored; creating a graph there in one click, without a repo; linking to a graph by server address instead of a local checkout; the offer side of a link (a graph says which idea of another graph it supports, with a pitch) and its acceptance; the web app loading a graph from another server.",
   "archived": false,
   "color": "#2e662d",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "34b3d747-a5fe-4658-b004-5aa603ad6c14",
+      "relativePosition": [
+        -3.73,
+        0.35
+      ],
+      "weight": 1
+    }
+  ],
   "supportedIdeas": [
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
   ],
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Direction Felix says he would love (2026-11-12); not designed, nothing built, no build requested. If it holds, owners and levels per idea (fcb38df6), the guest layer (34b3d747) and the GitHub check (698badcb) are probably not needed.",
+    "comment": "Decided by Felix as the direction on 2026-11-12; not designed, nothing built, no build requested yet. Owners and levels per idea (fcb38df6) and the GitHub check (698badcb) are probably not needed any more; Felix has not said so.",
     "date": 1794511063817
   },
   "intrinsicValue": 0,
