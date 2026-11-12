@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Proposed by Claude 2026-11-11, not accepted: the key pair is made in the guest's browser and git gets name and public key. The invitation is a one-time random token of which the server keeps only the hash and an expiry; a poster link is one with a limit on uses. Login is a signature on a fresh challenge. Recovery is a generated 12-word phrase, or a new invitation that replaces the key visibly in git. Never derive the key from a chosen password: with the public key in a public repo anyone could guess passwords offline, without limit. Wallets fit the same shape (address in place of key). Username/password and email need a secret or private data on the server, so they do not fit \"only public keys in git\". The same key can sign git commits (5955a048).",
-    "date": 1794404506275
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-12: accounts belong to the server and are not stored in git (Felix, d4203221). What carries over is in 383e8949: a key in the browser as automatic login, and invitation links (permanent or redeemable once). The security notes here (one-time token kept as a hash, login as a signature, never derive a key from a chosen password) remain useful for that build.",
+    "date": 1794513874155
   },
   "intrinsicValue": 0,
   "cost": 4,

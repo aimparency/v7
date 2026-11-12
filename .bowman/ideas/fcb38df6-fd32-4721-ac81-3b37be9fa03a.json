@@ -31,7 +31,8 @@
         -1.97
       ],
       "weight": 1,
-      "hypothesis": "An identity that is only a key in git works the same for a hosted URL and for signed commits."
+      "hypothesis": "An identity that is only a key in git works the same for a hosted URL and for signed commits.",
+      "reflection": "Not tested. Felix liked one key for login and commits, but using git to carry a write hierarchy felt cumbersome to him; accounts now belong to the server."
     },
     {
       "ideaId": "698badcb-8f36-4393-a241-f74de65805f8",
@@ -40,7 +41,8 @@
         3.6
       ],
       "weight": 1,
-      "hypothesis": "A required check on the remote gives a repository the same enforced owner rule as a hosted instance, so both ways can show the same people features in the UI."
+      "hypothesis": "A required check on the remote gives a repository the same enforced owner rule as a hosted instance, so both ways can show the same people features in the UI.",
+      "reflection": "Not tested. GitHub can enforce such a rule only through pull requests with a required check, not on direct pushes, and only on GitHub. It became unnecessary once rights moved to the whole graph and its server."
     }
   ],
   "supportedIdeas": [
@@ -48,9 +50,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Corrected by Felix 2026-11-11 (later): not accepted for both ways. Owners need permissions, so the owner model is probably necessary for any hosted version; in a repository, git and pull requests take that role. Not designed or built. Felix's sketch for hosted: guests are users without special rights; anyone can offer to work on an idea (or set it, with manage or write rights) and propose ideas that the benefiting idea's owner accepts; levels per idea: owner, manager, write, perhaps read or hidden ideas, which he notes goes against transparency. Missing in the code today: owner on ideas, a connection as offer plus acceptance, an actor on live activity.",
-    "date": 1794401425834
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-12, replaced by \"people own graphs\" (d4203221): the unit of ownership is the graph, so there are no owners or levels per idea. Felix asked to cancel old ideas that contradict the new direction. Carried over: everyone can propose and the benefiting side accepts, with the hypothesis as pitch (b7e0b972); agents get a user identity and are shown on the ideas they work on (383e8949); one address runs one graph (548c5b94).",
+    "date": 1794513873854
   },
   "intrinsicValue": 0,
   "cost": 5,

@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Explored on 2026-11-11, not decided. Feasible on github.com as a required pull-request check from a GitHub App; not feasible as a rejection of direct pushes. Depends on fcb38df6 (owners and levels stored in the idea files). Not checked: which GitHub plans allow rulesets on private repositories.",
-    "date": 1794421442262
+    "state": "cancelled",
+    "comment": "Cancelled 2026-11-12: it enforced owners and levels per idea (fcb38df6), which \"people own graphs\" (d4203221) replaces. Rights are per graph and are enforced by the server hosting it. The findings about GitHub rulesets in the description stay valid as a record.",
+    "date": 1794513873997
   },
   "intrinsicValue": 0,
   "cost": 5,

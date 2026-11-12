@@ -84,7 +84,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Decided by Felix as the direction on 2026-11-12; not designed, nothing built, no build requested yet. Owners and levels per idea (fcb38df6) and the GitHub check (698badcb) are probably not needed any more; Felix has not said so.",
+    "comment": "Decided by Felix as the direction on 2026-11-12 and planned in parts the same day: many graphs on one server (548c5b94), accounts (383e8949), access per graph (8faf6a70), proposing (b7e0b972), safety (8a303626), links by host URL (96d638bf), the web app across servers (588568b7). First use: Hack the Hub in December 2026 (96e9fc41). Nothing built yet. Felix: this implicitly solves the scaling problem, and it is like intention-connections between open-source repos. Cancelled as replaced: fcb38df6, 698badcb, b9744739.",
     "date": 1794511063817
   },
   "intrinsicValue": 0,

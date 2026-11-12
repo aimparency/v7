@@ -1,7 +1,7 @@
 {
   "id": "383e8949-3888-40de-95e9-a1dbfac0cdb6",
   "text": "Accounts on a server: sign-up as an option, automatic login with a browser key, upgrade to a permanent login",
-  "description": "Felix 2026-11-12: we do implement a user system. Everyone hosts Aimparency and manages users there. \"Anyone can create an account\" is an option of the server. For Hack the Hub it must be extraordinarily simple: login happens automatically with a key created in the browser's local storage; an exclamation mark recommends upgrading to some permanent type of login.\n\nToday: accounts with name, role and password hash in .bowman/runtime/accounts.json, created by the admin on the command line (accounts.ts); no sign-up, no key login. Earlier thoughts on keys, invitation links and recovery: b9744739.\n\nAssumed by Claude, not said by Felix: accounts belong to the server, not to one graph; the browser key is a key pair, the server stores the public key and the name, and login is a signature; without an upgrade, clearing the browser data loses the account, which is what the exclamation mark warns about.\n\nNot decided: which permanent logins to offer (Felix named password, email and crypto wallet on 2026-11-11), and whether invitation links remain as a third way next to open sign-up and admin-created accounts.",
+  "description": "Felix 2026-11-12: we do implement a user system. Accounts belong to the server. Whoever runs a server configures accounts; local hosting keeps today's default, a super user without login.\n\nWays to get an account, each a server option:\n- \"Anyone can create an account\".\n- Automatic: login happens with a key created in the browser's local storage; an exclamation mark recommends upgrading to a permanent login. This is what Commons Hub and Hack the Hub use, because onboarding has to be as easy as possible.\n- Invitation links: permanent ones (maybe limited in time) and ones redeemable once. To be implemented, but not used for Commons Hub; they are there to switch to if open sign-up causes problems.\n\nPermanent logins, decided by Felix 2026-11-12:\n- user name and password\n- crypto wallet, through a good open-source login that covers many wallets\n- email only optional, later: setting up a mail server is a burden\n\nCarried over from fcb38df6 (Felix 2026-11-11): non-human agents get a user identity too and are shown on the ideas they work on while they work.\n\nToday: accounts with name, role and password hash in .bowman/runtime/accounts.json, created by the admin on the command line (accounts.ts); no sign-up, no key login, no invitations.\n\nAssumed by Claude: the browser key is a key pair, the server stores the public key and the name, and login is a signature; without an upgrade, clearing the browser data loses the account. Candidate for the wallet login, not checked: Sign-In with Ethereum with a wallet connector that supports Vue.",
   "archived": false,
   "color": "#306331",
   "tags": [],
@@ -13,7 +13,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built. The kind of permanent login is not decided.",
+    "comment": "Planned 2026-11-12 at Felix's request; kinds of login decided the same day; nothing built. The wallet library is to be chosen.",
     "date": 1794511915953
   },
   "intrinsicValue": 0,

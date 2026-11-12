@@ -339,7 +339,8 @@
         2.87
       ],
       "weight": 1,
-      "hypothesis": "When every idea has an owner and connections need acceptance, anyone can be allowed to propose, so a group can share one graph without a ladder of access roles."
+      "hypothesis": "When every idea has an owner and connections need acceptance, anyone can be allowed to propose, so a group can share one graph without a ladder of access roles.",
+      "reflection": "Not tested, never built. Thinking it through showed that owners per idea need rules for who may touch which idea (levels, oversight, enforcement in git), which kept feeling cumbersome. Half of it held: anyone may propose and the benefiting side accepts. The owner moved from the idea to the whole graph (d4203221)."
     },
     {
       "ideaId": "c02e3a48-d9ed-440f-b333-0caf8be3a086",
