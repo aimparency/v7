@@ -1,0 +1,24 @@
+{
+  "id": "d4203221-939e-44e6-bf3f-b3933c790e6b",
+  "text": "People own graphs: one-click graph on a host, links between graphs, one global graph across servers",
+  "description": "Felix 2026-11-12: \"that actually comes closest to the reality: People owning graphs. Everyone can make a proposal which is his graph. And then ideally the website would be able to access different servers (almost like federated).\" The hurdle to participate is too high today: you have to set up a repo. \"If we could make that simple and one-click, that'd be awesome. Then the result would really be a global ever expanding graph of ideas. aimparency. ideaparency. global. I'd love this.\"\n\nWhat led here (2026-11-11): every design that put all people into one graph needed rules for who may touch which idea (owners and levels per idea, signed commits, a GitHub check, a guest layer) and felt cumbersome or like a compromise. Here the unit of ownership is the graph: whoever owns a graph may change all of it.\n\nFits the standing decision of 2026-06-27 and 2026-09-20 (e81b11c3): links are to a whole graph, which stays a black box.\n\nExists today: an idea supported by a whole linked repo, drawn as one node with value flow (e81b11c3); opening any graph from a Git URL read-only in the normal UI, with a shareable link (250fb1aa, 9beb3725); spinning a branch off into its own graph (10a0561b); hosted mode with accounts for one project per server (af701cd6).\n\nMissing, not designed: a host that holds many graphs, each with its own address; creating a graph there in one click, without a repo; linking to a graph by address instead of a local checkout; the offer side of a link (a graph says which idea of another graph it supports, with a pitch) and its acceptance; the website opening a graph that lives on another server.",
+  "archived": false,
+  "color": "#2e662d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Direction Felix says he would love (2026-11-12); not designed, nothing built, no build requested. If it holds, owners and levels per idea (fcb38df6), the guest layer (34b3d747) and the GitHub check (698badcb) are probably not needed.",
+    "date": 1794511063817
+  },
+  "intrinsicValue": 0,
+  "cost": 8,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

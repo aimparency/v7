@@ -348,6 +348,15 @@
         3.26
       ],
       "weight": 1
+    },
+    {
+      "ideaId": "d4203221-939e-44e6-bf3f-b3933c790e6b",
+      "relativePosition": [
+        2.2,
+        -3.04
+      ],
+      "weight": 1,
+      "hypothesis": "When anyone can get their own graph in one click and link it to others, people take part without setting up a repo, and the graphs grow into one global graph of ideas."
     }
   ],
   "supportedIdeas": [
