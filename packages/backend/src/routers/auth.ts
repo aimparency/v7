@@ -5,6 +5,7 @@ import { t, delayedProcedure, type Context } from '../trpc.js';
 import { agentsEnabled, mayCreateGraphs, viewerFor } from '../auth/access.js';
 import * as accounts from '../auth/accounts.js';
 import { newChallenge, verifyKeyLogin } from '../auth/browser-key.js';
+import { verifyWalletLogin, walletChallenge } from '../auth/wallet.js';
 import { findGraph } from '../graphs/registry.js';
 import { withinLimit } from '../rate-limit.js';
 
@@ -45,6 +46,21 @@ function assertMayCreateAccount(ctx: Context) {
   }
 }
 
+// Wallet login needs the server to know its own address: a signature is only
+// accepted for it (see auth/wallet.ts).
+const walletEnabled = () => hasAccounts() && serverConfig().signUp.wallet && serverConfig().publicUrl !== undefined;
+
+function walletUrl(): string {
+  if (!walletEnabled()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'This server offers no login with a wallet.' });
+  return serverConfig().publicUrl!;
+}
+
+async function signedWallet(input: { message: string; signature: string }): Promise<string> {
+  const address = await verifyWalletLogin(walletUrl(), input.message, input.signature);
+  if (!address) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'The wallet\'s signature does not fit the message this server wrote.' });
+  return address;
+}
+
 // Wrong passwords per name within the window; at the limit that name's logins
 // pause until the window ends. In memory: a restart forgets.
 const LOGIN_FAILURE_LIMIT = 10;
@@ -73,7 +89,7 @@ export const authRouter = t.router({
     return {
       login,
       agents: agentsEnabled(),
-      signUp,
+      signUp: { ...signUp, wallet: walletEnabled() },
       name: viewer.name,
       serverAdmin: viewer.serverAdmin,
       canCreateGraphs: mayCreateGraphs(viewer),
@@ -140,6 +156,37 @@ export const authRouter = t.router({
         account = await accounts.createKeyAccount(input.publicKey);
       }
       return logIn(ctx, account.name);
+    }),
+
+  // Login with a crypto wallet: the server writes a message for this wallet,
+  // the wallet signs it. An unknown wallet gets an account where sign-up is open.
+  walletChallenge: delayedProcedure
+    .input(z.object({ address: z.string().regex(/^0x[0-9a-fA-F]{40}$/), chainId: z.number().int().positive() }))
+    .mutation(({ input }) => ({ message: walletChallenge(walletUrl(), input.address, input.chainId) })),
+
+  walletLogin: delayedProcedure
+    .input(z.object({ message: z.string().max(2000), signature: z.string().max(1000) }))
+    .mutation(async ({ ctx, input }) => {
+      const address = await signedWallet(input);
+      let account = accounts.findAccountByWallet(address);
+      if (!account) {
+        if (!serverConfig().signUp.open) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'No account on this server logs in with this wallet.' });
+        }
+        assertMayCreateAccount(ctx);
+        account = await accounts.createWalletAccount(address);
+      }
+      return logIn(ctx, account.name);
+    }),
+
+  // The signed-in account takes this wallet as a login (an automatic account so becomes permanent).
+  addWallet: delayedProcedure
+    .input(z.object({ message: z.string().max(2000), signature: z.string().max(1000) }))
+    .mutation(async ({ ctx, input }) => {
+      const name = signedIn(ctx.viewer?.name);
+      const address = await signedWallet(input);
+      await run(() => accounts.addWallet(name, address));
+      return { success: true };
     }),
 
   // An automatic account chooses its name and password and so becomes permanent.

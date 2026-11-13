@@ -190,7 +190,12 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
     "limits": { "accountsPerAddressPerHour": 100, "graphsPerAccount": 20, "graphMegabytes": 50 } }
   ```
 
-  `open` lets anyone choose a name and a password. `browserKey` gives a visitor
+  `open` lets anyone choose a name and a password. `"wallet": true` in
+  `signUp`, together with `"publicUrl": "https://<host>"`, adds login with a
+  crypto wallet of the browser (Sign-In with Ethereum, checked by the server
+  itself, no outside service): a wallet of an existing account logs it in, an
+  account adds its wallet, and an unknown wallet gets an account where sign-up
+  is open. `browserKey` gives a visitor
   an account without asking, the moment they do something that needs one; it is
   held by a key in their browser, and the UI recommends a name and password
   ("Keep account"), since clearing the browser loses it. Invitations work

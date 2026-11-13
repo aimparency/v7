@@ -19,6 +19,8 @@ type Account = {
   passwordHash?: string;
   /** The browser key of an automatic account: its public half (SPKI, base64). */
   publicKey?: string;
+  /** Wallet addresses (checksummed) that log this account in. */
+  wallets?: string[];
   serverAdmin?: boolean;
   canCreateGraphs?: boolean;
   createdAt: string;
@@ -92,8 +94,10 @@ async function passwordMatches(password: string, stored: string | undefined): Pr
 
 const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
-const view = ({ id, name, serverAdmin, canCreateGraphs, passwordHash }: Account): AccountView =>
-  ({ id, name, serverAdmin: serverAdmin === true, canCreateGraphs: canCreateGraphs === true, permanentLogin: passwordHash !== undefined });
+const view = ({ id, name, serverAdmin, canCreateGraphs, passwordHash, wallets }: Account): AccountView => ({
+  id, name, serverAdmin: serverAdmin === true, canCreateGraphs: canCreateGraphs === true,
+  permanentLogin: passwordHash !== undefined || (wallets?.length ?? 0) > 0
+});
 
 function byName(accounts: Accounts, name: string): Account {
   const account = accounts.accounts.find(candidate => candidate.name === name);
@@ -248,6 +252,43 @@ export async function createKeyAccount(publicKey: string): Promise<AccountView> 
     return { ...accounts, accounts: [...accounts.accounts, account] };
   });
   return view(account);
+}
+
+// --- Wallets ---------------------------------------------------------------------
+
+export function findAccountByWallet(address: string): AccountView | null {
+  const account = load().accounts.find(candidate => candidate.wallets?.includes(address));
+  return account ? view(account) : null;
+}
+
+/** An account for a wallet nobody knows yet, named after its address until its holder chooses a name. */
+export async function createWalletAccount(address: string): Promise<AccountView> {
+  let account!: Account;
+  await change((accounts) => {
+    const existing = accounts.accounts.find(candidate => candidate.wallets?.includes(address));
+    if (existing) {
+      account = existing;
+      return accounts;
+    }
+    let length = 4;
+    const name = () => `${address.slice(0, 6)}…${address.slice(-length)}`;
+    while (accounts.accounts.some(candidate => candidate.name === name())) length++;
+    account = newAccount(name(), { wallets: [address] });
+    return { ...accounts, accounts: [...accounts.accounts, account] };
+  });
+  return view(account);
+}
+
+/** Lets this wallet log the account in from now on. */
+export async function addWallet(name: string, address: string) {
+  await change((accounts) => {
+    const current = byName(accounts, name);
+    if (accounts.accounts.some(account => account.id !== current.id && account.wallets?.includes(address))) {
+      throw new AccountError('This wallet logs in another account already.');
+    }
+    const wallets = [...new Set([...(current.wallets ?? []), address])];
+    return { ...accounts, accounts: accounts.accounts.map(account => account.id === current.id ? { ...account, wallets } : account) };
+  });
 }
 
 /** The first permanent login of an automatic account: a name of its own and a password. Logins stay. */

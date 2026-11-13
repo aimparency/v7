@@ -57,7 +57,7 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
 
   const me = await (await fetch(`${base}/trpc/auth.me`)).json() as any;
   assert.deepEqual(me.result.data, {
-    login: 'accounts', agents: false, signUp: { open: false, browserKey: false }, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true
+    login: 'accounts', agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true
   });
 
   // No MCP server listens on its port here: the proxy says so instead of hanging.

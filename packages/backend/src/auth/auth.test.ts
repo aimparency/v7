@@ -131,7 +131,7 @@ test('without login the person at the machine may do everything, by path or by s
   const idea = await as().idea.createFloatingIdea({ projectPath: 'mine', idea: { text: 'By slug' } });
   assert.equal((await as().idea.get({ projectPath, ideaId: idea.id })).text, 'By slug');
   assert.deepEqual(await as().auth.me(), {
-    login: 'none', agents: false, signUp: { open: false, browserKey: false }, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true
+    login: 'none', agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true
   });
   assert.equal((await as().project.getAccess({ projectPath })).role, 'owner');
   await assert.rejects(as().auth.login({ name: 'x', password: 'whatever it is' }), /no accounts/);

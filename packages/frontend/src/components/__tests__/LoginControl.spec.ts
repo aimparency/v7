@@ -10,6 +10,8 @@ const { auth, signLoginChallenge } = vi.hoisted(() => ({
     login: { mutate: vi.fn() },
     signUp: { mutate: vi.fn() },
     makePermanent: { mutate: vi.fn() },
+    walletChallenge: { mutate: vi.fn() },
+    walletLogin: { mutate: vi.fn() },
     keyChallenge: { mutate: vi.fn() },
     keyLogin: { mutate: vi.fn() }
   },
@@ -20,7 +22,7 @@ vi.mock('../../utils/runtime-config', () => ({ hasAccounts: () => true }))
 vi.mock('../../utils/browser-key', () => ({ signLoginChallenge }))
 
 const me = (values: object) => ({
-  login: 'accounts', agents: false, signUp: { open: false, browserKey: false },
+  login: 'accounts', agents: false, signUp: { open: false, browserKey: false, wallet: false },
   name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true, ...values
 })
 
@@ -92,7 +94,7 @@ describe('LoginControl', () => {
   })
 
   it('gives a visitor an account with the browser key the moment one is needed', async () => {
-    await mountControl({ signUp: { open: false, browserKey: true } })
+    await mountControl({ signUp: { open: false, browserKey: true, wallet: false } })
     const viewer = useViewerStore()
     expect(viewer.getsAccountAutomatically).toBe(true)
 
@@ -109,5 +111,25 @@ describe('LoginControl', () => {
     auth.keyChallenge.mutate.mockClear()
     expect(await viewer.ensureAccount()).toBe(true)
     expect(auth.keyChallenge.mutate).not.toHaveBeenCalled()
+  })
+
+  it('logs in with a wallet of this browser: it signs the message the server wrote for its account', async () => {
+    const request = vi.fn(async ({ method }: { method: string }) =>
+      method === 'eth_requestAccounts' ? ['0x52908400098527886E0F7030069857D2E4169EE7'] : method === 'eth_chainId' ? '0x1' : '0xsigned')
+    const wrapper = await mountControl({ signUp: { open: false, browserKey: false, wallet: true } })
+    // Wallets announce themselves whenever they are ready, also after the page asked.
+    window.dispatchEvent(new CustomEvent('eip6963:announceProvider', { detail: { info: { uuid: 'w1', name: 'Test Wallet' }, provider: { request } } }))
+    await wrapper.find('.login-control > button').trigger('click')
+    const walletButton = wrapper.findAll('button').find(button => button.text() === 'Test Wallet')!
+
+    auth.walletChallenge.mutate.mockResolvedValue({ message: 'Hi' })
+    auth.walletLogin.mutate.mockResolvedValue({ token: 'wallet-token' })
+    auth.me.query.mockResolvedValue(me({ name: '0x5290…9EE7' }))
+    await walletButton.trigger('click')
+    await flushPromises()
+    expect(auth.walletChallenge.mutate).toHaveBeenCalledWith({ address: '0x52908400098527886E0F7030069857D2E4169EE7', chainId: 1 })
+    expect(request).toHaveBeenLastCalledWith({ method: 'personal_sign', params: ['0x4869', '0x52908400098527886E0F7030069857D2E4169EE7'] })
+    expect(auth.walletLogin.mutate).toHaveBeenCalledWith({ message: 'Hi', signature: '0xsigned' })
+    expect(wrapper.find('.who').text()).toBe('0x5290…9EE7')
   })
 })

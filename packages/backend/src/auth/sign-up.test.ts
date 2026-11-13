@@ -57,7 +57,7 @@ test('sign-up is closed unless the server opens it', async () => {
   const visitor = connection();
   await assert.rejects(visitor.auth.signUp({ name: 'ben', password: 'ben password' }), /needs an invitation/);
   updateServerConfig({ signUp: { open: true } });
-  assert.deepEqual((await visitor.auth.me()).signUp, { open: true, browserKey: false });
+  assert.deepEqual((await visitor.auth.me()).signUp, { open: true, browserKey: false, wallet: false });
   await visitor.auth.signUp({ name: 'ben', password: 'ben password' });
   assert.deepEqual(await visitor.auth.me().then(({ name, permanentLogin, serverAdmin }) => ({ name, permanentLogin, serverAdmin })),
     { name: 'ben', permanentLogin: true, serverAdmin: false });

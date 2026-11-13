@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { CircleAlert } from 'lucide-vue-next'
 import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
+import { browserWallets, signWithWallet, type Wallet } from '../utils/wallets'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 import McpConnectModal from './McpConnectModal.vue'
@@ -63,6 +64,22 @@ const changePassword = () => submit(async () => {
   await viewer.loginChanged(token)
 })
 
+// Login with a crypto wallet: it signs a message this server wrote for it.
+const wallets = browserWallets()
+const walletChallenge = async (address: string, chainId: number) =>
+  (await trpc.auth.walletChallenge.mutate({ address, chainId })).message
+
+const walletLogin = (wallet: Wallet) => submit(async () => {
+  const { token } = await trpc.auth.walletLogin.mutate(await signWithWallet(wallet, walletChallenge))
+  await viewer.loginChanged(token)
+})
+
+// An automatic account takes a wallet as its permanent login.
+const keepWithWallet = (wallet: Wallet) => submit(async () => {
+  await trpc.auth.addWallet.mutate(await signWithWallet(wallet, walletChallenge))
+  await viewer.load()
+})
+
 // An automatic account chooses its name and password; it stays logged in.
 const makePermanent = () => submit(async () => {
   await trpc.auth.makePermanent.mutate({ name: name.value, password: password.value })
@@ -103,6 +120,9 @@ const logout = async () => {
         <p v-if="error" class="error">{{ error }}</p>
       </form>
       <template #footer>
+        <template v-if="viewer.signUp.wallet">
+          <button v-for="wallet in wallets" :key="wallet.id" class="btn-secondary" type="button" :disabled="busy" @click="walletLogin(wallet)">{{ wallet.name }}</button>
+        </template>
         <button class="btn-primary" form="login-form" type="submit" :disabled="busy">Log in</button>
       </template>
     </FormModalShell>
@@ -127,6 +147,9 @@ const logout = async () => {
         <p v-if="error" class="error">{{ error }}</p>
       </form>
       <template #footer>
+        <template v-if="viewer.signUp.wallet">
+          <button v-for="wallet in wallets" :key="wallet.id" class="btn-secondary" type="button" :disabled="busy" @click="keepWithWallet(wallet)">Keep with {{ wallet.name }}</button>
+        </template>
         <button class="btn-primary" form="permanent-form" type="submit" :disabled="busy">Keep account</button>
       </template>
     </FormModalShell>

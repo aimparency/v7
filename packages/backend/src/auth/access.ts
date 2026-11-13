@@ -37,10 +37,11 @@ const LOCAL_ONLY = new Set([
 ]);
 // Nothing of a graph: viewer state, or a visitor logging in or out.
 const OPEN_MUTATIONS = new Set([
-  'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin'
+  'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin',
+  'auth.walletChallenge', 'auth.walletLogin'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
+  'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
   'notes.add', 'notes.remove'
 ]);

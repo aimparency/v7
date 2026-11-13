@@ -26,7 +26,18 @@ const ServerConfigSchema = z.object({
   // lets anyone choose a name and password; `browserKey` gives a visitor an
   // account without asking, held by a key in their browser. Invitations work
   // either way.
-  signUp: z.object({ open: z.boolean().default(false), browserKey: z.boolean().default(false) }).prefault({}),
+  // `wallet` lets people log in by signing with a crypto wallet (Sign-In with
+  // Ethereum, checked by this server alone); it needs `publicUrl`. An unknown
+  // wallet gets a new account where sign-up is open.
+  signUp: z.object({
+    open: z.boolean().default(false),
+    browserKey: z.boolean().default(false),
+    wallet: z.boolean().default(false),
+  }).prefault({}),
+  // The address people reach this server at, e.g. "https://graphs.example.org".
+  // A wallet shows it when signing in, and the server accepts a signature only
+  // for it, so a signature given to another website is worthless here.
+  publicUrl: z.string().url().optional(),
   // What accounts without rights on a graph (guests) may do there, unless the
   // graph's owner set it otherwise: `everyone` every account, `selected` the
   // accounts the owner named, `nobody`.

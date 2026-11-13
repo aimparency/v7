@@ -18,7 +18,7 @@ export const useViewerStore = defineStore('viewer', {
     // False for an account held only by this browser's key.
     permanentLogin: true,
     // How a visitor gets an account without the server admin (server.json).
-    signUp: { open: false, browserKey: false },
+    signUp: { open: false, browserKey: false, wallet: false },
   }),
 
   getters: {
