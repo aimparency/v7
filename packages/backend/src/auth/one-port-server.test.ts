@@ -63,6 +63,8 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
   // No MCP server listens on its port here: the proxy says so instead of hanging.
   const mcp = await fetch(`${base}/mcp/sse`);
   assert.equal(mcp.status, 502);
+  // A graph's own MCP address goes to the same MCP server, not to the UI.
+  assert.equal((await fetch(`${base}/g/hack-the-hub/mcp/sse?token=x`)).status, 502);
 });
 
 test('sign in, create a graph, write it with the bearer token; no token only reads', async () => {

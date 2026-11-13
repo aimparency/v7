@@ -2,6 +2,7 @@ import { CallToolRequestSchema, ListToolsRequestSchema } from "@modelcontextprot
 import type { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import type { BackendClient } from "../client.js";
 import { TOOLS } from "./catalog.js";
+import type { ToolDefinition } from "./types.js";
 import { reportToolActivity } from "../activity.js";
 
 export { verificationHintForIdea, ideaCreationConfirmationToken } from "./ideas.js";
@@ -16,7 +17,23 @@ export function availableTools(withAccounts: boolean) {
   return withAccounts ? TOOLS.filter((tool) => !LOCAL_ONLY_TOOLS.has(tool.name)) : TOOLS;
 }
 
-export function registerTools(server: Server, trpcClient: BackendClient) {
+// A session connected through a graph's own address (<host>/g/<slug>/mcp/sse)
+// works on that graph: its tools take projectPath as optional.
+export function toolForGraph(tool: ToolDefinition, graph: string | undefined): Pick<ToolDefinition, "name" | "description" | "inputSchema"> {
+  const { name, description, inputSchema } = tool;
+  if (!graph || !inputSchema.required?.includes("projectPath")) return { name, description, inputSchema };
+  return {
+    name,
+    description,
+    inputSchema: {
+      ...inputSchema,
+      required: inputSchema.required.filter((property) => property !== "projectPath"),
+      properties: { ...inputSchema.properties, projectPath: { type: "string", description: `Leave out: this session works on the graph "${graph}"` } },
+    },
+  };
+}
+
+export function registerTools(server: Server, trpcClient: BackendClient, graph?: string) {
   // The backend says what kind of server this is, once per session. While it
   // does not answer, the tools that bypass it stay out.
   let known: Promise<typeof TOOLS> | undefined;
@@ -27,11 +44,13 @@ export function registerTools(server: Server, trpcClient: BackendClient) {
       return availableTools(true);
     });
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: (await sessionTools()).map(({ name, description, inputSchema }) => ({ name, description, inputSchema })),
+    tools: (await sessionTools()).map((tool) => toolForGraph(tool, graph)),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
-    const { name, arguments: args } = request.params;
+    const { name } = request.params;
+    const given = request.params.arguments;
+    const args = graph && given && given.projectPath === undefined ? { ...given, projectPath: graph } : given;
     try {
       const tool = (await sessionTools()).find((candidate) => candidate.name === name);
       if (!tool) throw new Error(`Unknown tool: ${name}`);

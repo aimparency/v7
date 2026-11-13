@@ -4,7 +4,8 @@ import { registerTools } from "./tools/index.js";
 import { registerPrompts } from "./prompts.js";
 import type { BackendClient } from "./client.js";
 
-export function createMcpServer(trpc: BackendClient) {
+/** `graph`: the one graph this session is for (its tools then need no projectPath). */
+export function createMcpServer(trpc: BackendClient, graph?: string) {
   const server = new Server(
     {
       name: "aimparency",
@@ -21,7 +22,7 @@ export function createMcpServer(trpc: BackendClient) {
 
   // Register handlers
   registerResources(server, trpc);
-  registerTools(server, trpc);
+  registerTools(server, trpc, graph);
   registerPrompts(server, trpc);
   
   return server;

@@ -57,7 +57,8 @@ app.get(`${basePath}/sse`, async (req, res) => {
   }
   console.log(`New SSE connection`);
   const backend = createBackendClient(tokenOf(req));
-  const server = createMcpServer(backend.trpc);
+  // ?graph=<slug>: the session came through that graph's address (the one-port server adds it).
+  const server = createMcpServer(backend.trpc, typeof req.query.graph === "string" ? req.query.graph : undefined);
   const transport = new SSEServerTransport(`${basePath}/messages`, res);
 
   await server.connect(transport);

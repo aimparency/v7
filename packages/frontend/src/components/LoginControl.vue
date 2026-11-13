@@ -2,16 +2,15 @@
 import { computed, onMounted, ref } from 'vue'
 import { CircleAlert } from 'lucide-vue-next'
 import { trpc } from '../trpc'
-import { useToastStore } from '../stores/toast'
 import { useViewerStore } from '../stores/viewer'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
+import McpConnectModal from './McpConnectModal.vue'
 
 // The account corner on a server with accounts: anyone reads, accounts write
 // the graphs they own or were given.
 const viewer = useViewerStore()
-const toastStore = useToastStore()
-type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts'
+type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'mcp'
 const dialog = ref<Dialog | null>(null)
 const name = ref('')
 const password = ref('')
@@ -75,16 +74,6 @@ const logout = async () => {
   await viewer.loginChanged(null)
 }
 
-// The MCP acts as this account: its token is in the link, so share it like a password.
-const copyMcpLink = async () => {
-  try {
-    const { token } = await trpc.auth.issueToken.mutate({ label: 'mcp' })
-    await navigator.clipboard.writeText(`${window.location.origin}/mcp/sse?token=${token}`)
-    toastStore.info('MCP link copied. It acts as you: keep it private.')
-  } catch (caught) {
-    toastStore.error('Could not create an MCP link', caught)
-  }
-}
 </script>
 
 <template>
@@ -102,7 +91,7 @@ const copyMcpLink = async () => {
         @click="open('permanent')"
       ><CircleAlert /> Keep account</button>
       <button v-if="viewer.serverAdmin" class="view-btn" @click="open('accounts')">Accounts</button>
-      <button class="view-btn" title="A link that lets an MCP client act as you" @click="copyMcpLink">MCP link</button>
+      <button class="view-btn" title="Let an MCP client, such as a coding agent, act as you" @click="open('mcp')">MCP</button>
       <button v-if="viewer.permanentLogin" class="view-btn" @click="open('password')">Password</button>
       <button class="view-btn" @click="logout">Log out</button>
     </template>
@@ -154,6 +143,7 @@ const copyMcpLink = async () => {
     </FormModalShell>
 
     <AccountsModal v-if="dialog === 'accounts'" :me="viewer.name" @close="dialog = null" />
+    <McpConnectModal v-if="dialog === 'mcp'" @close="dialog = null" />
   </div>
 </template>
 

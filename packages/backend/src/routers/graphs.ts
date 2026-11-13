@@ -3,7 +3,7 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { serverConfig } from 'shared/server-config';
 import { t, delayedProcedure } from '../trpc.js';
-import { mayCreateGraphs, viewerFor, type Viewer } from '../auth/access.js';
+import { mayCreateGraphs, rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
 import { createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, type Graph } from '../graphs/registry.js';
@@ -46,10 +46,14 @@ const ownerName = (graph: Graph) => graph.owner ? accountNames([graph.owner])[0]
 
 // The graphs of this server: who may read is everyone, so the list is open.
 export const graphsRouter = t.router({
-  list: delayedProcedure.query(async () => Promise.all(listGraphs().map(async (graph) => {
+  list: delayedProcedure.query(async ({ ctx }) => Promise.all(listGraphs().map(async (graph) => {
     // The name as it is on disk: no migration, no repair, just a label for the list.
     const meta = await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json')) as { name?: string; color?: string } | null;
-    return { slug: graph.slug, kind: graph.kind, name: meta?.name ?? graph.slug, color: meta?.color ?? null, owner: ownerName(graph) };
+    return {
+      slug: graph.slug, kind: graph.kind, name: meta?.name ?? graph.slug, color: meta?.color ?? null, owner: ownerName(graph),
+      // What the asker is on this graph: the UI offers their own graphs for an MCP client.
+      right: rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token))
+    };
   }))),
 
   create: delayedProcedure

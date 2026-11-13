@@ -43,7 +43,7 @@ test('passwords and tokens round-trip, and a revoked token is gone', async () =>
   assert.equal(await accounts.login('ada', 'wrong password'), null);
   const token = await accounts.login('ada', 'correct horse');
   assert.ok(token);
-  assert.deepEqual(accounts.resolveToken(token), { id: ada.id, name: 'ada', serverAdmin: false, canCreateGraphs: false, permanentLogin: true });
+  assert.deepEqual(accounts.resolveToken(token), { id: ada.id, name: 'ada', serverAdmin: false, canCreateGraphs: false, permanentLogin: true, scope: null });
   await accounts.revokeToken(token);
   assert.equal(accounts.resolveToken(token), null);
   const stored = await fs.readFile(accounts.accountsFile(), 'utf8');
@@ -190,6 +190,36 @@ test('a graph sends only its own changes, under its own address', async () => {
   await ada.idea.createFloatingIdea({ projectPath: first, idea: { text: 'Here' } });
   subscription.unsubscribe();
   assert.deepEqual(seen, [{ type: 'idea', projectPath: 'first' }]);
+});
+
+test('a token limited to some graphs is the account there and nobody anywhere else', async () => {
+  updateServerConfig({ login: 'accounts' });
+  await accounts.createAccount('ada', 'ada password', { serverAdmin: true });
+  const ada = await loggedIn('ada', 'ada password');
+  const first = (await ada.graphs.create({ name: 'First' })).slug;
+  const second = (await ada.graphs.create({ name: 'Second' })).slug;
+  await assert.rejects(ada.auth.issueToken({ label: 'agent', graphs: ['unknown'] }), /No graph "unknown"/);
+  const { token } = await ada.auth.issueToken({ label: 'agent', graphs: [first] });
+  const agent = as(token);
+
+  await agent.idea.createFloatingIdea({ projectPath: first, idea: { text: 'In scope' } });
+  assert.deepEqual(await agent.project.getAccess({ projectPath: first }).then(({ user, role, serverAdmin }) => ({ user, role, serverAdmin })),
+    { user: 'ada', role: 'owner', serverAdmin: false });
+  // The other graph is ada's too, and she is the server admin: the token is neither.
+  assert.equal((await agent.idea.list({ projectPath: second })).length, 0);
+  await assert.rejects(agent.idea.createFloatingIdea({ projectPath: second, idea: { text: 'Out of scope' } }), /log in to edit/);
+  await assert.rejects(agent.graphs.create({ name: 'More' }), /Log in first/);
+  await assert.rejects(agent.auth.issueToken({ label: 'wider' }), /Log in first/);
+  await assert.rejects(agent.auth.listAccounts(), /server admins/);
+  assert.equal((await agent.auth.me()).name, null);
+
+  // The account sees what it handed out and takes it back.
+  const tokens = await ada.auth.listTokens();
+  assert.deepEqual(tokens.map(({ label, graphs }) => ({ label, graphs })), [{ label: 'browser', graphs: null }, { label: 'agent', graphs: [first] }]);
+  assert.ok(!JSON.stringify(tokens).includes(token));
+  await ada.auth.revokeOwnToken({ id: tokens[1]!.id });
+  await assert.rejects(agent.idea.createFloatingIdea({ projectPath: first, idea: { text: 'Revoked' } }), /log in to edit/);
+  await assert.rejects(as().auth.listTokens(), /Log in first/);
 });
 
 test('a wrong password is refused', async () => {

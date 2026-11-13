@@ -3,7 +3,7 @@ import { isAllowedBrowserOrigin } from 'shared';
 import type { IncomingMessage } from 'node:http';
 import { runWithOrigin } from './change-origin.js';
 import { hasAccounts } from 'shared/server-config';
-import { assertAllowed, viewerFor, type Viewer } from './auth/access.js';
+import { assertAllowed, graphOf, viewerFor, type Viewer } from './auth/access.js';
 
 // `session` is one object per connection: logging in sets its token, so the
 // same WebSocket goes on as that account without reconnecting.
@@ -67,8 +67,9 @@ const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, nex
   if (ctx.foreignOrigin && type === 'mutation' && hasAccounts()) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Other websites may read this server; they do not write to it.' });
   }
-  const viewer = viewerFor(ctx.session?.token);
-  assertAllowed(path, type, viewer, await getRawInput());
+  const graph = graphOf(await getRawInput());
+  const viewer = viewerFor(ctx.session?.token, graph);
+  assertAllowed(path, type, viewer, graph);
   return next({ ctx: { ...ctx, viewer } });
 });
 

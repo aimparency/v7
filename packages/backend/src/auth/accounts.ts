@@ -23,7 +23,9 @@ type Account = {
   canCreateGraphs?: boolean;
   createdAt: string;
 };
-type Token = { hash: string; account: string; label: string; createdAt: string };
+// `graphs`: the slugs this token is limited to (an MCP client the account gave
+// only some graphs); absent, the token is the account everywhere.
+type Token = { hash: string; account: string; label: string; createdAt: string; graphs?: string[] };
 // A link that lets its holder create an account; `once` is used up by the first.
 type Invitation = {
   id: string;
@@ -315,10 +317,13 @@ export async function login(name: string, password: string): Promise<string | nu
   return await checkPassword(name, password) ? issueToken(name, 'browser') : null;
 }
 
-export async function issueToken(name: string, label: string): Promise<string> {
+export async function issueToken(name: string, label: string, graphs?: string[]): Promise<string> {
   const token = crypto.randomBytes(32).toString('base64url');
   await change((accounts) => {
-    const entry = { hash: sha256(token), account: byName(accounts, name).id, label, createdAt: new Date().toISOString() };
+    const entry: Token = {
+      hash: sha256(token), account: byName(accounts, name).id, label, createdAt: new Date().toISOString(),
+      ...(graphs ? { graphs } : {})
+    };
     return { ...accounts, tokens: [...accounts.tokens, entry] };
   });
   return token;
@@ -329,12 +334,31 @@ export async function revokeToken(token: string) {
   await change(accounts => ({ ...accounts, tokens: accounts.tokens.filter(entry => entry.hash !== hash) }));
 }
 
-export function resolveToken(token: string | undefined): AccountView | null {
+/** The account a token logs in, and the graphs it is limited to (null: none, it is the account everywhere). */
+export function resolveToken(token: string | undefined): (AccountView & { scope: string[] | null }) | null {
   if (!token) return null;
   const accounts = load();
   const entry = accounts.tokens.find(candidate => candidate.hash === sha256(token));
   const account = entry && accounts.accounts.find(candidate => candidate.id === entry.account);
-  return account ? view(account) : null;
+  return account ? { ...view(account), scope: entry.graphs ?? null } : null;
+}
+
+// The tokens an account handed out (browsers it is logged in at, MCP clients),
+// named by the start of their hash: enough to revoke one, useless to log in.
+const TOKEN_ID_LENGTH = 16;
+
+export function listTokens(name: string) {
+  const accounts = load();
+  const { id } = byName(accounts, name);
+  return accounts.tokens.filter(token => token.account === id)
+    .map(({ hash, label, createdAt, graphs }) => ({ id: hash.slice(0, TOKEN_ID_LENGTH), label, createdAt, graphs: graphs ?? null }));
+}
+
+export async function revokeTokenById(name: string, tokenId: string) {
+  await change((accounts) => {
+    const { id } = byName(accounts, name);
+    return { ...accounts, tokens: accounts.tokens.filter(token => !(token.account === id && token.hash.slice(0, TOKEN_ID_LENGTH) === tokenId)) };
+  });
 }
 
 // The server admins' wrapped agents edit graphs through the MCP as this account

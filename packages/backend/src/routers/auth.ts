@@ -5,6 +5,7 @@ import { t, delayedProcedure, type Context } from '../trpc.js';
 import { agentsEnabled, mayCreateGraphs, viewerFor } from '../auth/access.js';
 import * as accounts from '../auth/accounts.js';
 import { newChallenge, verifyKeyLogin } from '../auth/browser-key.js';
+import { findGraph } from '../graphs/registry.js';
 import { withinLimit } from '../rate-limit.js';
 
 const rights = { serverAdmin: z.boolean().optional(), canCreateGraphs: z.boolean().optional() };
@@ -149,12 +150,29 @@ export const authRouter = t.router({
       return { success: true };
     }),
 
-  // A token for an MCP client, which acts as this account.
+  // A token for an MCP client, which acts as this account: everywhere, or
+  // only on the graphs named here.
   issueToken: delayedProcedure
-    .input(z.object({ label: z.string().min(1).max(100).default('mcp') }))
-    .mutation(async ({ ctx, input }) => ({
-      token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), input.label))
-    })),
+    .input(z.object({ label: z.string().min(1).max(100).default('mcp'), graphs: z.array(z.string()).max(200).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      for (const slug of input.graphs ?? []) {
+        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No graph "${slug}" on this server.` });
+      }
+      return { token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), input.label, input.graphs)) };
+    }),
+
+  // The logins this account handed out: its browsers and MCP clients.
+  listTokens: delayedProcedure.query(({ ctx }) => {
+    assertAccounts();
+    return accounts.listTokens(signedIn(ctx.viewer?.name));
+  }),
+
+  revokeOwnToken: delayedProcedure
+    .input(z.object({ id: z.string().max(64) }))
+    .mutation(async ({ ctx, input }) => {
+      await run(() => accounts.revokeTokenById(signedIn(ctx.viewer?.name), input.id));
+      return { success: true };
+    }),
 
   changeOwnPassword: delayedProcedure
     .input(z.object({ current: z.string().max(1000), password: z.string().max(1000) }))

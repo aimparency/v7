@@ -54,16 +54,21 @@ function sameOrigin(req: http.IncomingMessage): boolean {
   }
 }
 
+// A token limited to some graphs (an MCP client's) is never a server admin's login.
+function isServerAdminToken(token: string | undefined): boolean {
+  const account = resolveToken(token);
+  return account?.serverAdmin === true && account.scope === null;
+}
+
 export async function isAdminRequest(req: http.IncomingMessage): Promise<boolean> {
-  return sameOrigin(req) && resolveToken(cookieToken(req.headers.cookie))?.serverAdmin === true;
+  return sameOrigin(req) && isServerAdminToken(cookieToken(req.headers.cookie));
 }
 
 /** POST with `Authorization: Bearer <token>`: a server admin's token becomes the agent cookie. */
 export function issueAgentCookie(req: http.IncomingMessage, res: http.ServerResponse) {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
-  const account = req.method === 'POST' && sameOrigin(req) ? resolveToken(token) : null;
-  if (!account?.serverAdmin) {
+  if (!(req.method === 'POST' && sameOrigin(req) && isServerAdminToken(token))) {
     res.writeHead(403, { 'content-type': 'text/plain' });
     return res.end('Agents are for server admins.');
   }

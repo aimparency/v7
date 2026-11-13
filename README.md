@@ -222,9 +222,15 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   (the log says why it is not pulling). `AIMPARENCY_PULL_SECONDS` sets the
   interval; `0` turns it off. A private repository needs fetch credentials for
   the server's user.
-- **MCP.** A logged-in user's "MCP link" connects an MCP client as that
-  account; tools take the graph's slug as `projectPath`. The link contains a
-  token, so treat it like a password. Without a token the MCP can only read.
+- **MCP.** "MCP" in the account corner connects an MCP client, such as a
+  coding agent, as that account: on all its graphs, or only on the graphs
+  chosen there. The link contains a login, so it is shown once and handled
+  like a password; the dialog lists the connected clients and revokes them. A
+  client limited to graphs is nobody elsewhere: it reads other graphs like any
+  visitor and cannot manage accounts or create graphs. Tools take the graph's
+  slug as `projectPath`; a link for one graph is that graph's own address
+  (`https://<host>/g/<slug>/mcp/sse`), where tools need no `projectPath`.
+  Without a token the MCP can only read.
 
 To keep it running, a systemd unit such as `/etc/systemd/system/aimparency.service`
 (adjust user and path; `pnpm` must be on systemd's PATH, check with `which pnpm`).

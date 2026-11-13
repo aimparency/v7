@@ -29,7 +29,7 @@ const mountControl = async (answer: object) => {
   const pinia = createPinia()
   setActivePinia(pinia)
   await useViewerStore().load()
-  const wrapper = mount(LoginControl, { global: { plugins: [pinia], stubs: { teleport: true, AccountsModal: true } }, attachTo: document.body })
+  const wrapper = mount(LoginControl, { global: { plugins: [pinia], stubs: { teleport: true, AccountsModal: true, McpConnectModal: true } }, attachTo: document.body })
   await flushPromises()
   return wrapper
 }
@@ -78,7 +78,7 @@ describe('LoginControl', () => {
 
   it('recommends a permanent login to an account that lives only in this browser', async () => {
     const wrapper = await mountControl({ name: 'guest-1a2b3c', permanentLogin: false })
-    expect(buttons(wrapper)).toEqual(['Keep account', 'MCP link', 'Log out'])
+    expect(buttons(wrapper)).toEqual(['Keep account', 'MCP', 'Log out'])
 
     auth.makePermanent.mutate.mockResolvedValue({ success: true })
     auth.me.query.mockResolvedValue(me({ name: 'Cleo', permanentLogin: true }))
@@ -88,7 +88,7 @@ describe('LoginControl', () => {
     await wrapper.find('#permanent-form').trigger('submit')
     await flushPromises()
     expect(auth.makePermanent.mutate).toHaveBeenCalledWith({ name: 'Cleo', password: 'cleo password' })
-    expect(buttons(wrapper)).toEqual(['MCP link', 'Password', 'Log out'])
+    expect(buttons(wrapper)).toEqual(['MCP', 'Password', 'Log out'])
   })
 
   it('gives a visitor an account with the browser key the moment one is needed', async () => {

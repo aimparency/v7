@@ -40,7 +40,7 @@ const OPEN_MUTATIONS = new Set([
   'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
+  'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
   'notes.add', 'notes.remove'
 ]);
@@ -52,7 +52,8 @@ const WRITE_MUTATIONS = new Set([
   'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister'
 ]);
 const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.remove']);
-const PUBLIC_AUTH_QUERIES = new Set(['auth.me']);
+// auth.listTokens answers an account about itself (its handler asks for the login).
+const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens']);
 // Every other mutation needs a server admin, so a new one is closed until listed.
 
 export function neededRole(path: string, type: string): Need {
@@ -72,9 +73,24 @@ export function seesServerPaths(viewer: Viewer | undefined): boolean {
   return !hasAccounts() || viewer?.serverAdmin === true;
 }
 
-export function viewerFor(token: string | undefined): Viewer {
+// A token limited to some graphs (an MCP client's) is the account on those
+// graphs and nobody anywhere else: not on other graphs, not for the server's
+// own business (accounts, creating graphs, further tokens).
+export function viewerFor(token: string | undefined, graph: Graph | null = null): Viewer {
   if (!hasAccounts()) return LOCAL_VIEWER;
-  return resolveToken(token) ?? ANONYMOUS;
+  const account = resolveToken(token);
+  if (!account) return ANONYMOUS;
+  const { scope, ...viewer } = account;
+  if (scope === null) return viewer;
+  if (!graph || !scope.includes(graph.slug)) return ANONYMOUS;
+  return { ...viewer, serverAdmin: false, canCreateGraphs: false };
+}
+
+/** The graph a request names with `projectPath`; an unknown one is refused here, whatever the procedure would do with it. */
+export function graphOf(input: unknown): Graph | null {
+  if (!hasAccounts()) return null;
+  const address = (input as { projectPath?: unknown } | undefined)?.projectPath;
+  return typeof address === 'string' ? resolveGraphAddress(address).graph : null;
 }
 
 export function mayCreateGraphs(viewer: Viewer): boolean {
@@ -100,15 +116,12 @@ export function readOnlyReason(graph: Graph | null, viewer: Viewer): string | nu
 
 // The message of a refused write keeps "open read-only", which the UI already
 // recognises as "editing is off here".
-export function assertAllowed(path: string, type: string, viewer: Viewer, input: unknown) {
+export function assertAllowed(path: string, type: string, viewer: Viewer, graph: Graph | null) {
   if (!hasAccounts()) return;
   const need = neededRole(path, type);
   if (need === 'local') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is not available on a server with accounts.` });
   }
-  // An unknown graph is refused here, whatever the procedure would do with it.
-  const address = (input as { projectPath?: unknown } | undefined)?.projectPath;
-  const graph = typeof address === 'string' ? resolveGraphAddress(address).graph : null;
   if (need === 'read' || viewer.serverAdmin) return;
   if (need === 'serverAdmin') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is for server admins.` });

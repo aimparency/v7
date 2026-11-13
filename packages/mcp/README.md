@@ -83,10 +83,13 @@ Restart Claude after updating the configuration.
 
 An Aimparency server for other people (see the root README, "Hosting It for a
 Group") serves this MCP over SSE at `https://<host>/mcp/sse`. Without a token it
-can only read. A logged-in user's "MCP link" in the UI adds `?token=…` and acts
-as that account; a client that sends headers may pass the token as
-`Authorization: Bearer <token>` instead. There `projectPath` is the slug of a
-graph (the last part of `https://<host>/g/<slug>`), never a path.
+can only read. "MCP" in the UI's account corner makes a link with `?token=…`
+that acts as that account, on all its graphs or only on chosen ones; a client
+that sends headers may pass the token as `Authorization: Bearer <token>`
+instead. There `projectPath` is the slug of a graph (the last part of
+`https://<host>/g/<slug>`), never a path. A graph's own address,
+`https://<host>/g/<slug>/mcp/sse`, serves a session for that one graph: its
+tools need no `projectPath`.
 
 ```bash
 claude mcp add --transport sse aimparency "https://<host>/mcp/sse?token=<token>"
