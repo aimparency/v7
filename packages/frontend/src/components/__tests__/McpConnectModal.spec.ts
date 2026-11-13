@@ -45,6 +45,7 @@ describe('McpConnectModal', () => {
     const wrapper = await mountModal()
     await wrapper.findAll('input[type=radio]')[1]!.setValue(true)
     expect(wrapper.findAll('.graphs label').map(label => label.text())).toEqual(['Mine', 'Shared'])
+    await flushPromises()
     expect(wrapper.find('form button').attributes('disabled')).toBeDefined()
 
     await wrapper.findAll('.graphs input')[0]!.setValue(true)
@@ -61,5 +62,43 @@ describe('McpConnectModal', () => {
     await wrapper.find('.row .btn-secondary').trigger('click')
     await flushPromises()
     expect(revokeOwnToken).toHaveBeenCalledWith({ id: 'm1' })
+  })
+})
+
+describe('McpAuthorizeModal', () => {
+  const { pending, approve, deny } = vi.hoisted(() => ({ pending: vi.fn(), approve: vi.fn(), deny: vi.fn() }))
+
+  it('shows who asks, lets the person choose graphs and sends the browser back with the approval', async () => {
+    const { trpc } = await import('../../trpc') as unknown as { trpc: Record<string, unknown> }
+    trpc.mcpAuth = { pending: { query: pending }, approve: { mutate: approve }, deny: { mutate: deny } }
+    pending.mockResolvedValue({ clientName: 'Coding agent', redirectHost: 'localhost:7777' })
+    approve.mockResolvedValue({ redirectTo: 'http://localhost:7777/callback?code=abc' })
+    const location = { href: '' }
+    vi.stubGlobal('location', location)
+
+    const { default: McpAuthorizeModal } = await import('../McpAuthorizeModal.vue')
+    const { createTestingPinia } = await import('@pinia/testing')
+    const wrapper = mount(McpAuthorizeModal, {
+      props: { requestId: 'r1' },
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: 'ana', signUp: { open: false, browserKey: false, wallet: false } } } })],
+        stubs: { teleport: true, LoginControl: true }
+      },
+      attachTo: document.body
+    })
+    const { useViewerStore } = await import('../../stores/viewer')
+    vi.mocked(useViewerStore().ensureAccount).mockResolvedValue(true)
+    await flushPromises()
+    expect(wrapper.text()).toContain('Coding agent asks to act as you on this server')
+    expect(wrapper.text()).toContain('localhost:7777')
+
+    await wrapper.findAll('input[type=radio]')[1]!.setValue(true)
+    await flushPromises()
+    await wrapper.findAll('.graphs input')[1]!.setValue(true)
+    await wrapper.find('.btn-primary').trigger('click')
+    await flushPromises()
+    expect(approve).toHaveBeenCalledWith({ requestId: 'r1', graphs: ['shared'] })
+    expect(location.href).toBe('http://localhost:7777/callback?code=abc')
+    vi.unstubAllGlobals()
   })
 })

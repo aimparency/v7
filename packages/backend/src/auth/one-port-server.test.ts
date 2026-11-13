@@ -57,7 +57,7 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
 
   const me = await (await fetch(`${base}/trpc/auth.me`)).json() as any;
   assert.deepEqual(me.result.data, {
-    login: 'accounts', agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true
+    login: 'accounts', publicUrl: null, agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true
   });
 
   // No MCP server listens on its port here: the proxy says so instead of hanging.
@@ -65,6 +65,11 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
   assert.equal(mcp.status, 502);
   // A graph's own MCP address goes to the same MCP server, not to the UI.
   assert.equal((await fetch(`${base}/g/hack-the-hub/mcp/sse?token=x`)).status, 502);
+  // So does what an MCP client's own login needs at the server's root; other paths stay the UI's.
+  for (const path of ['/authorize?client_id=x', '/token', '/register', '/.well-known/oauth-authorization-server']) {
+    assert.equal((await fetch(`${base}${path}`)).status, 502, path);
+  }
+  assert.notEqual((await fetch(`${base}/tokens`)).status, 502);
 });
 
 test('sign in, create a graph, write it with the bearer token; no token only reads', async () => {

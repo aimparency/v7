@@ -85,9 +85,11 @@ export const authRouter = t.router({
   // shows a login and the server's graphs instead of this machine's directories.
   me: delayedProcedure.query(({ ctx }) => {
     const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
-    const { login, signUp } = serverConfig();
+    const { login, signUp, publicUrl } = serverConfig();
     return {
       login,
+      // The address people reach this server at, when the operator named it (server.json).
+      publicUrl: publicUrl ?? null,
       agents: agentsEnabled(),
       signUp: { ...signUp, wallet: walletEnabled() },
       name: viewer.name,

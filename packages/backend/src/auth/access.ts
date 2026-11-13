@@ -38,12 +38,15 @@ const LOCAL_ONLY = new Set([
 // Nothing of a graph: viewer state, or a visitor logging in or out.
 const OPEN_MUTATIONS = new Set([
   'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin',
-  'auth.walletChallenge', 'auth.walletLogin'
+  'auth.walletChallenge', 'auth.walletLogin',
+  // An MCP client's own login: the protocol's steps, open by nature (routers/mcp-auth.ts).
+  'mcpAuth.registerClient', 'mcpAuth.begin', 'mcpAuth.deny', 'mcpAuth.exchange'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
   'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
-  'notes.add', 'notes.remove'
+  'notes.add', 'notes.remove',
+  'mcpAuth.approve'
 ]);
 const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // Also derived state that costs the server (re-indexing) or is shown to every

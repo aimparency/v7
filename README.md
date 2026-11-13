@@ -235,7 +235,11 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   visitor and cannot manage accounts or create graphs. Tools take the graph's
   slug as `projectPath`; a link for one graph is that graph's own address
   (`https://<host>/g/<slug>/mcp/sse`), where tools need no `projectPath`.
-  Without a token the MCP can only read.
+  Without a token the MCP can only read. With `"publicUrl"` set in
+  `server.json`, a client can also log in by itself (OAuth, as the MCP
+  specification describes it) at `https://<host>/mcp/login/sse`: it opens the
+  server's page in a browser, the person logs in, chooses the graphs and
+  approves, and the client gets a token for exactly that.
 
 To keep it running, a systemd unit such as `/etc/systemd/system/aimparency.service`
 (adjust user and path; `pnpm` must be on systemd's PATH, check with `which pnpm`).

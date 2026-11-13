@@ -28,6 +28,7 @@ import { forgetProjectChecks } from './storage/project.js';
 import { graphsRouter } from './routers/graphs.js';
 import { keysRouter } from './routers/keys.js';
 import { notesRouter } from './routers/notes.js';
+import { mcpAuthRouter } from './routers/mcp-auth.js';
 import { agentsEnabled } from './auth/access.js';
 import { followGitRemotes } from './git-follow.js';
 import { hasAccounts, serverConfig } from 'shared/server-config';
@@ -54,6 +55,7 @@ const appRouter = t.router({
   graphs: graphsRouter,
   keys: keysRouter,
   notes: notesRouter,
+  mcpAuth: mcpAuthRouter,
 });
 
 export { appRouter };
@@ -151,7 +153,9 @@ function startOnePortServer() {
       req.url = `${graphMcp[2]}${graphMcp[3] ? `${graphMcp[3]}&` : '?'}graph=${graphMcp[1]}`;
       return proxy(req, res, mcpPort);
     }
-    if (url.startsWith('/mcp/')) return proxy(req, res, mcpPort);
+    // /mcp and what an MCP client's own login needs at the server's root
+    // (OAuth discovery, authorization, token, client registration).
+    if (url.startsWith('/mcp/') || MCP_LOGIN_PATHS.test(url)) return proxy(req, res, mcpPort);
     if (url.startsWith('/runtime-config.json')) {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
       return res.end(runtimeConfig());
@@ -181,10 +185,14 @@ function startOnePortServer() {
   return { server, wss };
 }
 
+const MCP_LOGIN_PATHS = /^\/(authorize|token|register|\.well-known\/oauth-[a-z-]+)(\/|\?|$)/;
+
 // Streams both ways, so the MCP's server-sent events pass through unbuffered.
+// The visitor's address goes along, so the MCP server's limits count per visitor.
 function proxy(req: http.IncomingMessage, res: http.ServerResponse, port: number) {
+  const forwarded = [req.headers['x-forwarded-for'], req.socket.remoteAddress].flat().filter(Boolean).join(', ');
   const upstream = http.request(
-    { host: '127.0.0.1', port, path: req.url, method: req.method, headers: req.headers },
+    { host: '127.0.0.1', port, path: req.url, method: req.method, headers: { ...req.headers, 'x-forwarded-for': forwarded } },
     (response) => {
       res.writeHead(response.statusCode ?? 502, response.headers);
       response.pipe(res);

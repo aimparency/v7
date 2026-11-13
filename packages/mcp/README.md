@@ -95,6 +95,17 @@ tools need no `projectPath`.
 claude mcp add --transport sse aimparency "https://<host>/mcp/sse?token=<token>"
 ```
 
+Where the server names its public address (`publicUrl` in `server.json`), a
+client can log in by itself instead of carrying a token in its address:
+`https://<host>/mcp/login/sse` answers a client without a login with where to
+get one (OAuth 2.1 with PKCE and dynamic client registration). The client
+opens the server's page, the person approves it there for all their graphs or
+chosen ones, and it comes back with a token for exactly that.
+
+```bash
+claude mcp add --transport sse aimparency "https://<host>/mcp/login/sse"
+```
+
 ## Choosing `projectPath`
 
 Aimparency stores project state inside a `.bowman` directory, but MCP calls can usually use either of these absolute paths:

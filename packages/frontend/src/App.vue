@@ -13,6 +13,7 @@ import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
 import LoginControl from './components/LoginControl.vue'
 import NotesInbox from './components/NotesInbox.vue'
+import McpAuthorizeModal from './components/McpAuthorizeModal.vue'
 import type { IdeaSearchAdditionalOption, IdeaSearchPickPayload } from './stores/ui/idea-search-types'
 import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -264,6 +265,15 @@ const openProjectFromHistory = (path: string) => {
 const openGraph = (slug: string) => {
   projectSelectionReturnPath.value = ''
   void projectLoad.open(slug)
+}
+
+// ?mcp-authorize=<request>: an MCP client sent the person here to approve its login.
+const mcpRequest = ref(new URLSearchParams(window.location.search).get('mcp-authorize') ?? '')
+const closeMcpRequest = () => {
+  mcpRequest.value = ''
+  const url = new URL(window.location.href)
+  url.searchParams.delete('mcp-authorize')
+  window.history.replaceState({}, '', url)
 }
 
 // A note from the header's list: its graph, then its idea.
@@ -792,6 +802,7 @@ onUnmounted(() => {
 
     <IdeaRemovalDialog v-if="modalStore.ideaRemoval" :request="modalStore.ideaRemoval" />
 
+    <McpAuthorizeModal v-if="accounts && mcpRequest" :request-id="mcpRequest" @close="closeMcpRequest" />
     <!-- Before the idea editor, so an idea opened from the inbox stacks on top -->
     <ReviewInboxModal v-if="showReviewInbox" @close="showReviewInbox = false" />
     <CommitModal

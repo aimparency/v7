@@ -1,88 +1,27 @@
-import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
-import express from "express";
-import cors from "cors";
-import { createMcpServer } from "./factory.js";
+import { createMcpApp } from "./app.js";
 import { createBackendClient } from "./client.js";
-import { isAllowedClientOrigin, resolveBindHost } from "shared";
+import { resolveBindHost } from "shared";
 
 const port = Number(process.env.PORT_MCP || 3005);
-// The one-port server proxies /mcp/* here, so the paths keep that prefix.
-const basePath = process.env.MCP_BASE_PATH ?? "";
 // Loopback unless named: behind the one-port server only its proxy needs to
 // reach this server (MCP_BIND_HOST); `pnpm dev:host` opens it to BIND_HOST like the rest.
 const configuredHost = process.env.MCP_BIND_HOST || process.env.BIND_HOST || undefined;
 const host = resolveBindHost(configuredHost);
-// Without login every session acts with the full rights of this machine's
-// backend, so a browser page from anywhere else must not reach it (MCP clients
-// send no Origin). With accounts, requests arrive through the server's own
-// origin and the backend checks what each caller's token may do.
-// The backend says which of the two it is; while it does not answer, only
-// local callers get in.
-const app = express();
-const anonymous = createBackendClient();
-const ACCOUNTS_ANSWER_MS = 10_000;
-let accounts: { at: number; answer: Promise<boolean> } | undefined;
-function backendHasAccounts(): Promise<boolean> {
-  if (!accounts || Date.now() - accounts.at > ACCOUNTS_ANSWER_MS) {
-    accounts = { at: Date.now(), answer: anonymous.trpc.auth.me.query().then(({ login }) => login === "accounts", () => false) };
-  }
-  return accounts.answer;
-}
+const basePath = process.env.MCP_BASE_PATH ?? "";
 
-app.use(async (req, res, next) => {
-  if (isAllowedClientOrigin(req.headers.origin, configuredHost) || await backendHasAccounts()) return next();
-  res.status(403).send("Origin not allowed");
-});
-app.use(cors());
+// The backend knows the server's public address (server.json); with one, MCP
+// clients may log in by themselves. Asked once: the answer waits for the
+// backend to be up, like everything this server does.
+const startup = createBackendClient();
+const { publicUrl } = await startup.trpc.auth.me.query();
+startup.close();
 
-// Store transports by session ID
-const transports = new Map<string, SSEServerTransport>();
-// Each session holds a backend connection: enough for a team's clients, not
-// for one caller to exhaust the server.
-const MAX_SESSIONS = Number(process.env.MCP_MAX_SESSIONS || 50);
-
-// The UI's "Copy MCP link" carries the account's token as ?token=; clients that
-// can set headers may send it as a bearer instead. Each session talks to the
-// backend as that account, and the backend decides what it may do.
-function tokenOf(req: express.Request): string | undefined {
-  const header = req.headers.authorization;
-  if (header?.startsWith("Bearer ")) return header.slice(7);
-  return typeof req.query.token === "string" ? req.query.token : undefined;
-}
-
-app.get(`${basePath}/sse`, async (req, res) => {
-  if (transports.size >= MAX_SESSIONS) {
-    res.status(503).send("Too many MCP sessions");
-    return;
-  }
-  console.log(`New SSE connection`);
-  const backend = createBackendClient(tokenOf(req));
-  // ?graph=<slug>: the session came through that graph's address (the one-port server adds it).
-  const server = createMcpServer(backend.trpc, typeof req.query.graph === "string" ? req.query.graph : undefined);
-  const transport = new SSEServerTransport(`${basePath}/messages`, res);
-
-  await server.connect(transport);
-
-  transports.set(transport.sessionId, transport);
-
-  res.on('close', () => {
-    console.log(`SSE connection closed: ${transport.sessionId}`);
-    server.close();
-    backend.close();
-    transports.delete(transport.sessionId);
-  });
-});
-
-app.post(`${basePath}/messages`, async (req, res) => {
-  const sessionId = req.query.sessionId as string;
-  const transport = transports.get(sessionId);
-
-  if (!transport) {
-    res.status(404).send("Session not found");
-    return;
-  }
-
-  await transport.handlePostMessage(req, res);
+const { app } = createMcpApp({
+  connect: createBackendClient,
+  basePath,
+  configuredHost,
+  publicUrl,
+  maxSessions: Number(process.env.MCP_MAX_SESSIONS || 50),
 });
 
 app.listen(port, host, () => console.log(`Aimparency MCP Server running on SSE/HTTP at http://${host}:${port}${basePath}/sse`));
