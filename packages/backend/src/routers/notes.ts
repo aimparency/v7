@@ -1,0 +1,112 @@
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { serverConfig } from 'shared/server-config';
+import { t, delayedProcedure, type Context } from '../trpc.js';
+import { rightOn, viewerFor, type Viewer } from '../auth/access.js';
+import { accountNames } from '../auth/accounts.js';
+import { resolveGraphAddress } from '../graphs/address.js';
+import { graphBowmanPath, listGraphs, type Graph } from '../graphs/registry.js';
+import { addNote, listNotes, mayAddNotes, MAX_NOTE_LENGTH, NOTE_KINDS, NoteError, removeNote, type Note } from '../guest/notes.js';
+import { withinLimit } from '../rate-limit.js';
+import { readIdea } from '../storage/ideas.js';
+
+const RECENT_LIMIT = 50;
+
+async function run<T>(action: () => Promise<T>): Promise<T> {
+  try {
+    return await action();
+  } catch (error) {
+    if (error instanceof NoteError) throw new TRPCError({ code: 'BAD_REQUEST', message: error.message });
+    throw error;
+  }
+}
+
+const viewerOf = (ctx: Context): Viewer => ctx.viewer ?? viewerFor(ctx.session?.token);
+
+// Notes belong to graphs on the server's list; a bare directory has none.
+function listedGraph(address: string): Graph | null {
+  return resolveGraphAddress(address).graph;
+}
+
+function requireGraph(address: string): Graph {
+  const graph = listedGraph(address);
+  if (!graph) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Notes exist on graphs of a server, not on a bare directory.' });
+  return graph;
+}
+
+function accountOf(viewer: Viewer): string {
+  if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
+  return viewer.id;
+}
+
+// What a reader gets: the author by name, and whether this note is theirs to remove.
+function shown(notes: Note[], graph: Graph, viewer: Viewer) {
+  const names = new Map([...new Set(notes.map(note => note.author))].map(id => [id, accountNames([id])[0] ?? '(removed account)']));
+  const writes = rightOn(graph, viewer) !== 'read';
+  return notes.map(({ author, ...note }) => ({ ...note, author: names.get(author)!, removable: writes || (viewer.id !== null && author === viewer.id) }));
+}
+
+export const notesRouter = t.router({
+  // The notes on one idea, oldest first, and whether the viewer may add one.
+  list: delayedProcedure
+    .input(z.object({ projectPath: z.string(), ideaId: z.string().uuid() }))
+    .query(async ({ ctx, input }) => {
+      const graph = listedGraph(input.projectPath);
+      const viewer = viewerOf(ctx);
+      if (!graph) return { notes: [], mayAdd: false };
+      const notes = (await listNotes(graph)).filter(note => note.ideaId === input.ideaId);
+      // A visitor without an account may still get one: the UI asks ensureAccount first.
+      const mayAdd = viewer.id === null ? (graph.notes ?? serverConfig().guestDefaults.notes) === 'everyone'
+        : mayAddNotes(graph, viewer.id, rightOn(graph, viewer) !== 'read');
+      return { notes: shown(notes, graph, viewer), mayAdd };
+    }),
+
+  add: delayedProcedure
+    .input(z.object({
+      projectPath: z.string(),
+      ideaId: z.string().uuid(),
+      kind: z.enum(NOTE_KINDS),
+      text: z.string().max(MAX_NOTE_LENGTH + 100)
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const graph = requireGraph(input.projectPath);
+      const viewer = viewerOf(ctx);
+      const author = accountOf(viewer);
+      if (!mayAddNotes(graph, author, rightOn(graph, viewer) !== 'read')) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'The owner of this graph has not opened it for your notes.' });
+      }
+      if (!withinLimit('notes', author, serverConfig().limits.notesPerAccountPerHour)) {
+        throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Too many notes in the last hour: try again later.' });
+      }
+      await readIdea(graphBowmanPath(graph), input.ideaId); // a note needs its idea
+      const note = await run(() => addNote(graph, { ideaId: input.ideaId, kind: input.kind, text: input.text, author }));
+      return shown([note], graph, viewer)[0]!;
+    }),
+
+  remove: delayedProcedure
+    .input(z.object({ projectPath: z.string(), id: z.string().uuid() }))
+    .mutation(async ({ ctx, input }) => {
+      const graph = requireGraph(input.projectPath);
+      const viewer = viewerOf(ctx);
+      const account = accountOf(viewer);
+      const writes = rightOn(graph, viewer) !== 'read';
+      await run(() => removeNote(graph, input.id, note => writes || note.author === account));
+      return { success: true };
+    }),
+
+  // New notes on the graphs the viewer owns or writes, newest first: what the
+  // header's badge shows. A note whose idea is gone is left out.
+  recent: delayedProcedure.query(async ({ ctx }) => {
+    const viewer = viewerOf(ctx);
+    if (viewer.id === null) return [];
+    const mine = listGraphs().filter(graph => rightOn(graph, viewer) !== 'read');
+    const all = (await Promise.all(mine.map(async graph =>
+      shown((await listNotes(graph)).filter(note => note.author !== viewer.id), graph, viewer).map(note => ({ ...note, slug: graph.slug, graph }))
+    ))).flat().sort((left, right) => right.createdAt.localeCompare(left.createdAt)).slice(0, RECENT_LIMIT);
+    const withIdeas = await Promise.all(all.map(async ({ graph, ...note }) => {
+      const idea = await readIdea(graphBowmanPath(graph), note.ideaId).catch(() => null);
+      return idea && { ...note, ideaText: idea.text };
+    }));
+    return withIdeas.flatMap(note => note ?? []);
+  })
+});

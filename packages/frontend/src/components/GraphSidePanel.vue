@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch } from 'vue'
+import IdeaNotes from './IdeaNotes.vue'
 import { useGraphUIStore } from '../stores/ui/graph-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
@@ -424,6 +425,8 @@ const isOpaque = computed(() => !hasInteracted.value)
             <div v-if="selectedIdea.description" class="idea-description">
                 {{ selectedIdea.description }}
             </div>
+
+            <IdeaNotes class="section" :idea-id="selectedIdea.id" />
             
             <div class="section">
                 <h4>Supported Ideas (Parents)</h4>

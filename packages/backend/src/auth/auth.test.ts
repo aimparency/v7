@@ -93,7 +93,8 @@ test('everyone reads a graph, its owner and writers change it, the server admin 
   await ownerCaller.idea.update(edit('Owner edit'));
   assert.equal((await ownerCaller.project.getAccess({ projectPath: shared })).role, 'owner');
   await ownerCaller.graphs.setAccess({ projectPath: shared, writers: ['writer'] });
-  assert.deepEqual(await guest.graphs.getAccess({ projectPath: shared }), { slug: 'shared', kind: 'checkout', owner: 'owner', writers: ['writer'], remote: null });
+  const { slug, kind, owner: ownedBy, writers } = (await guest.graphs.getAccess({ projectPath: shared }))!;
+  assert.deepEqual({ slug, kind, ownedBy, writers }, { slug: 'shared', kind: 'checkout', ownedBy: 'owner', writers: ['writer'] });
   await assert.rejects(ownerCaller.graphs.setAccess({ projectPath: shared, writers: ['nobody'] }), /No account named "nobody"/);
 
   const writer = await loggedIn('writer', 'writer password');

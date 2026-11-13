@@ -34,6 +34,10 @@ export type Graph = {
   owner: string | null;
   /** Account ids that may change the graph, next to its owner. */
   writers: string[];
+  /** Who may leave notes; absent: the server's default (server.json guestDefaults). */
+  notes?: 'everyone' | 'selected' | 'nobody';
+  /** With notes 'selected': the account ids that may. */
+  noteWriters?: string[];
   createdAt: string;
 };
 
@@ -154,11 +158,15 @@ export async function removeGraph(slug: string): Promise<void> {
     const graph = graphs.find(candidate => candidate.slug === slug);
     if (!graph) throw new GraphError(`No graph "${slug}" on this server.`);
     if (graph.kind !== 'checkout') await fs.remove(graph.path);
+    await fs.remove(path.join(serverDir(), 'guest', slug));
     return { graphs: graphs.filter(candidate => candidate.slug !== slug), result: undefined };
   });
 }
 
-export async function setGraphAccess(slug: string, access: { owner?: string | null; writers?: string[] }): Promise<Graph> {
+export async function setGraphAccess(
+  slug: string,
+  access: { owner?: string | null; writers?: string[]; notes?: Graph['notes']; noteWriters?: string[] }
+): Promise<Graph> {
   return change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);
     if (!graph) throw new GraphError(`No graph "${slug}" on this server.`);

@@ -96,6 +96,7 @@ export const graphsRouter = t.router({
       const { graph } = resolveGraphAddress(input.projectPath);
       return graph && {
         slug: graph.slug, kind: graph.kind, owner: ownerName(graph), writers: accountNames(graph.writers),
+        notes: graph.notes ?? serverConfig().guestDefaults.notes, noteWriters: accountNames(graph.noteWriters ?? []),
         // The address is public; of the key only whose it is, never the key.
         remote: graph.remote ? { url: graph.remote.url, key: graph.remote.key?.id ?? null, keyOwner: graph.remote.key ? accountNames([graph.remote.key.account])[0] ?? null : null } : null
       };
@@ -105,13 +106,18 @@ export const graphsRouter = t.router({
     .input(z.object({
       projectPath: z.string(),
       owner: z.string().optional(),
-      writers: z.array(z.string()).max(500).optional()
+      writers: z.array(z.string()).max(500).optional(),
+      // Who may leave notes: null goes back to the server's default.
+      notes: z.enum(['everyone', 'selected', 'nobody']).nullable().optional(),
+      noteWriters: z.array(z.string()).max(500).optional()
     }))
     .mutation(async ({ input }) => {
       const graph = listed(input.projectPath);
       await run(() => setGraphAccess(graph.slug, {
         ...(input.owner !== undefined ? { owner: accountId(input.owner) } : {}),
-        ...(input.writers !== undefined ? { writers: [...new Set(input.writers.map(accountId))] } : {})
+        ...(input.writers !== undefined ? { writers: [...new Set(input.writers.map(accountId))] } : {}),
+        ...(input.notes !== undefined ? { notes: input.notes ?? undefined } : {}),
+        ...(input.noteWriters !== undefined ? { noteWriters: [...new Set(input.noteWriters.map(accountId))] } : {})
       }));
       return { success: true };
     }),

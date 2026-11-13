@@ -12,6 +12,7 @@ import { useHistoryStore } from './stores/history'
 import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
 import LoginControl from './components/LoginControl.vue'
+import NotesInbox from './components/NotesInbox.vue'
 import type { IdeaSearchAdditionalOption, IdeaSearchPickPayload } from './stores/ui/idea-search-types'
 import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
@@ -263,6 +264,12 @@ const openProjectFromHistory = (path: string) => {
 const openGraph = (slug: string) => {
   projectSelectionReturnPath.value = ''
   void projectLoad.open(slug)
+}
+
+// A note from the header's list: its graph, then its idea.
+const openNote = async (slug: string, ideaId: string) => {
+  if (projectStore.projectPath !== slug) await projectLoad.open(slug)
+  await uiStore.navigateToIdea(ideaId)
 }
 
 const openDiscoveredProject = (path: string) => {
@@ -670,6 +677,8 @@ onUnmounted(() => {
           >
             <Hourglass /> {{ awaitingHumanCount }}
           </button>
+
+          <NotesInbox v-if="accounts" @open="openNote" />
 
           <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
             <Settings />

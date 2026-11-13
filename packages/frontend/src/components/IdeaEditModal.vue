@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed, ref, watch, nextTick } from 'vue'
+import IdeaNotes from './IdeaNotes.vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
@@ -899,6 +900,8 @@ const discardChanges = () => {
     </div>
 
     <DiscardPrompt v-if="confirmingDiscard" @keep="keepEditing" @discard="discardChanges" />
+
+    <IdeaNotes v-if="!isBulk && idea" class="form-section" :idea-id="idea.id" />
 
     <template #footer>
       <button @click="handleCancel" class="btn-cancel">Cancel</button>

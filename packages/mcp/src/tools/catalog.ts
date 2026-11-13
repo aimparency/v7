@@ -11,6 +11,7 @@ import { repoTools } from "./repos.js";
 import { graphHealthTools } from "./graph-health.js";
 import { hookTools } from "./hooks.js";
 import { hypothesisLoopTools } from "./hypothesis-loop.js";
+import { noteTools } from "./notes.js";
 
 // Listing order is what an agent reads first: the work loop, then the graph.
 export const TOOLS: ToolDefinition[] = [
@@ -20,6 +21,7 @@ export const TOOLS: ToolDefinition[] = [
   ...repoTools,
   ...graphHealthTools,
   ...hypothesisLoopTools,
+  ...noteTools,
   ...hookTools,
 ];
 export const toolsByName = new Map(TOOLS.map((tool) => [tool.name, tool]));

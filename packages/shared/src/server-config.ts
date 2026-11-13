@@ -27,10 +27,15 @@ const ServerConfigSchema = z.object({
   // account without asking, held by a key in their browser. Invitations work
   // either way.
   signUp: z.object({ open: z.boolean().default(false), browserKey: z.boolean().default(false) }).prefault({}),
+  // What accounts without rights on a graph (guests) may do there, unless the
+  // graph's owner set it otherwise: `everyone` every account, `selected` the
+  // accounts the owner named, `nobody`.
+  guestDefaults: z.object({ notes: z.enum(['everyone', 'selected', 'nobody']).default('everyone') }).prefault({}),
   limits: z.object({
     // New accounts from one address; a whole room may share one address.
     accountsPerAddressPerHour: z.number().int().positive().default(100),
     graphsPerAccount: z.number().int().positive().default(20),
+    notesPerAccountPerHour: z.number().int().positive().default(30),
     // The .bowman of a graph added from a remote URL.
     graphMegabytes: z.number().positive().default(50),
   }).prefault({}),

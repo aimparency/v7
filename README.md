@@ -166,6 +166,14 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   server, committed in the UI and pushed back. For these URLs the server uses
   nothing of its own user's git setup (no credentials, no SSH agent), never
   fetches from its own network, and runs nothing from the repository.
+- **Notes from visitors.** An account without rights on a graph leaves notes
+  on its ideas: an idea, a question, or "I'd like to work on this". Notes are
+  kept on the server (`guest/<slug>/notes.json`), never in the graph's
+  repository; the graph's owner and writers see new ones in the header and
+  turn what they want into ideas. The owner sets who may leave notes (every
+  account, selected accounts, nobody); `"guestDefaults": { "notes": … }` in
+  `server.json` is the default for graphs that set nothing. Agents get notes
+  only through the MCP tool `list_notes`, marked as visitors' text.
 - **Rights.** Reading needs no account. On a graph, its owner and the accounts
   with write access change everything, including its settings and committing;
   only the owner changes who may write and removes the graph. A server admin

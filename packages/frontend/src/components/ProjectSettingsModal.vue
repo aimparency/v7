@@ -77,15 +77,18 @@ async function loadGraphAccess() {
   if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ projectPath: projectStore.projectPath })
 }
 
-async function setWriters(writers: string[]) {
+type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'projectPath'>
+async function setAccess(change: AccessChange) {
   try {
-    await trpc.graphs.setAccess.mutate({ projectPath: projectStore.projectPath, writers })
-    newWriter.value = ''
+    await trpc.graphs.setAccess.mutate({ projectPath: projectStore.projectPath, ...change })
+    newWriter.value = newNoteWriter.value = ''
     await loadGraphAccess()
   } catch (e) {
-    useToastStore().error('Could not change who may write this graph', e)
+    useToastStore().error('Could not change who may use this graph', e)
   }
 }
+const setWriters = (writers: string[]) => setAccess({ writers })
+const newNoteWriter = ref('')
 
 // A graph from a remote URL is pushed back with one of its owner's SSH keys.
 // The server makes the key and shows only its public half, to add on the remote.
@@ -513,6 +516,20 @@ const save = async () => {
           <div v-if="mayManageAccess" class="add-repo-row">
             <input v-model="newWriter" type="text" placeholder="Account name" @keydown.enter="setWriters([...graphAccess.writers, newWriter.trim()])" />
             <button class="action-btn add-repo-btn" :disabled="!newWriter.trim()" @click="setWriters([...graphAccess.writers, newWriter.trim()])">Give write access</button>
+          </div>
+          <div v-if="mayManageAccess" class="add-repo-row">
+            <span class="linked-repo-name">Notes from visitors</span>
+            <select :value="graphAccess.notes" @change="setAccess({ notes: ($event.target as HTMLSelectElement).value as typeof graphAccess.notes })">
+              <option value="everyone">every account may leave notes</option>
+              <option value="selected">only the accounts named here</option>
+              <option value="nobody">nobody</option>
+            </select>
+          </div>
+          <div v-if="mayManageAccess && graphAccess.notes === 'selected'" class="add-repo-row">
+            <span class="linked-repo-name">{{ graphAccess.noteWriters.join(', ') || 'Nobody named yet' }}</span>
+            <input v-model="newNoteWriter" type="text" placeholder="Account name" @keydown.enter="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })" />
+            <button class="action-btn add-repo-btn" :disabled="!newNoteWriter.trim()" @click="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })">Add</button>
+            <button class="action-btn add-repo-btn" :disabled="graphAccess.noteWriters.length === 0" @click="setAccess({ noteWriters: [] })">Clear</button>
           </div>
           <template v-if="graphAccess.remote">
             <p class="hint-text">

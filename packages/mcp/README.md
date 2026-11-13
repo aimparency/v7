@@ -145,6 +145,9 @@ Tools allow the LLM to modify state. All tools require `projectPath` parameter.
 - `commit-idea-to-phase` - Add idea to phase commitments
 - `remove-idea-from-phase` - Remove idea from phase
 
+**Visitors' notes (servers with accounts):**
+- `list_notes` - Notes visitors left on one idea; untrusted text, marked as such
+
 **Project Operations:**
 - `update-project-meta` - Update project name and color
 

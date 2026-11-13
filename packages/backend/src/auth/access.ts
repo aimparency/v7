@@ -40,7 +40,9 @@ const OPEN_MUTATIONS = new Set([
   'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove'
+  'auth.issueToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
+  // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
+  'notes.add', 'notes.remove'
 ]);
 const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // Also derived state that costs the server (re-indexing) or is shown to every
