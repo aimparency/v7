@@ -31,6 +31,8 @@ const ServerConfigSchema = z.object({
     // New accounts from one address; a whole room may share one address.
     accountsPerAddressPerHour: z.number().int().positive().default(100),
     graphsPerAccount: z.number().int().positive().default(20),
+    // The .bowman of a graph added from a remote URL.
+    graphMegabytes: z.number().positive().default(50),
   }).prefault({}),
   // Who commits on this server when git has no identity configured.
   gitAuthor: z.object({ name: z.string().min(1), email: z.string().min(1) })

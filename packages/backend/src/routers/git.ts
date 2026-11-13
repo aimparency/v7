@@ -4,6 +4,7 @@ import { t, delayedProcedure } from '../trpc.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { commitPaths, pushToUpstream, readWorkingTreeStatus } from '../git-working-tree.js';
 import { seesServerPaths } from '../auth/access.js';
+import { gitEnvFor } from '../graphs/remote-git.js';
 import { graphAddress } from '../graphs/address.js';
 
 // The project's .bowman as part of its repository's working tree.
@@ -30,6 +31,6 @@ export const gitRouter = t.router({
     .mutation(async ({ input }) => {
       const bowmanPath = normalizeProjectPath(input.projectPath);
       await assertWritableBowman(bowmanPath);
-      return { pushed: await pushToUpstream(bowmanPath) };
+      return { pushed: await pushToUpstream(bowmanPath, await gitEnvFor(bowmanPath)) };
     })
 });

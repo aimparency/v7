@@ -26,6 +26,7 @@ import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
 import { graphsRouter } from './routers/graphs.js';
+import { keysRouter } from './routers/keys.js';
 import { agentsEnabled } from './auth/access.js';
 import { followGitRemotes } from './git-follow.js';
 import { hasAccounts, serverConfig } from 'shared/server-config';
@@ -50,6 +51,7 @@ const appRouter = t.router({
   activity: activityRouter,
   auth: authRouter,
   graphs: graphsRouter,
+  keys: keysRouter,
 });
 
 export { appRouter };

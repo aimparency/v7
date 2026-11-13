@@ -3,10 +3,12 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { serverConfig } from 'shared/server-config';
 import { t, delayedProcedure } from '../trpc.js';
-import { mayCreateGraphs, viewerFor } from '../auth/access.js';
+import { mayCreateGraphs, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
 import { createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, type Graph } from '../graphs/registry.js';
+import { addRemote, selectRemoteKey } from '../graphs/remote-graph.js';
+import { privateKeyFile } from '../graphs/ssh-keys.js';
 import { clearIndices } from '../search.js';
 import { readJsonOrNull } from '../storage/json.js';
 
@@ -32,6 +34,14 @@ function accountId(name: string): string {
   return account.id;
 }
 
+// Keeps one account from filling the server; the server admin is not counted.
+function assertBelowGraphLimit(viewer: Viewer) {
+  const owned = listGraphs().filter(graph => graph.owner === viewer.id).length;
+  if (!viewer.serverAdmin && owned >= serverConfig().limits.graphsPerAccount) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: `An account has at most ${serverConfig().limits.graphsPerAccount} graphs on this server.` });
+  }
+}
+
 const ownerName = (graph: Graph) => graph.owner ? accountNames([graph.owner])[0] ?? null : null;
 
 // The graphs of this server: who may read is everyone, so the list is open.
@@ -49,13 +59,34 @@ export const graphsRouter = t.router({
       if (!mayCreateGraphs(viewer)) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Creating graphs on this server is for accounts the server admin selected.' });
       }
-      // Keeps one account from filling the server; the server admin is not counted.
-      const owned = listGraphs().filter(graph => graph.owner === viewer.id).length;
-      if (!viewer.serverAdmin && owned >= serverConfig().limits.graphsPerAccount) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: `An account has at most ${serverConfig().limits.graphsPerAccount} graphs on this server.` });
-      }
+      assertBelowGraphLimit(viewer);
       const graph = await run(() => createGraph(input.name, viewer.id));
       return { slug: graph.slug };
+    }),
+
+  // A graph that lives in a repository elsewhere: its .bowman is cloned here.
+  // Any account may add one. It is read-only until its owner selects a key.
+  addRemote: delayedProcedure
+    .input(z.object({ url: z.string().min(1).max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+      assertBelowGraphLimit(viewer);
+      const graph = await run(() => addRemote(input.url, viewer.id));
+      return { slug: graph.slug };
+    }),
+
+  // The key a remote graph is pushed with: one of the caller's own, or none.
+  // With a key the graph is edited here, committed and pushed; without, it only follows its remote.
+  setRemoteKey: delayedProcedure
+    .input(z.object({ projectPath: z.string(), key: z.string().nullable() }))
+    .mutation(async ({ ctx, input }) => {
+      const graph = listed(input.projectPath);
+      const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+      if (input.key !== null && (viewer.id === null || !await privateKeyFile(viewer.id, input.key))) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Select one of your own keys.' });
+      }
+      await run(() => selectRemoteKey(graph, input.key === null ? null : { account: viewer.id!, id: input.key }));
+      return { success: true };
     }),
 
   // Whose graph this is; null for a directory that is not on the list.
@@ -63,7 +94,11 @@ export const graphsRouter = t.router({
     .input(z.object({ projectPath: z.string() }))
     .query(({ input }) => {
       const { graph } = resolveGraphAddress(input.projectPath);
-      return graph && { slug: graph.slug, kind: graph.kind, owner: ownerName(graph), writers: accountNames(graph.writers) };
+      return graph && {
+        slug: graph.slug, kind: graph.kind, owner: ownerName(graph), writers: accountNames(graph.writers),
+        // The address is public; of the key only whose it is, never the key.
+        remote: graph.remote ? { url: graph.remote.url, key: graph.remote.key?.id ?? null, keyOwner: graph.remote.key ? accountNames([graph.remote.key.account])[0] ?? null : null } : null
+      };
     }),
 
   setAccess: delayedProcedure

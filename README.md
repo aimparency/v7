@@ -139,8 +139,9 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
 - **The server directory.** What the server owns lives in one directory
   (`AIMPARENCY_SERVER_DIR`, default `~/.local/share/aimparency`), never in a
   graph's `.bowman`: `server.json` (the settings), `accounts.json`, `graphs.json`
-  (the list of graphs with owner and writers) and `graphs/<slug>/`, the git
-  repositories of graphs created on the server. `server.json` is edited as a
+  (the list of graphs with owner and writers), `graphs/<slug>/`, the git
+  repositories of graphs created on the server, `remotes/<slug>/`, the clones
+  of graphs added from a Git URL, and `keys/`, the accounts' SSH keys. `server.json` is edited as a
   file and re-read when it changes:
 
   ```json
@@ -156,6 +157,15 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   accounts write access in the graph's settings. `pnpm graphs add <path>` lists
   a repository that is already on the machine, `pnpm graphs list|owner|writers|remove`
   manage the list from the terminal.
+- **Graphs from a Git URL.** Any account adds a repository that has a
+  `.bowman` by its https or ssh URL; the server clones only the `.bowman` and
+  follows the remote. It is read-only on the server until its owner selects an
+  SSH key in the graph's settings: the server makes the key pair and shows
+  only the public key, to add on the remote with write access (on GitHub: a
+  deploy key of that repository). From then on the graph is edited on the
+  server, committed in the UI and pushed back. For these URLs the server uses
+  nothing of its own user's git setup (no credentials, no SSH agent), never
+  fetches from its own network, and runs nothing from the repository.
 - **Rights.** Reading needs no account. On a graph, its owner and the accounts
   with write access change everything, including its settings and committing;
   only the owner changes who may write and removes the graph. A server admin
@@ -165,7 +175,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
 
   ```json
   { "signUp": { "open": true, "browserKey": true },
-    "limits": { "accountsPerAddressPerHour": 100, "graphsPerAccount": 20 } }
+    "limits": { "accountsPerAddressPerHour": 100, "graphsPerAccount": 20, "graphMegabytes": 50 } }
   ```
 
   `open` lets anyone choose a name and a password. `browserKey` gives a visitor

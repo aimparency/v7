@@ -83,17 +83,15 @@ export async function commitPaths(directory: string, paths: string[], message: s
 }
 
 // Pushes the branch to its upstream: the whole branch, so also commits made
-// outside this dialog. Never prompts for credentials; a server needs them set up.
-export async function pushToUpstream(directory: string): Promise<number> {
+// outside this dialog. Never prompts for credentials: `env` carries what git
+// may use (a graph added by URL: only its owner's key, see graphs/remote-git).
+export async function pushToUpstream(directory: string, env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' }): Promise<number> {
   const status = await readWorkingTreeStatus(directory);
   if (!status.isRepository) throw new Error('Not a git repository');
   if (status.ahead === null) throw new Error('This branch has no upstream to push to');
   if (status.ahead === 0) return 0;
   try {
-    await execFileAsync('git', ['-C', status.repositoryPath, 'push', '--quiet'], {
-      env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
-      timeout: 120_000,
-    });
+    await execFileAsync('git', ['-C', status.repositoryPath, 'push', '--quiet'], { env, timeout: 120_000 });
   } catch (error) {
     const stderr = String((error as { stderr?: string }).stderr ?? '');
     if (/\[rejected\]|non-fast-forward|fetch first/.test(stderr)) throw new Error('The remote has commits this clone lacks: pull them first');

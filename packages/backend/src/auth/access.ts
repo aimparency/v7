@@ -39,7 +39,9 @@ const LOCAL_ONLY = new Set([
 const OPEN_MUTATIONS = new Set([
   'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin'
 ]);
-const ACCOUNT_MUTATIONS = new Set(['auth.issueToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create']);
+const ACCOUNT_MUTATIONS = new Set([
+  'auth.issueToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove'
+]);
 const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // Also derived state that costs the server (re-indexing) or is shown to every
 // viewer (activity): not for visitors.
@@ -47,7 +49,7 @@ const WRITE_MUTATIONS = new Set([
   'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
   'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister'
 ]);
-const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.remove']);
+const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.remove']);
 const PUBLIC_AUTH_QUERIES = new Set(['auth.me']);
 // Every other mutation needs a server admin, so a new one is closed until listed.
 

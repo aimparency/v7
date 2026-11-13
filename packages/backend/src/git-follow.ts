@@ -5,7 +5,9 @@ import fs from 'fs-extra';
 import { emitChange, type ChangeEvent } from './change-events.js';
 import { readWorkingTreeStatus } from './git-working-tree.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { graphBowmanPath, listGraphs } from './graphs/registry.js';
+import { graphBowmanPath, listGraphs, type Graph } from './graphs/registry.js';
+import { graphGitEnv } from './graphs/remote-git.js';
+import { refreshBowmanClone } from './git-repository-cache.js';
 
 // A server for other people follows the git remotes of its graphs: what is
 // pushed shows up without anyone logging in to the server. It only
@@ -13,11 +15,7 @@ import { graphBowmanPath, listGraphs } from './graphs/registry.js';
 // uncommitted edits (they are committed in the UI).
 
 const execFileAsync = promisify(execFile);
-const git = async (cwd: string, args: string[]) =>
-  (await execFileAsync('git', ['-C', cwd, ...args], {
-    env: { ...process.env, GIT_TERMINAL_PROMPT: '0' },
-    timeout: 120_000,
-  })).stdout.trim();
+const OWN_GIT: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' };
 
 export type PullOutcome =
   | { state: 'updated'; from: string; to: string; changedPaths: string[] }
@@ -27,8 +25,10 @@ export type PullOutcome =
   | { state: 'no-upstream' }
   | { state: 'failed'; reason: string };
 
-/** `bowmanPath` is the project's .bowman directory. */
-export async function pullFastForward(bowmanPath: string): Promise<PullOutcome> {
+/** `bowmanPath` is the project's .bowman directory; `env` is what git may use to reach the remote. */
+export async function pullFastForward(bowmanPath: string, env: NodeJS.ProcessEnv = OWN_GIT): Promise<PullOutcome> {
+  const git = async (cwd: string, args: string[]) =>
+    (await execFileAsync('git', ['-C', cwd, ...args], { env, timeout: 120_000 })).stdout.trim();
   try {
     const status = await readWorkingTreeStatus(bowmanPath);
     if (!status.isRepository) return { state: 'failed', reason: 'not a git repository' };
@@ -78,25 +78,32 @@ export function followGitRemotes(intervalSeconds: number): () => void {
   if (intervalSeconds <= 0) return () => {};
   const lastStates = new Map<string, string>();
   let running = false;
-  const pull = async (slug: string, bowmanPath: string) => {
-    const outcome = await pullFastForward(bowmanPath);
+  const follow = async (graph: Graph) => {
+    const bowmanPath = graphBowmanPath(graph);
+    const env = await graphGitEnv(graph);
+    // A remote graph without a key is edited by nobody here: it takes whatever the remote holds.
+    const outcome: PullOutcome = graph.remote && !graph.remote.key
+      ? await refreshBowmanClone(graph.path, env).then(
+        (changedPaths): PullOutcome => changedPaths.length ? { state: 'updated', from: '', to: '', changedPaths } : { state: 'unchanged' },
+        (error): PullOutcome => ({ state: 'failed', reason: error instanceof Error ? error.message.split('\n')[0]! : String(error) }))
+      : await pullFastForward(bowmanPath, env);
     if (outcome.state === 'updated') {
       forgetProjectChecks(); // a pulled newer data model gets migrated on next use
       for (const event of await changeEventsFor(bowmanPath, outcome.changedPaths)) emitChange(event);
-      console.log(`[git-sync] ${slug}: pulled ${outcome.from.slice(0, 8)}..${outcome.to.slice(0, 8)} (${outcome.changedPaths.length} graph files)`);
-    } else if (outcome.state !== lastStates.get(slug) && outcome.state !== 'unchanged' && outcome.state !== 'no-upstream') {
-      console.log(`[git-sync] ${slug}: not pulling: ${outcome.state === 'failed' ? outcome.reason : outcome.state}`);
+      console.log(`[git-sync] ${graph.slug}: pulled ${outcome.changedPaths.length} graph files`);
+    } else if (outcome.state !== lastStates.get(graph.slug) && outcome.state !== 'unchanged' && outcome.state !== 'no-upstream') {
+      console.log(`[git-sync] ${graph.slug}: not pulling: ${outcome.state === 'failed' ? outcome.reason : outcome.state}`);
     }
-    lastStates.set(slug, outcome.state);
+    lastStates.set(graph.slug, outcome.state);
   };
   const tick = async () => {
     if (running) return;
     running = true;
     try {
       // One after the other: a server holds many graphs, and none is urgent.
-      for (const graph of listGraphs()) await pull(graph.slug, graphBowmanPath(graph));
-    } catch (error) {
-      console.warn('[git-sync] stopped this round:', error instanceof Error ? error.message : error);
+      for (const graph of listGraphs()) {
+        await follow(graph).catch(error => console.warn(`[git-sync] ${graph.slug}:`, error instanceof Error ? error.message : error));
+      }
     } finally {
       running = false;
     }

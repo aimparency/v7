@@ -4,8 +4,9 @@ import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
 import { useViewerStore } from '../stores/viewer'
 
-const { inspectPath, listGraphs, createGraph, accounts } = vi.hoisted(() => ({
+const { inspectPath, listGraphs, createGraph, addRemote, accounts } = vi.hoisted(() => ({
   inspectPath: vi.fn(),
+  addRemote: vi.fn(),
   listGraphs: vi.fn().mockResolvedValue([]),
   createGraph: vi.fn(),
   accounts: { on: false }
@@ -13,7 +14,7 @@ const { inspectPath, listGraphs, createGraph, accounts } = vi.hoisted(() => ({
 vi.mock('../trpc', () => ({
   trpc: {
     project: { inspectPath: { query: inspectPath } },
-    graphs: { list: { query: listGraphs }, create: { mutate: createGraph } }
+    graphs: { list: { query: listGraphs }, create: { mutate: createGraph }, addRemote: { mutate: addRemote } }
   },
 }))
 vi.mock('../utils/runtime-config', () => ({ hasAccounts: () => accounts.on }))
@@ -220,6 +221,19 @@ describe('ProjectSelectionView on a server with accounts', () => {
     await flushPromises()
     expect(ensureAccount).toHaveBeenCalledTimes(2)
     expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
+  })
+
+  it('adds a repository from a Git URL and opens it', async () => {
+    addRemote.mockResolvedValue({ slug: 'plans' })
+    const wrapper = mountView('', false, { name: 'ben', serverAdmin: false })
+    vi.mocked(useViewerStore().ensureAccount).mockResolvedValue(true)
+    await flushPromises()
+    const form = wrapper.findAll('form')[1]!
+    await form.find('input').setValue('https://github.com/someone/plans.git')
+    await form.trigger('submit')
+    await flushPromises()
+    expect(addRemote).toHaveBeenCalledWith({ url: 'https://github.com/someone/plans.git' })
+    expect(wrapper.emitted('open-graph')).toEqual([['plans']])
   })
 
   it('asks a visitor to log in before creating a graph', async () => {

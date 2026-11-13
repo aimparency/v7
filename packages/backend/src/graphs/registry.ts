@@ -3,6 +3,9 @@
 // else may write it. Everyone may read every graph.
 //
 //   created   made on this server by an account: <server dir>/graphs/<slug>
+//   remote    added from a Git URL by an account: its .bowman cloned into
+//             <server dir>/remotes/<slug>. Read-only until its owner selects
+//             an SSH key for it; then it is committed here and pushed back.
 //   checkout  a repository on this machine that the server admin added
 //
 // The slug is the graph's name in addresses (/g/<slug>, and `projectPath` in
@@ -12,7 +15,7 @@ import { execFile } from 'node:child_process';
 import fs from 'fs-extra';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import { isGraphSlug, toBowmanPath, toProjectRoot } from 'shared';
+import { gitRepositoryLocation, isGraphSlug, toBowmanPath, toProjectRoot } from 'shared';
 import { forgetServerFile, readServerFile, serverDir } from 'shared/server-config';
 import { withFileLock, writeJsonAtomic } from '../storage/json.js';
 import { updateProjectMeta } from '../storage/project.js';
@@ -22,7 +25,9 @@ const FILE = 'graphs.json';
 
 export type Graph = {
   slug: string;
-  kind: 'created' | 'checkout';
+  kind: 'created' | 'remote' | 'checkout';
+  /** Where a remote graph comes from, and the account's key that may push there. */
+  remote?: { url: string; key?: { account: string; id: string } };
   /** The repository's directory on this server (it holds the .bowman). */
   path: string;
   /** Account id; null (or an account that is gone) leaves the graph to the server admins. */
@@ -90,6 +95,41 @@ export async function createGraph(name: string, owner: string | null): Promise<G
   });
 }
 
+/**
+ * A graph that lives in a repository elsewhere. `clone` fills the directory
+ * (see routers/graphs.ts: it knows how to fetch a stranger's URL safely); a
+ * failed clone leaves nothing on the list.
+ */
+export async function addRemoteGraph(
+  url: string,
+  owner: string | null,
+  clone: (directory: string) => Promise<void>,
+  { allowFileUrls = false } = {}
+): Promise<Graph> {
+  const location = gitRepositoryLocation(url, { allowFileUrls });
+  if (!location) throw new GraphError(`Not a Git URL Aimparency can open: ${url}`);
+  return change(async (graphs) => {
+    if (graphs.some(graph => graph.remote?.url === url.trim())) throw new GraphError('This repository is a graph of this server already.');
+    const slug = freeSlug(location[location.length - 1]!, graphs);
+    const directory = path.join(serverDir(), 'remotes', slug);
+    await clone(directory);
+    const graph: Graph = {
+      slug, kind: 'remote', path: directory, remote: { url: url.trim() }, owner, writers: [], createdAt: new Date().toISOString()
+    };
+    return { graphs: [...graphs, graph], result: graph };
+  });
+}
+
+/** Selects the key a remote graph is pushed with, or none (then it is read-only). */
+export async function setRemoteKey(slug: string, key: { account: string; id: string } | null): Promise<Graph> {
+  return change(async (graphs) => {
+    const graph = graphs.find(candidate => candidate.slug === slug);
+    if (!graph?.remote) throw new GraphError(`"${slug}" is no graph from a remote URL.`);
+    const next: Graph = { ...graph, remote: { url: graph.remote.url, ...(key ? { key } : {}) } };
+    return { graphs: graphs.map(candidate => candidate.slug === slug ? next : candidate), result: next };
+  });
+}
+
 /** Lists a repository that is already on this machine. The server admin's doing, never a visitor's. */
 export async function addCheckout(directory: string, owner: string | null, slug?: string): Promise<Graph> {
   const root = toProjectRoot(path.resolve(directory));
@@ -108,12 +148,12 @@ export async function addCheckout(directory: string, owner: string | null, slug?
   });
 }
 
-/** Takes the graph off the list. A repository created here is deleted; a checkout stays where it is. */
+/** Takes the graph off the list. A repository created or cloned here is deleted; a checkout stays where it is. */
 export async function removeGraph(slug: string): Promise<void> {
   await change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);
     if (!graph) throw new GraphError(`No graph "${slug}" on this server.`);
-    if (graph.kind === 'created') await fs.remove(graph.path);
+    if (graph.kind !== 'checkout') await fs.remove(graph.path);
     return { graphs: graphs.filter(candidate => candidate.slug !== slug), result: undefined };
   });
 }

@@ -87,6 +87,35 @@ async function setWriters(writers: string[]) {
   }
 }
 
+// A graph from a remote URL is pushed back with one of its owner's SSH keys.
+// The server makes the key and shows only its public half, to add on the remote.
+const myKeys = ref<Awaited<ReturnType<typeof trpc.keys.list.query>>>([])
+const selectedKey = computed(() => myKeys.value.find(key => key.id === graphAccess.value?.remote?.key))
+
+async function loadKeys() {
+  if (graphAccess.value?.remote && mayManageAccess.value) myKeys.value = await trpc.keys.list.query()
+}
+
+async function selectKey(id: string | null) {
+  try {
+    await trpc.graphs.setRemoteKey.mutate({ projectPath: projectStore.projectPath, key: id })
+    await loadGraphAccess()
+    await dataStore.refreshAccess(projectStore.projectPath)
+  } catch (e) {
+    useToastStore().error('Could not select the key', e)
+  }
+}
+
+async function createKey() {
+  try {
+    const key = await trpc.keys.create.mutate({ label: `${name.value} on ${window.location.host}` })
+    await loadKeys()
+    await selectKey(key.id)
+  } catch (e) {
+    useToastStore().error('Could not make a key', e)
+  }
+}
+
 async function removeGraph() {
   if (!window.confirm(`Remove the graph "${name.value}" from this server? A graph created here is deleted with its history.`)) return
   try {
@@ -245,6 +274,7 @@ onMounted(async () => {
     await loadLinkedRepos()
     await loadDiscoveredProjects()
     await loadGraphAccess()
+    await loadKeys()
   } catch (e) {
     console.error(e)
   } finally {
@@ -484,6 +514,23 @@ const save = async () => {
             <input v-model="newWriter" type="text" placeholder="Account name" @keydown.enter="setWriters([...graphAccess.writers, newWriter.trim()])" />
             <button class="action-btn add-repo-btn" :disabled="!newWriter.trim()" @click="setWriters([...graphAccess.writers, newWriter.trim()])">Give write access</button>
           </div>
+          <template v-if="graphAccess.remote">
+            <p class="hint-text">
+              Follows <code>{{ graphAccess.remote.url }}</code>.
+              {{ graphAccess.remote.key ? `Edited here and pushed back with a key of ${graphAccess.remote.keyOwner ?? 'a removed account'}.` : 'Read-only here until its owner selects a key to push with.' }}
+            </p>
+            <div v-if="mayManageAccess" class="add-repo-row">
+              <select :value="selectedKey?.id ?? ''" @change="selectKey(($event.target as HTMLSelectElement).value || null)">
+                <option value="">No key: read-only here</option>
+                <option v-for="key in myKeys" :key="key.id" :value="key.id">{{ key.label }}</option>
+              </select>
+              <button class="action-btn add-repo-btn" @click="createKey">New key</button>
+            </div>
+            <p v-if="selectedKey" class="hint-text">
+              Add this public key on the remote with write access (on GitHub: the repository's Settings, Deploy keys):
+              <code class="public-key">{{ selectedKey.publicKey }}</code>
+            </p>
+          </template>
           <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Remove this graph from the server</button>
         </div>
 
@@ -777,6 +824,12 @@ const save = async () => {
       color: #888;
       margin-bottom: 0.5rem;
       margin-top: -0.25rem;
+
+      .public-key {
+        display: block;
+        user-select: all;
+        word-break: break-all;
+      }
     }
 
     .instructions-input {
