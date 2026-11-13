@@ -47,12 +47,13 @@ Agent sessions run the coding-agent CLI you pick for them (Claude Code, Codex, G
 | `pnpm dev:full` | Also the MCP server over SSE, the broker inspector and the voice bridge |
 | `pnpm dev:host` | Like `dev`, but reachable from `LAN_BIND_HOST` (or the Tailscale IP) instead of loopback only |
 | `pnpm start` | Builds, then runs the built bundles; uses exactly the configured ports (`--port <n>` for one run) |
+| `pnpm start --server <name>` | Another server of this machine, with its own accounts, graphs and port, next to the default one (`local`); also with `pnpm dev` |
 | `pnpm start:fast` | `start` without rebuilding |
 | `pnpm build` / `pnpm build:optional` | Build the core packages / also the MCP server and voice bridge |
 
-Ports and other settings go in `.env` (see `.env.example`). The first `pnpm start` in a terminal asks which repository to open and whether to host it for other people, and saves the answers there; `pnpm start --setup` asks again. Voice is opt-in: set `AIMPARENCY_ENABLE_VOICE=true`.
+Ports and other settings go in `.env` (see `.env.example`). The first `pnpm start` in a terminal asks whether other people use the server and saves the answers in the server's `server.json` (see [Hosting It for a Group](#hosting-it-for-a-group)); `pnpm start --setup` asks again. Voice is opt-in: set `AIMPARENCY_ENABLE_VOICE=true`.
 
-Backend, broker and agent sessions listen on `127.0.0.1` only and answer only pages served from this machine, since they can start agents. The launcher prints the resolved ports and writes them to `packages/frontend/public/runtime-config.json`. `pnpm validate:local-runtime` checks the port handling without starting the stack.
+Backend, broker and agent sessions listen on `127.0.0.1` only and answer only pages served from this machine, since they can start agents. The launcher prints the resolved ports and hands them to the frontend's server, which answers `/runtime-config.json` with them (the copy in `packages/frontend/public/` is for scripts). `pnpm validate:local-runtime` checks the port handling without starting the stack.
 
 ## The Loop
 
@@ -128,16 +129,17 @@ pnpm start
 
 1. whether other people use this server: answer yes;
 2. the port (default 4000) and the address to listen on (`127.0.0.1` behind nginx);
-3. whether server admins may run wrapped agents (a shell on the server);
-4. the first server admin's name and password;
-5. optionally a repository on the machine to add as a graph.
+3. whether visitors get an account without asking, and whether anyone may sign up;
+4. whether server admins may run wrapped agents (a shell on the server);
+5. the first server admin's name and password;
+6. optionally a repository on the machine to add as a graph.
 
 From then on `pnpm start` (for example from a systemd unit) serves everything on
 that one port: the UI, the API under `/trpc`, and an MCP server under
 `/mcp/sse`. A graph has the address `https://<host>/g/<slug>`.
 
 - **The server directory.** What the server owns lives in one directory
-  (`AIMPARENCY_SERVER_DIR`, default `~/.local/share/aimparency`), never in a
+  (`~/.local/share/aimparency-local`, or `AIMPARENCY_SERVER_DIR`), never in a
   graph's `.bowman`: `server.json` (the settings), `accounts.json`, `graphs.json`
   (the list of graphs with owner and writers), `graphs/<slug>/`, the git
   repositories of graphs created on the server, `remotes/<slug>/`, the clones
@@ -145,13 +147,19 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   file and re-read when it changes:
 
   ```json
-  { "login": "accounts", "agents": false, "graphCreation": "everyone" }
+  { "login": "accounts", "port": 4000, "host": "127.0.0.1", "agents": false, "graphCreation": "everyone" }
   ```
 
   `"login": "none"` (or no file) is the local server: no login, the person at
   the machine may do everything. `"graphCreation": "selected"` lets only
-  accounts marked "creates graphs" create graphs. `pnpm dev` is a server of its
-  own in `~/.local/share/aimparency-dev`.
+  accounts marked "creates graphs" create graphs.
+- **Several servers on one machine.** A server has a name; `local` is the one
+  every command works on. `--server <name>` selects another one, in
+  `~/.local/share/aimparency-<name>`: `pnpm start --server hub` runs it,
+  `pnpm accounts --server hub list` and `pnpm graphs --server hub add <path>`
+  manage it. Give each a different `"port"` and they run side by side, for
+  example your own local server and one you prepare for other people.
+  `pnpm dev --server hub` runs that server from source with hot reload.
 - **Graphs.** An account creates a graph in the browser in one step and owns
   it; it gets a git repository of its own on the server. The owner gives other
   accounts write access in the graph's settings. `pnpm graphs add <path>` lists

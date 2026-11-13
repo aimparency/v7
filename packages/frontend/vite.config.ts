@@ -1,9 +1,26 @@
 import os from 'node:os'
 import { fileURLToPath, URL } from 'node:url'
 
-import { defineConfig, loadEnv } from 'vite'
+import { defineConfig, loadEnv, type Connect, type Plugin } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import vueDevTools from 'vite-plugin-vue-devtools'
+
+// The launcher gives each stack its runtime config in the environment; the
+// file in public/ is the last started stack's and only the fallback.
+function runtimeConfigFromEnv(): Plugin {
+  const config = process.env.AIMPARENCY_RUNTIME_CONFIG
+  const answer: Connect.NextHandleFunction = (req, res, next) => {
+    if (!config || req.url?.split('?')[0] !== '/runtime-config.json') return next()
+    res.setHeader('content-type', 'application/json')
+    res.setHeader('cache-control', 'no-store')
+    res.end(config)
+  }
+  return {
+    name: 'aimparency-runtime-config',
+    configureServer: (server) => { server.middlewares.use(answer) },
+    configurePreviewServer: (server) => { server.middlewares.use(answer) },
+  }
+}
 
 // https://vite.dev/config/
 export default defineConfig(({ mode }) => {
@@ -27,6 +44,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       vue(),
       vueDevTools(),
+      runtimeConfigFromEnv(),
     ],
     resolve: {
       alias: {

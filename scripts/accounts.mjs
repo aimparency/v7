@@ -19,7 +19,8 @@ import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 //   pnpm accounts uninvite <id>
 //   pnpm accounts agent-token   (prints a fresh token of the wrapped agents' account)
 //
-// They live in the server directory (AIMPARENCY_SERVER_DIR, see .env). A
+// They live in the server directory; `--server <name>` (anywhere in the
+// command) selects another server of this machine than "local". A
 // password comes from AIMPARENCY_PASSWORD when set (the setup passes it so),
 // else it is asked. What an account may do on a graph: `pnpm graphs`.
 
@@ -28,6 +29,9 @@ const envFile = path.join(repoRoot, '.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const args = process.argv.slice(2);
+// Which server of this machine (default: local), as with `pnpm start --server <name>`.
+const serverAt = args.indexOf('--server');
+if (serverAt >= 0) process.env.AIMPARENCY_SERVER = args.splice(serverAt, 2)[1] ?? '';
 const flag = (name) => {
   const index = args.indexOf(name);
   if (index >= 0) args.splice(index, 1);

@@ -12,7 +12,8 @@ import * as graphs from '../packages/backend/src/graphs/registry.ts';
 //   pnpm graphs writers <slug> [<account> ...]                   replaces the list
 //   pnpm graphs remove <slug>          (a graph created on the server is deleted; a checkout stays)
 //
-// Accounts create graphs in the browser; adding a repository that is already
+// `--server <name>` (anywhere in the command) selects another server of this
+// machine than "local". Accounts create graphs in the browser; adding a repository that is already
 // on the machine is the operator's doing, here. Without --owner it belongs to
 // the server admins.
 
@@ -21,6 +22,9 @@ const envFile = path.join(repoRoot, '.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const args = process.argv.slice(2);
+// Which server of this machine (default: local), as with `pnpm start --server <name>`.
+const serverAt = args.indexOf('--server');
+if (serverAt >= 0) process.env.AIMPARENCY_SERVER = args.splice(serverAt, 2)[1] ?? '';
 const option = (name) => {
   const index = args.indexOf(name);
   return index >= 0 ? args.splice(index, 2)[1] : undefined;

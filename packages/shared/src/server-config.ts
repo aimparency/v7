@@ -6,18 +6,33 @@
 // Without server.json the server is the local one: no login, the person at the
 // machine may do everything. `"login": "accounts"` opens it to other people:
 // everyone reads, accounts write the graphs they own or were given.
+//
+// One machine can hold several servers, each with a name: its directory is
+// ~/.local/share/aimparency-<name>. AIMPARENCY_SERVER names the one a process
+// works on (`--server <name>` of the launcher and the CLIs sets it); without
+// it that is "local". AIMPARENCY_SERVER_DIR gives a directory directly.
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { z } from 'zod';
 
+export const DEFAULT_SERVER_NAME = 'local';
+
 export function serverDir(): string {
   if (process.env.AIMPARENCY_SERVER_DIR) return path.resolve(process.env.AIMPARENCY_SERVER_DIR);
-  return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), 'aimparency');
+  const name = process.env.AIMPARENCY_SERVER || DEFAULT_SERVER_NAME;
+  if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`A server name has lower-case letters, digits and hyphens: "${name}"`);
+  return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), `aimparency-${name}`);
 }
 
 const ServerConfigSchema = z.object({
   login: z.enum(['none', 'accounts']).default('none'),
+  // Where the launcher (`pnpm start`, `pnpm dev`) puts this server: the port
+  // people open (with accounts the one port for everything) and the address it
+  // listens on (127.0.0.1 behind a proxy, 0.0.0.0 for everyone). Servers on
+  // one machine get different ports here and run side by side.
+  port: z.number().int().positive().optional(),
+  host: z.string().min(1).optional(),
   // The server admins' wrapped agents: a shell on the server, so off unless switched on.
   agents: z.boolean().default(false),
   // Who may create graphs: every account, or only those the server admin selected.

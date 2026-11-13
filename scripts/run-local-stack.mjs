@@ -11,26 +11,33 @@ import { ask, askNewPassword, askYesNo, closeQuestions } from './ask.mjs';
 // One launcher for the local stack. Dev runs every server from TypeScript source
 // through tsx (no watchers, no build step); start builds bundles and runs those.
 //
-//   node scripts/run-local-stack.mjs dev|start [<repo path or git url>] [--full] [--host] [--delay] [--no-build] [--port <n>] [--setup] [--dry-run]
+//   node scripts/run-local-stack.mjs dev|start [<repo path or git url>] [--server <name>] [--full] [--host] [--delay] [--no-build] [--port <n>] [--setup] [--dry-run]
 //
 //   <repo ...>  print a link that opens that project (a git URL opens read-only)
+//   --server <name>  which server of this machine (default: local); its
+//               directory is ~/.local/share/aimparency-<name>
 //   --full      also the broker client, MCP over SSE and the voice bridge
 //   --host      dev: bind to LAN_BIND_HOST (or the tailscale IP) and serve MCP over SSE
 //   --delay     DEV_DELAY=true: the backend slows responses (frontend e2e tests)
 //   --no-build  start: run the existing bundles without rebuilding
-//   --port <n>  start: the frontend port, or the one port of a server with accounts
+//   --port <n>  the frontend port, or the one port of a server with accounts
+//               (otherwise "port" in the server's server.json)
 //   --setup     start: ask the setup questions again
 //
 // dev picks free ports next to the configured ones (parallel worktrees); start
 // uses exactly the configured ports, so a proxy in front of it can rely on them.
 //
-// The first `start` in a terminal asks whether other people use this server;
-// the answers go to server.json in the server directory (and ports to .env).
-// With accounts (`"login": "accounts"`), one port carries the built UI, the API
-// and the MCP server for all graphs of the server; everyone reads, accounts
-// write the graphs they own or were given (pnpm accounts, pnpm graphs), and
-// agents and loops stay off. dev is a server of its own (its own server
-// directory), so trying things there never touches the one other people use.
+// A machine holds any number of servers, each named: `pnpm dev` and `pnpm
+// start` run the one called "local" (no login, for the person at the machine);
+// `pnpm start --server hub` runs another one, with its own accounts, graphs,
+// port and settings, next to it. dev runs a server from source with hot
+// reload, start runs it built, as it is deployed.
+//
+// The first `start` of a server in a terminal asks whether other people use
+// it; the answers go to server.json in its directory. With accounts (`"login":
+// "accounts"`), `start` puts the built UI, the API and the MCP server for all
+// graphs on one port; everyone reads, accounts write the graphs they own or
+// were given (pnpm accounts, pnpm graphs), and agents and loops stay off.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -45,12 +52,40 @@ if (existsSync(envFile)) {
   process.loadEnvFile(envFile);
 }
 
+const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
+const args = process.argv.slice(2);
+// `--name value` options; what is left are flags and positionals.
+function option(name) {
+  const index = args.indexOf(name);
+  if (index < 0) return undefined;
+  const [, value] = args.splice(index, 2);
+  if (!value || value.startsWith('--')) {
+    console.error(`[local-runtime] ${name} needs a value`);
+    process.exit(1);
+  }
+  return value;
+}
+const portOption = option('--port');
+const portOverride = parsePort(portOption, undefined);
+if (portOption && !portOverride) {
+  console.error('[local-runtime] --port needs a port number');
+  process.exit(1);
+}
+// The child processes and the CLIs the setup calls work on the same server.
+const serverOption = option('--server');
+if (serverOption) process.env.AIMPARENCY_SERVER = serverOption;
+const serverName = process.env.AIMPARENCY_SERVER || 'local';
+if (!/^[a-z0-9][a-z0-9-]*$/.test(serverName)) {
+  console.error(`[local-runtime] A server name has lower-case letters, digits and hyphens: "${serverName}"`);
+  process.exit(1);
+}
+const flags = new Set(args.filter((arg) => arg.startsWith('--')));
+const positional = args.filter((arg) => !arg.startsWith('--'));
+
 // The server directory (see packages/shared/src/server-config.ts): settings,
 // accounts, the list of graphs. Read here as plain JSON; the backend validates.
-function defaultServerDir() {
-  return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), 'aimparency');
-}
-const serverDir = () => path.resolve(process.env.AIMPARENCY_SERVER_DIR || defaultServerDir());
+const serverDir = () => path.resolve(process.env.AIMPARENCY_SERVER_DIR
+  || path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), `aimparency-${serverName}`));
 const serverSettingsFile = () => path.join(serverDir(), 'server.json');
 
 function readJson(file, fallback) {
@@ -67,19 +102,11 @@ async function saveServerSettings(values) {
   await fs.writeFile(serverSettingsFile(), JSON.stringify({ ...serverSettings(), ...values }, null, 2) + '\n');
 }
 
-const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
-const args = process.argv.slice(2);
-const flags = new Set(args.filter((arg) => arg.startsWith('--')));
-const portFlag = args.indexOf('--port');
-const portOverride = portFlag >= 0 ? parsePort(args[portFlag + 1], undefined) : undefined;
-if (portFlag >= 0 && !portOverride) {
-  console.error('[local-runtime] --port needs a port number');
-  process.exit(1);
-}
-const positional = args.filter((arg, index) => !arg.startsWith('--') && !(portFlag >= 0 && index === portFlag + 1));
+// The port people open: --port, the server's own setting, then .env.
+const openPort = (envValue) => portOverride ?? parsePort(serverSettings().port, undefined) ?? parsePort(envValue, 4000);
 
 const preferredPorts = {
-  frontendPort: parsePort(process.env.PORT_FRONTEND, 4000),
+  frontendPort: openPort(process.env.PORT_FRONTEND),
   backendHttpPort: parsePort(process.env.PORT_BACKEND_HTTP, 3000),
   backendWsPort: parsePort(process.env.PORT_BACKEND_WS, 3001),
   brokerHttpPort: parsePort(process.env.PORT_BROKER_HTTP, 5000),
@@ -140,7 +167,7 @@ async function findAvailablePort(startPort, reservedPorts) {
 
 async function resolvePorts(mode) {
   const reservedPorts = new Set();
-  const preferred = { ...preferredPorts, frontendPort: portOverride ?? preferredPorts.frontendPort };
+  const preferred = preferredPorts;
   if (mode === 'start') {
     await requireFreePorts(preferred);
     return preferred;
@@ -160,7 +187,7 @@ async function resolvePorts(mode) {
 async function requireFreePorts(ports) {
   for (const [name, port] of Object.entries(ports)) {
     if (!await canListen(port)) {
-      throw new UsageError(`Port ${port} (${name}) is in use. Stop what uses it, pass --port <n>, or set the PORT_* entries in .env.`);
+      throw new UsageError(`Port ${port} (${name}) is in use. Stop what uses it, pass --port <n>, set "port" in ${serverSettingsFile()}, or the PORT_* entries in .env.`);
     }
   }
 }
@@ -182,7 +209,7 @@ async function writeRuntimeConfig(resolvedPorts) {
 }
 
 function logPortSummary(resolvedPorts) {
-  console.log('[local-runtime] Resolved local ports:');
+  console.log(`[local-runtime] server "${serverName}" (${serverDir()}), ports:`);
   console.log(`[local-runtime] frontend: http://localhost:${resolvedPorts.frontendPort}`);
   console.log(`[local-runtime] backend: http://localhost:${resolvedPorts.backendHttpPort} / ws://localhost:${resolvedPorts.backendWsPort}`);
   console.log(`[local-runtime] broker: http://localhost:${resolvedPorts.brokerHttpPort} / ws://localhost:${resolvedPorts.brokerWsPort}`);
@@ -193,6 +220,9 @@ function logPortSummary(resolvedPorts) {
 function createEnv(resolvedPorts) {
   return {
     ...process.env,
+    // The frontend's dev server answers /runtime-config.json with this, so two
+    // stacks of one checkout never read each other's ports from the file.
+    AIMPARENCY_RUNTIME_CONFIG: JSON.stringify(runtimeConfig(resolvedPorts)),
     PORT_FRONTEND: String(resolvedPorts.frontendPort),
     PORT_BACKEND_HTTP: String(resolvedPorts.backendHttpPort),
     PORT_BACKEND_WS: String(resolvedPorts.backendWsPort),
@@ -346,7 +376,7 @@ async function askRepository(question, fallback = '') {
 }
 
 async function setup() {
-  console.log(`[local-runtime] Setup. The answers go to ${serverSettingsFile()} and .env; \`pnpm start --setup\` asks again.`);
+  console.log(`[local-runtime] Setup of the server "${serverName}". The answers go to ${serverSettingsFile()}; \`pnpm start${serverOption ? ` --server ${serverName}` : ''} --setup\` asks again.`);
   const others = await askYesNo(
     'Let other people use this server? (everyone reads; accounts create graphs and write the ones they own or were given)',
     serverSettings().login === 'accounts',
@@ -356,15 +386,16 @@ async function setup() {
     await saveEnv({ AIMPARENCY_PROJECT: await askRepository('Repository to open (a path or a git URL; empty: choose in the browser):', process.env.AIMPARENCY_PROJECT ?? '') });
     return closeQuestions();
   }
-  await saveEnv({
-    PORT: parsePort(await ask('Port:', process.env.PORT ?? '4000'), 4000),
-    BIND_HOST: await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', process.env.BIND_HOST || '127.0.0.1'),
-  });
+  const port = parsePort(await ask('Port:', String(onePortAddress().port)), 4000);
+  const host = await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', onePortAddress().host);
+  const signUp = serverSettings().signUp ?? {};
+  const browserKey = await askYesNo('Give every visitor an account without asking, the moment they first need one? (held by a key in their browser)', signUp.browserKey === true);
+  const open = await askYesNo('Let anyone sign up with a name and a password?', signUp.open === true);
   const agents = await askYesNo(
     'Let server admins run wrapped agents? That is a shell on this server for every server admin: commands as this user, /etc and the secrets in .env included.',
     serverSettings().agents === true,
   );
-  await saveServerSettings({ login: 'accounts', agents });
+  await saveServerSettings({ login: 'accounts', port, host, signUp: { ...signUp, browserKey, open }, agents });
   if (!hasAdmin()) {
     console.log('[local-runtime] The first account, a server admin, who manages the others in the UI:');
     const name = await ask('Name:', process.env.USER ?? 'admin');
@@ -411,25 +442,33 @@ function onePortCommands(env, agentToken) {
   ];
 }
 
+// Where a server with accounts listens: its own settings, then .env (PORT, BIND_HOST).
+const onePortAddress = () => ({
+  port: openPort(process.env.PORT),
+  host: serverSettings().host || process.env.BIND_HOST || '127.0.0.1',
+});
+
 async function startOnePort() {
+  const serverFlag = serverOption ? ` --server ${serverName}` : '';
   if (!hasAdmin()) {
-    throw new UsageError('No server admin account yet. Run `pnpm start --setup` once in a terminal, or `pnpm accounts add <name> --admin`.');
+    throw new UsageError(`No server admin account yet. Run \`pnpm start${serverFlag} --setup\` once in a terminal, or \`pnpm accounts${serverFlag} add <name> --admin\`.`);
   }
-  const port = portOverride ?? parsePort(process.env.PORT, 4000);
-  const mcpPort = parsePort(process.env.PORT_MCP, 3005);
+  const { port, host } = onePortAddress();
+  await requireFreePorts({ port });
+  // The MCP server stays on loopback behind the one port: any free port does.
+  const mcpPort = parsePort(process.env.PORT_MCP, undefined) ?? await findAvailablePort(3005, new Set([port]));
   const env = {
     ...process.env,
     PORT: String(port),
     PORT_MCP: String(mcpPort),
-    BIND_HOST: process.env.BIND_HOST || '127.0.0.1',
+    BIND_HOST: host,
     PATH: [path.join(repoRoot, 'node_modules', '.bin'), process.env.PATH].join(path.delimiter),
   };
-  await requireFreePorts({ port, mcpPort });
   const agentToken = serverSettings().agents === true && !flags.has('--dry-run')
     ? execFileSync(tsx, ['scripts/accounts.mjs', 'agent-token'], { cwd: repoRoot, encoding: 'utf8' }).trim()
     : '';
   const commands = onePortCommands(env, agentToken);
-  console.log(`[local-runtime] server with accounts (${serverDir()}) on http://${env.BIND_HOST}:${port} (MCP: /mcp/sse)`);
+  console.log(`[local-runtime] server "${serverName}" with accounts (${serverDir()}) on http://${env.BIND_HOST}:${port} (MCP: /mcp/sse)`);
   if (flags.has('--dry-run')) {
     for (const { name, cwd, command } of commands) {
       console.log(`[local-runtime] ${name}: (${path.relative(repoRoot, cwd)}) ${command}`);
@@ -457,10 +496,6 @@ async function main() {
     if (serverSettings().login === 'accounts') {
       return startOnePort();
     }
-  } else {
-    // dev is a server of its own, for the person at this machine: what is tried
-    // there (also accounts) never touches the server other people use.
-    process.env.AIMPARENCY_SERVER_DIR ||= `${defaultServerDir()}-dev`;
   }
 
   const resolvedPorts = await resolvePorts(mode);
