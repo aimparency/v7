@@ -1,5 +1,6 @@
-// The login on a server with accounts. The token rides on the WebSocket's connection
-// params, which are sent once per connection, so logging in or out reloads.
+// The login on a server with accounts. The token rides on the WebSocket's
+// connection params; logging in or out on an open connection changes that
+// connection on the server, and the token kept here is for the next one.
 const KEY = 'aimparency-token'
 
 export function loginToken(): string | null {
@@ -10,19 +11,19 @@ export function loginToken(): string | null {
   }
 }
 
-export function setLoginToken(token: string | null) {
+export function storeLoginToken(token: string | null) {
+  agentCookie = null
   try {
     if (token) localStorage.setItem(KEY, token)
     else localStorage.removeItem(KEY)
   } catch {
     // Without storage the login lasts until the next reload.
   }
-  window.location.reload()
 }
 
 // The server admins' agents gateway (/broker, /session/<port>) reads the login
 // from an HttpOnly cookie, since browser WebSockets send no headers. Asked once
-// per page; anyone else gets a refusal and no cookie.
+// per login; anyone else gets a refusal and no cookie.
 let agentCookie: Promise<boolean> | null = null
 
 export function ensureAgentCookie(): Promise<boolean> {

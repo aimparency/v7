@@ -45,6 +45,8 @@ const loadGraphs = async () => {
   graphs.value = await trpc.graphs.list.query()
 }
 const createGraph = async () => {
+  // Where the server gives accounts automatically, the visitor gets theirs now.
+  if (!await viewer.ensureAccount()) return
   try {
     const { slug } = await trpc.graphs.create.mutate({ name: newGraphName.value })
     newGraphName.value = ''
@@ -255,7 +257,7 @@ onUnmounted(revokeThumbnails)
         </div>
       </div>
       <p v-if="graphs.length === 0" class="empty-state">No graphs yet.</p>
-      <form v-if="viewer.canCreateGraphs" class="project-input-container" @submit.prevent="createGraph">
+      <form v-if="viewer.canCreateGraphs || viewer.getsAccountAutomatically" class="project-input-container" @submit.prevent="createGraph">
         <input v-model="newGraphName" class="project-input" placeholder="Name of a new graph" />
         <button class="select-project" type="submit" :disabled="!newGraphName.trim()">New graph</button>
       </form>

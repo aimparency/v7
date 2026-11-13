@@ -56,7 +56,9 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
   assert.deepEqual(config, { sameOrigin: true, login: 'accounts', agents: false, voiceEnabled: false });
 
   const me = await (await fetch(`${base}/trpc/auth.me`)).json() as any;
-  assert.deepEqual(me.result.data, { login: 'accounts', agents: false, name: null, serverAdmin: false, canCreateGraphs: false });
+  assert.deepEqual(me.result.data, {
+    login: 'accounts', agents: false, signUp: { open: false, browserKey: false }, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true
+  });
 
   // No MCP server listens on its port here: the proxy says so instead of hanging.
   const mcp = await fetch(`${base}/mcp/sse`);
@@ -85,7 +87,7 @@ test('sign in, create a graph, write it with the bearer token; no token only rea
 });
 
 test('the WebSocket carries the token in its connection params', () => {
-  assert.equal(createContext({ info: { connectionParams: { clientId: 'tab', token: 'secret' } } }).token, 'secret');
+  assert.equal(createContext({ info: { connectionParams: { clientId: 'tab', token: 'secret' } } }).session?.token, 'secret');
 });
 
 test('errors carry no server stack trace', async () => {

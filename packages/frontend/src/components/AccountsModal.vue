@@ -45,12 +45,37 @@ const setRight = async (account: Account, right: Right, box: HTMLInputElement) =
 
 const remove = (account: string) => run(() => trpc.auth.removeAccount.mutate({ name: account }))
 
+// Invitations: links that let their holder create an account, also where
+// sign-up is closed. The link is shown once; the server keeps only a hash.
+const invitations = ref<Awaited<ReturnType<typeof trpc.auth.listInvitations.query>>>([])
+const invitationOnce = ref(true)
+const invitationDays = ref<number | null>(null)
+const invitationLink = ref('')
+const loadInvitations = async () => {
+  invitations.value = await trpc.auth.listInvitations.query().catch(() => invitations.value)
+}
+const invite = () => run(async () => {
+  const { code } = await trpc.auth.createInvitation.mutate({
+    kind: invitationOnce.value ? 'once' : 'permanent',
+    days: invitationDays.value || undefined
+  })
+  invitationLink.value = `${window.location.origin}/?invitation=${code}`
+  await loadInvitations()
+})
+const uninvite = (id: string) => run(async () => {
+  await trpc.auth.removeInvitation.mutate({ id })
+  await loadInvitations()
+})
+const describeInvitation = (invitation: (typeof invitations.value)[number]) =>
+  invitation.redeemedBy ? `used by ${invitation.redeemedBy}`
+    : invitation.expiresAt ? `until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'no end'
+
 const resetPassword = (account: string) => {
   const next = window.prompt(`New password for ${account} (8+ characters)`)
   if (next) void run(() => trpc.auth.setPassword.mutate({ name: account, password: next }))
 }
 
-onMounted(() => run(async () => undefined))
+onMounted(() => run(loadInvitations))
 </script>
 
 <template>
@@ -70,6 +95,19 @@ onMounted(() => run(async () => undefined))
         <button class="btn-primary" type="submit">Add</button>
       </form>
       <p v-if="error" class="error">{{ error }}</p>
+
+      <h4>Invitations</h4>
+      <div v-for="invitation in invitations" :key="invitation.id" class="row">
+        <span class="name">{{ invitation.kind === 'once' ? 'for one person' : 'for anyone with the link' }} · {{ describeInvitation(invitation) }}</span>
+        <button class="btn-secondary" @click="uninvite(invitation.id)">Remove</button>
+      </div>
+      <form class="row" @submit.prevent="invite">
+        <label><input v-model="invitationOnce" type="checkbox" /> for one person only</label>
+        <input v-model.number="invitationDays" class="name" type="number" min="1" placeholder="Valid for days (empty: no end)" />
+        <button class="btn-primary" type="submit">Invite</button>
+      </form>
+      <p v-if="invitationLink" class="hint">Send this link; it is shown only now: <code>{{ invitationLink }}</code></p>
+
       <p class="hint">"creates graphs" matters where the server lets only selected accounts create graphs. Who may write a graph is set in that graph's settings, by its owner.</p>
       <p class="hint warning">{{ ADMIN_SHELL_WARNING }}</p>
     </div>
@@ -95,6 +133,15 @@ onMounted(() => run(async () => undefined))
   .error {
     color: #e57373;
     margin: 0;
+  }
+
+  h4 {
+    margin: 0.5rem 0 0;
+  }
+
+  code {
+    user-select: all;
+    word-break: break-all;
   }
 
   .hint {

@@ -1,6 +1,7 @@
 import path from 'node:path';
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { serverConfig } from 'shared/server-config';
 import { t, delayedProcedure } from '../trpc.js';
 import { mayCreateGraphs, viewerFor } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
@@ -44,9 +45,14 @@ export const graphsRouter = t.router({
   create: delayedProcedure
     .input(z.object({ name: z.string().max(200) }))
     .mutation(async ({ ctx, input }) => {
-      const viewer = ctx.viewer ?? viewerFor(ctx.token);
+      const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
       if (!mayCreateGraphs(viewer)) {
         throw new TRPCError({ code: 'FORBIDDEN', message: 'Creating graphs on this server is for accounts the server admin selected.' });
+      }
+      // Keeps one account from filling the server; the server admin is not counted.
+      const owned = listGraphs().filter(graph => graph.owner === viewer.id).length;
+      if (!viewer.serverAdmin && owned >= serverConfig().limits.graphsPerAccount) {
+        throw new TRPCError({ code: 'FORBIDDEN', message: `An account has at most ${serverConfig().limits.graphsPerAccount} graphs on this server.` });
       }
       const graph = await run(() => createGraph(input.name, viewer.id));
       return { slug: graph.slug };

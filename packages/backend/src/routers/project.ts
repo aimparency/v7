@@ -129,7 +129,7 @@ export const projectRouter = t.router({
     }))
     .query(async ({ ctx, input }) => {
       const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
-      const viewer = ctx.viewer ?? viewerFor(ctx.token);
+      const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
       const graph = findGraphByPath(input.projectPath);
       const reason = blocker?.message ?? readOnlyReason(graph, viewer);
       return { writable: reason === null, reason, user: viewer.name, role: rightOn(graph, viewer), serverAdmin: viewer.serverAdmin };

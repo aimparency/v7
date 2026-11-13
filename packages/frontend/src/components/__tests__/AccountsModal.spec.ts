@@ -3,13 +3,20 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { ADMIN_SHELL_WARNING } from 'shared'
 import AccountsModal from '../AccountsModal.vue'
 
-const { createAccount, setRights, listAccounts } = vi.hoisted(() => ({
+const { createAccount, setRights, listAccounts, listInvitations, createInvitation } = vi.hoisted(() => ({
+  listInvitations: vi.fn().mockResolvedValue([]),
+  createInvitation: vi.fn().mockResolvedValue({ code: 'the-code' }),
   createAccount: vi.fn().mockResolvedValue(undefined),
   setRights: vi.fn().mockResolvedValue(undefined),
   listAccounts: vi.fn().mockResolvedValue([{ name: 'ana', serverAdmin: false, canCreateGraphs: false }])
 }))
 vi.mock('../../trpc', () => ({
-  trpc: { auth: { createAccount: { mutate: createAccount }, setRights: { mutate: setRights }, listAccounts: { query: listAccounts } } }
+  trpc: {
+    auth: {
+      createAccount: { mutate: createAccount }, setRights: { mutate: setRights }, listAccounts: { query: listAccounts },
+      listInvitations: { query: listInvitations }, createInvitation: { mutate: createInvitation }
+    }
+  }
 }))
 
 const mountModal = async () => {
@@ -22,6 +29,8 @@ describe('AccountsModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     listAccounts.mockResolvedValue([{ name: 'ana', serverAdmin: false, canCreateGraphs: false }])
+    listInvitations.mockResolvedValue([])
+    createInvitation.mockResolvedValue({ code: 'the-code' })
   })
 
   it('shows what server admin hands over', async () => {
@@ -62,5 +71,19 @@ describe('AccountsModal', () => {
     await form.trigger('submit')
     await flushPromises()
     expect(createAccount).toHaveBeenCalledWith({ name: 'ben', password: 'long enough' })
+  })
+
+  it('makes an invitation link, shown once, and lists who used the earlier ones', async () => {
+    listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, canCreateGraphs: false, redeemedBy: 'ben', createdAt: '' }])
+    const wrapper = await mountModal()
+    expect(wrapper.text()).toContain('for one person · used by ben')
+
+    const form = wrapper.findAll('form')[1]!
+    await form.find('input[type=checkbox]').setValue(false)
+    await form.find('input[type=number]').setValue(7)
+    await form.trigger('submit')
+    await flushPromises()
+    expect(createInvitation).toHaveBeenCalledWith({ kind: 'permanent', days: 7 })
+    expect(wrapper.find('code').text()).toBe(`${window.location.origin}/?invitation=the-code`)
   })
 })

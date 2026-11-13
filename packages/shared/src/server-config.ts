@@ -22,6 +22,16 @@ const ServerConfigSchema = z.object({
   agents: z.boolean().default(false),
   // Who may create graphs: every account, or only those the server admin selected.
   graphCreation: z.enum(['everyone', 'selected']).default('everyone'),
+  // How people get an account without the server admin making one: `open`
+  // lets anyone choose a name and password; `browserKey` gives a visitor an
+  // account without asking, held by a key in their browser. Invitations work
+  // either way.
+  signUp: z.object({ open: z.boolean().default(false), browserKey: z.boolean().default(false) }).prefault({}),
+  limits: z.object({
+    // New accounts from one address; a whole room may share one address.
+    accountsPerAddressPerHour: z.number().int().positive().default(100),
+    graphsPerAccount: z.number().int().positive().default(20),
+  }).prefault({}),
   // Who commits on this server when git has no identity configured.
   gitAuthor: z.object({ name: z.string().min(1), email: z.string().min(1) })
     .default({ name: 'Aimparency', email: 'aimparency@localhost' }),
@@ -73,7 +83,7 @@ export function hasAccounts(): boolean {
 }
 
 /** Sets some settings, keeping the rest of the file (the setup of `pnpm start`). */
-export function updateServerConfig(values: Partial<ServerConfig>) {
+export function updateServerConfig(values: z.input<typeof ServerConfigSchema>) {
   const file = path.join(serverDir(), 'server.json');
   const current = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
   const next = { ...current, ...values };

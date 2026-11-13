@@ -29,7 +29,8 @@ const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
 // Create WebSocket client
 const wsClient = createWSClient({
   url: backendWsUrl(),
-  connectionParams: { clientId, token: loginToken() ?? undefined },
+  // Read at every (re)connection: the login may have changed since the last one.
+  connectionParams: () => ({ clientId, token: loginToken() ?? undefined }),
   // The dev backend restarts on every source change (tsx watch) and requests
   // queue until the socket is back: tRPC's default backoff (2, 4, 8, 16 s…)
   // turned a ~1 s restart into seconds of a dead UI. Retry quickly instead.

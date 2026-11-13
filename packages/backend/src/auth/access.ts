@@ -17,10 +17,10 @@ export type GraphRight = typeof RIGHTS[number];
 // server admin, or 'local' (only on a server without login).
 type Need = GraphRight | 'account' | 'serverAdmin' | 'local';
 
-export type Viewer = { id: string | null; name: string | null; serverAdmin: boolean; canCreateGraphs: boolean };
+export type Viewer = { id: string | null; name: string | null; serverAdmin: boolean; canCreateGraphs: boolean; permanentLogin: boolean };
 
-const LOCAL_VIEWER: Viewer = { id: null, name: null, serverAdmin: true, canCreateGraphs: true };
-const ANONYMOUS: Viewer = { id: null, name: null, serverAdmin: false, canCreateGraphs: false };
+const LOCAL_VIEWER: Viewer = { id: null, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true };
+const ANONYMOUS: Viewer = { id: null, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: false };
 
 // The server admins' wrapped agents: off unless the operator turns them on,
 // since a server admin then holds a shell on the server.
@@ -36,8 +36,10 @@ const LOCAL_ONLY = new Set([
   'linkedRepo.register'
 ]);
 // Nothing of a graph: viewer state, or a visitor logging in or out.
-const OPEN_MUTATIONS = new Set(['phase.setCursor', 'auth.login', 'auth.logout']);
-const ACCOUNT_MUTATIONS = new Set(['auth.issueToken', 'auth.changeOwnPassword', 'graphs.create']);
+const OPEN_MUTATIONS = new Set([
+  'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin'
+]);
+const ACCOUNT_MUTATIONS = new Set(['auth.issueToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'graphs.create']);
 const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // Also derived state that costs the server (re-indexing) or is shown to every
 // viewer (activity): not for visitors.

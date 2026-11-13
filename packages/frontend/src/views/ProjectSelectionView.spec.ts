@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
+import { useViewerStore } from '../stores/viewer'
 
 const { inspectPath, listGraphs, createGraph, accounts } = vi.hoisted(() => ({
   inspectPath: vi.fn(),
@@ -25,7 +26,10 @@ const discovered = [{ path: '/work/notes', bowmanPath: '/work/notes/.bowman', so
 const mountView = (modelValue: string, lists = false, viewer = {}) => mount(ProjectSelectionView, {
   attachTo: document.body,
   global: {
-    plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: null, serverAdmin: true, canCreateGraphs: true, ...viewer } } })],
+    plugins: [createTestingPinia({
+      createSpy: vi.fn,
+      initialState: { viewer: { name: null, serverAdmin: true, canCreateGraphs: true, signUp: { open: false, browserKey: false }, ...viewer } }
+    })],
     stubs: { LoginControl: true }
   },
   props: {
@@ -194,12 +198,28 @@ describe('ProjectSelectionView on a server with accounts', () => {
 
   it('creates a graph in one step and opens it', async () => {
     const wrapper = mountView('', false, { name: 'ben', serverAdmin: false })
+    vi.mocked(useViewerStore().ensureAccount).mockResolvedValue(true)
     await flushPromises()
     await wrapper.find('form input').setValue('My idea')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
     expect(wrapper.emitted('open-graph')).toEqual([['my-idea']])
+  })
+
+  it('lets a visitor create a graph where accounts are given automatically, and gets them one first', async () => {
+    const wrapper = mountView('', false, { name: null, serverAdmin: false, canCreateGraphs: false, signUp: { open: false, browserKey: true } })
+    const ensureAccount = vi.mocked(useViewerStore().ensureAccount).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
+    await flushPromises()
+    await wrapper.find('form input').setValue('My idea')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(createGraph).not.toHaveBeenCalled()
+
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(ensureAccount).toHaveBeenCalledTimes(2)
+    expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
   })
 
   it('asks a visitor to log in before creating a graph', async () => {

@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { hasAccounts, serverConfig } from 'shared/server-config';
-import { t, delayedProcedure } from '../trpc.js';
+import { t, delayedProcedure, type Context } from '../trpc.js';
 import { agentsEnabled, mayCreateGraphs, viewerFor } from '../auth/access.js';
 import * as accounts from '../auth/accounts.js';
+import { newChallenge, verifyKeyLogin } from '../auth/browser-key.js';
+import { withinLimit } from '../rate-limit.js';
 
 const rights = { serverAdmin: z.boolean().optional(), canCreateGraphs: z.boolean().optional() };
 
@@ -24,6 +26,21 @@ async function run<T>(action: () => Promise<T>): Promise<T> {
   } catch (error) {
     if (error instanceof accounts.AccountError) throw new TRPCError({ code: 'BAD_REQUEST', message: error.message });
     throw error;
+  }
+}
+
+// A fresh login for this account. Over a WebSocket the connection goes on as
+// that account from here; the browser keeps the token for its next connection.
+async function logIn(ctx: Context, name: string): Promise<{ token: string }> {
+  const token = await accounts.issueToken(name, 'browser');
+  if (ctx.session) ctx.session.token = token;
+  return { token };
+}
+
+// New accounts from one address per hour: sign-ups and automatic accounts together.
+function assertMayCreateAccount(ctx: Context) {
+  if (!withinLimit('new-account', ctx.address ?? 'unknown', serverConfig().limits.accountsPerAddressPerHour)) {
+    throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Too many new accounts from this address: try again in an hour.' });
   }
 }
 
@@ -50,39 +67,87 @@ export const authRouter = t.router({
   // What kind of server this is and who is asking. login 'accounts': the UI
   // shows a login and the server's graphs instead of this machine's directories.
   me: delayedProcedure.query(({ ctx }) => {
-    const viewer = ctx.viewer ?? viewerFor(ctx.token);
+    const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+    const { login, signUp } = serverConfig();
     return {
-      login: serverConfig().login,
+      login,
       agents: agentsEnabled(),
+      signUp,
       name: viewer.name,
       serverAdmin: viewer.serverAdmin,
-      canCreateGraphs: mayCreateGraphs(viewer)
+      canCreateGraphs: mayCreateGraphs(viewer),
+      // False for an account held only by a key in this browser: the UI
+      // recommends a name and password, since clearing the browser loses it.
+      permanentLogin: viewer.id === null || viewer.permanentLogin
     };
   }),
 
   login: delayedProcedure
     .input(z.object({ name: z.string().max(200), password: z.string().max(1000) }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       assertAccounts();
       const name = input.name.trim();
       if (loginBlocked(name)) {
         throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Too many wrong passwords for this name: try again in a few minutes.' });
       }
-      const token = await accounts.login(name, input.password);
-      if (!token) {
+      if (!await accounts.checkPassword(name, input.password)) {
         loginFailed(name);
         // Slows down guessing one by one; loginBlocked stops guessing in parallel.
         await new Promise(resolve => setTimeout(resolve, 1000));
         throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Wrong name or password.' });
       }
       loginFailures.delete(name);
-      return { token };
+      return logIn(ctx, name);
     }),
 
   logout: delayedProcedure.mutation(async ({ ctx }) => {
-    if (ctx.token && hasAccounts()) await accounts.revokeToken(ctx.token);
+    const token = ctx.session?.token;
+    if (token && hasAccounts()) await accounts.revokeToken(token);
+    if (ctx.session) ctx.session.token = undefined;
     return { success: true };
   }),
+
+  // A person makes their own account: where sign-up is open, or with an invitation.
+  signUp: delayedProcedure
+    .input(z.object({ name: z.string().max(200), password: z.string().max(1000), invitation: z.string().max(200).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      assertMayCreateAccount(ctx);
+      const account = await run(() => accounts.signUp(input.name, input.password, { open: serverConfig().signUp.open, invitation: input.invitation }));
+      return logIn(ctx, account.name);
+    }),
+
+  // Login with the key in the visitor's browser: a challenge to sign, then the
+  // signature. An unknown key gets a new account where the server offers that.
+  keyChallenge: delayedProcedure.mutation(() => {
+    assertAccounts();
+    return { nonce: newChallenge() };
+  }),
+
+  keyLogin: delayedProcedure
+    .input(z.object({ publicKey: z.string().max(500), nonce: z.string().max(100), signature: z.string().max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      assertAccounts();
+      if (!verifyKeyLogin(input.publicKey, input.nonce, input.signature)) {
+        throw new TRPCError({ code: 'UNAUTHORIZED', message: 'The browser key did not answer the challenge.' });
+      }
+      let account = accounts.findAccountByKey(input.publicKey);
+      if (!account) {
+        if (!serverConfig().signUp.browserKey) {
+          throw new TRPCError({ code: 'UNAUTHORIZED', message: 'This server gives no accounts automatically: log in.' });
+        }
+        assertMayCreateAccount(ctx);
+        account = await accounts.createKeyAccount(input.publicKey);
+      }
+      return logIn(ctx, account.name);
+    }),
+
+  // An automatic account chooses its name and password and so becomes permanent.
+  makePermanent: delayedProcedure
+    .input(z.object({ name: z.string().max(200), password: z.string().max(1000) }))
+    .mutation(async ({ ctx, input }) => {
+      await run(() => accounts.makePermanent(signedIn(ctx.viewer?.name), input.name, input.password));
+      return { success: true };
+    }),
 
   // A token for an MCP client, which acts as this account.
   issueToken: delayedProcedure
@@ -101,13 +166,40 @@ export const authRouter = t.router({
       }
       await run(() => accounts.setPassword(name, input.password));
       // Setting a password logs out everywhere; keep this browser logged in.
-      return { token: await accounts.issueToken(name, 'browser') };
+      return logIn(ctx, name);
     }),
 
   listAccounts: delayedProcedure.query(() => {
     assertAccounts();
-    return accounts.listAccounts().map(({ name, serverAdmin, canCreateGraphs }) => ({ name, serverAdmin, canCreateGraphs }));
+    return accounts.listAccounts().map(({ id: _internal, ...account }) => account);
   }),
+
+  listInvitations: delayedProcedure.query(() => {
+    assertAccounts();
+    return accounts.listInvitations();
+  }),
+
+  // The code is shown this once; the server keeps its hash.
+  createInvitation: delayedProcedure
+    .input(z.object({
+      kind: z.enum(['once', 'permanent']),
+      days: z.number().positive().max(3650).optional(),
+      canCreateGraphs: z.boolean().optional()
+    }))
+    .mutation(async ({ input }) => ({
+      code: await run(() => accounts.createInvitation({
+        kind: input.kind,
+        canCreateGraphs: input.canCreateGraphs,
+        expiresAt: input.days ? new Date(Date.now() + input.days * 24 * 60 * 60_000).toISOString() : undefined
+      }))
+    })),
+
+  removeInvitation: delayedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input }) => {
+      await run(() => accounts.removeInvitation(input.id));
+      return { success: true };
+    }),
 
   createAccount: delayedProcedure
     .input(z.object({ name: z.string().max(200), password: z.string().max(1000), ...rights }))

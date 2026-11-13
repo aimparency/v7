@@ -35,7 +35,7 @@ const host = async (owner: string | null = null) => {
 };
 const shared = 'shared';
 
-const as = (token?: string) => appRouter.createCaller({ token });
+const as = (token?: string) => appRouter.createCaller({ session: { token } });
 const loggedIn = async (name: string, password: string) => as((await accounts.login(name, password))!);
 
 test('passwords and tokens round-trip, and a revoked token is gone', async () => {
@@ -43,7 +43,7 @@ test('passwords and tokens round-trip, and a revoked token is gone', async () =>
   assert.equal(await accounts.login('ada', 'wrong password'), null);
   const token = await accounts.login('ada', 'correct horse');
   assert.ok(token);
-  assert.deepEqual(accounts.resolveToken(token), { id: ada.id, name: 'ada', serverAdmin: false, canCreateGraphs: false });
+  assert.deepEqual(accounts.resolveToken(token), { id: ada.id, name: 'ada', serverAdmin: false, canCreateGraphs: false, permanentLogin: true });
   await accounts.revokeToken(token);
   assert.equal(accounts.resolveToken(token), null);
   const stored = await fs.readFile(accounts.accountsFile(), 'utf8');
@@ -129,7 +129,9 @@ test('without login the person at the machine may do everything, by path or by s
   await addCheckout(path.dirname(projectPath), null, 'mine');
   const idea = await as().idea.createFloatingIdea({ projectPath: 'mine', idea: { text: 'By slug' } });
   assert.equal((await as().idea.get({ projectPath, ideaId: idea.id })).text, 'By slug');
-  assert.deepEqual(await as().auth.me(), { login: 'none', agents: false, name: null, serverAdmin: true, canCreateGraphs: true });
+  assert.deepEqual(await as().auth.me(), {
+    login: 'none', agents: false, signUp: { open: false, browserKey: false }, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true
+  });
   assert.equal((await as().project.getAccess({ projectPath })).role, 'owner');
   await assert.rejects(as().auth.login({ name: 'x', password: 'whatever it is' }), /no accounts/);
 });

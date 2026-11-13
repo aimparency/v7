@@ -14,6 +14,9 @@ import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 //   pnpm accounts creates-graphs <name> on|off
 //   pnpm accounts password <name>
 //   pnpm accounts remove <name>
+//   pnpm accounts invite [--once] [--days <n>] [--creates-graphs]   (prints the link's path)
+//   pnpm accounts invitations
+//   pnpm accounts uninvite <id>
 //   pnpm accounts agent-token   (prints a fresh token of the wrapped agents' account)
 //
 // They live in the server directory (AIMPARENCY_SERVER_DIR, see .env). A
@@ -32,6 +35,9 @@ const flag = (name) => {
 };
 const admin = flag('--admin');
 const createsGraphs = flag('--creates-graphs');
+const once = flag('--once');
+const daysAt = args.indexOf('--days');
+const days = daysAt >= 0 ? Number(args.splice(daysAt, 2)[1]) : undefined;
 const [command, name, value] = args;
 
 const password = async (who) => process.env.AIMPARENCY_PASSWORD || await askNewPassword(who);
@@ -67,6 +73,26 @@ async function main() {
       await accounts.setPassword(name ?? '', await password(name));
       console.log(`New password set for ${name}; their logins ended.`);
       return;
+    case 'invite': {
+      if (days !== undefined && !(days > 0)) throw new accounts.AccountError('--days needs a number of days.');
+      const code = await accounts.createInvitation({
+        kind: once ? 'once' : 'permanent',
+        canCreateGraphs: createsGraphs,
+        expiresAt: days ? new Date(Date.now() + days * 24 * 60 * 60_000).toISOString() : undefined,
+      });
+      console.log(`Append this to the server's address; it is shown only now:\n/?invitation=${code}`);
+      return;
+    }
+    case 'invitations':
+      for (const invitation of accounts.listInvitations()) {
+        const state = invitation.redeemedBy ? `used by ${invitation.redeemedBy}` : invitation.expiresAt ? `until ${invitation.expiresAt}` : 'no end';
+        console.log(`${invitation.id}\t${invitation.kind}\t${state}${invitation.canCreateGraphs ? '\tcreates graphs' : ''}`);
+      }
+      return;
+    case 'uninvite':
+      await accounts.removeInvitation(name ?? '');
+      console.log('Removed the invitation.');
+      return;
     case 'agent-token':
       // The launcher reads stdout: the token and nothing else.
       process.stdout.write(`${await accounts.agentToken()}\n`);
@@ -76,7 +102,7 @@ async function main() {
       console.log(`Removed ${name}.`);
       return;
     default:
-      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-graphs] | admin <name> on|off | creates-graphs <name> on|off | password <name> | remove <name>');
+      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-graphs] | admin <name> on|off | creates-graphs <name> on|off | password <name> | remove <name> | invite [--once] [--days <n>] [--creates-graphs] | invitations | uninvite <id>');
   }
 }
 

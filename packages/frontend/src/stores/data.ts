@@ -1012,6 +1012,11 @@ export const useDataStore = defineStore('data', {
       }
     },
 
+    // After logging in or out: what this viewer may do on the open graph.
+    async refreshAccess(projectPath: string) {
+      this.applyAccess(projectPath, await trpc.project.getAccess.query({ projectPath }))
+    },
+
     applyAccess(projectPath: string, access: ProjectAccess) {
       this.access = access;
       setProjectAccess(projectPath, access.reason);

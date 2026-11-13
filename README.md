@@ -160,6 +160,20 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   with write access change everything, including its settings and committing;
   only the owner changes who may write and removes the graph. A server admin
   may do all of that on every graph and manages accounts.
+- **Getting an account.** Three ways besides the server admin making one,
+  set in `server.json`:
+
+  ```json
+  { "signUp": { "open": true, "browserKey": true },
+    "limits": { "accountsPerAddressPerHour": 100, "graphsPerAccount": 20 } }
+  ```
+
+  `open` lets anyone choose a name and a password. `browserKey` gives a visitor
+  an account without asking, the moment they do something that needs one; it is
+  held by a key in their browser, and the UI recommends a name and password
+  ("Keep account"), since clearing the browser loses it. Invitations work
+  either way: links for one person or for anyone, optionally with an end date,
+  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>]`.
 - **Accounts.** Server admins add people in the UI (Accounts), or on the
   server with `pnpm accounts add <name> [--admin] [--creates-graphs]`,
   `pnpm accounts admin|creates-graphs <name> on|off`,
@@ -228,6 +242,7 @@ location / {
     proxy_set_header Upgrade $http_upgrade;
     proxy_set_header Connection "upgrade";
     proxy_set_header Host $host;
+    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for; # limits count per visitor, not per proxy
     proxy_set_header X-Forwarded-Proto $scheme; # the agents' login cookie gets Secure
     proxy_buffering off;   # MCP streams server-sent events
     proxy_read_timeout 1d; # keeps idle WebSocket and MCP connections open

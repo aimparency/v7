@@ -15,15 +15,35 @@ import { withFileLock } from '../storage/json.js';
 type Account = {
   id: string;
   name: string;
+  /** Absent on an account that so far only has its browser key. */
   passwordHash?: string;
+  /** The browser key of an automatic account: its public half (SPKI, base64). */
+  publicKey?: string;
   serverAdmin?: boolean;
   canCreateGraphs?: boolean;
   createdAt: string;
 };
 type Token = { hash: string; account: string; label: string; createdAt: string };
-type Accounts = { accounts: Account[]; tokens: Token[] };
+// A link that lets its holder create an account; `once` is used up by the first.
+type Invitation = {
+  id: string;
+  hash: string;
+  kind: 'once' | 'permanent';
+  expiresAt?: string;
+  canCreateGraphs?: boolean;
+  redeemedBy?: string;
+  createdAt: string;
+};
+type Accounts = { accounts: Account[]; tokens: Token[]; invitations: Invitation[] };
 
-export type AccountView = { id: string; name: string; serverAdmin: boolean; canCreateGraphs: boolean };
+export type AccountView = {
+  id: string;
+  name: string;
+  serverAdmin: boolean;
+  canCreateGraphs: boolean;
+  /** False while the account lives only in one browser: clearing that browser loses it. */
+  permanentLogin: boolean;
+};
 
 const FILE = 'accounts.json';
 const scrypt = promisify(crypto.scrypt) as (password: string, salt: string, length: number) => Promise<Buffer>;
@@ -37,7 +57,7 @@ export const accountsFile = () => path.join(serverDir(), FILE);
 function load(): Accounts {
   return readServerFile(FILE, (raw) => {
     const parsed = (raw ?? {}) as Partial<Accounts>;
-    return { accounts: parsed.accounts ?? [], tokens: parsed.tokens ?? [] };
+    return { accounts: parsed.accounts ?? [], tokens: parsed.tokens ?? [], invitations: parsed.invitations ?? [] };
   });
 }
 
@@ -70,8 +90,8 @@ async function passwordMatches(password: string, stored: string | undefined): Pr
 
 const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
-const view = ({ id, name, serverAdmin, canCreateGraphs }: Account): AccountView =>
-  ({ id, name, serverAdmin: serverAdmin === true, canCreateGraphs: canCreateGraphs === true });
+const view = ({ id, name, serverAdmin, canCreateGraphs, passwordHash }: Account): AccountView =>
+  ({ id, name, serverAdmin: serverAdmin === true, canCreateGraphs: canCreateGraphs === true, permanentLogin: passwordHash !== undefined });
 
 function byName(accounts: Accounts, name: string): Account {
   const account = accounts.accounts.find(candidate => candidate.name === name);
@@ -105,28 +125,143 @@ export function accountNames(ids: string[]): string[] {
   return ids.flatMap(id => names.get(id) ?? []);
 }
 
+function cleanName(name: string): string {
+  const trimmed = name.trim();
+  if (!trimmed) throw new AccountError('An account needs a name.');
+  if (trimmed.length > MAX_NAME_LENGTH) throw new AccountError(`A name has at most ${MAX_NAME_LENGTH} characters.`);
+  return trimmed;
+}
+
+function assertFreeName(accounts: Accounts, name: string, except?: string) {
+  if (accounts.accounts.some(existing => existing.name === name && existing.id !== except)) {
+    throw new AccountError(`"${name}" exists already.`);
+  }
+}
+
+const newAccount = (name: string, fields: Partial<Account>): Account =>
+  ({ id: crypto.randomUUID(), name, ...fields, createdAt: new Date().toISOString() });
+
 export async function createAccount(
   name: string,
   password: string,
   rights: { serverAdmin?: boolean; canCreateGraphs?: boolean } = {}
 ): Promise<AccountView> {
-  const trimmed = name.trim();
-  if (!trimmed) throw new AccountError('An account needs a name.');
-  if (trimmed.length > MAX_NAME_LENGTH) throw new AccountError(`A name has at most ${MAX_NAME_LENGTH} characters.`);
+  const trimmed = cleanName(name);
   assertPassword(password);
-  const account: Account = {
-    id: crypto.randomUUID(),
-    name: trimmed,
+  const account = newAccount(trimmed, {
     passwordHash: await hashPassword(password),
     ...(rights.serverAdmin ? { serverAdmin: true } : {}),
-    ...(rights.canCreateGraphs ? { canCreateGraphs: true } : {}),
-    createdAt: new Date().toISOString()
-  };
+    ...(rights.canCreateGraphs ? { canCreateGraphs: true } : {})
+  });
   await change((accounts) => {
-    if (accounts.accounts.some(existing => existing.name === trimmed)) throw new AccountError(`"${trimmed}" exists already.`);
+    assertFreeName(accounts, trimmed);
     return { ...accounts, accounts: [...accounts.accounts, account] };
   });
   return view(account);
+}
+
+// --- Invitations ---------------------------------------------------------------
+
+function validInvitation(accounts: Accounts, code: string): Invitation {
+  const invitation = accounts.invitations.find(candidate => candidate.hash === sha256(code));
+  const expired = invitation?.expiresAt !== undefined && Date.parse(invitation.expiresAt) < Date.now();
+  if (!invitation || expired || invitation.redeemedBy) throw new AccountError('This invitation is not valid any more.');
+  return invitation;
+}
+
+/** The code to hand out (in a link); only its hash is stored. */
+export async function createInvitation(
+  options: { kind: 'once' | 'permanent'; expiresAt?: string; canCreateGraphs?: boolean }
+): Promise<string> {
+  const code = crypto.randomBytes(18).toString('base64url');
+  const invitation: Invitation = {
+    id: crypto.randomUUID(),
+    hash: sha256(code),
+    kind: options.kind,
+    ...(options.expiresAt ? { expiresAt: options.expiresAt } : {}),
+    ...(options.canCreateGraphs ? { canCreateGraphs: true } : {}),
+    createdAt: new Date().toISOString()
+  };
+  await change(accounts => ({ ...accounts, invitations: [...accounts.invitations, invitation] }));
+  return code;
+}
+
+export function listInvitations() {
+  const accounts = load();
+  const names = new Map(accounts.accounts.map(account => [account.id, account.name]));
+  return accounts.invitations.map(({ id, kind, expiresAt, canCreateGraphs, redeemedBy, createdAt }) => ({
+    id, kind, createdAt,
+    expiresAt: expiresAt ?? null,
+    canCreateGraphs: canCreateGraphs === true,
+    // A redeemed one-time invitation stays listed, so the admin sees who came through it.
+    redeemedBy: redeemedBy ? names.get(redeemedBy) ?? '(removed account)' : null
+  }));
+}
+
+export async function removeInvitation(id: string) {
+  await change(accounts => ({ ...accounts, invitations: accounts.invitations.filter(invitation => invitation.id !== id) }));
+}
+
+/** A person makes their own account: where sign-up is open, or with an invitation. */
+export async function signUp(name: string, password: string, { open, invitation }: { open: boolean; invitation?: string }): Promise<AccountView> {
+  const trimmed = cleanName(name);
+  assertPassword(password);
+  const passwordHash = await hashPassword(password);
+  let account!: Account;
+  await change((accounts) => {
+    const invited = invitation ? validInvitation(accounts, invitation) : null;
+    if (!invited && !open) throw new AccountError('Creating an account on this server needs an invitation.');
+    assertFreeName(accounts, trimmed);
+    account = newAccount(trimmed, { passwordHash, ...(invited?.canCreateGraphs ? { canCreateGraphs: true } : {}) });
+    return {
+      ...accounts,
+      accounts: [...accounts.accounts, account],
+      invitations: accounts.invitations.map(candidate =>
+        candidate === invited && candidate.kind === 'once' ? { ...candidate, redeemedBy: account.id } : candidate)
+    };
+  });
+  return view(account);
+}
+
+// --- Automatic accounts, held by a key in the browser ----------------------------
+
+export function findAccountByKey(publicKey: string): AccountView | null {
+  const account = load().accounts.find(candidate => candidate.publicKey === publicKey);
+  return account ? view(account) : null;
+}
+
+/** An account nobody typed anything for: named after its key until its holder chooses a name. */
+export async function createKeyAccount(publicKey: string): Promise<AccountView> {
+  const digest = sha256(publicKey);
+  let account!: Account;
+  await change((accounts) => {
+    const existing = accounts.accounts.find(candidate => candidate.publicKey === publicKey);
+    if (existing) {
+      account = existing;
+      return accounts;
+    }
+    let length = 6;
+    while (accounts.accounts.some(candidate => candidate.name === `guest-${digest.slice(0, length)}`)) length++;
+    account = newAccount(`guest-${digest.slice(0, length)}`, { publicKey });
+    return { ...accounts, accounts: [...accounts.accounts, account] };
+  });
+  return view(account);
+}
+
+/** The first permanent login of an automatic account: a name of its own and a password. Logins stay. */
+export async function makePermanent(name: string, newName: string, password: string) {
+  const trimmed = cleanName(newName);
+  assertPassword(password);
+  const passwordHash = await hashPassword(password);
+  await change((accounts) => {
+    const current = byName(accounts, name);
+    if (current.passwordHash) throw new AccountError('This account has a password already.');
+    assertFreeName(accounts, trimmed, current.id);
+    return {
+      ...accounts,
+      accounts: accounts.accounts.map(account => account.id === current.id ? { ...account, name: trimmed, passwordHash } : account)
+    };
+  });
 }
 
 export async function setPassword(name: string, password: string) {
@@ -135,6 +270,7 @@ export async function setPassword(name: string, password: string) {
   await change((accounts) => {
     const { id } = byName(accounts, name);
     return {
+      ...accounts,
       accounts: accounts.accounts.map(account => account.id === id ? { ...account, passwordHash } : account),
       // A new password logs out everywhere else.
       tokens: accounts.tokens.filter(token => token.account !== id)
@@ -160,6 +296,7 @@ export async function removeAccount(name: string) {
   await change((accounts) => {
     const { id } = byName(accounts, name);
     const next = {
+      ...accounts,
       accounts: accounts.accounts.filter(account => account.id !== id),
       tokens: accounts.tokens.filter(token => token.account !== id)
     };
