@@ -111,9 +111,10 @@ Aimparency clones only that repository's `.bowman` into `~/.cache/aimparency/rep
 
 ## Hosting It for a Group
 
-One server can host a project's graph for a whole group: anyone may read it,
-people with an account may edit it, and admins manage the accounts. On the
-server (Node.js 22.13+ and git; an https clone needs no GitHub account):
+One server holds many graphs for many people: anyone may read every graph,
+people with an account create graphs and write the ones they own or were given
+write access to, and server admins manage the accounts. On the server (Node.js
+22.13+ and git; an https clone needs no GitHub account):
 
 ```bash
 git clone https://github.com/aimparency/v7.git aimparency
@@ -125,46 +126,69 @@ pnpm start
 
 `pnpm start` asks:
 
-1. the repository to serve: a path, or a Git URL that it clones next to `aimparency/`;
-2. whether to host it for other people: answer yes;
-3. the port (default 4000) and the address to listen on (`127.0.0.1` behind nginx);
-4. the first admin's name and password.
+1. whether other people use this server: answer yes;
+2. the port (default 4000) and the address to listen on (`127.0.0.1` behind nginx);
+3. whether server admins may run wrapped agents (a shell on the server);
+4. the first server admin's name and password;
+5. optionally a repository on the machine to add as a graph.
 
-From then on `pnpm start` (for example from a systemd unit) serves that one
-project on that one port: the UI, the API under `/trpc`, and an MCP server under
-`/mcp/sse`. Loops stay off on a hosted instance, and no other project can be
-opened. Wrapped agents (the watchdog) are off too unless you
-answer yes to "Let admins run wrapped agents?" (`AIMPARENCY_AGENTS=true`):
-then admins, and only admins, get them in the UI. The broker and the agent
-sessions listen on `127.0.0.1`; the one port lets a request through to them
-only with an admin's login and from the instance's own origin. The agents'
-own Aimparency MCP edits the graph as the account `wrapped-agents` (write),
-whose token is replaced on every start; remove that account to make them
-read-only.
+From then on `pnpm start` (for example from a systemd unit) serves everything on
+that one port: the UI, the API under `/trpc`, and an MCP server under
+`/mcp/sse`. A graph has the address `https://<host>/g/<slug>`.
 
-- **Accounts.** Admins add people in the UI (header: Accounts), or on the
-  server with `pnpm accounts add <name> <read|write|admin>`,
-  `pnpm accounts role|password|remove <name>` and `pnpm accounts list`. Accounts
-  live in the project's `.bowman/runtime/accounts.json` (gitignored); passwords
-  are stored as scrypt hashes.
-- **Roles.** Reading needs no account. `write` edits ideas and phases.
-  `admin` also manages accounts, project settings and commits, and holds the
-  wrapped-agent shell when agents are on: a shell on the server as the user Aimparency
-  runs as, with read access to whatever that user can read (`/etc`, other
-  files) and every secret in Aimparency's `.env`. Make admin only people you
-  would give an SSH login; the setup, `pnpm accounts` and the Accounts dialog
-  warn about this.
-- **Commits.** Edits change the files in the served repository; someone with
-  push access commits and pushes them, and that git account answers for every
-  account it lets in.
-- **Pulling.** Every 5 minutes the instance fast-forwards to what was pushed
-  upstream, and open browsers update. It waits while the served `.bowman` has
-  uncommitted edits and never merges diverged history (the log says why it is
-  not pulling). `AIMPARENCY_PULL_SECONDS` sets the interval; `0` turns it off.
-  A private repository needs fetch credentials for the server's user.
-- **MCP.** A logged-in user's "MCP link" (in the header) connects an MCP client
-  as that account. It contains a token, so treat it like a password. Without a
-  token the MCP can only read.
+- **The server directory.** What the server owns lives in one directory
+  (`AIMPARENCY_SERVER_DIR`, default `~/.local/share/aimparency`), never in a
+  graph's `.bowman`: `server.json` (the settings), `accounts.json`, `graphs.json`
+  (the list of graphs with owner and writers) and `graphs/<slug>/`, the git
+  repositories of graphs created on the server. `server.json` is edited as a
+  file and re-read when it changes:
+
+  ```json
+  { "login": "accounts", "agents": false, "graphCreation": "everyone" }
+  ```
+
+  `"login": "none"` (or no file) is the local server: no login, the person at
+  the machine may do everything. `"graphCreation": "selected"` lets only
+  accounts marked "creates graphs" create graphs. `pnpm dev` is a server of its
+  own in `~/.local/share/aimparency-dev`.
+- **Graphs.** An account creates a graph in the browser in one step and owns
+  it; it gets a git repository of its own on the server. The owner gives other
+  accounts write access in the graph's settings. `pnpm graphs add <path>` lists
+  a repository that is already on the machine, `pnpm graphs list|owner|writers|remove`
+  manage the list from the terminal.
+- **Rights.** Reading needs no account. On a graph, its owner and the accounts
+  with write access change everything, including its settings and committing;
+  only the owner changes who may write and removes the graph. A server admin
+  may do all of that on every graph and manages accounts.
+- **Accounts.** Server admins add people in the UI (Accounts), or on the
+  server with `pnpm accounts add <name> [--admin] [--creates-graphs]`,
+  `pnpm accounts admin|creates-graphs <name> on|off`,
+  `pnpm accounts password|remove <name>` and `pnpm accounts list`. Passwords
+  are stored as scrypt hashes, login tokens as hashes.
+- **Agents.** Loops stay off on a server with accounts. Wrapped agents (the
+  watchdog) are off too unless `"agents": true`: then server admins, and only
+  they, get them in the UI. That is a shell on the server as the user
+  Aimparency runs as, with read access to whatever that user can read (`/etc`,
+  other files) and every secret in Aimparency's `.env`. Make server admin only
+  people you would give an SSH login; the setup, `pnpm accounts` and the
+  Accounts dialog warn about this. The broker and the agent sessions listen on
+  `127.0.0.1`; the one port lets a request through to them only with a server
+  admin's login and from the server's own origin. The agents' own Aimparency
+  MCP edits graphs as the account `wrapped-agents`, whose token is replaced on
+  every start; it writes the graphs it was given write access to.
+- **Commits.** Edits change the files in a graph's repository; its owner and
+  writers commit them in the UI (the header's commit button). The author is
+  git's configured identity, or `"gitAuthor": { "name": …, "email": … }` from
+  `server.json` when git has none.
+- **Pulling.** Every 5 minutes the server fast-forwards each graph that has an
+  upstream to what was pushed there, and open browsers update. It waits while
+  a graph's `.bowman` has uncommitted edits and never merges diverged history
+  (the log says why it is not pulling). `AIMPARENCY_PULL_SECONDS` sets the
+  interval; `0` turns it off. A private repository needs fetch credentials for
+  the server's user.
+- **MCP.** A logged-in user's "MCP link" connects an MCP client as that
+  account; tools take the graph's slug as `projectPath`. The link contains a
+  token, so treat it like a password. Without a token the MCP can only read.
 
 To keep it running, a systemd unit such as `/etc/systemd/system/aimparency.service`
 (adjust user and path; `pnpm` must be on systemd's PATH, check with `which pnpm`).
@@ -173,7 +197,7 @@ rebuilds on each start, `pnpm start --no-build` skips that:
 
 ```ini
 [Unit]
-Description=Aimparency (hosted)
+Description=Aimparency
 After=network-online.target
 Wants=network-online.target
 
@@ -191,7 +215,7 @@ WantedBy=multi-user.target
 Then `sudo systemctl enable --now aimparency` and follow it with `journalctl -u aimparency -f`.
 
 Behind nginx with TLS, one location is enough; the rate limit keeps a single
-client from flooding a public instance:
+client from flooding a public server:
 
 ```nginx
 # in the http block

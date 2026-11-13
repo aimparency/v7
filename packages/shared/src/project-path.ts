@@ -37,3 +37,12 @@ export function toBowmanPath(input: string): string {
   const { root, separator } = splitTrailingBowman(input);
   return root.endsWith(separator) ? `${root}${AIMPARENCY_DIR_NAME}` : `${root}${separator}${AIMPARENCY_DIR_NAME}`;
 }
+
+// A graph of a server is addressed by its slug (lower-case letters, digits and
+// hyphens) wherever a project path can stand: /g/<slug> in the browser,
+// `projectPath` in the API. A path always has a separator, so the two never mix.
+const GRAPH_SLUG = /^[a-z0-9][a-z0-9-]*$/;
+
+export function isGraphSlug(address: string): boolean {
+  return GRAPH_SLUG.test(address);
+}

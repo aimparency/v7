@@ -46,7 +46,8 @@ vi.mock('../../trpc', () => ({
 
 vi.mock('../../utils/runtime-config', () => ({
   sessionSocketTarget: (port: number) => ({ url: `http://127.0.0.1:${port}` }),
-  getRuntimeConfig: () => ({ hosted: false, project: '' })
+  getRuntimeConfig: () => ({ sameOrigin: false }),
+  hasAccounts: () => false
 }))
 
 describe('watchdog store project switching', () => {

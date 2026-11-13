@@ -1,10 +1,8 @@
 <script setup lang="ts">
 import { onMounted, onUnmounted } from 'vue'
 import { useProjectLoadStore } from '../stores/project-load'
-import { getRuntimeConfig } from '../utils/runtime-config'
 
 const projectLoad = useProjectLoadStore()
-const hosted = getRuntimeConfig().hosted
 
 // Nothing behind the screen reacts to keys. Stopped, not prevented, so Enter
 // still presses a focused button.
@@ -40,7 +38,7 @@ onUnmounted(() => window.removeEventListener('keydown', takeKeydown, { capture: 
       <div class="bar overall">
         <div class="fill" :style="{ transform: `scaleX(${projectLoad.overallFraction})` }"></div>
       </div>
-      <button v-if="!hosted" @click="projectLoad.cancel()">Cancel</button>
+      <button @click="projectLoad.cancel()">Cancel</button>
     </template>
 
     <template v-else>
@@ -48,7 +46,7 @@ onUnmounted(() => window.removeEventListener('keydown', takeKeydown, { capture: 
       <p class="error">{{ projectLoad.error }}</p>
       <div class="actions">
         <button @click="projectLoad.retry()">Retry</button>
-        <button v-if="!hosted" @click="projectLoad.cancel()">Back to projects</button>
+        <button @click="projectLoad.cancel()">Back to projects</button>
       </div>
     </template>
   </div>

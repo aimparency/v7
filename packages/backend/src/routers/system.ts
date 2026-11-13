@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { t, delayedProcedure } from '../trpc.js';
 import { continueHookStatus, disableContinueHook, enableContinueHook } from 'shared/continue-hook';
 import { readSystemStatus, writeSystemStatus } from '../storage/project.js';
+import { graphAddress } from '../graphs/address.js';
 
 const readContinueHook = (projectPath: string) => {
   try {
@@ -14,11 +15,11 @@ const readContinueHook = (projectPath: string) => {
 export const systemRouter = t.router({
   // The agents' Stop continuation hook, the same switch as the MCP enable-hook / disable-hook prompts.
   getContinueHook: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .query(({ input }) => readContinueHook(input.projectPath)),
 
   setContinueHook: delayedProcedure
-    .input(z.object({ projectPath: z.string(), enabled: z.boolean() }))
+    .input(z.object({ projectPath: graphAddress, enabled: z.boolean() }))
     .mutation(({ input }) => {
       if (input.enabled) enableContinueHook(input.projectPath);
       else disableContinueHook(input.projectPath);
@@ -27,7 +28,7 @@ export const systemRouter = t.router({
 
   getStatus: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       return await readSystemStatus(input.projectPath);
@@ -35,7 +36,7 @@ export const systemRouter = t.router({
 
   updateStatus: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       status: z.object({
         computeCredits: z.number().optional(),
         funds: z.number().optional()
@@ -54,7 +55,7 @@ export const systemRouter = t.router({
 
   performWork: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       workType: z.enum(['mining', 'freelance']).optional()
     }))
     .mutation(async ({ input }) => {

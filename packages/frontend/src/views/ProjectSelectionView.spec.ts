@@ -1,19 +1,33 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { mount } from '@vue/test-utils'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { flushPromises, mount } from '@vue/test-utils'
+import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
 
-const { inspectPath } = vi.hoisted(() => ({ inspectPath: vi.fn() }))
-vi.mock('../trpc', () => ({
-  trpc: { project: { inspectPath: { query: inspectPath } } },
+const { inspectPath, listGraphs, createGraph, accounts } = vi.hoisted(() => ({
+  inspectPath: vi.fn(),
+  listGraphs: vi.fn().mockResolvedValue([]),
+  createGraph: vi.fn(),
+  accounts: { on: false }
 }))
+vi.mock('../trpc', () => ({
+  trpc: {
+    project: { inspectPath: { query: inspectPath } },
+    graphs: { list: { query: listGraphs }, create: { mutate: createGraph } }
+  },
+}))
+vi.mock('../utils/runtime-config', () => ({ hasAccounts: () => accounts.on }))
 vi.mock('../utils/db', () => ({ loadProjectThumbnails: async () => new Map() }))
 
 const history = ['/work/aimparency/v7', '/work/entour', '/work/aimparency/v6']
   .map((path, index) => ({ path, lastOpened: index, failedToLoad: false }))
 const discovered = [{ path: '/work/notes', bowmanPath: '/work/notes/.bowman', sourceRoot: '/work' }]
 
-const mountView = (modelValue: string, lists = false) => mount(ProjectSelectionView, {
+const mountView = (modelValue: string, lists = false, viewer = {}) => mount(ProjectSelectionView, {
   attachTo: document.body,
+  global: {
+    plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: null, serverAdmin: true, canCreateGraphs: true, ...viewer } } })],
+    stubs: { LoginControl: true }
+  },
   props: {
     modelValue,
     projectHistory: lists ? history : [],
@@ -155,5 +169,43 @@ describe('ProjectSelectionView search', () => {
   it('keeps the edit and remove buttons out of the Tab order', () => {
     const wrapper = mountView('', true)
     expect(wrapper.findAll('.edit-button, .remove-button').every(button => button.attributes('tabindex') === '-1')).toBe(true)
+  })
+})
+
+describe('ProjectSelectionView on a server with accounts', () => {
+  beforeEach(() => {
+    vi.useRealTimers()
+    accounts.on = true
+    listGraphs.mockResolvedValue([{ slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' }])
+    createGraph.mockReset().mockResolvedValue({ slug: 'my-idea' })
+  })
+  afterEach(() => { accounts.on = false })
+
+  it('lists the server\'s graphs instead of this machine\'s directories and opens one by its slug', async () => {
+    const wrapper = mountView('', true, { name: 'ben', serverAdmin: false })
+    await flushPromises()
+    expect(wrapper.find('.project-input-shell').exists()).toBe(false)
+    expect(wrapper.text()).not.toContain('/work/entour')
+    expect(wrapper.text()).toContain('Hack the Hub')
+    expect(wrapper.text()).toContain('ana · /g/hack-the-hub')
+    await wrapper.find('.history-open-button').trigger('click')
+    expect(wrapper.emitted('open-graph')).toEqual([['hack-the-hub']])
+  })
+
+  it('creates a graph in one step and opens it', async () => {
+    const wrapper = mountView('', false, { name: 'ben', serverAdmin: false })
+    await flushPromises()
+    await wrapper.find('form input').setValue('My idea')
+    await wrapper.find('form').trigger('submit')
+    await flushPromises()
+    expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
+    expect(wrapper.emitted('open-graph')).toEqual([['my-idea']])
+  })
+
+  it('asks a visitor to log in before creating a graph', async () => {
+    const wrapper = mountView('', false, { name: null, serverAdmin: false, canCreateGraphs: false })
+    await flushPromises()
+    expect(wrapper.find('form').exists()).toBe(false)
+    expect(wrapper.text()).toContain('Log in to create a graph.')
   })
 })

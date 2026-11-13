@@ -10,6 +10,7 @@ import {
 import { normalizeProjectPath } from '../project-path.js';
 import { ensureProjectStructure } from '../storage/project.js';
 import { t, delayedProcedure } from '../trpc.js';
+import { graphAddress } from '../graphs/address.js';
 
 const autonomyPolicySchema = z.object({
   version: z.number().default(1),
@@ -82,7 +83,7 @@ const writeAutonomyPolicy = async (rawProjectPath: string, policy: z.infer<typeo
 export const watchdogRouter = t.router({
   getRuntimeState: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       return readWatchdogRuntimeState(input.projectPath);
@@ -90,7 +91,7 @@ export const watchdogRouter = t.router({
 
   updateRuntimeState: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       preferredAgentType: watchdogAgentTypeSchema.nullable().optional(),
       agentState: z.object({
         agentType: watchdogAgentTypeSchema,
@@ -132,7 +133,7 @@ export const watchdogRouter = t.router({
 
   getAutonomyPolicy: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       return readAutonomyPolicy(input.projectPath);
@@ -140,7 +141,7 @@ export const watchdogRouter = t.router({
 
   updateAutonomyPolicy: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       policy: autonomyPolicySchema.partial()
     }))
     .mutation(async ({ input }) => {

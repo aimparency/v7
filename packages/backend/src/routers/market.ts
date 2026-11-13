@@ -3,11 +3,12 @@ import fs from 'fs-extra';
 import path from 'path';
 import { packageRoot } from 'shared/node-entry';
 import { t, delayedProcedure } from '../trpc.js';
+import { graphAddress } from '../graphs/address.js';
 
 export const marketRouter = t.router({
   updateConfig: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       config: z.object({
         risk_level: z.number().optional(),
         leverage: z.number().optional(),

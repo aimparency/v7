@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import type { Hint } from 'shared'
+import { isGraphSlug, type Hint } from 'shared'
 import {
   normalizeProjectPath,
   removeProjectFromHistoryEntries,
@@ -7,7 +7,7 @@ import {
   upsertProjectHistory,
   type ProjectHistoryEntry
 } from './ui/project-helpers'
-import { getRuntimeConfig } from '../utils/runtime-config'
+import { hasAccounts } from '../utils/runtime-config'
 
 // ?repo=<git url>: a shareable link to someone else's project. It wins over
 // ?project= (the local clone) so a reload fetches the latest commit.
@@ -22,10 +22,15 @@ export function setRepoUrlParam(repoUrl: string) {
   window.history.replaceState({}, '', url)
 }
 
+// /g/<slug>: a graph of this server.
+function graphSlugFromLocation(): string {
+  const slug = /^\/g\/([^/]+)\/?$/.exec(window.location.pathname)?.[1] ?? ''
+  return isGraphSlug(slug) ? slug : ''
+}
+
 function getInitialProjectPath(): string {
-  // A hosted instance serves exactly one project.
-  const { hosted, project } = getRuntimeConfig()
-  if (hosted) return project
+  const slug = graphSlugFromLocation()
+  if (slug) return slug
   const urlParams = new URLSearchParams(window.location.search)
   if (urlParams.get('repo')) return ''
   const pathFromUrl = urlParams.get('project') || urlParams.get('path')
@@ -33,16 +38,19 @@ function getInitialProjectPath(): string {
   return ''
 }
 
+// Without login the person at the machine runs agents and loops.
+const localTools = () => !hasAccounts()
+
 export const useProjectStore = defineStore('project', {
   state: () => ({
     projectPath: getInitialProjectPath(),
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
     projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as ProjectHistoryEntry[],
     currentView: 'columns' as 'columns' | 'graph' | 'voice',
-    showWatchdog: !getRuntimeConfig().hosted && localStorage.getItem('aimparency-show-watchdog') === 'true',
+    showWatchdog: localTools() && localStorage.getItem('aimparency-show-watchdog') === 'true',
     watchdogMaximized: false,
     // Never both: the watchdog wins when both were left open.
-    showLoop: !getRuntimeConfig().hosted && localStorage.getItem('aimparency-show-loop') === 'true' && localStorage.getItem('aimparency-show-watchdog') !== 'true',
+    showLoop: localTools() && localStorage.getItem('aimparency-show-loop') === 'true' && localStorage.getItem('aimparency-show-watchdog') !== 'true',
     loopMaximized: false,
     loopHasHumanRequests: false,
     showLoopActionsOverlay: false,
@@ -58,22 +66,23 @@ export const useProjectStore = defineStore('project', {
   },
 
   actions: {
+    // The address bar names the open project: /g/<slug> for a graph of this
+    // server, ?project=<path> for a directory of this machine.
     setProjectPath(path: string) {
       const cleanPath = normalizeProjectPath(path)
       this.projectPath = cleanPath
+      const url = new URL(window.location.href)
+      url.pathname = isGraphSlug(cleanPath) ? `/g/${cleanPath}` : '/'
+      url.searchParams.delete('path')
+      if (cleanPath && !isGraphSlug(cleanPath)) url.searchParams.set('project', cleanPath)
+      else url.searchParams.delete('project')
       if (cleanPath) {
         localStorage.setItem('aimparency-project-path', cleanPath)
-        const url = new URL(window.location.href)
-        url.searchParams.set('project', cleanPath)
-        window.history.replaceState({}, '', url)
       } else {
         localStorage.removeItem('aimparency-project-path')
-        const url = new URL(window.location.href)
-        url.searchParams.delete('project')
-        url.searchParams.delete('path')
         url.searchParams.delete('repo')
-        window.history.replaceState({}, '', url)
       }
+      window.history.replaceState({}, '', url)
     },
 
     addProjectToHistory(path: string) {

@@ -35,7 +35,7 @@ const { mockTrpc, updates } = vi.hoisted(() => {
 
 vi.mock('../../trpc', () => ({ trpc: mockTrpc }))
 vi.mock('../../utils/perf-log', () => ({ perfLog: vi.fn(), hasQueryFlag: () => false }))
-vi.mock('../../utils/runtime-config', () => ({ getRuntimeConfig: () => ({ hosted: false, project: '' }) }))
+vi.mock('../../utils/runtime-config', () => ({ hasAccounts: () => false }))
 
 const idea = (id: string, text = id) => ({
   id, text, archived: false, tags: [], supportingConnections: [], supportedIdeas: [], committedIn: [],

@@ -5,11 +5,12 @@ import fs from 'fs-extra';
 import { emitChange, type ChangeEvent } from './change-events.js';
 import { readWorkingTreeStatus } from './git-working-tree.js';
 import { forgetProjectChecks } from './storage/project.js';
+import { graphBowmanPath, listGraphs } from './graphs/registry.js';
 
-// A hosted instance follows its git remote: what is pushed shows up without
-// anyone logging in to the server. It only fast-forwards, never commits or
-// pushes, and waits while the server's .bowman has uncommitted edits (write
-// accounts edit there and an admin commits them by hand).
+// A server for other people follows the git remotes of its graphs: what is
+// pushed shows up without anyone logging in to the server. It only
+// fast-forwards, never commits or pushes, and waits while a graph's .bowman has
+// uncommitted edits (they are committed in the UI).
 
 const execFileAsync = promisify(execFile);
 const git = async (cwd: string, args: string[]) =>
@@ -73,23 +74,29 @@ export async function changeEventsFor(bowmanPath: string, changedPaths: string[]
   return events;
 }
 
-export function followGitRemote(bowmanPath: string, intervalSeconds: number): () => void {
+export function followGitRemotes(intervalSeconds: number): () => void {
   if (intervalSeconds <= 0) return () => {};
-  let lastState = '';
+  const lastStates = new Map<string, string>();
   let running = false;
+  const pull = async (slug: string, bowmanPath: string) => {
+    const outcome = await pullFastForward(bowmanPath);
+    if (outcome.state === 'updated') {
+      forgetProjectChecks(); // a pulled newer data model gets migrated on next use
+      for (const event of await changeEventsFor(bowmanPath, outcome.changedPaths)) emitChange(event);
+      console.log(`[git-sync] ${slug}: pulled ${outcome.from.slice(0, 8)}..${outcome.to.slice(0, 8)} (${outcome.changedPaths.length} graph files)`);
+    } else if (outcome.state !== lastStates.get(slug) && outcome.state !== 'unchanged' && outcome.state !== 'no-upstream') {
+      console.log(`[git-sync] ${slug}: not pulling: ${outcome.state === 'failed' ? outcome.reason : outcome.state}`);
+    }
+    lastStates.set(slug, outcome.state);
+  };
   const tick = async () => {
     if (running) return;
     running = true;
     try {
-      const outcome = await pullFastForward(bowmanPath);
-      if (outcome.state === 'updated') {
-        forgetProjectChecks(); // a pulled newer data model gets migrated on next use
-        for (const event of await changeEventsFor(bowmanPath, outcome.changedPaths)) emitChange(event);
-        console.log(`[git-sync] pulled ${outcome.from.slice(0, 8)}..${outcome.to.slice(0, 8)} (${outcome.changedPaths.length} graph files)`);
-      } else if (outcome.state !== lastState && outcome.state !== 'unchanged') {
-        console.log(`[git-sync] not pulling: ${outcome.state === 'failed' ? outcome.reason : outcome.state}`);
-      }
-      lastState = outcome.state;
+      // One after the other: a server holds many graphs, and none is urgent.
+      for (const graph of listGraphs()) await pull(graph.slug, graphBowmanPath(graph));
+    } catch (error) {
+      console.warn('[git-sync] stopped this round:', error instanceof Error ? error.message : error);
     } finally {
       running = false;
     }

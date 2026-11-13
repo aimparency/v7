@@ -4,7 +4,7 @@ import { execFileSync } from 'node:child_process';
 import fs from 'fs-extra';
 import os from 'node:os';
 import path from 'node:path';
-import { changeEventsFor, pullFastForward } from './hosted-git-sync';
+import { changeEventsFor, pullFastForward } from './git-follow';
 
 // upstream (bare) <- author pushes; server is a clone that follows it.
 let root = '';

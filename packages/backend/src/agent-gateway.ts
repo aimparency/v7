@@ -3,12 +3,12 @@ import net from 'node:net';
 import type { Duplex } from 'node:stream';
 import { resolveToken } from './auth/accounts.js';
 
-// On a hosted instance the wrapped agents are a shell on the server, so only
-// admins reach them (Felix 2026-11-02). The broker and the agent sessions
+// On a server with accounts the wrapped agents are a shell on the server, so
+// only server admins reach them (Felix 2026-11-02). The broker and the agent sessions
 // listen on 127.0.0.1; this gateway on the one public port is the only way in:
 //   /broker              the broker's tRPC WebSocket
 //   /session/<port>/...  one agent session (Socket.IO, polling and WebSocket)
-// Each request needs the admin's login in an HttpOnly, SameSite=Strict cookie
+// Each request needs the server admin's login in an HttpOnly, SameSite=Strict cookie
 // (browser WebSockets send no headers, and a token in the URL would land in
 // nginx's logs). The token is resolved on every request, so a logout or a
 // demotion ends access to new connections at once.
@@ -54,20 +54,18 @@ function sameOrigin(req: http.IncomingMessage): boolean {
   }
 }
 
-export async function isAdminRequest(req: http.IncomingMessage, project: string): Promise<boolean> {
-  if (!sameOrigin(req)) return false;
-  const user = await resolveToken(project, cookieToken(req.headers.cookie));
-  return user?.role === 'admin';
+export async function isAdminRequest(req: http.IncomingMessage): Promise<boolean> {
+  return sameOrigin(req) && resolveToken(cookieToken(req.headers.cookie))?.serverAdmin === true;
 }
 
-/** POST with `Authorization: Bearer <token>`: an admin's token becomes the agent cookie. */
-export async function issueAgentCookie(req: http.IncomingMessage, res: http.ServerResponse, project: string) {
+/** POST with `Authorization: Bearer <token>`: a server admin's token becomes the agent cookie. */
+export function issueAgentCookie(req: http.IncomingMessage, res: http.ServerResponse) {
   const header = req.headers.authorization;
   const token = header?.startsWith('Bearer ') ? header.slice(7) : undefined;
-  const user = req.method === 'POST' && sameOrigin(req) ? await resolveToken(project, token) : null;
-  if (user?.role !== 'admin') {
+  const account = req.method === 'POST' && sameOrigin(req) ? resolveToken(token) : null;
+  if (!account?.serverAdmin) {
     res.writeHead(403, { 'content-type': 'text/plain' });
-    return res.end('Agents are for admins.');
+    return res.end('Agents are for server admins.');
   }
   const secure = req.headers['x-forwarded-proto'] === 'https' || (req.socket as { encrypted?: boolean }).encrypted;
   res.writeHead(204, {

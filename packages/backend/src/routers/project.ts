@@ -14,7 +14,7 @@ import { onChange, type ChangeEvent } from '../change-events.js';
 import { onProjectLoadProgress, reportProjectLoadProgress, type ProjectLoadProgress } from '../project-load-progress.js';
 import { writeJsonAtomic } from '../storage/json.js';
 import { normalizeProjectPath } from '../project-path.js';
-import { hostedReadOnly, HOSTED_READ_ONLY_MESSAGE } from '../auth/access.js';
+import { readOnlyReason, rightOn, viewerFor } from '../auth/access.js';
 import { openGitRepository } from '../git-repository-cache.js';
 import { ensureProjectStructure, readProjectMeta, updateProjectMeta } from '../storage/project.js';
 import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
@@ -24,7 +24,8 @@ import { loadVectorStore } from '../embeddings.js';
 import { backfillEmbeddings, ensureEmbeddings } from '../embedding-backfill.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { t, procedure, delayedProcedure } from '../trpc.js';
-import { roleAtLeast } from '../auth/accounts.js';
+import { findGraphByPath } from '../graphs/registry.js';
+import { graphAddress, resolveGraphAddress } from '../graphs/address.js';
 
 const projectDiscoveryInputSchema = z.object({
   roots: z.array(z.string()).optional(),
@@ -91,17 +92,25 @@ const discoverProjectsFromRoot = async (
 };
 
 export const projectRouter = t.router({
-  onUpdate: procedure.subscription(() => {
-    return observable<ChangeEvent & { origin?: string }>((emit) =>
-      // Listeners run inside the emitting request's context: tag the origin
-      // so clients can recognize (and undo) their own changes.
-      onChange((event) => emit.next({ ...event, origin: currentOrigin() }))
-    );
-  }),
+  // One graph's changes. The client gets its own address back, never the
+  // directory on the server.
+  onUpdate: procedure
+    .input(z.object({ projectPath: z.string() }))
+    .subscription(({ input }) => {
+      const graphPath = normalizeProjectPath(resolveGraphAddress(input.projectPath).path);
+      return observable<ChangeEvent & { origin?: string }>((emit) =>
+        // Listeners run inside the emitting request's context: tag the origin
+        // so clients can recognize (and undo) their own changes.
+        onChange((event) => {
+          if (normalizeProjectPath(event.projectPath) !== graphPath) return;
+          emit.next({ ...event, projectPath: input.projectPath, origin: currentOrigin() });
+        })
+      );
+    }),
 
   getMeta: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       // Clients call getMeta first when opening a project: warm the search index
@@ -116,15 +125,14 @@ export const projectRouter = t.router({
   // Whether the graph may be changed here; the UI disables editing otherwise.
   getAccess: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ ctx, input }) => {
       const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
-      const viewer = ctx.viewer ?? { name: null, role: 'admin' as const };
-      const reason = blocker?.message ?? (hostedReadOnly() ? HOSTED_READ_ONLY_MESSAGE : null) ?? (roleAtLeast(viewer.role, 'write') ? null
-        : viewer.name ? `This project is open read-only for ${viewer.name}: ask an admin for write access.`
-        : 'This project is open read-only here: log in to edit.');
-      return { writable: reason === null, reason, user: viewer.name, role: viewer.role };
+      const viewer = ctx.viewer ?? viewerFor(ctx.token);
+      const graph = findGraphByPath(input.projectPath);
+      const reason = blocker?.message ?? readOnlyReason(graph, viewer);
+      return { writable: reason === null, reason, user: viewer.name, role: rightOn(graph, viewer), serverAdmin: viewer.serverAdmin };
     }),
 
   // Someone else's project by Git URL: cached clone of its .bowman, read-only.
@@ -157,7 +165,7 @@ export const projectRouter = t.router({
     }),
 
   inspectPath: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .query(async ({ input }) => {
       const bowmanPath = resolveBowmanPath(input.projectPath);
       return {
@@ -170,7 +178,7 @@ export const projectRouter = t.router({
 
   buildSearchIndex: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .mutation(async ({ input }) => {
       const ideas = await listIdeas(input.projectPath);
@@ -193,7 +201,7 @@ export const projectRouter = t.router({
 
   updateMeta: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       meta: z.object({
         name: z.string(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -232,7 +240,7 @@ export const projectRouter = t.router({
   // The graph's Layout panel stores the settings it applied with.
   setLayoutSettings: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       layout: LayoutSettingsSchema
     }))
     .mutation(async ({ input }) => {
@@ -241,7 +249,7 @@ export const projectRouter = t.router({
 
   injectAgentInstructions: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .mutation(async ({ input }) => {
       const projectPath = normalizeProjectPath(input.projectPath);
@@ -297,7 +305,7 @@ export const projectRouter = t.router({
   // them as warning nodes).
   loadIdeas: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       const projectPath = normalizeProjectPath(input.projectPath);
@@ -305,10 +313,10 @@ export const projectRouter = t.router({
     }),
 
   onLoadProgress: procedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .subscription(({ input }) => {
       const projectPath = normalizeProjectPath(input.projectPath);
-      return observable<ProjectLoadProgress>((emit) =>
-        onProjectLoadProgress((progress) => { if (progress.projectPath === projectPath) emit.next(progress); }));
+      return observable<Pick<ProjectLoadProgress, 'done' | 'total'>>((emit) =>
+        onProjectLoadProgress(({ projectPath: loading, done, total }) => { if (loading === projectPath) emit.next({ done, total }); }));
     })
 });

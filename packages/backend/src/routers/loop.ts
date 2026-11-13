@@ -20,11 +20,12 @@ import {
   spawnLoopWorker,
   enqueueLoopHumanMessage,
 } from '../loop-runtime.js';
+import { graphAddress } from '../graphs/address.js';
 
 export const loopRouter = t.router({
   getConfig: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       const [config, secrets] = await Promise.all([
@@ -44,7 +45,7 @@ export const loopRouter = t.router({
 
   updateConfig: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       config: loopConfigSchema.partial()
     }))
     .mutation(async ({ input }) => {
@@ -59,7 +60,7 @@ export const loopRouter = t.router({
 
   updateSecrets: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       secrets: z.object({
         NVIDIA_API_KEY: z.string().optional(),
         OPENROUTER_API_KEY: z.string().optional(),
@@ -86,7 +87,7 @@ export const loopRouter = t.router({
 
   getState: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       return refreshLoopProcessStates(input.projectPath);
@@ -94,7 +95,7 @@ export const loopRouter = t.router({
 
   create: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       name: z.string().optional()
     }))
     .mutation(async ({ input }) => {
@@ -123,7 +124,7 @@ export const loopRouter = t.router({
 
   update: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       loopId: z.string(),
       name: z.string().optional(),
       systemPrompt: z.string().optional(),
@@ -169,7 +170,7 @@ export const loopRouter = t.router({
 
   duplicate: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       loopId: z.string()
     }))
     .mutation(async ({ input }) => {
@@ -192,7 +193,7 @@ export const loopRouter = t.router({
 
   delete: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       loopId: z.string()
     }))
     .mutation(async ({ input }) => {
@@ -213,7 +214,7 @@ export const loopRouter = t.router({
 
   createInstance: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       loopId: z.string(),
       name: z.string().optional()
     }))
@@ -242,7 +243,7 @@ export const loopRouter = t.router({
 
   updateInstance: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       instanceId: z.string(),
       name: z.string().optional(),
       targetPhaseId: z.string().nullable().optional(),
@@ -269,7 +270,7 @@ export const loopRouter = t.router({
 
   deleteInstance: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
@@ -285,7 +286,7 @@ export const loopRouter = t.router({
 
   startInstance: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
@@ -303,7 +304,7 @@ export const loopRouter = t.router({
 
   stopInstance: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
@@ -320,7 +321,7 @@ export const loopRouter = t.router({
 
   restartInstance: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
@@ -341,7 +342,7 @@ export const loopRouter = t.router({
 
   sendHumanMessage: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       instanceId: z.string(),
       content: z.string().min(1),
       replyToRequestId: z.string().optional()

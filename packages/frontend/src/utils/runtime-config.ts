@@ -8,13 +8,14 @@ const DEFAULT_RUNTIME_CONFIG = {
   brokerWsPort: Number.parseInt(env.VITE_PORT_BROKER_WS || '5001', 10),
   processStartPort: Number.parseInt(env.VITE_PORT_PROCESS_START || '7000', 10),
   voiceEnabled: env.VITE_ENABLE_VOICE === 'true',
-  // A hosted instance (one project, accounts) serves everything on its own origin.
-  hosted: false,
-  // Hosted: admins may run wrapped agents (a shell on the server).
+  // Everything on the page's own origin (the one-port server of `pnpm start`),
+  // instead of one port per service.
+  sameOrigin: false,
+  // 'accounts': other people use this server; they log in, and graphs are the
+  // server's (not directories of this machine).
+  login: 'none' as 'none' | 'accounts',
+  // With accounts: server admins may run wrapped agents (a shell on the server).
   agents: false,
-  // Hosted and read-only: the project changes through Git only, there is no login.
-  readOnly: false,
-  project: '',
 }
 
 export type RuntimeConfig = typeof DEFAULT_RUNTIME_CONFIG & {
@@ -79,10 +80,9 @@ function normalizeRuntimeConfig(value: unknown): RuntimeConfig {
     brokerWsPort: readPort(value.brokerWsPort, DEFAULT_RUNTIME_CONFIG.brokerWsPort),
     processStartPort: readPort(value.processStartPort, DEFAULT_RUNTIME_CONFIG.processStartPort),
     voiceEnabled: readBoolean(value.voiceEnabled, DEFAULT_RUNTIME_CONFIG.voiceEnabled),
-    hosted: readBoolean(value.hosted, false),
+    sameOrigin: readBoolean(value.sameOrigin, false),
+    login: value.login === 'accounts' ? 'accounts' : 'none',
     agents: readBoolean(value.agents, false),
-    readOnly: readBoolean(value.readOnly, false),
-    project: typeof value.project === 'string' ? value.project : '',
     generatedAt: typeof value.generatedAt === 'string' ? value.generatedAt : undefined,
   }
 }
@@ -118,21 +118,26 @@ export function buildWsUrl(port: string | number): string {
   return `${getWsProtocol()}//${getBrowserHost()}:${port}`
 }
 
-// The backend's WebSocket: its own port locally, /trpc on the page's origin when
-// hosted (behind nginx that is wss://<domain>/trpc).
+// The backend's WebSocket: its own port, or /trpc on the page's origin (behind
+// nginx that is wss://<domain>/trpc).
 export function backendWsUrl(): string {
-  if (runtimeConfig.hosted) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/trpc`
+  if (runtimeConfig.sameOrigin) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/trpc`
   return buildWsUrl(runtimeConfig.backendWsPort)
 }
 
-// Hosted, the broker and the agent sessions sit behind the page's own origin
-// (/broker, /session/<port>), where the backend lets only admins through.
+// On one origin the broker and the agent sessions sit behind the page's own
+// origin (/broker, /session/<port>), where the backend lets only server admins through.
 export function brokerWsUrl(): string {
-  if (runtimeConfig.hosted) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/broker`
+  if (runtimeConfig.sameOrigin) return `${getWsProtocol()}//${getLocation()?.host ?? DEFAULT_HOST}/broker`
   return buildWsUrl(runtimeConfig.brokerWsPort)
 }
 
 export function sessionSocketTarget(port: number): { url: string, path?: string } {
-  if (runtimeConfig.hosted) return { url: getLocation()?.origin ?? '', path: `/session/${port}/socket.io` }
+  if (runtimeConfig.sameOrigin) return { url: getLocation()?.origin ?? '', path: `/session/${port}/socket.io` }
   return { url: buildHttpUrl(port) }
+}
+
+/** Other people use this server: accounts, the server's graphs, no local tools. */
+export function hasAccounts(): boolean {
+  return runtimeConfig.login === 'accounts'
 }

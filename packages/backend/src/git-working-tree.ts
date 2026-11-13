@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
+import { serverConfig } from 'shared/server-config';
 
 const execFileAsync = promisify(execFile);
 const git = async (cwd: string, args: string[]) =>
@@ -56,6 +57,16 @@ export async function readWorkingTreeStatus(directory: string): Promise<WorkingT
   return { isRepository: true, repositoryPath, lastCommitAt: seconds ? seconds * 1000 : null, changes: parsePorcelainStatus(status), ahead };
 }
 
+// The author is git's own (Felix 2026-11-12: the default git author, no system
+// of change authors). A server may have none configured: then the one from
+// server.json commits.
+async function identityArguments(repositoryPath: string): Promise<string[]> {
+  const configured = (key: string) => git(repositoryPath, ['config', '--get', key]).then(value => value.trim() !== '', () => false);
+  if (await configured('user.name') && await configured('user.email')) return [];
+  const { name, email } = serverConfig().gitAuthor;
+  return ['-c', `user.name=${name}`, '-c', `user.email=${email}`];
+}
+
 // Commits exactly the given changed paths inside `directory`. Agents share the
 // working tree, so nothing else is staged, and what someone else had staged stays staged.
 export async function commitPaths(directory: string, paths: string[], message: string): Promise<string> {
@@ -67,7 +78,7 @@ export async function commitPaths(directory: string, paths: string[], message: s
   if (!paths.length) throw new Error('Choose at least one file to commit');
   if (!message.trim()) throw new Error('Enter a commit message');
   await git(status.repositoryPath, ['add', '-A', '--', ...paths]);
-  await git(status.repositoryPath, ['commit', '--only', '-m', message.trim(), '--', ...paths]);
+  await git(status.repositoryPath, [...await identityArguments(status.repositoryPath), 'commit', '--only', '-m', message.trim(), '--', ...paths]);
   return (await git(status.repositoryPath, ['rev-parse', '--short', 'HEAD'])).trim();
 }
 

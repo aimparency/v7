@@ -4,11 +4,12 @@ import { t, delayedProcedure } from '../trpc.js';
 import { normalizeProjectPath } from '../project-path.js';
 import { commitPaths, pushToUpstream, readWorkingTreeStatus } from '../git-working-tree.js';
 import { seesServerPaths } from '../auth/access.js';
+import { graphAddress } from '../graphs/address.js';
 
 // The project's .bowman as part of its repository's working tree.
 export const gitRouter = t.router({
   status: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .query(async ({ ctx, input }) => {
       const status = await readWorkingTreeStatus(normalizeProjectPath(input.projectPath));
       if (!status.isRepository || seesServerPaths(ctx.viewer)) return status;
@@ -17,7 +18,7 @@ export const gitRouter = t.router({
     }),
 
   commit: delayedProcedure
-    .input(z.object({ projectPath: z.string(), paths: z.array(z.string()), message: z.string() }))
+    .input(z.object({ projectPath: graphAddress, paths: z.array(z.string()), message: z.string() }))
     .mutation(async ({ input }) => {
       const bowmanPath = normalizeProjectPath(input.projectPath);
       await assertWritableBowman(bowmanPath);
@@ -25,7 +26,7 @@ export const gitRouter = t.router({
     }),
 
   push: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .mutation(async ({ input }) => {
       const bowmanPath = normalizeProjectPath(input.projectPath);
       await assertWritableBowman(bowmanPath);

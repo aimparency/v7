@@ -6,6 +6,10 @@ import { loadProjectThumbnails } from '../utils/db'
 import { formatRelativeTime } from '../utils/relative-time'
 import { gitRepositoryLocation } from 'shared'
 import { Pencil, X } from 'lucide-vue-next'
+import LoginControl from '../components/LoginControl.vue'
+import { useToastStore } from '../stores/toast'
+import { useViewerStore } from '../stores/viewer'
+import { hasAccounts } from '../utils/runtime-config'
 
 type DiscoveredProject = {
   path: string
@@ -28,7 +32,28 @@ const emit = defineEmits<{
   (event: 'remove-from-history', path: string): void
   (event: 'refresh-discovered-projects'): void
   (event: 'open-discovered-project', path: string): void
+  (event: 'open-graph', slug: string): void
 }>()
+
+// The graphs of this server. With accounts they are all there is to open: the
+// directories of the machine are the operator's business.
+const accounts = hasAccounts()
+const viewer = useViewerStore()
+const graphs = ref<Awaited<ReturnType<typeof trpc.graphs.list.query>>>([])
+const newGraphName = ref('')
+const loadGraphs = async () => {
+  graphs.value = await trpc.graphs.list.query()
+}
+const createGraph = async () => {
+  try {
+    const { slug } = await trpc.graphs.create.mutate({ name: newGraphName.value })
+    newGraphName.value = ''
+    emit('open-graph', slug)
+  } catch (error) {
+    useToastStore().error('Could not create the graph', error)
+  }
+}
+onMounted(() => loadGraphs().catch(error => useToastStore().error('Could not list the graphs of this server', error)))
 
 const inspectedPath = ref('')
 const bowmanExists = ref<boolean | null>(null)
@@ -194,9 +219,10 @@ onUnmounted(revokeThumbnails)
 <template>
   <div class="project-selection">
     <h1>Aimparency</h1>
-    <p>Select a project base folder to get started</p>
+    <LoginControl v-if="accounts" />
+    <p v-if="!accounts">Select a project base folder to get started</p>
 
-    <div class="project-input-container">
+    <div v-if="!accounts" class="project-input-container">
       <div class="project-input-shell">
         <div v-if="completionSuffix" class="path-completion" aria-hidden="true">
           <span class="typed-path">{{ props.modelValue }}</span><span>{{ completionSuffix }}</span>
@@ -215,7 +241,28 @@ onUnmounted(revokeThumbnails)
       <button @click="emit('select-project')" class="select-project">{{ selectButtonLabel }}</button>
     </div>
 
-    <div ref="listRef" class="project-lists" @keydown="onListKeydown">
+    <div v-if="accounts || graphs.length > 0" class="project-history" :class="{ 'project-lists': accounts }">
+      <h3>Graphs on this server</h3>
+      <div class="history-list">
+        <div v-for="graph in graphs" :key="graph.slug" class="history-item">
+          <span class="thumbnail" :style="{ background: graph.color ?? undefined }"></span>
+          <button type="button" class="history-open-button" @click="emit('open-graph', graph.slug)">
+            <div class="history-item-content">
+              <div class="history-path">{{ graph.name }}</div>
+              <div class="history-time">{{ graph.owner ?? 'server' }} · /g/{{ graph.slug }}</div>
+            </div>
+          </button>
+        </div>
+      </div>
+      <p v-if="graphs.length === 0" class="empty-state">No graphs yet.</p>
+      <form v-if="viewer.canCreateGraphs" class="project-input-container" @submit.prevent="createGraph">
+        <input v-model="newGraphName" class="project-input" placeholder="Name of a new graph" />
+        <button class="select-project" type="submit" :disabled="!newGraphName.trim()">New graph</button>
+      </form>
+      <p v-else-if="accounts" class="empty-state">{{ viewer.name ? 'Creating graphs here is for selected accounts.' : 'Log in to create a graph.' }}</p>
+    </div>
+
+    <div v-if="!accounts" ref="listRef" class="project-lists" @keydown="onListKeydown">
       <div v-if="recentResults.length > 0" class="project-history">
         <h3>Recent Projects</h3>
         <div class="history-list">

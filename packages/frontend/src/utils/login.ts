@@ -1,4 +1,4 @@
-// The login of a hosted instance. The token rides on the WebSocket's connection
+// The login on a server with accounts. The token rides on the WebSocket's connection
 // params, which are sent once per connection, so logging in or out reloads.
 const KEY = 'aimparency-token'
 
@@ -20,9 +20,9 @@ export function setLoginToken(token: string | null) {
   window.location.reload()
 }
 
-// Hosted: the admins' agents gateway (/broker, /session/<port>) reads the login
+// The server admins' agents gateway (/broker, /session/<port>) reads the login
 // from an HttpOnly cookie, since browser WebSockets send no headers. Asked once
-// per page; a non-admin gets a refusal and no cookie.
+// per page; anyone else gets a refusal and no cookie.
 let agentCookie: Promise<boolean> | null = null
 
 export function ensureAgentCookie(): Promise<boolean> {

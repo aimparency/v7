@@ -4,6 +4,7 @@ import { IDEA_ACCESS_KINDS, type IdeaAccessKind, type IdeaActivityEvent } from '
 import { t, procedure, delayedProcedure } from '../trpc.js';
 import { ideaActivitySnapshot, onIdeaAccess, recordIdeaAccess } from '../idea-activity.js';
 import { normalizeProjectPath } from '../project-path.js';
+import { graphAddress } from '../graphs/address.js';
 
 const accessKind = z.enum(Object.keys(IDEA_ACCESS_KINDS) as [IdeaAccessKind, ...IdeaAccessKind[]]);
 
@@ -11,7 +12,7 @@ export const activityRouter = t.router({
   // The MCP server reports which ideas its read tools showed an agent.
   record: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaIds: z.array(z.string().uuid()).max(5000),
       kind: accessKind
     }))
@@ -20,11 +21,11 @@ export const activityRouter = t.router({
     }),
 
   snapshot: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .query(({ input }) => ideaActivitySnapshot(input.projectPath)),
 
   onAccess: procedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .subscription(({ input }) => {
       const projectPath = normalizeProjectPath(input.projectPath);
       return observable<IdeaActivityEvent>((emit) =>

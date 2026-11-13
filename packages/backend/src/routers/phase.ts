@@ -13,7 +13,8 @@ import { entityFile } from '../storage/json.js';
 import { cleanupCommitments } from '../storage/commitments.js';
 import { addPhaseToIndex, updatePhaseInIndex, removePhaseFromIndex, searchPhases } from '../search.js';
 import { ensureSearchIndex } from '../search-index.js';
-import { hostedProject } from '../auth/access.js';
+import { hasAccounts } from 'shared/server-config';
+import { graphAddress } from '../graphs/address.js';
 
 // Updates the ordered list a phase lives in: its parent's childPhaseIds, or
 // meta.rootPhaseIds for root phases. Locked, so concurrent edits don't drop ids.
@@ -39,7 +40,7 @@ const phaseAncestorNames = (phase: Phase, phasesById: Map<string, Phase>) => {
 export const phaseRouter = t.router({
   create: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phase: z.object({
         name: z.string(),
         order: z.number().int().nonnegative().optional(),
@@ -74,7 +75,7 @@ export const phaseRouter = t.router({
 
   get: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phaseId: z.string().uuid()
     }))
     .query(async ({ input }) => {
@@ -83,7 +84,7 @@ export const phaseRouter = t.router({
 
   list: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       parentPhaseId: z.string().uuid().nullable().optional()
     }))
     .query(async ({ input }) => {
@@ -92,7 +93,7 @@ export const phaseRouter = t.router({
 
   update: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phaseId: z.string().uuid(),
       phase: z.object({
         name: z.string().optional(),
@@ -142,7 +143,7 @@ export const phaseRouter = t.router({
 
   reorder: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phaseId: z.string().uuid(),
       newIndex: z.number().int().nonnegative()
     }))
@@ -162,7 +163,7 @@ export const phaseRouter = t.router({
 
   delete: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phaseId: z.string().uuid()
     }))
     .mutation(async ({ input }) => {
@@ -195,7 +196,7 @@ export const phaseRouter = t.router({
 
   search: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       query: z.string(),
       parentPhaseId: z.string().uuid().nullable().optional(),
       // Searching a new parent for this phase: leaves out the phase and its
@@ -221,22 +222,22 @@ export const phaseRouter = t.router({
 
   setCursor: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       cursors: z.record(z.string(), z.string()),
       activeLevel: z.number().int().min(0)
     }))
     .mutation(async ({ input }) => {
       // Cursors are where the viewer is, not graph content: a read-only project
-      // stays navigable, it just does not remember the position. A hosted one has
-      // many viewers, so none of them moves the stored cursor.
-      if (hostedProject() || await bowmanWriteBlocker(normalizeProjectPath(input.projectPath))) return { success: false };
+      // stays navigable, it just does not remember the position. A server with
+      // accounts has many viewers, so none of them moves the stored cursor.
+      if (hasAccounts() || await bowmanWriteBlocker(normalizeProjectPath(input.projectPath))) return { success: false };
       await updateProjectMeta(input.projectPath, (meta) => ({ ...meta, phaseCursors: input.cursors, phaseActiveLevel: input.activeLevel }));
       return { success: true };
     }),
 
   getActivePath: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       const meta = await readProjectMeta(input.projectPath);

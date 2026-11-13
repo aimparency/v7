@@ -1,4 +1,5 @@
 import fs from 'node:fs/promises';
+import { mkdtempSync, rmSync } from 'node:fs';
 import net from 'node:net';
 import os from 'node:os';
 import path from 'node:path';
@@ -9,6 +10,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
 // The launcher's dry run prints the runtime config it would write, so this never touches the live one.
+const scenarioServerDir = mkdtempSync(path.join(os.tmpdir(), 'aimparency-validate-server-'));
+process.on('exit', () => rmSync(scenarioServerDir, { recursive: true, force: true }));
+
 const dryRunConfigPrefix = '[local-runtime] runtime config (dry run): ';
 
 const testPorts = {
@@ -114,9 +118,8 @@ function createScenarioEnv(overrides = {}) {
     PORT_BROKER_WS: String(testPorts.brokerWsPort),
     PORT_PROCESS_START: String(testPorts.processStartPort),
     AIMPARENCY_ENABLE_VOICE: 'false',
-    // Setup answers in this checkout's .env must not turn the scenarios hosted.
-    AIMPARENCY_HOSTED: 'false',
-    AIMPARENCY_AGENTS: 'false',
+    // The scenarios run as a server of their own, never as this machine's.
+    AIMPARENCY_SERVER_DIR: scenarioServerDir,
     ...overrides,
   };
 }
@@ -192,25 +195,27 @@ async function main() {
     assert(config.voiceEnabled === true, 'expected voice to enable when requested');
   });
 
-  const hostedProject = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-hosted-'));
-  try {
-    const hostedEnv = createScenarioEnv({ AIMPARENCY_HOSTED: 'true', AIMPARENCY_PROJECT: hostedProject, PORT: '4410', PORT_MCP: '4411' });
-    const withoutAdmin = await launch('hosted-without-admin', 'start', hostedEnv);
-    assert(withoutAdmin.code === 1 && /No admin account yet/.test(withoutAdmin.stderr), 'hosted start ran without an admin');
+  // With accounts: one port, no dev frontend, the broker only for the server admins' agents.
+  const accountsEnv = createScenarioEnv({ PORT: '4410', PORT_MCP: '4411' });
+  const settings = (values) => fs.writeFile(path.join(scenarioServerDir, 'server.json'), JSON.stringify({ login: 'accounts', ...values }));
+  await settings({});
+  const withoutAdmin = await launch('accounts-without-admin', 'start', accountsEnv);
+  assert(withoutAdmin.code === 1 && /No server admin account yet/.test(withoutAdmin.stderr), 'a server with accounts started without a server admin');
 
-    await fs.mkdir(path.join(hostedProject, '.bowman', 'runtime'), { recursive: true });
-    await fs.writeFile(path.join(hostedProject, '.bowman', 'runtime', 'accounts.json'), JSON.stringify({ users: [{ name: 'admin', role: 'admin', passwordHash: 'x' }], tokens: [] }));
-    const hosted = await launch('hosted', 'start', hostedEnv);
-    assert(hosted.code === 0, 'hosted dry run failed');
-    assert(/hosting .* on http:\/\/127\.0\.0\.1:4410/.test(hosted.stdout), 'hosted mode did not use its one port');
-    assert(!/BROK|FRNT/.test(hosted.stdout), 'hosted mode would start the broker or the dev frontend');
-    const withAgents = await launch('hosted-agents', 'start', { ...hostedEnv, AIMPARENCY_AGENTS: 'true' });
-    assert(withAgents.code === 0, 'hosted dry run with agents failed');
-    assert(/BROK: \(packages\/wrapped-agents\/broker\) node dist\/index\.js/.test(withAgents.stdout), 'admins\' agents did not start the broker');
-    assert(!/FRNT/.test(withAgents.stdout), 'hosted mode with agents would start the dev frontend');
-  } finally {
-    await fs.rm(hostedProject, { recursive: true, force: true });
-  }
+  await fs.writeFile(path.join(scenarioServerDir, 'accounts.json'), JSON.stringify({ accounts: [{ id: 'a', name: 'admin', serverAdmin: true }], tokens: [] }));
+  const onePort = await launch('accounts', 'start', accountsEnv);
+  assert(onePort.code === 0, 'dry run of a server with accounts failed');
+  assert(/server with accounts .* on http:\/\/127\.0\.0\.1:4410/.test(onePort.stdout), 'a server with accounts did not use its one port');
+  assert(!/BROK|FRNT/.test(onePort.stdout), 'a server with accounts would start the broker or the dev frontend');
+  await settings({ agents: true });
+  const withAgents = await launch('accounts-agents', 'start', accountsEnv);
+  assert(withAgents.code === 0, 'dry run with agents failed');
+  assert(/BROK: \(packages\/wrapped-agents\/broker\) node dist\/index\.js/.test(withAgents.stdout), 'server admins\' agents did not start the broker');
+  assert(!/FRNT/.test(withAgents.stdout), 'a server with accounts and agents would start the dev frontend');
+
+  // dev stays the local stack of the person at this machine, in a server directory of its own.
+  const dev = await launch('dev-next-to-accounts', 'dev', createScenarioEnv({ AIMPARENCY_SERVER_DIR: '' }));
+  assert(dev.code === 0 && /FRNT/.test(dev.stdout) && !/server with accounts/.test(dev.stdout), 'dev did not start the local stack');
 
   console.log('\n[validate-local-runtime] PASS');
 }

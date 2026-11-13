@@ -25,9 +25,11 @@ import { gitRouter } from './routers/git.js';
 import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { hostedAgents, hostedProject, hostedReadOnly } from './auth/access.js';
-import { followGitRemote } from './hosted-git-sync.js';
-import { agentRoute, isAdminRequest, issueAgentCookie, proxyAgentRequest, proxyAgentUpgrade, refuseUpgrade } from './hosted-agent-gateway.js';
+import { graphsRouter } from './routers/graphs.js';
+import { agentsEnabled } from './auth/access.js';
+import { followGitRemotes } from './git-follow.js';
+import { hasAccounts, serverConfig } from 'shared/server-config';
+import { agentRoute, isAdminRequest, issueAgentCookie, proxyAgentRequest, proxyAgentUpgrade, refuseUpgrade } from './agent-gateway.js';
 import { isAllowedClientOrigin, resolveBindHost } from 'shared';
 
 const appRouter = t.router({
@@ -47,6 +49,7 @@ const appRouter = t.router({
   git: gitRouter,
   activity: activityRouter,
   auth: authRouter,
+  graphs: graphsRouter,
 });
 
 export { appRouter };
@@ -58,13 +61,14 @@ const MAX_REQUEST_BYTES = 8 * 1024 * 1024;
 const HTTP_PORT = parseInt(process.env.PORT_BACKEND_HTTP || '3000');
 const WS_PORT = parseInt(process.env.PORT_BACKEND_WS || '3001');
 // An explicit interface (e.g. the Tailscale IP from `pnpm dev:host`); unset means
-// loopback only. Hosted mode keeps its own default below.
+// loopback only.
 const BIND_HOST = process.env.BIND_HOST || undefined;
 
-// The dev API runs agents and loops: only pages from this machine (or the
-// named host) and local programs without an Origin may use it.
+// A server without login runs agents and loops for whoever asks: only pages
+// from this machine (or the named host) and local programs without an Origin
+// may use it. With accounts every request proves itself with its token.
 function allowedOrigin(req: http.IncomingMessage) {
-  return isAllowedClientOrigin(req.headers.origin, BIND_HOST);
+  return hasAccounts() || isAllowedClientOrigin(req.headers.origin, BIND_HOST);
 }
 
 function logConnections(wss: WebSocketServer) {
@@ -85,11 +89,12 @@ function closeOnSigterm(server: { close(): unknown }, wss: WebSocketServer) {
   });
 }
 
-// Hosted: one port carries the built UI, the API (/trpc, HTTP and WebSocket),
-// the MCP server (/mcp, proxied) and, when AIMPARENCY_AGENTS is on, the
-// admins' agents (/broker, /session/<port>, see hosted-agent-gateway), so
-// nginx needs a single proxy_pass.
-function startHostedServer(project: string) {
+// One port carries the built UI, the API (/trpc, HTTP and WebSocket), the MCP
+// server (/mcp, proxied) and, when the server admins' agents are on, those
+// agents (/broker, /session/<port>, see agent-gateway), so nginx needs a
+// single proxy_pass. This is how a server for other people runs
+// (AIMPARENCY_ONE_PORT=true, set by `pnpm start`).
+function startOnePortServer() {
   const port = parseInt(process.env.PORT || '4000');
   const mcpPort = parseInt(process.env.PORT_MCP || '3005');
   const trpcHandler = createHTTPHandler({ router: appRouter, createContext, basePath: '/trpc/', maxBodySize: MAX_REQUEST_BYTES });
@@ -101,23 +106,24 @@ function startHostedServer(project: string) {
       res.writeHead(503, { 'content-type': 'text/plain' });
       res.end('The UI is not built: run `pnpm start` (it builds) or `pnpm build`.');
     };
-  const agents = hostedAgents();
   const agentPorts = {
     brokerWs: parseInt(process.env.PORT_BROKER_WS || '5001'),
     processStart: parseInt(process.env.PORT_PROCESS_START || '7000'),
   };
-  const runtimeConfig = () => JSON.stringify({ sameOrigin: true, hosted: true, readOnly: hostedReadOnly(), agents, project, voiceEnabled: false });
+  // Read per request: server.json is edited while the server runs.
+  const runtimeConfig = () => JSON.stringify({ sameOrigin: true, login: serverConfig().login, agents: agentsEnabled(), voiceEnabled: false });
+  const refuse = (res: http.ServerResponse, message: string) => {
+    res.writeHead(403, { 'content-type': 'text/plain' });
+    res.end(message);
+  };
 
   const server = http.createServer(async (req, res) => {
     const url = req.url ?? '/';
-    if (url.startsWith('/trpc/')) return trpcHandler(req, res);
+    if (url.startsWith('/trpc/')) return allowedOrigin(req) ? trpcHandler(req, res) : refuse(res, 'Origin not allowed');
+    const agents = agentsEnabled();
     const route = agents ? agentRoute(url, agentPorts) : null;
-    if (route) {
-      if (await isAdminRequest(req, project)) return proxyAgentRequest(req, res, route);
-      res.writeHead(403, { 'content-type': 'text/plain' });
-      return res.end('Agents are for admins.');
-    }
-    if (agents && url === '/auth/agent-cookie') return issueAgentCookie(req, res, project);
+    if (route) return await isAdminRequest(req) ? proxyAgentRequest(req, res, route) : refuse(res, 'Agents are for server admins.');
+    if (agents && url === '/auth/agent-cookie') return issueAgentCookie(req, res);
     if (url.startsWith('/mcp/')) return proxy(req, res, mcpPort);
     if (url.startsWith('/runtime-config.json')) {
       res.writeHead(200, { 'content-type': 'application/json', 'cache-control': 'no-store' });
@@ -131,19 +137,20 @@ function startHostedServer(project: string) {
   server.on('upgrade', async (req, socket, head) => {
     const url = req.url ?? '/';
     if (url.split('?')[0] === '/trpc') {
+      if (!allowedOrigin(req)) return refuseUpgrade(socket);
       return wss.handleUpgrade(req, socket, head, (ws) => wss.emit('connection', ws, req));
     }
-    const route = agents ? agentRoute(url, agentPorts) : null;
+    const route = agentsEnabled() ? agentRoute(url, agentPorts) : null;
     if (!route) return refuseUpgrade(socket, '404 Not Found');
-    if (await isAdminRequest(req, project)) return proxyAgentUpgrade(req, socket, head, route);
+    if (await isAdminRequest(req)) return proxyAgentUpgrade(req, socket, head, route);
     refuseUpgrade(socket);
   });
   const host = resolveBindHost(BIND_HOST);
   server.listen(port, host, () => {
-    console.log(`Hosting ${project} on http://${host}:${port}`);
+    console.log(`Aimparency server (login: ${serverConfig().login}) on http://${host}:${port}`);
   });
   closeOnSigterm(server, wss);
-  followGitRemote(project, parseInt(process.env.AIMPARENCY_PULL_SECONDS || '300'));
+  followGitRemotes(parseInt(process.env.AIMPARENCY_PULL_SECONDS || '300'));
   return { server, wss };
 }
 
@@ -164,8 +171,7 @@ function proxy(req: http.IncomingMessage, res: http.ServerResponse, port: number
 }
 
 export function startServer() {
-  const project = hostedProject();
-  if (project) return startHostedServer(project);
+  if (process.env.AIMPARENCY_ONE_PORT === 'true') return startOnePortServer();
 
   const host = resolveBindHost(BIND_HOST);
   const trpcHandler = createHTTPHandler({ router: appRouter, createContext, maxBodySize: MAX_REQUEST_BYTES });

@@ -60,13 +60,14 @@ describe('runtime-config', () => {
     expect(getRuntimeConfig().brokerWsPort).toBe(5001)
   })
 
-  it('puts the broker and agent sessions behind the page origin when hosted, with agents only when switched on', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ hosted: true, agents: true, project: '/srv/p' }) }))
+  it('puts the broker and agent sessions behind the page origin on a one-port server, with agents only when switched on', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: true, json: async () => ({ sameOrigin: true, login: 'accounts', agents: true }) }))
 
-    const { loadRuntimeConfig, brokerWsUrl, sessionSocketTarget } = await import('./runtime-config')
+    const { loadRuntimeConfig, brokerWsUrl, sessionSocketTarget, hasAccounts } = await import('./runtime-config')
     const config = await loadRuntimeConfig()
 
     expect(config.agents).toBe(true)
+    expect(hasAccounts()).toBe(true)
     expect(brokerWsUrl()).toBe(`ws://${window.location.host}/broker`)
     expect(sessionSocketTarget(7001)).toEqual({ url: window.location.origin, path: '/session/7001/socket.io' })
   })
@@ -78,6 +79,7 @@ describe('runtime-config', () => {
     const config = await loadRuntimeConfig()
 
     expect(config.agents).toBe(false)
+    expect(config.login).toBe('none')
     expect(brokerWsUrl()).toBe('ws://localhost:5401')
     expect(sessionSocketTarget(7001)).toEqual({ url: 'http://localhost:7001' })
   })

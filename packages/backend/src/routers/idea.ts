@@ -6,7 +6,7 @@ import { createHash } from 'node:crypto';
 import { DEFAULT_IDEA_COST, IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
-import { hostedProject } from '../auth/access.js';
+import { hasAccounts } from 'shared/server-config';
 import { getIdeaCommitEvidence, getIdeaContributors, getIdeaStatusHistory, getCommitDiff } from '../git-evidence.js';
 import { t, delayedProcedure } from '../trpc.js';
 import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, updateIdea, connectIdeasInternal, getRandomRelativePosition, scanIdeaFiles } from '../storage/ideas.js';
@@ -22,6 +22,7 @@ import { addIdeaToIndex, updateIdeaInIndex, removeIdeaFromIndex, searchIdeas } f
 import { generateEmbedding, generateQueryEmbedding, saveEmbedding, removeEmbedding, searchVectors } from '../embeddings.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { generateIdeaProposal } from '../idea-proposal-generator.js';
+import { graphAddress } from '../graphs/address.js';
 
 // Search text is scanned or embedded per request, so it is bounded.
 const MAX_QUERY_CHARS = 2000;
@@ -156,7 +157,7 @@ const ideaContextSchema = z.union([
 export const ideaRouter = t.router({
   commitEvidence: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       limit: z.number().int().min(1).max(100).optional()
     }))
@@ -169,7 +170,7 @@ export const ideaRouter = t.router({
   // Status changes of the idea as committed to git, oldest first.
   statusHistory: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid()
     }))
     .query(async ({ input }) => {
@@ -180,7 +181,7 @@ export const ideaRouter = t.router({
   // change its file or name it.
   contributors: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid()
     }))
     .query(async ({ input }) => {
@@ -190,17 +191,17 @@ export const ideaRouter = t.router({
   // Per-file patches of one commit in the project's repository.
   commitDiff: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       hash: z.string().regex(/^[0-9a-f]{7,40}$/i)
     }))
     .query(async ({ input }) => {
       const bowmanPath = normalizeProjectPath(input.projectPath);
-      return getCommitDiff(bowmanPath, input.hash, hostedProject() ? bowmanPath : undefined);
+      return getCommitDiff(bowmanPath, input.hash, hasAccounts() ? bowmanPath : undefined);
     }),
 
   get: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid()
     }))
     .query(async ({ input }) => {
@@ -209,7 +210,7 @@ export const ideaRouter = t.router({
 
   getMany: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaIds: z.array(z.string().uuid())
     }))
     .query(async ({ input }) => {
@@ -230,7 +231,7 @@ export const ideaRouter = t.router({
 
   list: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional(),
       parentIdeaId: z.string().uuid().optional(),
@@ -315,7 +316,7 @@ export const ideaRouter = t.router({
 
   getRecursive: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phaseId: z.string().uuid()
     }))
     .query(async ({ input }) => {
@@ -349,7 +350,7 @@ export const ideaRouter = t.router({
 
   proposeIdeaSubtree: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       transcript: z.string().trim().min(1).max(10_000),
       existingParentIds: z.array(z.string().uuid()).max(20).default([]),
       phaseId: z.string().uuid().optional()
@@ -374,7 +375,7 @@ export const ideaRouter = t.router({
 
   approveIdeaSubtree: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       proposal: IdeaProposalSchema,
       revision: z.string().trim().min(1).max(200),
       idempotencyKey: z.string().trim().min(8).max(500)
@@ -520,7 +521,7 @@ export const ideaRouter = t.router({
 
   update: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       idea: z.object({
         text: z.string().optional(),
@@ -692,7 +693,7 @@ export const ideaRouter = t.router({
   // no phase commitment) are deleted too. dryRun only reports what would go.
   delete: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaIds: z.array(z.string().uuid()).min(1),
       cascade: z.boolean().default(false),
       dryRun: z.boolean().default(false)
@@ -704,7 +705,7 @@ export const ideaRouter = t.router({
 
   disconnect: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       parentIdeaId: z.string().uuid(),
       childIdeaId: z.string().uuid()
     }))
@@ -716,7 +717,7 @@ export const ideaRouter = t.router({
   // Removes the idea from one parent or phase; the idea itself stays.
   detach: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       from: ideaContextSchema
     }))
@@ -729,7 +730,7 @@ export const ideaRouter = t.router({
   // touched ideas and phases so the client needs no reload.
   move: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       from: ideaContextSchema.optional(),
       to: ideaContextSchema.optional(),
@@ -741,7 +742,7 @@ export const ideaRouter = t.router({
 
   commitToPhase: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       phaseId: z.string().uuid(),
       insertionIndex: z.number().optional()
@@ -753,7 +754,7 @@ export const ideaRouter = t.router({
 
   removeFromPhase: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       phaseId: z.string().uuid()
     }))
@@ -766,7 +767,7 @@ export const ideaRouter = t.router({
   // file is rewritten once; every other field, including hypotheses, is kept.
   setConnectionPositions: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       changes: z.array(z.object({
         parentId: z.string().uuid(),
         childId: z.string().uuid(),
@@ -797,7 +798,7 @@ export const ideaRouter = t.router({
 
   connectIdeas: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       parentIdeaId: z.string().uuid(),
       childIdeaId: z.string().uuid(),
       parentIncomingIndex: z.number().optional(),
@@ -818,7 +819,7 @@ export const ideaRouter = t.router({
   // that another repo needs you), so there is no reciprocal write.
   linkRepo: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       repoId: z.string().uuid(),
       relativePosition: z.tuple([z.number(), z.number()]).optional(),
@@ -846,7 +847,7 @@ export const ideaRouter = t.router({
 
   unlinkRepo: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       ideaId: z.string().uuid(),
       repoId: z.string().uuid()
     }))
@@ -861,7 +862,7 @@ export const ideaRouter = t.router({
 
   createFloatingIdea: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       idea: newIdeaInputSchema,
       // Parent the caller will connect right after creation (graph drag, MCP):
       // the default color derives from it.
@@ -883,7 +884,7 @@ export const ideaRouter = t.router({
 
   createSubIdea: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       parentIdeaId: z.string().uuid(),
       idea: newIdeaInputSchema,
       positionInParent: z.number().optional(),
@@ -899,7 +900,7 @@ export const ideaRouter = t.router({
 
   createIdeaInPhase: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       phaseId: z.string().uuid(),
       idea: newIdeaInputSchema,
       insertionIndex: z.number().optional()
@@ -916,7 +917,7 @@ export const ideaRouter = t.router({
 
   search: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       query: z.string().max(MAX_QUERY_CHARS),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional(),
@@ -1020,7 +1021,7 @@ export const ideaRouter = t.router({
 
   searchSemantic: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       query: z.string().max(MAX_QUERY_CHARS),
       limit: z.number().optional(),
       status: z.union([z.string(), z.array(z.string())]).optional(),
@@ -1070,7 +1071,7 @@ export const ideaRouter = t.router({
   // description marks what was imported, so re-running only adds new issues.
   importGithubIssues: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       repository: z.string().min(1) // owner/repo or a github.com URL
     }))
     .mutation(async ({ input }) => {
@@ -1108,7 +1109,7 @@ export const ideaRouter = t.router({
   // forward (open -> partially -> implemented), never back. Paths stay inside the repository.
   importSpecTasks: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       specPath: z.string().min(1) // a tasks.md file or a directory, relative to the repository root or absolute
     }))
     .mutation(async ({ input }) => {
@@ -1154,7 +1155,7 @@ export const ideaRouter = t.router({
 
   merge: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       targetId: z.string().uuid(),  // A — the idea to keep
       sourceId: z.string().uuid(),  // B — the idea to archive
     }))

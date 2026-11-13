@@ -1,14 +1,15 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { trpc } from '../trpc'
-import { useDataStore } from '../stores/data'
+import { useViewerStore } from '../stores/viewer'
 import { useToastStore } from '../stores/toast'
 import { setLoginToken } from '../utils/login'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 
-// The header's account corner on a hosted instance: anyone reads, accounts write.
-const dataStore = useDataStore()
+// The account corner on a server with accounts: anyone reads, accounts write
+// the graphs they own or were given.
+const viewer = useViewerStore()
 const toastStore = useToastStore()
 const dialog = ref<'login' | 'password' | 'accounts' | null>(null)
 const name = ref('')
@@ -63,10 +64,10 @@ const copyMcpLink = async () => {
 
 <template>
   <div class="login-control">
-    <button v-if="!dataStore.access.user" class="view-btn" @click="open('login')">Log in</button>
+    <button v-if="!viewer.name" class="view-btn" @click="open('login')">Log in</button>
     <template v-else>
-      <span class="who" :title="`role: ${dataStore.access.role}`">{{ dataStore.access.user }}</span>
-      <button v-if="dataStore.access.role === 'admin'" class="view-btn" @click="open('accounts')">Accounts</button>
+      <span class="who" :title="viewer.serverAdmin ? 'server admin' : 'account on this server'">{{ viewer.name }}</span>
+      <button v-if="viewer.serverAdmin" class="view-btn" @click="open('accounts')">Accounts</button>
       <button class="view-btn" title="A link that lets an MCP client act as you" @click="copyMcpLink">MCP link</button>
       <button class="view-btn" @click="open('password')">Password</button>
       <button class="view-btn" @click="logout">Log out</button>
@@ -94,7 +95,7 @@ const copyMcpLink = async () => {
       </template>
     </FormModalShell>
 
-    <AccountsModal v-if="dialog === 'accounts'" :me="dataStore.access.user" @close="dialog = null" />
+    <AccountsModal v-if="dialog === 'accounts'" :me="viewer.name" @close="dialog = null" />
   </div>
 </template>
 

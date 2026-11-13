@@ -12,7 +12,8 @@
     "./node-entry": "./src/node-entry.ts",
     "./loop-state": "./src/loop-state.ts",
     "./harness-config": "./src/harness-config.ts",
-    "./continue-hook": "./src/continue-hook.ts"
+    "./continue-hook": "./src/continue-hook.ts",
+    "./server-config": "./src/server-config.ts"
   },
   "scripts": {
     "test": "tsx --test \"src/**/*.test.ts\"",

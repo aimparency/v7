@@ -40,7 +40,8 @@ import { gitRepositoryLocation } from 'shared'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
 import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
-import { getRuntimeConfig } from './utils/runtime-config'
+import { getRuntimeConfig, hasAccounts } from './utils/runtime-config'
+import { useViewerStore } from './stores/viewer'
 import { isModalOpen } from './stores/ui/modal-helpers'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
 import { Check, GitCommitHorizontal, Hourglass, Info, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
@@ -108,14 +109,11 @@ const showConsistencyModal = ref(false)
 const showReviewInbox = ref(false)
 const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities).length)
 const showIdeaProposalEntry = ref(false)
-// A hosted instance serves one project to many people: no loops or project
-// switching, and wrapped agents (a shell on the server) only for admins, when
-// the operator turned them on.
-const hosted = getRuntimeConfig().hosted
-const agentsAllowed = computed(() =>
-  !hosted || (getRuntimeConfig().agents && dataStore.access.user !== null && dataStore.access.role === 'admin'))
-// Read-only hosted: the project changes through Git only, so there is no login.
-const hostedReadOnly = getRuntimeConfig().readOnly
+// With accounts other people use this server: no loops, and wrapped agents (a
+// shell on the server) only for server admins, when the operator turned them on.
+const accounts = hasAccounts()
+const viewerStore = useViewerStore()
+const agentsAllowed = computed(() => !accounts || (getRuntimeConfig().agents && viewerStore.name !== null && viewerStore.serverAdmin))
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
@@ -238,8 +236,9 @@ const handleSelectProject = () => {
   void projectLoad.open(target)
 }
 
+// Directories of this machine: only where the person at the machine is the user.
 const refreshDiscoveredProjects = async () => {
-  if (!projectStore.isInProjectSelection) return
+  if (!projectStore.isInProjectSelection || accounts) return
 
   isRefreshingDiscoveredProjects.value = true
   try {
@@ -259,6 +258,11 @@ const openProjectFromHistory = (path: string) => {
   projectSelectionReturnPath.value = ''
   projectPathInput.value = path
   void projectLoad.open(path)
+}
+
+const openGraph = (slug: string) => {
+  projectSelectionReturnPath.value = ''
+  void projectLoad.open(slug)
 }
 
 const openDiscoveredProject = (path: string) => {
@@ -346,20 +350,20 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   // Ignore if user is typing in an input or a modal is open; modals handle their own keys
   if (isInput || isModalOpen()) return
 
-  if (!hosted && event.key === 'p' && !uiStore.navigatingIdeas && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (event.key === 'p' && !uiStore.navigatingIdeas && !event.ctrlKey && !event.metaKey && !event.altKey) {
     event.preventDefault()
     openProjectSelection()
     return
   }
 
-  // Watchdog toggle (p and a are local-only, w hosted only for admins with agents on)
+  // Watchdog toggle (a is local-only; with accounts w is for server admins with agents on)
   if (agentsAllowed.value && event.key === 'w' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     projectStore.showWatchdog = !projectStore.showWatchdog
     return
   }
 
   // Loop (agent loop area) toggle
-  if (!hosted && event.key === 'a' && !event.ctrlKey && !event.metaKey && !event.altKey) {
+  if (!accounts && event.key === 'a' && !event.ctrlKey && !event.metaKey && !event.altKey) {
     projectStore.showLoop = !projectStore.showLoop
     return
   }
@@ -476,6 +480,7 @@ onMounted(async () => {
   perfLog('app.mounted')
   // Register global keydown listener
   window.addEventListener('keydown', handleGlobalKeydown)
+  void viewerStore.load()
   window.addEventListener('pagehide', flushPersistedUIState)
   window.addEventListener('beforeunload', flushPersistedUIState)
   document.addEventListener('visibilitychange', handleVisibilityChange)
@@ -554,7 +559,7 @@ onUnmounted(() => {
           >Voice</button>
         </div>
 
-        <label v-if="continueHook.installed && !hosted" class="hook-control" @mouseenter="refreshContinueHook">
+        <label v-if="continueHook.installed && !accounts" class="hook-control" @mouseenter="refreshContinueHook">
           Hook
           <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
           <span class="state">{{ continueHook.enabled ? 'on' : 'off' }}</span>
@@ -584,7 +589,7 @@ onUnmounted(() => {
           </button>
 
           <button
-            v-if="!hosted"
+            v-if="!accounts"
             @click="projectStore.showLoop = !projectStore.showLoop"
             class="icon-btn"
             style="width: auto; padding: 0 0.5rem; position: relative;"
@@ -646,7 +651,7 @@ onUnmounted(() => {
           </div>
 
           <button
-            v-if="workingTree && dataStore.access.writable && dataStore.access.role === 'admin'"
+            v-if="workingTree && dataStore.access.writable"
             class="icon-btn commit-btn"
             :class="{ prompt: commitPrompt }"
             :title="workingTreeTitle"
@@ -691,8 +696,8 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <LoginControl v-if="hosted && !hostedReadOnly" />
-        <a v-else @click="closeProject" class="close-project">Switch Project</a>
+        <LoginControl v-if="accounts" />
+        <a @click="closeProject" class="close-project">{{ accounts ? 'Graphs' : 'Switch Project' }}</a>
       </div>
     </header>
 
@@ -708,6 +713,7 @@ onUnmounted(() => {
       @remove-from-history="removeFromHistory"
       @refresh-discovered-projects="refreshDiscoveredProjects"
       @open-discovered-project="openDiscoveredProject"
+      @open-graph="openGraph"
     />
 
     <!-- Main Interface -->

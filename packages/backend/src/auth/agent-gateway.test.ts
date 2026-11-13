@@ -1,6 +1,6 @@
-// The admins' agents on a hosted instance: a fake broker (WebSocket) and a fake
-// agent session (HTTP + WebSocket) on loopback, reached only through the
-// hosted port with an admin's cookie.
+// The server admins' agents on a server with accounts: a fake broker (WebSocket)
+// and a fake agent session (HTTP + WebSocket) on loopback, reached only through
+// the server's one port with a server admin's cookie.
 import { test, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert';
 import fs from 'fs-extra';
@@ -10,12 +10,13 @@ import path from 'node:path';
 import type { AddressInfo } from 'node:net';
 import { WebSocket, WebSocketServer } from 'ws';
 import { startServer } from '../server';
-import { clearIndices } from '../search';
-import { AGENT_COOKIE, agentRoute } from '../hosted-agent-gateway';
+import { updateServerConfig } from 'shared/server-config';
+import { AGENT_COOKIE, agentRoute } from '../agent-gateway';
 import { neededRole } from './access';
 import * as accounts from './accounts';
 
 let root = '';
+const localServerDir = process.env.AIMPARENCY_SERVER_DIR;
 let base = '';
 let sessionPort = 0;
 let seen: http.IncomingHttpHeaders & { url?: string } = {};
@@ -33,11 +34,12 @@ function echo(wss: WebSocketServer) {
 
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-agents-'));
-  await fs.ensureDir(path.join(root, '.bowman'));
-  await accounts.createUser(root, 'boss', 'admin', 'admin password');
-  await accounts.createUser(root, 'writer', 'write', 'writer password');
-  adminToken = (await accounts.login(root, 'boss', 'admin password'))!;
-  writerToken = (await accounts.login(root, 'writer', 'writer password'))!;
+  process.env.AIMPARENCY_SERVER_DIR = root;
+  updateServerConfig({ login: 'accounts', agents: true });
+  await accounts.createAccount('boss', 'admin password', { serverAdmin: true });
+  await accounts.createAccount('writer', 'writer password');
+  adminToken = (await accounts.login('boss', 'admin password'))!;
+  writerToken = (await accounts.login('writer', 'writer password'))!;
 
   const session = http.createServer((req, res) => {
     seen = { ...req.headers, url: req.url };
@@ -50,7 +52,7 @@ beforeEach(async () => {
   const brokerPort = await listen(brokerServer);
 
   Object.assign(process.env, {
-    AIMPARENCY_HOSTED: 'true', AIMPARENCY_AGENTS: 'true', AIMPARENCY_PROJECT: root, PORT: '0', PORT_MCP: '1',
+    AIMPARENCY_ONE_PORT: 'true', PORT: '0', PORT_MCP: '1',
     PORT_BROKER_WS: String(brokerPort), PORT_PROCESS_START: String(sessionPort), AIMPARENCY_PULL_SECONDS: '0',
   });
   const { server, wss } = startServer();
@@ -65,10 +67,10 @@ beforeEach(async () => {
 
 afterEach(async () => {
   for (const close of closers.splice(0)) await close();
-  for (const key of ['AIMPARENCY_HOSTED', 'AIMPARENCY_AGENTS', 'AIMPARENCY_PROJECT', 'PORT', 'PORT_MCP', 'PORT_BROKER_WS', 'PORT_PROCESS_START', 'AIMPARENCY_PULL_SECONDS']) {
+  for (const key of ['AIMPARENCY_ONE_PORT', 'PORT', 'PORT_MCP', 'PORT_BROKER_WS', 'PORT_PROCESS_START', 'AIMPARENCY_PULL_SECONDS']) {
     delete process.env[key];
   }
-  clearIndices(path.join(root, '.bowman'));
+  process.env.AIMPARENCY_SERVER_DIR = localServerDir;
   await fs.remove(root);
 });
 
@@ -89,7 +91,7 @@ const reply = (ws: WebSocket, message: string) =>
     ws.send(message);
   });
 
-test('only an admin token becomes the agent cookie, HttpOnly and SameSite=Strict', async () => {
+test('only a server admin\'s token becomes the agent cookie, HttpOnly and SameSite=Strict', async () => {
   const issue = (token?: string) =>
     fetch(`${base}/auth/agent-cookie`, { method: 'POST', headers: token ? { authorization: `Bearer ${token}` } : {} });
   assert.equal((await issue()).status, 403);
@@ -99,7 +101,7 @@ test('only an admin token becomes the agent cookie, HttpOnly and SameSite=Strict
   assert.match(granted.headers.get('set-cookie')!, new RegExp(`^${AGENT_COOKIE}=.+; Path=/; HttpOnly; SameSite=Strict$`));
 });
 
-test('session HTTP reaches the agent only with an admin cookie, as a loopback client without the cookie', async () => {
+test('session HTTP reaches the agent only with a server admin\'s cookie, as a loopback client without the cookie', async () => {
   const url = `${base}/session/${sessionPort}/socket.io/?EIO=4&transport=polling`;
   assert.equal((await fetch(url)).status, 403);
   assert.equal((await fetch(url, { headers: { cookie: cookie(writerToken) } })).status, 403);
@@ -112,7 +114,7 @@ test('session HTTP reaches the agent only with an admin cookie, as a loopback cl
   assert.equal(seen.cookie, undefined);
 });
 
-test('broker and session WebSockets open for an admin of this origin only', async () => {
+test('broker and session WebSockets open for a server admin of this origin only', async () => {
   const admin = { cookie: cookie(adminToken), origin: base };
   const broker = await openSocket('/broker', admin);
   assert.ok('ws' in broker);
@@ -131,7 +133,7 @@ test('broker and session WebSockets open for an admin of this origin only', asyn
   assert.deepEqual(await openSocket('/elsewhere', admin), { status: 404 });
 });
 
-test('routes only the broker and the session port range; the watchdog state is for admins', () => {
+test('routes only the broker and the session port range; the watchdog state is for server admins', () => {
   const ports = { brokerWs: 5001, processStart: 7000 };
   assert.deepEqual(agentRoute('/broker', ports), { port: 5001, path: '/' });
   assert.deepEqual(agentRoute('/broker?connectionParams=1', ports), { port: 5001, path: '/?connectionParams=1' });
@@ -139,7 +141,7 @@ test('routes only the broker and the session port range; the watchdog state is f
   assert.equal(agentRoute('/session/3005/sse', ports), null, 'the MCP port is not an agent');
   assert.equal(agentRoute('/session/7100/', ports), null);
   assert.equal(agentRoute('/brokerage', ports), null);
-  assert.equal(neededRole('watchdog.getRuntimeState', 'query'), 'admin');
-  process.env.AIMPARENCY_AGENTS = 'false';
+  assert.equal(neededRole('watchdog.getRuntimeState', 'query'), 'serverAdmin');
+  updateServerConfig({ agents: false });
   assert.equal(neededRole('watchdog.getRuntimeState', 'query'), 'local');
 });

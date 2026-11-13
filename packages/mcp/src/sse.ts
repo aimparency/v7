@@ -6,21 +6,31 @@ import { createBackendClient } from "./client.js";
 import { isAllowedClientOrigin, resolveBindHost } from "shared";
 
 const port = Number(process.env.PORT_MCP || 3005);
-// A hosted instance proxies /mcp/* here, so the paths keep that prefix.
+// The one-port server proxies /mcp/* here, so the paths keep that prefix.
 const basePath = process.env.MCP_BASE_PATH ?? "";
-// Loopback unless named: hosted, only the backend's proxy needs to reach this
-// server (MCP_BIND_HOST); `pnpm dev:host` opens it to BIND_HOST like the rest.
+// Loopback unless named: behind the one-port server only its proxy needs to
+// reach this server (MCP_BIND_HOST); `pnpm dev:host` opens it to BIND_HOST like the rest.
 const configuredHost = process.env.MCP_BIND_HOST || process.env.BIND_HOST || undefined;
 const host = resolveBindHost(configuredHost);
-// Locally every session acts with the full rights of this machine's backend, so
-// a browser page from anywhere else must not reach it (MCP clients send no
-// Origin). Hosted, requests arrive through the instance's own origin and the
-// backend checks each caller's role.
-const hosted = process.env.AIMPARENCY_HOSTED === "true";
+// Without login every session acts with the full rights of this machine's
+// backend, so a browser page from anywhere else must not reach it (MCP clients
+// send no Origin). With accounts, requests arrive through the server's own
+// origin and the backend checks what each caller's token may do.
+// The backend says which of the two it is; while it does not answer, only
+// local callers get in.
 const app = express();
+const anonymous = createBackendClient();
+const ACCOUNTS_ANSWER_MS = 10_000;
+let accounts: { at: number; answer: Promise<boolean> } | undefined;
+function backendHasAccounts(): Promise<boolean> {
+  if (!accounts || Date.now() - accounts.at > ACCOUNTS_ANSWER_MS) {
+    accounts = { at: Date.now(), answer: anonymous.trpc.auth.me.query().then(({ login }) => login === "accounts", () => false) };
+  }
+  return accounts.answer;
+}
 
-app.use((req, res, next) => {
-  if (hosted || isAllowedClientOrigin(req.headers.origin, configuredHost)) return next();
+app.use(async (req, res, next) => {
+  if (isAllowedClientOrigin(req.headers.origin, configuredHost) || await backendHasAccounts()) return next();
   res.status(403).send("Origin not allowed");
 });
 app.use(cors());

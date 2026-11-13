@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import net from 'node:net';
+import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
@@ -17,17 +18,19 @@ import { ask, askNewPassword, askYesNo, closeQuestions } from './ask.mjs';
 //   --host      dev: bind to LAN_BIND_HOST (or the tailscale IP) and serve MCP over SSE
 //   --delay     DEV_DELAY=true: the backend slows responses (frontend e2e tests)
 //   --no-build  start: run the existing bundles without rebuilding
-//   --port <n>  start: the frontend port, or the one port of a hosted instance
+//   --port <n>  start: the frontend port, or the one port of a server with accounts
 //   --setup     start: ask the setup questions again
 //
 // dev picks free ports next to the configured ones (parallel worktrees); start
 // uses exactly the configured ports, so a proxy in front of it can rely on them.
 //
-// The first `start` in a terminal asks which repository to serve and whether
-// other people may reach it; the answers go to .env. Hosted
-// (AIMPARENCY_HOSTED=true), one port carries the built UI, the API and the MCP
-// server for that one project; reading is open, writing needs an account
-// (pnpm accounts), and agents and loops stay off.
+// The first `start` in a terminal asks whether other people use this server;
+// the answers go to server.json in the server directory (and ports to .env).
+// With accounts (`"login": "accounts"`), one port carries the built UI, the API
+// and the MCP server for all graphs of the server; everyone reads, accounts
+// write the graphs they own or were given (pnpm accounts, pnpm graphs), and
+// agents and loops stay off. dev is a server of its own (its own server
+// directory), so trying things there never touches the one other people use.
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -40,6 +43,28 @@ const envFile = process.env.AIMPARENCY_ENV_FILE ?? path.join(repoRoot, '.env');
 if (existsSync(envFile)) {
   // Never overrides variables that are already set, so explicit PORT_* still win.
   process.loadEnvFile(envFile);
+}
+
+// The server directory (see packages/shared/src/server-config.ts): settings,
+// accounts, the list of graphs. Read here as plain JSON; the backend validates.
+function defaultServerDir() {
+  return path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), 'aimparency');
+}
+const serverDir = () => path.resolve(process.env.AIMPARENCY_SERVER_DIR || defaultServerDir());
+const serverSettingsFile = () => path.join(serverDir(), 'server.json');
+
+function readJson(file, fallback) {
+  try {
+    return JSON.parse(readFileSync(file, 'utf8'));
+  } catch {
+    return fallback;
+  }
+}
+const serverSettings = () => readJson(serverSettingsFile(), {});
+
+async function saveServerSettings(values) {
+  await fs.mkdir(serverDir(), { recursive: true, mode: 0o700 });
+  await fs.writeFile(serverSettingsFile(), JSON.stringify({ ...serverSettings(), ...values }, null, 2) + '\n');
 }
 
 const pnpmCommand = process.platform === 'win32' ? 'pnpm.cmd' : 'pnpm';
@@ -145,6 +170,7 @@ class UsageError extends Error {}
 function runtimeConfig(resolvedPorts) {
   return {
     ...resolvedPorts,
+    login: serverSettings().login === 'accounts' ? 'accounts' : 'none',
     voiceEnabled: parseBoolean(process.env.AIMPARENCY_ENABLE_VOICE, false),
     generatedAt: new Date().toISOString(),
   };
@@ -290,19 +316,16 @@ async function saveEnv(values) {
   await fs.writeFile(envFile, text);
 }
 
-function hasAdmin(projectPath) {
-  try {
-    const accounts = JSON.parse(readFileSync(path.join(projectPath, '.bowman', 'runtime', 'accounts.json'), 'utf8'));
-    return accounts.users?.some((user) => user.role === 'admin') ?? false;
-  } catch {
-    return false;
-  }
+function hasAdmin() {
+  return readJson(path.join(serverDir(), 'accounts.json'), {}).accounts?.some((account) => account.serverAdmin) ?? false;
 }
 
+const tsx = path.join(repoRoot, 'node_modules', '.bin', 'tsx');
+
 // A git URL is cloned next to this checkout, the way someone would by hand.
-async function askRepository() {
+async function askRepository(question, fallback = '') {
   for (;;) {
-    const answer = await ask('Repository to serve (a path or a git URL; empty: choose in the browser):', process.env.AIMPARENCY_PROJECT ?? '');
+    const answer = await ask(question, fallback);
     if (!answer) return '';
     if (isGitUrl(answer)) {
       const target = path.resolve(repoRoot, '..', path.basename(answer).replace(/\.git$/, ''));
@@ -323,31 +346,38 @@ async function askRepository() {
 }
 
 async function setup() {
-  console.log('[local-runtime] Setup. The answers go to .env; `pnpm start --setup` asks again.');
-  const project = await askRepository();
-  const hosted = project !== '' && await askYesNo('Host it for other people? (reading open to anyone, writing with an account)', process.env.AIMPARENCY_HOSTED === 'true');
-  const readOnly = hosted && await askYesNo('Read-only? (no accounts: the project changes only through its Git repository)', process.env.AIMPARENCY_READ_ONLY === 'true');
-  const values = { AIMPARENCY_PROJECT: project, AIMPARENCY_HOSTED: hosted, AIMPARENCY_READ_ONLY: readOnly };
-  if (hosted) {
-    values.PORT = parsePort(await ask('Port:', process.env.PORT ?? '4000'), 4000);
-    values.BIND_HOST = await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', process.env.BIND_HOST || '127.0.0.1');
-    values.AIMPARENCY_AGENTS = await askYesNo(
-      'Let admins run wrapped agents? That is a shell on this server for every admin: commands as this user, /etc and the secrets in .env included.',
-      process.env.AIMPARENCY_AGENTS === 'true',
-    );
+  console.log(`[local-runtime] Setup. The answers go to ${serverSettingsFile()} and .env; \`pnpm start --setup\` asks again.`);
+  const others = await askYesNo(
+    'Let other people use this server? (everyone reads; accounts create graphs and write the ones they own or were given)',
+    serverSettings().login === 'accounts',
+  );
+  if (!others) {
+    await saveServerSettings({ login: 'none' });
+    await saveEnv({ AIMPARENCY_PROJECT: await askRepository('Repository to open (a path or a git URL; empty: choose in the browser):', process.env.AIMPARENCY_PROJECT ?? '') });
+    return closeQuestions();
   }
-  await saveEnv(values);
-  if (hosted && !readOnly && !hasAdmin(project)) {
-    console.log('[local-runtime] The first account, an admin, who manages the others in the UI:');
-    const name = await ask('Admin name:', process.env.USER ?? 'admin');
+  await saveEnv({
+    PORT: parsePort(await ask('Port:', process.env.PORT ?? '4000'), 4000),
+    BIND_HOST: await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', process.env.BIND_HOST || '127.0.0.1'),
+  });
+  const agents = await askYesNo(
+    'Let server admins run wrapped agents? That is a shell on this server for every server admin: commands as this user, /etc and the secrets in .env included.',
+    serverSettings().agents === true,
+  );
+  await saveServerSettings({ login: 'accounts', agents });
+  if (!hasAdmin()) {
+    console.log('[local-runtime] The first account, a server admin, who manages the others in the UI:');
+    const name = await ask('Name:', process.env.USER ?? 'admin');
     const password = await askNewPassword(name);
-    await runCommand(path.join(repoRoot, 'node_modules', '.bin', 'tsx'), ['scripts/accounts.mjs', 'add', name, 'admin', '--project', project], { ...process.env, AIMPARENCY_PASSWORD: password });
+    await runCommand(tsx, ['scripts/accounts.mjs', 'add', name, '--admin'], { ...process.env, AIMPARENCY_PASSWORD: password });
   }
+  const checkout = await askRepository('A repository on this machine to add as a graph (a path or a git URL; empty: none, graphs are created in the browser):');
+  if (checkout) await runCommand(tsx, ['scripts/graphs.mjs', 'add', checkout], process.env).catch(() => console.log('Not added; `pnpm graphs add <path>` adds it later.'));
   closeQuestions();
 }
 
-// Hosted: the backend serves the UI, the API and (proxied) the MCP server on one port.
-function hostedCommands(env, agentToken) {
+// With accounts: the backend serves the UI, the API and (proxied) the MCP server on one port.
+function onePortCommands(env, agentToken) {
   const command = (name, prefixColor, dir, startCommand, extraEnv) => {
     const cwd = path.join(repoRoot, 'packages', dir);
     return {
@@ -359,12 +389,12 @@ function hostedCommands(env, agentToken) {
     };
   };
   const backendHost = env.BIND_HOST === '0.0.0.0' ? '127.0.0.1' : env.BIND_HOST;
-  // Admins' agents: the broker and its sessions stay on loopback; the backend's
-  // port is their only way in, and it lets admins through (hosted-agent-gateway).
-  const agents = env.AIMPARENCY_AGENTS === 'true'
+  // Server admins' agents: the broker and its sessions stay on loopback; the
+  // backend's port is their only way in, and it lets server admins through (agent-gateway).
+  const agents = serverSettings().agents === true
     ? [command('BROK', 'yellow', 'wrapped-agents/broker', 'node dist/index.js', {
       BIND_HOST: '127.0.0.1',
-      // The agents' Aimparency MCP (stdio, inherits this env) reaches the hosted
+      // The agents' Aimparency MCP (stdio, inherits this env) reaches the
       // backend as the wrapped-agents account.
       BACKEND_WS_URL: `ws://${backendHost}:${env.PORT}/trpc`,
       AIMPARENCY_TOKEN: agentToken,
@@ -372,7 +402,7 @@ function hostedCommands(env, agentToken) {
     : [];
   return [
     ...agents,
-    command('BACK', 'blue', 'backend', 'node dist/server.js', {}),
+    command('BACK', 'blue', 'backend', 'node dist/server.js', { AIMPARENCY_ONE_PORT: 'true' }),
     command('MCPS', 'magenta', 'mcp', 'node build/sse.js', {
       MCP_BASE_PATH: '/mcp',
       MCP_BIND_HOST: '127.0.0.1',
@@ -381,13 +411,9 @@ function hostedCommands(env, agentToken) {
   ];
 }
 
-async function startHosted() {
-  const project = process.env.AIMPARENCY_PROJECT;
-  if (!project || !existsSync(project)) {
-    throw new UsageError(`AIMPARENCY_PROJECT (${project || 'unset'}) is no directory. Run \`pnpm start --setup\`.`);
-  }
-  if (process.env.AIMPARENCY_READ_ONLY !== 'true' && !hasAdmin(project)) {
-    throw new UsageError('No admin account yet. Run `pnpm start --setup` once in a terminal, or `pnpm accounts add <name> admin`.');
+async function startOnePort() {
+  if (!hasAdmin()) {
+    throw new UsageError('No server admin account yet. Run `pnpm start --setup` once in a terminal, or `pnpm accounts add <name> --admin`.');
   }
   const port = portOverride ?? parsePort(process.env.PORT, 4000);
   const mcpPort = parsePort(process.env.PORT_MCP, 3005);
@@ -399,11 +425,11 @@ async function startHosted() {
     PATH: [path.join(repoRoot, 'node_modules', '.bin'), process.env.PATH].join(path.delimiter),
   };
   await requireFreePorts({ port, mcpPort });
-  const agentToken = env.AIMPARENCY_AGENTS === 'true' && !flags.has('--dry-run')
-    ? execFileSync(path.join(repoRoot, 'node_modules', '.bin', 'tsx'), ['scripts/accounts.mjs', 'agent-token', '--project', project], { cwd: repoRoot, encoding: 'utf8' }).trim()
+  const agentToken = serverSettings().agents === true && !flags.has('--dry-run')
+    ? execFileSync(tsx, ['scripts/accounts.mjs', 'agent-token'], { cwd: repoRoot, encoding: 'utf8' }).trim()
     : '';
-  const commands = hostedCommands(env, agentToken);
-  console.log(`[local-runtime] hosting ${project} on http://${env.BIND_HOST}:${port} (MCP: /mcp/sse)`);
+  const commands = onePortCommands(env, agentToken);
+  console.log(`[local-runtime] server with accounts (${serverDir()}) on http://${env.BIND_HOST}:${port} (MCP: /mcp/sse)`);
   if (flags.has('--dry-run')) {
     for (const { name, cwd, command } of commands) {
       console.log(`[local-runtime] ${name}: (${path.relative(repoRoot, cwd)}) ${command}`);
@@ -425,15 +451,17 @@ async function main() {
   }
 
   if (mode === 'start') {
-    if (flags.has('--setup') || (process.stdin.isTTY && process.env.AIMPARENCY_HOSTED === undefined && !flags.has('--dry-run'))) {
+    if (flags.has('--setup') || (process.stdin.isTTY && !existsSync(serverSettingsFile()) && !flags.has('--dry-run'))) {
       await setup();
     }
-    if (process.env.AIMPARENCY_HOSTED === 'true') {
-      return startHosted();
+    if (serverSettings().login === 'accounts') {
+      return startOnePort();
     }
+  } else {
+    // dev is a server of its own, for the person at this machine: what is tried
+    // there (also accounts) never touches the server other people use.
+    process.env.AIMPARENCY_SERVER_DIR ||= `${defaultServerDir()}-dev`;
   }
-  // dev never hosts: it serves sources to the person at this machine.
-  process.env.AIMPARENCY_HOSTED = 'false';
 
   const resolvedPorts = await resolvePorts(mode);
   // A dry run prints the config instead: writing it would repoint a running stack's frontend.

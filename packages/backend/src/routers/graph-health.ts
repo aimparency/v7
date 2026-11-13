@@ -7,6 +7,7 @@ import { listPhases, writePhase, reconcilePhaseTree } from '../storage/phases.js
 import { loadVectorStore, removeEmbedding } from '../embeddings.js';
 import { getDb } from '../db.js';
 import { t, delayedProcedure } from '../trpc.js';
+import { graphAddress } from '../graphs/address.js';
 
 type ConsistencyIssueCode =
   | GraphConsistencyIssueCode
@@ -45,7 +46,7 @@ function createConsistencyIssue(code: ConsistencyIssueCode, message: string): Co
 export const graphHealthRouter = t.router({
   checkConsistency: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .query(async ({ input }) => {
       // Archived ideas exist too: links to them are not dangling.
@@ -82,7 +83,7 @@ export const graphHealthRouter = t.router({
 
   fixConsistency: delayedProcedure
     .input(z.object({
-      projectPath: z.string()
+      projectPath: graphAddress
     }))
     .mutation(async ({ input }) => {
       const fixes: string[] = [];
@@ -256,7 +257,7 @@ export const graphHealthRouter = t.router({
   // Use merge_ideas to act on the results.
   findDuplicates: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
       limit: z.number().int().positive().max(500).optional(),   // default 50
     }))
@@ -313,7 +314,7 @@ export const graphHealthRouter = t.router({
   // is an approve-a-list report, it changes nothing.
   suggestReparents: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       parentIdeaId: z.string(),                              // the catch-all parent
       candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
       limit: z.number().int().positive().max(500).optional(),        // default 200
@@ -428,7 +429,7 @@ export const graphHealthRouter = t.router({
   // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
   graphHygiene: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       megaParentThreshold: z.number().int().positive().optional(), // default 25
       duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
       limit: z.number().int().positive().max(500).optional(),               // per-section cap, default 30

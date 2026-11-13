@@ -1,7 +1,6 @@
 import { defineStore } from 'pinia'
 import { gitRepositoryLocation } from 'shared'
 import { trpc } from '../trpc'
-import { getRuntimeConfig } from '../utils/runtime-config'
 import { perfLog } from '../utils/perf-log'
 import { useDataStore, type ProjectLoadStage } from './data'
 import { useHistoryStore } from './history'
@@ -188,7 +187,6 @@ export const useProjectLoadStore = defineStore('project-load', {
 
     // Back to the project selection: from a failed load, or one taking too long.
     cancel() {
-      if (getRuntimeConfig().hosted) return
       latestLoad++
       resolveViewReady?.()
       this.resetOpenProject()

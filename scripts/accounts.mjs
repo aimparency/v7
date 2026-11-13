@@ -3,69 +3,80 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { askNewPassword, closeQuestions } from './ask.mjs';
 import * as accounts from '../packages/backend/src/auth/accounts.ts';
-import { ensureProjectStructure } from '../packages/backend/src/storage/project.ts';
+import { serverDir } from '../packages/shared/src/server-config.ts';
 import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 
-// Accounts of the hosted project, from the server's terminal (run through tsx):
+// Accounts of this server, from its terminal (run through tsx):
 //
 //   pnpm accounts list
-//   pnpm accounts add <name> <read|write|admin>
-//   pnpm accounts role <name> <read|write|admin>
+//   pnpm accounts add <name> [--admin] [--creates-graphs]
+//   pnpm accounts admin <name> on|off
+//   pnpm accounts creates-graphs <name> on|off
 //   pnpm accounts password <name>
 //   pnpm accounts remove <name>
 //   pnpm accounts agent-token   (prints a fresh token of the wrapped agents' account)
 //
-// The project is AIMPARENCY_PROJECT from .env, or --project <path>. A password
-// comes from AIMPARENCY_PASSWORD when set (the setup passes it so), else it is asked.
+// They live in the server directory (AIMPARENCY_SERVER_DIR, see .env). A
+// password comes from AIMPARENCY_PASSWORD when set (the setup passes it so),
+// else it is asked. What an account may do on a graph: `pnpm graphs`.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const envFile = path.join(repoRoot, '.env');
 if (existsSync(envFile)) process.loadEnvFile(envFile);
 
 const args = process.argv.slice(2);
-const projectFlag = args.indexOf('--project');
-const project = projectFlag >= 0 ? args.splice(projectFlag, 2)[1] : process.env.AIMPARENCY_PROJECT;
-const [command, name, role] = args;
+const flag = (name) => {
+  const index = args.indexOf(name);
+  if (index >= 0) args.splice(index, 1);
+  return index >= 0;
+};
+const admin = flag('--admin');
+const createsGraphs = flag('--creates-graphs');
+const [command, name, value] = args;
 
 const password = async (who) => process.env.AIMPARENCY_PASSWORD || await askNewPassword(who);
 
-function checkRole(value) {
-  if (!accounts.ROLES.includes(value)) throw new accounts.AccountError(`The role is one of: ${accounts.ROLES.join(', ')}.`);
-  return value;
+function onOff(text) {
+  if (text !== 'on' && text !== 'off') throw new accounts.AccountError('Say on or off.');
+  return text === 'on';
 }
 
+const describe = ({ serverAdmin, canCreateGraphs }) =>
+  [serverAdmin && 'server admin', canCreateGraphs && 'creates graphs'].filter(Boolean).join(', ');
+
 async function main() {
-  if (!project) throw new accounts.AccountError('No project: set AIMPARENCY_PROJECT in .env (pnpm start --setup) or pass --project <path>.');
   switch (command) {
     case 'list':
-      for (const user of await accounts.listUsers(project)) console.log(`${user.name}\t${user.role}`);
+      for (const account of accounts.listAccounts()) console.log(`${account.name}\t${describe(account)}`);
       return;
     case 'add':
-      // The setup's first account: give the project its .bowman (README, .gitignore) now.
-      await ensureProjectStructure(path.resolve(project));
-      await accounts.createUser(project, name ?? '', checkRole(role), await password(name));
-      console.log(`Added ${name} (${role}).`);
-      if (role === 'admin') console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
+      await accounts.createAccount(name ?? '', await password(name), { serverAdmin: admin, canCreateGraphs: createsGraphs });
+      console.log(`Added ${name}${admin ? ' (server admin)' : ''} in ${serverDir()}.`);
+      if (admin) console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
       return;
-    case 'role':
-      await accounts.setRole(project, name ?? '', checkRole(role));
-      console.log(`${name} is ${role} now.`);
-      if (role === 'admin') console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
+    case 'admin':
+      await accounts.setRights(name ?? '', { serverAdmin: onOff(value) });
+      console.log(`${name} is ${value === 'on' ? 'a server admin now' : 'no server admin any more'}.`);
+      if (value === 'on') console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
+      return;
+    case 'creates-graphs':
+      await accounts.setRights(name ?? '', { canCreateGraphs: onOff(value) });
+      console.log(`${name} ${value === 'on' ? 'may create graphs' : 'is no longer selected to create graphs'}.`);
       return;
     case 'password':
-      await accounts.setPassword(project, name ?? '', await password(name));
+      await accounts.setPassword(name ?? '', await password(name));
       console.log(`New password set for ${name}; their logins ended.`);
       return;
     case 'agent-token':
       // The launcher reads stdout: the token and nothing else.
-      process.stdout.write(`${await accounts.agentToken(project)}\n`);
+      process.stdout.write(`${await accounts.agentToken()}\n`);
       return;
     case 'remove':
-      await accounts.removeUser(project, name ?? '');
+      await accounts.removeAccount(name ?? '');
       console.log(`Removed ${name}.`);
       return;
     default:
-      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> <role> | role <name> <role> | password <name> | remove <name>');
+      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-graphs] | admin <name> on|off | creates-graphs <name> on|off | password <name> | remove <name>');
   }
 }
 

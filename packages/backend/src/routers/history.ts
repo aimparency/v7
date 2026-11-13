@@ -14,6 +14,7 @@ import { writeIdea } from '../storage/ideas.js';
 import { writePhase } from '../storage/phases.js';
 import { writeProjectMeta } from '../storage/project.js';
 import { entityFile } from '../storage/json.js';
+import { graphAddress } from '../graphs/address.js';
 
 const EntityChangeSchema = z.object({
   type: z.enum(['idea', 'phase', 'project']),
@@ -92,7 +93,7 @@ const applyChange = async (projectPath: string, change: EntityChange, current: u
 export const historyRouter = t.router({
   restore: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       changes: z.array(EntityChangeSchema)
     }))
     .mutation(async ({ input }) => {

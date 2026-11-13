@@ -202,8 +202,8 @@ function toPhaseColumn(phases: Phase[], entries: PhaseLevelEntry[]): PhaseColumn
 
 // A floating idea has no phase commitment and no parent.
 type ProjectUpdate = { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean, previous?: unknown, origin?: string }
-type ProjectAccess = { writable: boolean, reason: string | null, user: string | null, role: 'read' | 'write' | 'admin' }
-const unrestrictedAccess = (): ProjectAccess => ({ writable: true, reason: null, user: null, role: 'admin' })
+type ProjectAccess = { writable: boolean, reason: string | null, user: string | null, role: 'read' | 'write' | 'owner', serverAdmin: boolean }
+const unrestrictedAccess = (): ProjectAccess => ({ writable: true, reason: null, user: null, role: 'owner', serverAdmin: true })
 export type ProjectLoadStage = 'opening' | 'reading' | 'applying'
 export type ProjectLoadHooks = {
   isCurrent?: () => boolean
@@ -255,7 +255,7 @@ export const useDataStore = defineStore('data', {
     // Project Meta
     meta: null as BaseIdea['status'] | any | null, // ProjectMeta
     // Whether the open project's graph may be changed here, and by whom
-    // (project.getAccess; user is the login of a hosted instance)
+    // (project.getAccess; user is the account on a server with accounts)
     access: unrestrictedAccess(),
   }),
 
@@ -1127,7 +1127,7 @@ export const useDataStore = defineStore('data', {
 
       let held: ProjectUpdate[] | null = hold ? [] : null;
       // @ts-ignore - trpc subscription typing might differ
-      this.subscription = trpc.project.onUpdate.subscribe(undefined, {
+      this.subscription = trpc.project.onUpdate.subscribe({ projectPath }, {
         onData: async (data: ProjectUpdate) => {
           if (toProjectRoot(data.projectPath) !== toProjectRoot(projectPath)) return;
           if (held) held.push(data);

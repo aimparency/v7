@@ -79,13 +79,14 @@ Add the same command entry to your Claude Desktop configuration:
 
 Restart Claude after updating the configuration.
 
-### A hosted instance
+### A server with accounts
 
-A hosted Aimparency (see the root README, "Hosting It for a Group") serves this
-MCP over SSE at `https://<host>/mcp/sse`. Without a token it can only read. A
-logged-in user's "MCP link" in the UI header adds `?token=…` and acts as that
-account; a client that sends headers may pass the token as
-`Authorization: Bearer <token>` instead.
+An Aimparency server for other people (see the root README, "Hosting It for a
+Group") serves this MCP over SSE at `https://<host>/mcp/sse`. Without a token it
+can only read. A logged-in user's "MCP link" in the UI adds `?token=…` and acts
+as that account; a client that sends headers may pass the token as
+`Authorization: Bearer <token>` instead. There `projectPath` is the slug of a
+graph (the last part of `https://<host>/g/<slug>`), never a path.
 
 ```bash
 claude mcp add --transport sse aimparency "https://<host>/mcp/sse?token=<token>"

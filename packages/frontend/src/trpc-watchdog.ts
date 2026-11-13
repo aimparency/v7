@@ -4,17 +4,18 @@ import type { AppRouter } from 'wrapped-agents-broker';
 import { ensureAgentCookie } from './utils/login';
 import { brokerWsUrl, getRuntimeConfig } from './utils/runtime-config';
 
-const hosted = getRuntimeConfig().hosted;
+// With accounts the broker sits behind the server's port, for server admins only.
+const gated = getRuntimeConfig().sameOrigin;
 
-// Create WebSocket client for Watchdog Broker. Hosted, it connects only when an
-// admin opens the watchdog (a non-admin's attempt is refused at /broker).
+// Create WebSocket client for Watchdog Broker. Behind the gateway it connects
+// only when a server admin opens the watchdog (anyone else is refused at /broker).
 const wsClient = createWSClient({
   url: brokerWsUrl(),
-  lazy: { enabled: hosted, closeMs: 0 },
+  lazy: { enabled: gated, closeMs: 0 },
 });
 
-// Hosted: the lazy socket opens on the first operation, so holding operations
-// until the agent cookie is set lets the gateway see the admin's login.
+// Behind the gateway the lazy socket opens on the first operation, so holding
+// operations until the agent cookie is set lets the gateway see the login.
 const agentCookieLink: TRPCLink<AppRouter> = () => ({ next, op }) =>
   observable((observer) => {
     let subscription: { unsubscribe(): void } | undefined;
@@ -31,7 +32,7 @@ const agentCookieLink: TRPCLink<AppRouter> = () => ({ next, op }) =>
 // Create tRPC client with WebSocket
 export const trpcWatchdog = createTRPCProxyClient<AppRouter>({
   links: [
-    ...(hosted ? [agentCookieLink] : []),
+    ...(gated ? [agentCookieLink] : []),
     wsLink({
       client: wsClient,
     }),

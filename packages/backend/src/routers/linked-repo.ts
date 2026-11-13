@@ -7,6 +7,7 @@ import { seesServerPaths } from '../auth/access.js';
 import { resolveBowmanPath } from '../path-completion.js';
 import { readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { readLinkedRepoRegistry, writeLinkedRepoRegistry, resolveLinkedRepoLocalPath } from '../storage/linked-repos.js';
+import { graphAddress } from '../graphs/address.js';
 
 // A portable link plus this machine's resolution status (localPath present ⇒
 // checked out here). Explicit output schemas keep the router's inferred type
@@ -20,7 +21,7 @@ const LinkedRepoStatusSchema = LinkedRepoSchema.extend({
 export const linkedRepoRouter = t.router({
   // Portable links (from meta) merged with this machine's resolution status.
   list: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ projectPath: graphAddress }))
     .output(z.array(LinkedRepoStatusSchema))
     .query(async ({ ctx, input }) => {
       const showPaths = seesServerPaths(ctx.viewer);
@@ -43,7 +44,7 @@ export const linkedRepoRouter = t.router({
   // meta and the machine-local path in the runtime registry.
   register: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       targetPath: z.string(),
       url: z.string().optional(),
       access: z.enum(['read', 'write']).default('read'),
@@ -81,7 +82,7 @@ export const linkedRepoRouter = t.router({
 
   // Drop a linked repo from both the portable list and the local registry.
   unregister: delayedProcedure
-    .input(z.object({ projectPath: z.string(), repoId: z.string().uuid() }))
+    .input(z.object({ projectPath: graphAddress, repoId: z.string().uuid() }))
     .output(z.object({ repoId: z.string().uuid(), removed: z.boolean() }))
     .mutation(async ({ input }) => {
       const meta = await readProjectMeta(input.projectPath);
@@ -97,7 +98,7 @@ export const linkedRepoRouter = t.router({
   // Resolve a repoId to its local checkout — for the black-box node's name and
   // health only. Ideas inside the linked repo are never read (see e81b11c3).
   resolve: delayedProcedure
-    .input(z.object({ projectPath: z.string(), repoId: z.string().uuid() }))
+    .input(z.object({ projectPath: graphAddress, repoId: z.string().uuid() }))
     .output(z.object({
       repoId: z.string().uuid(),
       name: z.string().optional(),

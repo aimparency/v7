@@ -9,6 +9,7 @@ import { addIdeaToIndex, updateIdeaInIndex } from '../search.js';
 import { deleteIdeaCompletely, listIdeas, writeIdea } from '../storage/ideas.js';
 import { ensureProjectStructure, readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { cleanupCommitments } from '../storage/commitments.js';
+import { graphAddress } from '../graphs/address.js';
 
 export const spinOffRouter = t.router({
   // Tab-completion for the target path chooser: given a partial path (supporting
@@ -27,7 +28,7 @@ export const spinOffRouter = t.router({
   // for the graph preview, plus a warning if the target already has a graph.
   preview: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string().optional(),
     }))
@@ -50,7 +51,7 @@ export const spinOffRouter = t.router({
   // the selection exclusively, keeping shared ideas (overlap). Conservative.
   execute: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      projectPath: graphAddress,
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string(),
       removeFromSource: z.boolean().default(true),

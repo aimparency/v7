@@ -1,96 +1,120 @@
-// What a hosted instance lets each role do. Locally (no AIMPARENCY_HOSTED) the
-// one person at the machine may do everything; hosted, one project is served,
-// reading is open to anyone, and writing needs an account.
+// Who may do what. On a server without login the one person at the machine may
+// do everything. With accounts: everyone reads every graph; a graph's owner and
+// the accounts it gave write access change it; agents, loops and server paths
+// are for nobody (the server admins' agents are a separate switch).
 
 import { TRPCError } from '@trpc/server';
-import { normalizeProjectPath } from '../project-path.js';
-import { resolveToken, roleAtLeast, type Role } from './accounts.js';
+import { hasAccounts, serverConfig } from 'shared/server-config';
+import { resolveGraphAddress } from '../graphs/address.js';
+import type { Graph } from '../graphs/registry.js';
+import { resolveToken } from './accounts.js';
 
-type Need = Role | 'local';
+// What a viewer is on one graph.
+const RIGHTS = ['read', 'write', 'owner'] as const;
+export type GraphRight = typeof RIGHTS[number];
 
-export function hostedProject(): string | null {
-  const project = process.env.AIMPARENCY_PROJECT;
-  return process.env.AIMPARENCY_HOSTED === 'true' && project ? normalizeProjectPath(project) : null;
+// What a procedure asks for: a right on the graph it names, an account, the
+// server admin, or 'local' (only on a server without login).
+type Need = GraphRight | 'account' | 'serverAdmin' | 'local';
+
+export type Viewer = { id: string | null; name: string | null; serverAdmin: boolean; canCreateGraphs: boolean };
+
+const LOCAL_VIEWER: Viewer = { id: null, name: null, serverAdmin: true, canCreateGraphs: true };
+const ANONYMOUS: Viewer = { id: null, name: null, serverAdmin: false, canCreateGraphs: false };
+
+// The server admins' wrapped agents: off unless the operator turns them on,
+// since a server admin then holds a shell on the server.
+export function agentsEnabled(): boolean {
+  return hasAccounts() && serverConfig().agents;
 }
-
-// Admins' wrapped agents on a hosted instance: off unless the operator turns
-// them on, since an admin then holds a shell on the server.
-export function hostedAgents(): boolean {
-  return process.env.AIMPARENCY_AGENTS === 'true';
-}
-
-// AIMPARENCY_READ_ONLY=true: the hosted project only changes through its Git
-// repository (pushed elsewhere, pulled here); nobody edits it on this server.
-export function hostedReadOnly(): boolean {
-  return hostedProject() !== null && process.env.AIMPARENCY_READ_ONLY === 'true';
-}
-
-// Keeps "open read-only", which the UI already recognises as "editing is off here".
-export const HOSTED_READ_ONLY_MESSAGE = 'This project is open read-only here: it changes through its Git repository.';
 
 // Agents, loops and server paths: things a shared server must not hand out.
-// The watchdog's runtime state goes to admins when agents are on.
+// The watchdog's runtime state goes to server admins when agents are on.
 const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'system', 'voice', 'market', 'spinOff']);
 const LOCAL_ONLY = new Set([
-  'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions'
+  'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions',
+  'linkedRepo.register'
 ]);
-// Nothing checked in: viewer state, or a viewer's own login.
-const READ_MUTATIONS = new Set([
-  'phase.setCursor', 'auth.login', 'auth.logout', 'auth.issueToken', 'auth.changeOwnPassword'
-]);
-const WRITE_ROUTERS = new Set(['idea', 'phase']);
+// Nothing of a graph: viewer state, or a visitor logging in or out.
+const OPEN_MUTATIONS = new Set(['phase.setCursor', 'auth.login', 'auth.logout']);
+const ACCOUNT_MUTATIONS = new Set(['auth.issueToken', 'auth.changeOwnPassword', 'graphs.create']);
+const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // Also derived state that costs the server (re-indexing) or is shown to every
-// viewer (activity): not for anonymous readers.
+// viewer (activity): not for visitors.
 const WRITE_MUTATIONS = new Set([
-  'history.restore', 'graphHealth.fixConsistency', 'project.setLayoutSettings', 'project.buildSearchIndex', 'activity.record'
+  'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
+  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister'
 ]);
-// Every other mutation needs an admin, so a new one is closed until listed.
+const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.remove']);
+const PUBLIC_AUTH_QUERIES = new Set(['auth.me']);
+// Every other mutation needs a server admin, so a new one is closed until listed.
 
 export function neededRole(path: string, type: string): Need {
   const router = path.split('.')[0]!;
-  if (router === 'watchdog' && hostedAgents()) return 'admin';
+  if (router === 'watchdog' && agentsEnabled()) return 'serverAdmin';
   if (LOCAL_ONLY_ROUTERS.has(router) || LOCAL_ONLY.has(path)) return 'local';
-  if (type !== 'mutation') return path.startsWith('auth.') && path !== 'auth.me' ? 'admin' : 'read';
-  if (READ_MUTATIONS.has(path)) return 'read';
+  if (type !== 'mutation') return router === 'auth' && !PUBLIC_AUTH_QUERIES.has(path) ? 'serverAdmin' : 'read';
+  if (OPEN_MUTATIONS.has(path)) return 'read';
+  if (ACCOUNT_MUTATIONS.has(path)) return 'account';
   if (WRITE_ROUTERS.has(router) || WRITE_MUTATIONS.has(path)) return 'write';
-  return 'admin';
+  if (OWNER_MUTATIONS.has(path)) return 'owner';
+  return 'serverAdmin';
 }
 
-export type Viewer = { name: string | null; role: Role };
-
-// Where things live on the server is the operator's business: hosted, only
-// admins see filesystem paths.
+// Where things live on the server is the operator's business.
 export function seesServerPaths(viewer: Viewer | undefined): boolean {
-  return !hostedProject() || viewer?.role === 'admin';
+  return !hasAccounts() || viewer?.serverAdmin === true;
 }
 
-export async function viewerFor(token: string | undefined): Promise<Viewer> {
-  const project = hostedProject();
-  if (!project) return { name: null, role: 'admin' };
-  const user = await resolveToken(project, token);
-  return user ?? { name: null, role: 'read' };
+export function viewerFor(token: string | undefined): Viewer {
+  if (!hasAccounts()) return LOCAL_VIEWER;
+  return resolveToken(token) ?? ANONYMOUS;
+}
+
+export function mayCreateGraphs(viewer: Viewer): boolean {
+  if (viewer.serverAdmin) return true;
+  return viewer.id !== null && (viewer.canCreateGraphs || serverConfig().graphCreation === 'everyone');
+}
+
+/** The viewer's right on a graph; a graph without an owner is the server admins'. */
+export function rightOn(graph: Graph | null, viewer: Viewer): GraphRight {
+  if (viewer.serverAdmin) return 'owner';
+  if (!graph || viewer.id === null) return 'read';
+  if (graph.owner === viewer.id) return 'owner';
+  return graph.writers.includes(viewer.id) ? 'write' : 'read';
+}
+
+/** Why the viewer may not change this graph, or null when they may. */
+export function readOnlyReason(graph: Graph | null, viewer: Viewer): string | null {
+  if (rightOn(graph, viewer) !== 'read') return null;
+  return viewer.name
+    ? `This graph is open read-only for ${viewer.name}: ask its owner for write access.`
+    : 'This graph is open read-only here: log in to edit.';
 }
 
 // The message of a refused write keeps "open read-only", which the UI already
 // recognises as "editing is off here".
 export function assertAllowed(path: string, type: string, viewer: Viewer, input: unknown) {
-  const project = hostedProject();
-  if (!project) return;
+  if (!hasAccounts()) return;
   const need = neededRole(path, type);
   if (need === 'local') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is not available on a hosted instance.` });
+    throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is not available on a server with accounts.` });
   }
-  if (hostedReadOnly() && type === 'mutation' && need !== 'read') {
-    throw new TRPCError({ code: 'FORBIDDEN', message: HOSTED_READ_ONLY_MESSAGE });
+  // An unknown graph is refused here, whatever the procedure would do with it.
+  const address = (input as { projectPath?: unknown } | undefined)?.projectPath;
+  const graph = typeof address === 'string' ? resolveGraphAddress(address).graph : null;
+  if (need === 'read' || viewer.serverAdmin) return;
+  if (need === 'serverAdmin') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is for server admins.` });
   }
-  const projectPath = (input as { projectPath?: unknown } | undefined)?.projectPath;
-  if (typeof projectPath === 'string' && normalizeProjectPath(projectPath) !== project) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'This instance serves one project only.' });
+  if (need === 'account') {
+    if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
+    return;
   }
-  if (!roleAtLeast(viewer.role, need)) {
-    const message = viewer.name
-      ? `This project is open read-only for ${viewer.name}: ${need === 'admin' ? 'admins only' : 'ask an admin for write access'}.`
-      : 'This project is open read-only here: log in to edit.';
-    throw new TRPCError({ code: 'FORBIDDEN', message });
-  }
+  const right = rightOn(graph, viewer);
+  if (RIGHTS.indexOf(right) >= RIGHTS.indexOf(need)) return;
+  throw new TRPCError({
+    code: 'FORBIDDEN',
+    message: readOnlyReason(graph, viewer) ?? 'Only the owner of this graph may do this.'
+  });
 }

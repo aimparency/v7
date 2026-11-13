@@ -8,6 +8,7 @@ import { useToastStore } from '../stores/toast'
 import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost } from 'shared'
 import type { AgentType } from '../stores/watchdog'
 import { Check, X } from 'lucide-vue-next'
+import { hasAccounts } from '../utils/runtime-config'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -63,7 +64,42 @@ async function loadLinkedRepos() {
   linkedRepos.value = await trpc.linkedRepo.list.query({ projectPath: projectStore.projectPath })
 }
 
+// With accounts other people use this server: no directories of the machine,
+// no agents, so the sections about them are left out.
+const accounts = hasAccounts()
+
+// Who may use this graph. Everyone reads; its owner names the accounts that may also change it.
+const graphAccess = ref<Awaited<ReturnType<typeof trpc.graphs.getAccess.query>>>(null)
+const newWriter = ref('')
+const mayManageAccess = computed(() => dataStore.access.role === 'owner')
+
+async function loadGraphAccess() {
+  if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ projectPath: projectStore.projectPath })
+}
+
+async function setWriters(writers: string[]) {
+  try {
+    await trpc.graphs.setAccess.mutate({ projectPath: projectStore.projectPath, writers })
+    newWriter.value = ''
+    await loadGraphAccess()
+  } catch (e) {
+    useToastStore().error('Could not change who may write this graph', e)
+  }
+}
+
+async function removeGraph() {
+  if (!window.confirm(`Remove the graph "${name.value}" from this server? A graph created here is deleted with its history.`)) return
+  try {
+    await trpc.graphs.remove.mutate({ projectPath: projectStore.projectPath })
+    modalStore.closeSettingsModal()
+    projectStore.setProjectPath('')
+  } catch (e) {
+    useToastStore().error('Could not remove the graph', e)
+  }
+}
+
 async function loadDiscoveredProjects() {
+  if (accounts) return
   try {
     const result = await trpc.project.discoverLocalProjects.query()
     discoveredProjects.value = result.projects
@@ -152,7 +188,7 @@ const describeAgentRuntimeState = (agentType: AgentType) => {
 }
 
 async function loadAutonomyState() {
-  if (!projectStore.projectPath) return
+  if (!projectStore.projectPath || accounts) return
 
   const [watchdogRuntime, policy] = await Promise.all([
     trpc.watchdog.getRuntimeState.query({ projectPath: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
@@ -208,6 +244,7 @@ onMounted(async () => {
     await loadAutonomyState()
     await loadLinkedRepos()
     await loadDiscoveredProjects()
+    await loadGraphAccess()
   } catch (e) {
     console.error(e)
   } finally {
@@ -276,7 +313,7 @@ const save = async () => {
           // Explicit booleans: an absent flag would let the v4 migration re-apply its defaults.
           statuses: statuses.value.map((status) => ({ ...status, promptsReflection: !!status.promptsReflection }))
         })
-        await trpc.watchdog.updateAutonomyPolicy.mutate({
+        if (!accounts) await trpc.watchdog.updateAutonomyPolicy.mutate({
           projectPath: projectStore.projectPath,
           policy: {
             autonomyMode: autonomyMode.value,
@@ -417,7 +454,7 @@ const save = async () => {
           </div>
           <p v-else class="hint-text">No linked repos yet.</p>
 
-          <div class="add-repo-row">
+          <div v-if="!accounts" class="add-repo-row">
             <select v-model="selectedTargetPath" :disabled="availableRepoTargets.length === 0 || repoBusy">
               <option value="">
                 {{ availableRepoTargets.length === 0 ? 'No other local projects found' : 'Select a project to link…' }}
@@ -426,6 +463,28 @@ const save = async () => {
             </select>
             <button @click="addLinkedRepo" class="action-btn add-repo-btn" :disabled="!selectedTargetPath || repoBusy">Link</button>
           </div>
+        </div>
+
+        <div v-if="graphAccess" class="form-group">
+          <label>Access</label>
+          <p class="hint-text">Everyone may read this graph. {{ graphAccess.owner ?? 'The server admin' }} owns it; the accounts below may also change it.</p>
+          <div v-if="graphAccess.writers.length > 0" class="status-list">
+            <div v-for="writer in graphAccess.writers" :key="writer" class="linked-repo-row">
+              <span class="linked-repo-name">{{ writer }}</span>
+              <button
+                v-if="mayManageAccess"
+                class="delete-btn"
+                title="Take write access away"
+                @click="setWriters(graphAccess.writers.filter(other => other !== writer))"
+              ><X /></button>
+            </div>
+          </div>
+          <p v-else class="hint-text">Nobody else may change it yet.</p>
+          <div v-if="mayManageAccess" class="add-repo-row">
+            <input v-model="newWriter" type="text" placeholder="Account name" @keydown.enter="setWriters([...graphAccess.writers, newWriter.trim()])" />
+            <button class="action-btn add-repo-btn" :disabled="!newWriter.trim()" @click="setWriters([...graphAccess.writers, newWriter.trim()])">Give write access</button>
+          </div>
+          <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Remove this graph from the server</button>
         </div>
 
         <div class="form-group">
@@ -440,7 +499,7 @@ const save = async () => {
           <p v-if="issueImportResult" class="hint-text">{{ issueImportResult }}</p>
         </div>
 
-        <div class="form-group">
+        <div v-if="!accounts" class="form-group">
           <label>Agent Integration</label>
           <p class="hint-text">Injects Aimparency MCP instructions into .gemini/GEMINI.md, CLAUDE.md, etc.</p>
           <button @click="updateInstructions" class="action-btn" :disabled="isUpdatingInstructions">
@@ -451,7 +510,7 @@ const save = async () => {
           </div>
         </div>
 
-        <div class="form-group">
+        <div v-if="!accounts" class="form-group">
           <label>Autonomy Policy</label>
           <p class="hint-text">Stored in <code>{{ autonomyRuntimePath }}/autonomy-policy.json</code>.</p>
 
@@ -509,7 +568,7 @@ const save = async () => {
           </div>
         </div>
 
-        <div class="form-group">
+        <div v-if="!accounts" class="form-group">
           <label>Runtime Ownership</label>
           <p class="hint-text">Current runtime state observed from <code>{{ autonomyRuntimePath }}</code>.</p>
 
