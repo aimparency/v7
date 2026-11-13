@@ -101,6 +101,35 @@ test('errors carry no server stack trace', async () => {
   assert.equal((await path.json() as any).error.data.stack, undefined);
 });
 
+test('other websites read a server with accounts, and none of them writes', async () => {
+  await start('accounts');
+  await accounts.createAccount('ada', 'ada password');
+  const token = (await accounts.login('ada', 'ada password'))!;
+  const { body: graph } = await call('graphs.create', { name: 'Open' }, token);
+  const projectPath = graph.result.data.slug;
+  const elsewhere = 'https://another-aimparency.example';
+
+  const input = encodeURIComponent(JSON.stringify({ projectPath }));
+  const read = await fetch(`${base}/trpc/idea.list?input=${input}`, { headers: { origin: elsewhere } });
+  assert.equal(read.status, 200);
+  assert.equal(read.headers.get('access-control-allow-origin'), '*');
+  assert.equal(read.headers.get('access-control-allow-credentials'), null, 'no cookie or login rides along');
+
+  const preflight = await fetch(`${base}/trpc/idea.list`, { method: 'OPTIONS', headers: { origin: elsewhere, 'access-control-request-method': 'GET' } });
+  assert.equal(preflight.status, 204);
+  assert.match(preflight.headers.get('access-control-allow-headers')!, /authorization/);
+
+  // Even holding a valid token, a page of another website does not write.
+  const idea = { projectPath, idea: { text: 'From elsewhere' } };
+  const written = await call('idea.createFloatingIdea', idea, token, elsewhere);
+  assert.equal(written.status, 403);
+  assert.match(written.body.error.message, /Other websites may read this server/);
+  assert.equal((await call('auth.login', { name: 'ada', password: 'ada password' }, undefined, elsewhere)).status, 403);
+  // The server's own page and programs without an Origin do.
+  assert.equal((await call('idea.createFloatingIdea', idea, token, base)).status, 200);
+  assert.equal((await call('idea.createFloatingIdea', idea, token)).status, 200);
+});
+
 test('without login only pages of this machine reach the API', async () => {
   await start('none');
   const repository = path.join(root, 'repo');
@@ -108,5 +137,8 @@ test('without login only pages of this machine reach the API', async () => {
   const idea = { projectPath: repository, idea: { text: 'Mine' } };
   assert.equal((await call('idea.createFloatingIdea', idea, undefined, 'http://localhost:4000')).status, 200);
   assert.equal((await call('idea.createFloatingIdea', idea)).status, 200, 'a local program sends no Origin');
+  const foreign = await fetch(`${base}/trpc/auth.me`, { headers: { origin: 'https://evil.example' } });
+  assert.equal(foreign.status, 403);
+  assert.equal(foreign.headers.get('access-control-allow-origin'), null);
   assert.equal((await call('idea.createFloatingIdea', idea, undefined, 'https://evil.example')).status, 403);
 });

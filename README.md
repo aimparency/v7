@@ -174,6 +174,10 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   account, selected accounts, nobody); `"guestDefaults": { "notes": … }` in
   `server.json` is the default for graphs that set nothing. Agents get notes
   only through the MCP tool `list_notes`, marked as visitors' text.
+- **Other websites.** Pages of other websites may read a server with accounts
+  (the API answers them, so a graph can be shown from anywhere); they never
+  write, also not with a valid login. A login is a token the browser keeps
+  for this server's own pages; no cookie carries it.
 - **Rights.** Reading needs no account. On a graph, its owner and the accounts
   with write access change everything, including its settings and committing;
   only the owner changes who may write and removes the graph. A server admin

@@ -112,13 +112,16 @@ export const projectRouter = t.router({
     .input(z.object({
       projectPath: graphAddress
     }))
-    .query(async ({ input }) => {
+    .query(async ({ ctx, input }) => {
       // Clients call getMeta first when opening a project: warm the search index
       // and vector store now so the first idea-creation search isn't the cold
-      // one, and embed ideas that have no current embedding yet.
+      // one, and embed ideas that have no current embedding yet. Embedding costs
+      // the server, so only those who write the graph set it off: a visitor
+      // opening many graphs must not keep the server busy.
       void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
         .catch(error => console.warn('[Search] Warm-up failed:', error));
-      if (process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.projectPath).catch(console.error);
+      const writes = rightOn(findGraphByPath(input.projectPath), ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'read';
+      if (writes && process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.projectPath).catch(console.error);
       return await readProjectMeta(input.projectPath);
     }),
 

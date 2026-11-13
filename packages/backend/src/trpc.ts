@@ -1,4 +1,5 @@
-import { initTRPC } from '@trpc/server';
+import { initTRPC, TRPCError } from '@trpc/server';
+import { isAllowedBrowserOrigin } from 'shared';
 import type { IncomingMessage } from 'node:http';
 import { runWithOrigin } from './change-origin.js';
 import { hasAccounts } from 'shared/server-config';
@@ -6,7 +7,14 @@ import { assertAllowed, viewerFor, type Viewer } from './auth/access.js';
 
 // `session` is one object per connection: logging in sets its token, so the
 // same WebSocket goes on as that account without reconnecting.
-export type Context = { clientId?: string; address?: string; session?: { token?: string }; viewer?: Viewer };
+export type Context = {
+  clientId?: string;
+  address?: string;
+  session?: { token?: string };
+  /** The request comes from a page of another website (see foreignOrigin). */
+  foreignOrigin?: boolean;
+  viewer?: Viewer;
+};
 
 type ContextOptions = {
   req?: IncomingMessage;
@@ -24,6 +32,20 @@ function clientAddress(req: IncomingMessage | undefined): string | undefined {
   return remote;
 }
 
+// A page of another website: its Origin is neither this server's own address
+// nor a page on the visitor's own machine (the dev frontend on its own port).
+// Such pages may read a server with accounts, so that a graph can be shown
+// from anywhere; they never write.
+function foreignOrigin(req: IncomingMessage | undefined): boolean {
+  const origin = req?.headers.origin;
+  if (origin === undefined) return false;
+  try {
+    return new URL(origin).host !== req!.headers.host && !isAllowedBrowserOrigin(origin, process.env.BIND_HOST || undefined);
+  } catch {
+    return true;
+  }
+}
+
 // The login token comes with the WebSocket's connection params, or as a bearer
 // header over HTTP (the MCP server, scripts).
 export const createContext = (opts?: ContextOptions): Context => {
@@ -31,6 +53,7 @@ export const createContext = (opts?: ContextOptions): Context => {
   return {
     clientId: opts?.info?.connectionParams?.clientId,
     address: clientAddress(opts?.req),
+    foreignOrigin: foreignOrigin(opts?.req),
     session: { token: opts?.info?.connectionParams?.token ?? (header?.startsWith('Bearer ') ? header.slice(7) : undefined) }
   };
 };
@@ -41,6 +64,9 @@ export const t = initTRPC.context<Context>().create({
 });
 
 const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, next }) => {
+  if (ctx.foreignOrigin && type === 'mutation' && hasAccounts()) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Other websites may read this server; they do not write to it.' });
+  }
   const viewer = viewerFor(ctx.session?.token);
   assertAllowed(path, type, viewer, await getRawInput());
   return next({ ctx: { ...ctx, viewer } });

@@ -75,6 +75,20 @@ function allowedOrigin(req: http.IncomingMessage) {
   return hasAccounts() || isAllowedClientOrigin(req.headers.origin, BIND_HOST);
 }
 
+// With accounts every graph is public reading: a page of any website may ask
+// (the browser lets it see the answer only with these headers). No cookie
+// carries a login to this API, so nothing rides along with such a request;
+// writing from another website is refused in trpc.ts. True when the request
+// was a preflight and is answered.
+function answerCors(req: http.IncomingMessage, res: http.ServerResponse): boolean {
+  if (!hasAccounts()) return false;
+  res.setHeader('access-control-allow-origin', '*');
+  if (req.method !== 'OPTIONS') return false;
+  res.writeHead(204, { 'access-control-allow-methods': 'GET, POST', 'access-control-allow-headers': 'authorization, content-type', 'access-control-max-age': '600' });
+  res.end();
+  return true;
+}
+
 function logConnections(wss: WebSocketServer) {
   wss.on('connection', (ws) => {
     forgetProjectChecks(); // a (re)opened client gets a fresh migration check
@@ -123,7 +137,10 @@ function startOnePortServer() {
 
   const server = http.createServer(async (req, res) => {
     const url = req.url ?? '/';
-    if (url.startsWith('/trpc/')) return allowedOrigin(req) ? trpcHandler(req, res) : refuse(res, 'Origin not allowed');
+    if (url.startsWith('/trpc/')) {
+      if (!allowedOrigin(req)) return refuse(res, 'Origin not allowed');
+      return answerCors(req, res) || trpcHandler(req, res);
+    }
     const agents = agentsEnabled();
     const route = agents ? agentRoute(url, agentPorts) : null;
     if (route) return await isAdminRequest(req) ? proxyAgentRequest(req, res, route) : refuse(res, 'Agents are for server admins.');
@@ -184,7 +201,7 @@ export function startServer() {
       res.writeHead(403, { 'content-type': 'text/plain' });
       return res.end('Origin not allowed');
     }
-    trpcHandler(req, res);
+    if (!answerCors(req, res)) trpcHandler(req, res);
   });
 
   const wss = new WebSocketServer({
