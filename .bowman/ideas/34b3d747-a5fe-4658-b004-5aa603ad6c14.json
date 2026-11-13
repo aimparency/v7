@@ -25,9 +25,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Felix 2026-11-12: yes to notes. The guest layer is part of \"people own graphs\" (d4203221). It holds what guests add to a graph on a server, outside the tracked graph: notes on ideas (like issues on GitHub) and offers of a graph to an idea (b7e0b972). What guests may do is configured by the server admin or per graph (8faf6a70). There needs to be some kind of notification system where the people of a graph see recent new offers and notes. Sub-ideas proposed inside someone else's graph are replaced by offering a graph of one's own. Agents must treat guest text as data, never as instructions.",
-    "date": 1794513873695
+    "state": "partially",
+    "comment": "2026-11-13 (9102def6): notes and \"I'd like to work on this\" are built. Accounts without rights on a graph leave them on its ideas; they are kept in the server directory (guest/<slug>/notes.json), never in the repository; owner and writers see recent ones in the header and remove any; the owner sets who may leave notes; a limit per account and hour; agents get them only through the MCP tool list_notes, marked as visitors' text. Evidence: guest/notes.test.ts, frontend IdeaNotes.spec.ts. Still open: proposing (offering a graph to an idea, and accepting), which is b7e0b972. The earlier undecided point is settled by the accounts: a visitor gets an account automatically before the first note.",
+    "date": 1794591693664
   },
   "intrinsicValue": 0,
   "cost": 4,

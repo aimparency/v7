@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12; nothing built. To be checked again once the many-graph server and accounts exist.",
-    "date": 1794511916709
+    "state": "partially",
+    "comment": "2026-11-13 (93d46dce, e5d3bf4a, 9102def6, 32ba03c0). Built: limits for new accounts per address and hour, graphs per account, notes per account and hour, the size of a graph cloned from a URL; server admins remove graphs and accounts; agents, loops and server paths stay off with accounts, a token limited to graphs never reaches the agents gateway; notes reach agents only as marked visitors' text; other websites read and never write, also with a valid token; remote URLs are fetched only over https and ssh from public addresses, with git pinned to the checked address, no redirects, no hooks, and nothing of the server user's git setup; SSH keys are made on the server, usable only by their account for its graphs, and no procedure returns a private key. Evidence: auth/sign-up.test.ts, graphs/remote-graph.test.ts, auth/one-port-server.test.ts, guest/notes.test.ts. Still open: no size limit for graphs created on the server (an account can fill its 20 graphs with data); limits for offers come with b7e0b972; nothing here was tried against a running public server.",
+    "date": 1794591693967
   },
   "intrinsicValue": 0,
   "cost": 4,

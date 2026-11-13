@@ -22,7 +22,8 @@
         2.22
       ],
       "weight": 1,
-      "hypothesis": "An account without a form lets participants act within seconds."
+      "hypothesis": "An account without a form lets participants act within seconds.",
+      "reflection": "2026-11-13: creating a graph or leaving a note needs no form in the tests; the time it takes a participant is not measured, nobody has tried it."
     },
     {
       "ideaId": "8faf6a70-d197-4fac-a6f9-3975d776c735",
@@ -31,7 +32,8 @@
         1.43
       ],
       "weight": 1,
-      "hypothesis": "The organizers keep control of the prepared graph while participants own theirs."
+      "hypothesis": "The organizers keep control of the prepared graph while participants own theirs.",
+      "reflection": "2026-11-13: in the tests an account without rights cannot change the organizers' graph and owns the graphs it creates. Not yet tried with the organizers and participants."
     },
     {
       "ideaId": "b7e0b972-4b5e-4fce-b6c6-f47f1c3d0e45",
@@ -67,7 +69,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Felix 2026-11-12: Hack the Hub is in December 2026; enough time to build. Waits on the parts it is supported by. Onboarding must be as easy as possible: automatic accounts, no invitation links.",
+    "comment": "2026-11-13: of what this needs, built are many graphs on one server (548c5b94, waiting for Felix's look at the UI), accounts with automatic login (383e8949), access per graph (8faf6a70), notes (34b3d747) and most of the safety limits (8a303626). A participant can already create their own graph in one step and leave notes on the prepared one. Missing for the event: offering a graph to an idea and the organizers accepting (b7e0b972), then deployment on the Commons Hub server and preparing the graph.",
     "date": 1794511934463
   },
   "intrinsicValue": 0,

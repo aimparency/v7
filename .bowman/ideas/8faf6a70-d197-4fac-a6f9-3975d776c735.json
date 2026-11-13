@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built.",
-    "date": 1794511916126
+    "state": "implemented",
+    "comment": "Built 2026-11-13 (b2b6fd2a, 9102def6). Rights are per graph: owner, accounts with write access, everyone reads; the owner sets writers and who may leave notes (every account, selected accounts, nobody; server.json guestDefaults is the default) in the graph's settings or with `pnpm graphs`. Server-wide only: server admin, and whether an account may create graphs (server.json graphCreation). Write access never reaches agents, loops or server paths. Evidence: auth/auth.test.ts (owner, writer, stranger, visitor, server admin on one graph; paths refused; one graph's events only), guest/notes.test.ts (the owner's notes setting).",
+    "date": 1794591659996
   },
   "intrinsicValue": 0,
   "cost": 4,

@@ -30,7 +30,8 @@
         -3.54
       ],
       "weight": 1,
-      "hypothesis": "When an account appears without a form, people act on a graph the moment they open it, and still can keep the account later."
+      "hypothesis": "When an account appears without a form, people act on a graph the moment they open it, and still can keep the account later.",
+      "reflection": "2026-11-13: the mechanism is there: the account appears at the first action that needs one, and \"Keep account\" makes it permanent without losing what it owns. Whether people then act at once is not known: no person has used it yet."
     },
     {
       "ideaId": "8faf6a70-d197-4fac-a6f9-3975d776c735",
@@ -39,7 +40,8 @@
         3.36
       ],
       "weight": 1,
-      "hypothesis": "Rights per graph instead of per idea are enough for people to work together, and simple enough to understand without explanation."
+      "hypothesis": "Rights per graph instead of per idea are enough for people to work together, and simple enough to understand without explanation.",
+      "reflection": "2026-11-13: built, and the rights fit in one sentence (everyone reads, owner and writers change, the owner decides who writes). Whether people understand it without explanation is not known yet: nobody but the tests has used it."
     },
     {
       "ideaId": "96d638bf-f034-43df-b8e6-3ee1b4ade3da",
@@ -84,7 +86,8 @@
         -3.6
       ],
       "weight": 1,
-      "hypothesis": "When a person can connect an agent to chosen graphs in one approval step, agents work on hosted graphs without receiving more rights than the task needs."
+      "hypothesis": "When a person can connect an agent to chosen graphs in one approval step, agents work on hosted graphs without receiving more rights than the task needs.",
+      "reflection": "2026-11-13: one approval step exists in both forms, and in the tests a token limited to chosen graphs writes only those and has none of the account's server-wide rights. Not yet tried with a real agent on a hosted graph."
     }
   ],
   "supportedIdeas": [
@@ -92,9 +95,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Decided by Felix as the direction on 2026-11-12 and planned in parts the same day: many graphs on one server (548c5b94), accounts (383e8949), access per graph (8faf6a70), proposing (b7e0b972), safety (8a303626), links by host URL (96d638bf), the web app across servers (588568b7). First use: Hack the Hub in December 2026 (96e9fc41). Nothing built yet. Felix: this implicitly solves the scaling problem, and it is like intention-connections between open-source repos. Cancelled as replaced: fcb38df6, 698badcb, b9744739.",
-    "date": 1794511063817
+    "state": "partially",
+    "comment": "2026-11-13: the server is built (commits b2b6fd2a to e2eaf826): many graphs on one server, accounts, access per graph, notes, safety limits, MCP authentication; see 548c5b94 (in review for Felix's look at the UI), 383e8949, 8faf6a70, e34b5ff1, 34b3d747, 8a303626. Open: proposing a graph to an idea and accepting (b7e0b972), links stored by host URL with their migration (96d638bf), and the web app following links to other servers (588568b7).",
+    "date": 1794591704477
   },
   "intrinsicValue": 0,
   "cost": 8,

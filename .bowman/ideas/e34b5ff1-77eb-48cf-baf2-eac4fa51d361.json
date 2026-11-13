@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built. Needs accounts (383e8949) and access per graph (8faf6a70).",
-    "date": 1794517348763
+    "state": "implemented",
+    "comment": "Built 2026-11-13 (50e24bd6, e2eaf826). Two ways. In the UI, \"MCP\" in the account corner: choose all graphs or a selection, get a link shown once, list and revoke connected clients. Or the client logs in by itself at <host>/mcp/login/sse (OAuth 2.1 with PKCE and client registration on the MCP SDK's router, needs server.json publicUrl): it opens the server's page, the person chooses graphs and approves. Either way the token is the account on the chosen graphs and nobody elsewhere. A graph's own address (<host>/g/<slug>/mcp/sse) serves a session whose tools need no projectPath. Evidence: backend auth/auth.test.ts (limited token), auth/mcp-clients.test.ts; mcp oauth.test.ts runs the whole login with the SDK's own client code (discovery, registration, authorization page, PKCE, token, session). Not tried: a real MCP client such as Claude Code against a running server. Still undecided: the agent appears under the person's name; a name of its own was not designed.",
+    "date": 1794591660658
   },
   "intrinsicValue": 0,
   "cost": 4,

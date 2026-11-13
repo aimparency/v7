@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built. Needs the link by server address first.",
+    "comment": "2026-11-13 (32ba03c0): the server side exists. A server with accounts answers pages of any origin for reading and refuses their writes (auth/one-port-server.test.ts). Not built: the web app loading a linked graph from another server and expanding it in place, and the value and priority rules across graphs.",
     "date": 1794511916405
   },
   "intrinsicValue": 0,

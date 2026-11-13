@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built. Foundation for the other parts of d4203221. Felix 2026-11-12: this supersedes today's hosted mode (af701cd6) and read-only mode (06d83e94); whoever has access to a graph has full access to its repo, so there are no worktrees per user (53a03e76 cancelled).",
-    "date": 1794511915803
+    "state": "review",
+    "comment": "Built 2026-11-13 (b2b6fd2a, e5d3bf4a). One server described by a server directory (AIMPARENCY_SERVER_DIR: server.json, accounts.json, graphs.json) replaces hosted, read-only and local mode. Graphs are addressed by slug (/g/<slug>); created on the server as a git repository of their own, added from a Git URL (only .bowman cloned, pushed back with an SSH key the server makes), or a checkout listed with `pnpm graphs add`. Commit and push in the UI for owner and writers; the git author falls back to server.json gitAuthor. Evidence: backend tests auth.test.ts, one-port-server.test.ts (the server over real HTTP on a private port), graphs/remote-graph.test.ts (clone, key, commit, push, pull against a bare repository); `pnpm check` 25 of 25; the running dev stack still opens this repo by path. Not seen by me: the UI with accounts on in a browser, because starting an instance was refused. Question for Felix: run `pnpm start --setup`, answer yes to other people, and try creating a graph and adding one from a Git URL. Does it work and look right?",
+    "date": 1794591658441
   },
   "intrinsicValue": 0,
   "cost": 6,

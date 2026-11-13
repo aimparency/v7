@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; kinds of login and the wallet approach decided the same day; nothing built.",
-    "date": 1794511915953
+    "state": "implemented",
+    "comment": "Built 2026-11-13 (b2b6fd2a, 93d46dce, abadab76). Accounts belong to the server (accounts.json in the server directory). Ways in, each a server.json setting: open sign-up; an automatic account held by a key in the browser, created at the first action that needs one, with \"Keep account\" recommending a name and password; invitations for one person or for anyone, optionally with an end date; login with a crypto wallet (Sign-In with Ethereum checked by the server itself with viem, wallets found through EIP-6963). Logging in changes the open connection, the page no longer reloads. Evidence: auth/sign-up.test.ts, auth/wallet.test.ts (real signatures from generated keys, replay and other-domain messages refused), frontend LoginControl.spec.ts. Not included: direct mobile wallet integrations, email, contract wallets, and showing agents on the ideas they work on (not designed). Deviation from what Felix said: the browser key is kept in IndexedDB with a private half scripts cannot read out, not in local storage.",
+    "date": 1794591660351
   },
   "intrinsicValue": 0,
   "cost": 5,
