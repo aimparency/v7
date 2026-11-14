@@ -564,9 +564,13 @@ export function useGraphInteraction(
         }
         // Repo and unreadable-idea nodes have no idea detail to select or track
         // (the label tooltip shows an unreadable idea's error); never select
-        // them as ideas. A linked graph with an address opens on its server.
+        // them as ideas. A linked graph with an address opens in place on
+        // click; an idea inside it opens its graph on its own server.
         if (!isIdeaNode(node)) {
-            if (node.host && !mapStore.cursorMoved) window.open(node.host, '_blank', 'noopener')
+            if (node.host && !mapStore.cursorMoved) {
+                if (node.isRepo) void dataStore.toggleLinkedGraph(node.id)
+                else window.open(node.host, '_blank', 'noopener')
+            }
             return
         }
 

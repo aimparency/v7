@@ -1,6 +1,6 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { fetchGraphAtHost, parseGraphHost } from './graph-host.js';
+import { fetchGraphAtHost, fetchIdeasAtHost, parseGraphHost, spreadInflow } from './graph-host.js';
 
 test('a graph address is the origin and the slug of the page URL', () => {
   assert.deepStrictEqual(parseGraphHost(' https://hub.example.org/g/commons-hub/?x=1#top '), { origin: 'https://hub.example.org', slug: 'commons-hub' });
@@ -25,4 +25,15 @@ test('an unreachable or unknown graph says so', async () => {
   await assert.rejects(fetchGraphAtHost('https://hub.example.org/g/x', (async () => { throw new TypeError('fetch failed'); }) as typeof fetch), /cannot be reached/);
   await assert.rejects(fetchGraphAtHost('https://hub.example.org/g/x', (async () => new Response('{}', { status: 404 })) as typeof fetch), /no graph "x"/);
   await assert.rejects(fetchGraphAtHost('not a url'), /not the address of a graph/);
+});
+
+test('the ideas at a host are read through its API, unparsable ones left out', async () => {
+  const idea = { id: '33333333-3333-4333-8333-333333333333', text: 'Garden', supportingConnections: [], supportedIdeas: [], committedIn: [], status: { state: 'open', comment: '', date: 1 } };
+  const fake = (async () => new Response(JSON.stringify({ result: { data: { ideas: [idea, { id: 'broken' }], unreadable: [] } } }))) as typeof fetch;
+  const ideas = await fetchIdeasAtHost('https://hub.example.org/g/commons-hub', fake);
+  assert.deepStrictEqual(ideas.map((i) => i.text), ['Garden']);
+});
+
+test('the inflow takes the place of the linked graph\'s whole intrinsic value', () => {
+  assert.deepStrictEqual([...spreadInflow(0.4, new Map([['top', 0.5], ['child', 1]]))], [['top', 0.2], ['child', 0.4]]);
 });

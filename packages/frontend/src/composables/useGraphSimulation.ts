@@ -36,12 +36,13 @@ export interface GraphNode {
   freezeCounter?: number
   loadable?: boolean
   isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
-  host?: string // a linked graph's address on its server; clicking the node opens it
+  host?: string // a linked graph's address on its server
+  linked?: boolean // an idea of a linked graph opened in place: read-only here
   unreadable?: string // load error of an idea file the backend cannot read (read-only warning node)
 }
 
 // A real, editable idea: not a linked-repo box or an unreadable-idea warning.
-export const isIdeaNode = (node: Pick<GraphNode, 'isRepo' | 'unreadable'>) => !node.isRepo && !node.unreadable
+export const isIdeaNode = (node: Pick<GraphNode, 'isRepo' | 'unreadable' | 'linked'>) => !node.isRepo && !node.unreadable && !node.linked
 
 export interface GraphLink {
   source: GraphNode
@@ -155,12 +156,14 @@ export function useGraphSimulation() {
       visibleSet = new Set(filter.visibleIds)
       loadableSet = new Set(filter.loadableIds)
       const allowedIds = new Set([...filter.visibleIds, ...filter.loadableIds])
-      // Repo and unreadable nodes belong to no phase, so they'd be filtered out
-      // by id. Keep their links to visible ideas, and let them ride along.
-      const unphasedIds = new Set(allRawNodes.filter(n => n.isRepo || n.unreadable).map(n => n.id))
+      // Repo, unreadable and opened linked-graph nodes belong to no phase, so
+      // they'd be filtered out by id. Keep their links to visible ideas, and
+      // let them ride along; a linked graph's ideas hang on its node.
+      const unphasedIds = new Set(allRawNodes.filter(n => n.isRepo || n.unreadable || n.linked).map(n => n.id))
+      const linkedGraphIds = new Set(allRawNodes.filter(n => n.linked).map(n => n.id))
       const kept = (id: string) => allowedIds.has(id) || unphasedIds.has(id)
       rawLinks = allRawLinks.filter(l =>
-        kept(l.source) && kept(l.target) && (allowedIds.has(l.source) || allowedIds.has(l.target))
+        kept(l.source) && kept(l.target) && (allowedIds.has(l.source) || allowedIds.has(l.target) || linkedGraphIds.has(l.source))
       )
       const linkedIds = new Set(rawLinks.flatMap(l => [l.source, l.target]))
       rawNodes = allRawNodes.filter(n => allowedIds.has(n.id) || (unphasedIds.has(n.id) && linkedIds.has(n.id)))
@@ -197,7 +200,8 @@ export function useGraphSimulation() {
 
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
-        const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [Math.random() * 100 - 50, Math.random() * 100 - 50]
+        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : undefined
+        const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [(near?.[0] ?? 0) + Math.random() * 100 - 50, (near?.[1] ?? 0) + Math.random() * 100 - 50]
         existing = {
           id: raw.id,
           text: raw.text,
@@ -214,6 +218,7 @@ export function useGraphSimulation() {
           loadable: isLoadable,
           isRepo: raw.isRepo ?? false,
           host: raw.host,
+          linked: raw.linked,
           unreadable: raw.unreadable
         }
         nodeMap.set(raw.id, existing)
@@ -227,6 +232,7 @@ export function useGraphSimulation() {
         existing.loadable = isLoadable
         existing.isRepo = raw.isRepo ?? false
         existing.host = raw.host
+        existing.linked = raw.linked
         existing.unreadable = raw.unreadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }

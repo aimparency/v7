@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
-import { calculateIdeaValues, defaultIdeaCost, INITIAL_STATES, toProjectRoot } from 'shared'
+import { calculateIdeaValues, defaultIdeaCost, fetchIdeasAtHost, INITIAL_STATES, spreadInflow, toProjectRoot } from 'shared'
 import { trpc } from '../trpc'
 import { followIdeaActivity } from '../utils/idea-activity-feed'
 import { backendConnection } from '../utils/backend-connection'
@@ -44,6 +44,16 @@ const isMissingFileError = (error: unknown) => {
 // not tinted by any internal idea's status. (Tinting by the linked repo's own
 // meta color, when checked out, is a later refinement.)
 const REPO_NODE_COLOR = '#9e9e9e'
+
+// A linked graph opened in place: its ideas, loaded by the browser from the
+// server hosting it, with the values that graph gives them itself.
+type LinkedGraphView =
+  | { state: 'loading' }
+  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number> }
+  | { state: 'unavailable' }
+
+// Ideas of an opened linked graph get ids of their own in this graph.
+export const linkedIdeaNodeId = (repoId: string, ideaId: string) => `${repoId}:${ideaId}`
 const UNREADABLE_NODE_COLOR = '#f85149'
 
 // Extend Phase type with UI-only properties
@@ -224,6 +234,9 @@ export const useDataStore = defineStore('data', {
     
     // Floating ideas
     floatingIdeasIds: [] as string[],
+
+    // Linked graphs opened in place, by repoId.
+    linkedGraphViews: {} as Record<string, LinkedGraphView>,
     
     // Calculated values
     calculatedValues: new Map<string, number>(),
@@ -374,6 +387,8 @@ export const useDataStore = defineStore('data', {
         value: state.calculatedValues.get(idea.id) || 0, // Add value here for graph
         isRepo: false, // real idea node (vs. a black-box linked-repo node, below)
         host: undefined as string | undefined, // a linked graph's address on its server (repo nodes, below)
+        linked: false, // an idea of a linked graph opened in place (read-only, below)
+        spawnNear: undefined as string | undefined, // node a new node first appears next to
         unreadable: undefined as string | undefined // load error of a warning node (below)
       }))
 
@@ -422,6 +437,8 @@ export const useDataStore = defineStore('data', {
           value: 0,
           isRepo: false,
           host: undefined,
+          linked: false,
+          spawnNear: undefined,
           unreadable: entry.error
         })
         entry.supportingIdeaIds.forEach(childId => {
@@ -448,9 +465,11 @@ export const useDataStore = defineStore('data', {
           if (!repoNodeIds.has(repoId)) {
             repoNodeIds.add(repoId)
             const linked = linkedRepoById.get(repoId)
+            const view = state.linkedGraphViews[repoId]
+            const name = linked?.name ?? `repo:${repoId.slice(0, 8)}`
             nodes.push({
               id: repoId,
-              text: linked?.name ?? `repo:${repoId.slice(0, 8)}`,
+              text: view?.state === 'unavailable' ? `${name} (not available)` : name,
               status: 'open',
               // Neutral grey: a black box, not tinted by an internal idea's status.
               color: REPO_NODE_COLOR,
@@ -464,6 +483,8 @@ export const useDataStore = defineStore('data', {
               value: state.calculatedValues.get(repoId) || 0,
               isRepo: true,
               host: linked?.host,
+              linked: false,
+              spawnNear: undefined,
               unreadable: undefined
             })
           }
@@ -482,11 +503,65 @@ export const useDataStore = defineStore('data', {
         })
       })
 
+      // Linked graphs opened in place: their ideas hang below the graph's
+      // node and share out the value flowing into it. Read-only here.
+      for (const [repoId, view] of Object.entries(state.linkedGraphViews)) {
+        if (view.state !== 'shown' || !repoNodeIds.has(repoId)) continue
+        const values = spreadInflow(state.calculatedValues.get(repoId) || 0, view.ownValues)
+        const ids = new Set(view.ideas.map(idea => idea.id))
+        const host = linkedRepoById.get(repoId)?.host
+        for (const idea of view.ideas) {
+          const id = linkedIdeaNodeId(repoId, idea.id)
+          nodes.push({
+            id,
+            text: idea.text,
+            status: idea.status.state,
+            color: idea.color ?? undefined,
+            depth: 0,
+            x: 0,
+            y: 0,
+            vx: 0,
+            vy: 0,
+            fx: null as number | null,
+            fy: null as number | null,
+            value: values.get(idea.id) || 0,
+            isRepo: false,
+            host,
+            linked: true,
+            spawnNear: repoId,
+            unreadable: undefined
+          })
+          const parents = idea.supportedIdeas.filter(parent => ids.has(parent))
+          for (const parent of parents.length ? parents.map(p => linkedIdeaNodeId(repoId, p)) : [repoId]) {
+            links.push({ source: id, target: parent, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0, attributionShare: 0 })
+          }
+        }
+      }
+
       return { nodes, links }
     }
   },
 
   actions: {
+    // Opens a linked graph in place, or closes it again. The browser loads it
+    // from the server hosting it; that server may be down.
+    async toggleLinkedGraph(repoId: string) {
+      if (this.linkedGraphViews[repoId]?.state === 'shown') {
+        delete this.linkedGraphViews[repoId]
+        return
+      }
+      const host = this.meta?.linkedRepos?.find((link: { repoId: string; host?: string }) => link.repoId === repoId)?.host
+      if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
+      this.linkedGraphViews[repoId] = { state: 'loading' }
+      try {
+        const ideas = await fetchIdeasAtHost(host)
+        this.linkedGraphViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values }
+      } catch (error) {
+        this.linkedGraphViews[repoId] = { state: 'unavailable' }
+        useToastStore().warning(`Not available: ${error instanceof Error ? error.message : String(error)}`)
+      }
+    },
+
     async ensureProjectMeta(projectPath: string, options: { force?: boolean } = {}) {
       if (!projectPath) return this.meta
       if (!options.force && this.meta) {
@@ -1040,6 +1115,7 @@ export const useDataStore = defineStore('data', {
       this.unreadableIdeas = [];
       this.floatingIdeasIds = [];
       this.calculatedValues = new Map();
+      this.linkedGraphViews = {};
       this.calculatedCosts = new Map();
       this.calculatedDoneCosts = new Map();
       this.calculatedPriorities = new Map();
