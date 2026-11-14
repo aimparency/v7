@@ -150,6 +150,16 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.phaseSearchPromptAdditionalOptions = []
     },
 
+    // Navigate to an idea from anywhere: one path to it is followed directly,
+    // several are offered to choose from.
+    openPathsModal(ideaId: string) {
+      this.ideaSearchInitialIdeaId = ideaId
+      this.ideaSearchShowParentPaths = false
+      this.ideaSearchMode = 'navigate'
+      this.ideaSearchCallback = null
+      this.showIdeaSearch = true
+    },
+
     openParentPathsModal(ideaId: string) {
       // Open search modal in path selection mode showing all paths to parent ideas
       this.ideaSearchInitialIdeaId = ideaId
