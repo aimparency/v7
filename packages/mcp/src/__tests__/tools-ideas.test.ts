@@ -612,3 +612,68 @@ test('update_ideas applies several updates in order and stops at the first failu
   assert.deepEqual((await caller.idea.get({ graph: ctx.projectPath, ideaId: first })).tags, ['kept']);
   assert.deepEqual((await caller.idea.get({ graph: ctx.projectPath, ideaId: second })).tags, ['batched']);
 });
+
+test('a new idea takes a share of its parent in percent; the siblings and the loop fill the rest', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+  const graph = ctx.projectPath;
+
+  await createIdea(server, { graph, text: 'Share parent' });
+  const parentId = (await caller.idea.list({ graph })).find((idea) => idea.text === 'Share parent')!.id;
+  await createIdea(server, { graph, text: 'Older sibling', supportedIdeas: [parentId] });
+  const siblingId = (await caller.idea.list({ graph })).find((idea) => idea.text === 'Older sibling')!.id;
+
+  const args = { graph, text: 'Newcomer', supportedIdeas: [{ ideaId: parentId, share: 60 }] };
+  const review = JSON.parse((await server.callTool('create_idea', args)).content[0].text);
+  assert.match(review.parentSplits, /50% Older sibling/, 'the review shows the split the share is judged against');
+  assert.match(review.parentSplits, /50% loop/);
+
+  const created = await server.callTool('create_idea', { ...args, confirmationToken: review.confirmationToken });
+  assert.match(created.content[0].text, /60% → Newcomer/);
+  assert.match(created.content[0].text, /20% Older sibling/);
+
+  const parent = await caller.idea.get({ graph, ideaId: parentId });
+  const newcomerId = parent.supportingConnections.find((conn) => conn.ideaId !== siblingId)!.ideaId;
+  assert.strictEqual(parent.supportingConnections.find((conn) => conn.ideaId === newcomerId)!.weight, 60);
+  assert.strictEqual(parent.supportingConnections.find((conn) => conn.ideaId === siblingId)!.weight, 20);
+  assert.strictEqual(parent.selfWeight, 20);
+
+  // Naming the sibling and the loop as well sets the whole split.
+  const updated = await server.callTool('update_idea', {
+    graph,
+    ideaId: newcomerId,
+    addSupportedIdeas: [{ ideaId: parentId, share: 30, siblingShares: { [siblingId]: 70 }, loopShare: 0 }],
+  });
+  assert.match(updated.content[0].text, /30% → Newcomer/);
+  const reshared = await caller.idea.get({ graph, ideaId: parentId });
+  assert.deepStrictEqual(
+    reshared.supportingConnections.map((conn) => [conn.ideaId, conn.weight]).sort(),
+    [[newcomerId, 30], [siblingId, 70]].sort(),
+  );
+  assert.strictEqual(reshared.selfWeight, 0);
+
+  // A share that leaves nothing for the sibling is refused before anything is written.
+  const refused = await server.callTool('update_idea', { graph, ideaId: newcomerId, addSupportedIdeas: [{ ideaId: parentId, share: 100 }] });
+  assert.ok(refused.isError);
+  assert.match(refused.content[0].text, /nothing for its other children/);
+  assert.strictEqual((await caller.idea.get({ graph, ideaId: parentId })).supportingConnections.length, 2);
+});
+
+test('an idea sets its own children and loop share in percent', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+  const graph = ctx.projectPath;
+
+  await createIdea(server, { graph, text: 'Owner' });
+  await createIdea(server, { graph, text: 'Part' });
+  const ideas = await caller.idea.list({ graph });
+  const ownerId = ideas.find((idea) => idea.text === 'Owner')!.id;
+  const partId = ideas.find((idea) => idea.text === 'Part')!.id;
+
+  const result = await server.callTool('update_idea', { graph, ideaId: ownerId, addSupportingConnections: [{ ideaId: partId, share: 40 }] });
+  assert.match(result.content[0].text, /40% Part/);
+  assert.match(result.content[0].text, /60% loop/);
+  const owner = await caller.idea.get({ graph, ideaId: ownerId });
+  assert.strictEqual(owner.supportingConnections[0]!.weight, 40);
+  assert.strictEqual(owner.selfWeight, 60);
+});

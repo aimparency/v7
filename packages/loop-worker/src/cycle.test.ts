@@ -50,6 +50,7 @@ function fakeGraph(ideas: any[], targetId: string, similar: any[] = []) {
   const backend = {
     idea: {
       get: { query: async ({ ideaId }: any) => byId.get(ideaId) },
+      getMany: { query: async ({ ideaIds }: any) => ideaIds.flatMap((ideaId: string) => byId.get(ideaId) ?? []) },
       update: { mutate: async (input: any) => { writes.push(['update', input]); } },
       search: { query: async () => [] },
       createFloatingIdea: { mutate: async (input: any) => { writes.push(['create', input]); return { id: '99999999-9999-4999-8999-999999999999' }; } },

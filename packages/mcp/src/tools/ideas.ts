@@ -3,7 +3,8 @@ import { IDEA_STATES_DESCRIPTION, GRAPH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea, formatIdeas, describeRepoEdges } from "./format.js";
-import { connectionInputSchema, normalizeConnectionInput, toStoredConnection, type ConnectionInput } from "./connections.js";
+import { connectionInputSchema, normalizeConnectionInput, setsShares, toStoredConnection, type ConnectionInput } from "./connections.js";
+import { applyShares, describeShares, SHARE_GUIDE, validatePercent, type ShareRequest } from "./shares.js";
 import { createHash } from "crypto";
 
 /**
@@ -25,6 +26,59 @@ export function verificationHintForIdea(
   if (has(/\b(refactor|implement|backend|api|tool|schema|mcp|endpoint|function|module|migration|test|type-?check)\b/))
     return "tests + typecheck passing — cite exactly what you ran";
   return "what you ran/checked to confirm it actually works — tests, a repro, or a screenshot";
+}
+
+type Connection = Exclude<ConnectionInput, string>;
+type IdeaRecord = Awaited<ReturnType<BackendClient["idea"]["get"]["query"]>>;
+
+// A parent edge's shares in percent: the child's own plus its siblings'.
+function parentShareRequest(parent: Connection, childId: string): ShareRequest | undefined {
+  if (!setsShares(parent)) return undefined;
+  const shares = new Map(Object.entries(parent.siblingShares ?? {}));
+  if (parent.share !== undefined) shares.set(childId, parent.share);
+  return { shares, loopShare: parent.loopShare };
+}
+
+// The shares an idea sets on its own children, and the loop share it keeps.
+function childShareRequest(children: Connection[], loopShare: unknown): ShareRequest | undefined {
+  const shares = new Map(children.filter((child) => child.share !== undefined).map((child) => [child.ideaId, child.share!]));
+  if (shares.size === 0 && loopShare === undefined) return undefined;
+  return { shares, loopShare: loopShare === undefined ? undefined : validatePercent(loopShare, "loopShare", true) };
+}
+
+// The parent as it is about to be, with the child linked if it is not yet.
+function withChild(parent: IdeaRecord, childId: string): IdeaRecord {
+  return parent.supportingConnections.some((conn) => conn.ideaId === childId)
+    ? parent
+    : { ...parent, supportingConnections: [...parent.supportingConnections, { ideaId: childId, weight: 1, relativePosition: [0, 0] }] };
+}
+
+function shareUpdate(idea: IdeaRecord, request: ShareRequest) {
+  const next = applyShares(idea, request);
+  return {
+    supportingConnections: next.supportingConnections,
+    selfWeight: next.selfWeight,
+    ...(idea.supportingRepos?.length ? { supportingRepos: next.supportingRepos } : {}),
+  };
+}
+
+async function setShares(trpcClient: BackendClient, graph: string, ideaId: string, request: ShareRequest) {
+  const idea = await trpcClient.idea.get.query({ graph, ideaId });
+  await trpcClient.idea.update.mutate({ graph, ideaId, idea: shareUpdate(idea, request) });
+}
+
+// Each idea's split in percent, for the agent to judge a share against its siblings.
+async function describeSplits(trpcClient: BackendClient, graph: string, ideaIds: string[], focusId?: string): Promise<string> {
+  if (ideaIds.length === 0) return "";
+  const ideas = await trpcClient.idea.getMany.query({ graph, ideaIds: [...new Set(ideaIds)] });
+  const childIds = [...new Set(ideas.flatMap((idea) => idea.supportingConnections.map((conn) => conn.ideaId)))];
+  const children = await trpcClient.idea.getMany.query({ graph, ideaIds: childIds });
+  const texts = new Map(children.map((child) => [child.id, child.text]));
+  return ideas.map((idea) => describeShares(idea, texts, focusId)).join("\n\n");
+}
+
+function splitsSection(splits: string): string {
+  return splits ? `\n\n${splits}\n\nIs each share right next to its siblings? Adjust with share (percent). ${SHARE_GUIDE}` : "";
 }
 
 /**
@@ -234,8 +288,9 @@ export const ideaTools: ToolDefinition[] = [
             reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
           },
         },
-        supportingConnections: connectionInputSchema("Child ideas: UUIDs or { ideaId, weight, hypothesis }."),
-        supportedIdeas: connectionInputSchema("Parent ideas this one serves: UUIDs or { ideaId, weight, hypothesis } for the parent→new-idea edge."),
+        supportingConnections: connectionInputSchema("Child ideas: UUIDs or { ideaId, share, hypothesis }."),
+        supportedIdeas: connectionInputSchema("Parent ideas this one serves: UUIDs or { ideaId, share, siblingShares, loopShare, hypothesis } for the parent→new-idea edge. The review call shows each parent's current split in percent.", true),
+        loopShare: { type: "number", description: "Percent of its value this idea keeps for its own work, next to the shares of its children" },
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
         cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit, compared against the related ideas' costs from the review call. Optional but expected: without it the idea is ranked at the project's default cost and graph_hygiene lists it as unestimated" },
@@ -252,15 +307,19 @@ export const ideaTools: ToolDefinition[] = [
       if (args.duration !== undefined && (!Number.isFinite(args.duration) || (args.duration as number) < 0)) {
         throw new Error("Duration must be a finite number greater than or equal to 0 days.");
       }
+      const parents = ((args.supportedIdeas as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
+      const children = ((args.supportingConnections as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
+      const ownShares = childShareRequest(children, args.loopShare);
       const expectedToken = ideaCreationConfirmationToken(args);
       if (args.confirmationToken === undefined) {
-        const [related, projectMeta] = await Promise.all([
+        const [related, projectMeta, parentSplits] = await Promise.all([
           trpcClient.idea.search.query({
             graph: args.graph as string,
             query: args.text as string,
             limit: 8,
           }),
           trpcClient.project.getMeta.query({ graph: args.graph as string }).catch(() => null),
+          describeSplits(trpcClient, args.graph as string, parents.map((parent) => parent.ideaId)),
         ]);
         return {
           content: [{
@@ -277,6 +336,9 @@ export const ideaTools: ToolDefinition[] = [
                 ? `No cost given. Estimate the idea's direct cost in ${projectMeta?.costUnit || "the project's abstract cost units"} ` +
                   "(its own work, not its children's) relative to the related ideas' costs, and pass it as cost. " +
                   `Without it the idea is ranked at the default cost ${defaultIdeaCost(projectMeta)} and graph_hygiene lists it as unestimated.`
+                : undefined,
+              parentSplits: parentSplits
+                ? `${parentSplits}\n\nHow much of each parent does the new idea carry next to these? Pass share on its supportedIdeas entry. ${SHARE_GUIDE}`
                 : undefined,
               relatedIdeas: related.map((idea) => ({
                 id: idea.id,
@@ -297,7 +359,26 @@ export const ideaTools: ToolDefinition[] = [
         );
       }
 
-      const parents = (args.supportedIdeas as ConnectionInput[]) || [];
+      // Check every share before writing anything, against a stand-in for the new idea.
+      const pendingId = "the new idea";
+      const parentRequests = parents.map((parent) => parentShareRequest(parent, pendingId));
+      const parentIdeas = parentRequests.some(Boolean)
+        ? await trpcClient.idea.getMany.query({ graph: args.graph as string, ideaIds: parents.map((parent) => parent.ideaId) })
+        : [];
+      parents.forEach((parent, index) => {
+        const request = parentRequests[index];
+        const parentIdea = parentIdeas.find((idea) => idea.id === parent.ideaId);
+        if (request && !parentIdea) throw new Error(`Parent idea ${parent.ideaId} not found.`);
+        if (request) applyShares(withChild(parentIdea!, pendingId), request);
+      });
+      if (ownShares) {
+        applyShares({
+          id: pendingId,
+          selfWeight: 1,
+          supportingConnections: children.map((child) => ({ ideaId: child.ideaId, weight: child.weight ?? 1, relativePosition: [0, 0] })),
+        }, ownShares);
+      }
+
       const result = await trpcClient.idea.createFloatingIdea.mutate({
         graph: args.graph as string,
         idea: {
@@ -314,13 +395,11 @@ export const ideaTools: ToolDefinition[] = [
           cost: args.cost as number | undefined,
           duration: args.duration as number | undefined,
         },
-        inheritColorFrom: parents[0] && normalizeConnectionInput(parents[0]).ideaId,
+        inheritColorFrom: parents[0]?.ideaId,
       });
 
       // Handle supportingConnections (children)
-      const children = (args.supportingConnections as ConnectionInput[]) || [];
-      for (const childInput of children) {
-        const child = normalizeConnectionInput(childInput);
+      for (const child of children) {
         await trpcClient.idea.connectIdeas.mutate({
           graph: args.graph as string,
           parentIdeaId: result.id,
@@ -331,8 +410,7 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       // Handle supportedIdeas (parents)
-      for (const parentInput of parents) {
-        const parent = normalizeConnectionInput(parentInput);
+      for (const parent of parents) {
         await trpcClient.idea.connectIdeas.mutate({
           graph: args.graph as string,
           parentIdeaId: parent.ideaId,
@@ -340,7 +418,10 @@ export const ideaTools: ToolDefinition[] = [
           weight: parent.weight,
           hypothesis: parent.hypothesis,
         });
+        const request = parentShareRequest(parent, result.id);
+        if (request) await setShares(trpcClient, args.graph as string, parent.ideaId, request);
       }
+      if (ownShares) await setShares(trpcClient, args.graph as string, result.id, ownShares);
 
       // If phaseId provided, commit to phase
       if (args.phaseId) {
@@ -356,7 +437,13 @@ export const ideaTools: ToolDefinition[] = [
           {
             type: "text",
             text: `Created idea with ID: ${result.id}${args.phaseId ? ` and committed to phase ${args.phaseId}` : ''}` +
-              (args.cost === undefined ? ". It has no cost estimate yet: set one via update_idea." : ""),
+              (args.cost === undefined ? ". It has no cost estimate yet: set one via update_idea." : "") +
+              splitsSection(await describeSplits(
+                trpcClient,
+                args.graph as string,
+                [...parents.map((parent) => parent.ideaId), ...(ownShares ? [result.id] : [])],
+                result.id,
+              )),
           },
         ],
       };
@@ -381,14 +468,15 @@ export const ideaTools: ToolDefinition[] = [
             reviewedAt: { type: "number", description: "Timestamp confirming status and intention still hold (keeps the transition date)." },
           },
         },
-        addSupportingConnections: connectionInputSchema("Add child links, or update weight/hypothesis/reflection of existing ones."),
+        addSupportingConnections: connectionInputSchema("Add child links, or update share/hypothesis/reflection of existing ones."),
         removeSupportingConnections: { type: "array", items: { type: "string" }, description: "Child idea UUIDs to unlink." },
-        addSupportedIdeas: connectionInputSchema("Add parent links, or update weight/hypothesis/reflection of the parent→this-idea edge (reflect on the hypothesis once this idea is settled)."),
+        addSupportedIdeas: connectionInputSchema("Add parent links, or update share/hypothesis/reflection of the parent→this-idea edge (reflect on the hypothesis once this idea is settled). The reply shows each parent's split in percent.", true),
         removeSupportedIdeas: { type: "array", items: { type: "string" }, description: "Parent idea UUIDs to unlink." },
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
         cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics)" },
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
+        loopShare: { type: "number", description: "Percent of its value this idea keeps for its own work, next to the shares of its children" },
       },
       required: ["graph", "ideaId"],
     },
@@ -405,28 +493,47 @@ export const ideaTools: ToolDefinition[] = [
       if (fields.cost !== undefined) updateData.cost = fields.cost;
       if (fields.duration !== undefined) updateData.duration = fields.duration;
 
-      const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; hypothesis?: string; reflection?: string }> = [];
+      const graph = args.graph as string;
+      const ideaId = args.ideaId as string;
+      const addedChildren = ((args.addSupportingConnections as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
+      const addedParents = ((args.addSupportedIdeas as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
+      const ownShares = childShareRequest(addedChildren, args.loopShare);
+      const parentMetadataToApply: Array<{ parentIdeaId: string; weight?: number; hypothesis?: string; reflection?: string; shares?: ShareRequest }> = [];
+
+      // Check every parent's shares before writing anything.
+      const parentRequests = addedParents.map((parent) => parentShareRequest(parent, ideaId));
+      if (parentRequests.some(Boolean)) {
+        const parentIdeas = await trpcClient.idea.getMany.query({ graph, ideaIds: addedParents.map((parent) => parent.ideaId) });
+        addedParents.forEach((parent, index) => {
+          const request = parentRequests[index];
+          const parentIdea = parentIdeas.find((idea) => idea.id === parent.ideaId);
+          if (request && !parentIdea) throw new Error(`Parent idea ${parent.ideaId} not found.`);
+          if (request) applyShares(withChild(parentIdea!, ideaId), request);
+        });
+      }
 
       if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
-          args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
+          args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined || ownShares) {
         const existingIdea = await trpcClient.idea.get.query({
           graph: args.graph as string,
           ideaId: args.ideaId as string,
         });
 
-        if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined) {
-          const byChildId = new Map();
+        if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined || ownShares) {
+          const byChildId = new Map<string, IdeaRecord["supportingConnections"][number]>();
           for (const conn of existingIdea.supportingConnections ?? []) {
             byChildId.set(conn.ideaId, { ...conn });
           }
           for (const childId of (args.removeSupportingConnections as string[] | undefined) ?? []) {
             byChildId.delete(childId);
           }
-          for (const input of (args.addSupportingConnections as ConnectionInput[] | undefined) ?? []) {
+          for (const input of addedChildren) {
             const next = toStoredConnection(input);
-            byChildId.set(next.ideaId, { weight: 1, ...(byChildId.get(next.ideaId) ?? {}), ...next });
+            byChildId.set(next.ideaId, { weight: 1, relativePosition: [0, 0], ...byChildId.get(next.ideaId), ...next });
           }
-          updateData.supportingConnections = Array.from(byChildId.values());
+          const supportingConnections = Array.from(byChildId.values());
+          updateData.supportingConnections = supportingConnections;
+          if (ownShares) Object.assign(updateData, shareUpdate({ ...existingIdea, supportingConnections }, ownShares));
         }
 
         if (args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
@@ -434,13 +541,10 @@ export const ideaTools: ToolDefinition[] = [
           for (const parentId of (args.removeSupportedIdeas as string[] | undefined) ?? []) {
             parentIds.delete(parentId);
           }
-          for (const input of (args.addSupportedIdeas as ConnectionInput[] | undefined) ?? []) {
-            const parent = normalizeConnectionInput(input);
+          addedParents.forEach((parent, index) => {
             parentIds.add(parent.ideaId);
-            if (typeof input !== "string") {
-              parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, hypothesis: parent.hypothesis, reflection: parent.reflection });
-            }
-          }
+            parentMetadataToApply.push({ parentIdeaId: parent.ideaId, weight: parent.weight, hypothesis: parent.hypothesis, reflection: parent.reflection, shares: parentRequests[index] });
+          });
           updateData.supportedIdeas = Array.from(parentIds);
         }
       }
@@ -452,7 +556,7 @@ export const ideaTools: ToolDefinition[] = [
       });
 
       for (const parent of parentMetadataToApply) {
-        if (parent.weight === undefined && parent.hypothesis === undefined && parent.reflection === undefined) continue;
+        if (parent.weight === undefined && parent.hypothesis === undefined && parent.reflection === undefined && !parent.shares) continue;
 
         const parentIdea = await trpcClient.idea.get.query({
           graph: args.graph as string,
@@ -476,9 +580,9 @@ export const ideaTools: ToolDefinition[] = [
           supportingConnections[existingIndex] = next;
         }
         await trpcClient.idea.update.mutate({
-          graph: args.graph as string,
+          graph,
           ideaId: parent.parentIdeaId,
-          idea: { supportingConnections },
+          idea: parent.shares ? shareUpdate({ ...parentIdea, supportingConnections }, parent.shares) : { supportingConnections },
         });
       }
 
@@ -513,7 +617,13 @@ export const ideaTools: ToolDefinition[] = [
         content: [
           {
             type: "text",
-            text: `Updated idea ${args.ideaId}${verificationNudge}${reflectionNudge}`,
+            text: `Updated idea ${args.ideaId}${verificationNudge}${reflectionNudge}` +
+              splitsSection(await describeSplits(
+                trpcClient,
+                graph,
+                [...addedParents.map((parent) => parent.ideaId), ...(ownShares || addedChildren.length ? [ideaId] : [])],
+                ideaId,
+              )),
           },
         ],
       };
