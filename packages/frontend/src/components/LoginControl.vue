@@ -96,21 +96,21 @@ const logout = async () => {
 <template>
   <div class="login-control">
     <template v-if="!viewer.name">
-      <button class="view-btn" @click="open('login')">Log in</button>
-      <button v-if="maySignUp" class="view-btn" @click="open('sign-up')">Create account</button>
+      <button class="icon-btn text" @click="open('login')">Log in</button>
+      <button v-if="maySignUp" class="icon-btn text" @click="open('sign-up')">Create account</button>
     </template>
     <template v-else>
       <span class="who" :title="viewer.serverAdmin ? 'server admin' : 'account on this server'">{{ viewer.name }}</span>
       <button
         v-if="!viewer.permanentLogin"
-        class="view-btn keep"
+        class="icon-btn text keep"
         title="This account lives only in this browser: clearing the browser's data loses it. Choose a name and a password to keep it."
         @click="open('permanent')"
       ><CircleAlert /> Keep account</button>
-      <button v-if="viewer.serverAdmin" class="view-btn" @click="open('accounts')">Accounts</button>
-      <button class="view-btn" title="Let an MCP client, such as a coding agent, act as you" @click="open('mcp')">MCP</button>
-      <button v-if="viewer.permanentLogin" class="view-btn" @click="open('password')">Password</button>
-      <button class="view-btn" @click="logout">Log out</button>
+      <button v-if="viewer.serverAdmin" class="icon-btn text" @click="open('accounts')">Accounts</button>
+      <button class="icon-btn text" title="Let an MCP client, such as a coding agent, act as you" @click="open('mcp')">MCP</button>
+      <button v-if="viewer.permanentLogin" class="icon-btn text" @click="open('password')">Password</button>
+      <button class="icon-btn text" @click="logout">Log out</button>
     </template>
 
     <FormModalShell :show="dialog === 'login'" title="Log in" width="min(90vw, 22rem)" @request-close="dialog = null">
@@ -181,7 +181,8 @@ const logout = async () => {
   }
 
   .keep {
-    color: #e0a050;
+    color: var(--status-unclear);
+    border-color: var(--status-unclear);
   }
 
   form {

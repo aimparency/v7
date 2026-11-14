@@ -1131,8 +1131,7 @@ export const useDataStore = defineStore('data', {
       this.subscription?.unsubscribe();
 
       let held: ProjectUpdate[] | null = hold ? [] : null;
-      // @ts-ignore - trpc subscription typing might differ
-      this.subscription = trpc.project.onUpdate.subscribe({ projectPath }, {
+      this.subscription = trpc.project.onUpdate.subscribe({ graph: projectPath }, {
         onData: async (data: ProjectUpdate) => {
           if (toProjectRoot(data.projectPath) !== toProjectRoot(projectPath)) return;
           if (held) held.push(data);

@@ -85,6 +85,51 @@ textarea {
   &:hover { background: #555; }
 }
 
+/* Controls of the bar: one --control-h tall, square by default; a label widens
+   it (.text). Global, so the bar's child components use them too. */
+.icon-btn {
+  background: transparent;
+  border: 1px solid #444;
+  color: #e0e0e0;
+  border-radius: 3px;
+  min-width: var(--control-h);
+  height: var(--control-h);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  white-space: nowrap;
+
+  &.text, &.inbox-btn, &.commit-btn { padding: 0 0.5rem; }
+  &.commit-btn.prompt { color: var(--status-unclear); border-color: var(--status-unclear); }
+  &:hover { background: var(--toolbar-group-bg); }
+}
+
+/* One choice of a group of views (columns, graph) */
+.view-btn {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  color: #888;
+  padding: 0 0.6rem;
+  cursor: pointer;
+  font-size: 0.8rem;
+
+  &:hover {
+    background: #333;
+    color: #ccc;
+  }
+
+  &.active {
+    background: #444;
+    color: #fff;
+  }
+}
+
 /* Global focusable element styling */
 .focusable{
   background-color: #3333;

@@ -25,10 +25,10 @@ describe('readOnlyGuardLink', () => {
     const { sent, trpc } = client()
     setProjectAccess('/repo', REASON)
 
-    await expect(trpc.idea.update.mutate({ projectPath: '/repo/.bowman', ideaId: 'a', idea: {} } as never)).rejects.toThrow(REASON)
-    await trpc.idea.list.query({ projectPath: '/repo' } as never) // reading is fine
+    await expect(trpc.idea.update.mutate({ graph: '/repo/.bowman', ideaId: 'a', idea: {} } as never)).rejects.toThrow(REASON)
+    await trpc.idea.list.query({ graph: '/repo' } as never) // reading is fine
     await trpc.phase.setCursor.mutate({ graph: '/repo', cursors: {}, activeLevel: 0 }) // viewer position
-    await trpc.idea.update.mutate({ projectPath: '/other', ideaId: 'a', idea: {} } as never) // other projects untouched
+    await trpc.idea.update.mutate({ graph: '/other', ideaId: 'a', idea: {} } as never) // other projects untouched
 
     expect(sent).toEqual(['idea.list', 'phase.setCursor', 'idea.update'])
   })
@@ -37,7 +37,7 @@ describe('readOnlyGuardLink', () => {
     const { sent, trpc } = client()
     setProjectAccess('/repo', REASON)
     setProjectAccess('/repo/', null)
-    await trpc.idea.update.mutate({ projectPath: '/repo', ideaId: 'a', idea: {} } as never)
+    await trpc.idea.update.mutate({ graph: '/repo', ideaId: 'a', idea: {} } as never)
     expect(sent).toEqual(['idea.update'])
   })
 
@@ -47,7 +47,7 @@ describe('readOnlyGuardLink', () => {
     const { trpc } = client()
     setProjectAccess('/repo', REASON)
 
-    await trpc.idea.update.mutate({ projectPath: '/repo', ideaId: 'a', idea: {} } as never).catch(error => toasts.error('Failed to update idea', error))
+    await trpc.idea.update.mutate({ graph: '/repo', ideaId: 'a', idea: {} } as never).catch(error => toasts.error('Failed to update idea', error))
 
     expect(toasts.toasts.map(toast => [toast.kind, toast.message])).toEqual([['warning', REASON]])
   })

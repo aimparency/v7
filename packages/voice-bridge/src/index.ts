@@ -99,7 +99,7 @@ async function handleToolCall(name: string, args: any, projectPath: string) {
   try {
     switch (name) {
       case 'list_ideas':
-        return await trpc.idea.list.query({ projectPath, ...args });
+        return await trpc.idea.list.query({ graph: projectPath, ...args });
       case 'get_prioritized_ideas': {
         // Fetch ideas with open status
         const ideas = await trpc.idea.list.query({ 

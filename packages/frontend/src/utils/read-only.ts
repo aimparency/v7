@@ -28,7 +28,7 @@ export const isReadOnlyError = (error: unknown) =>
   error instanceof ReadOnlyProjectError || (error instanceof Error && /open read-only/.test(error.message))
 
 export const readOnlyGuardLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
-  const projectPath = (op.input as { projectPath?: unknown } | undefined)?.projectPath
+  const projectPath = (op.input as { graph?: unknown } | undefined)?.graph
   const reason = op.type === 'mutation' && !ALLOWED_MUTATIONS.has(op.path) && typeof projectPath === 'string'
     ? reasons.get(projectKey(projectPath))
     : undefined

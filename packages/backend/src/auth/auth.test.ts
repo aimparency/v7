@@ -155,11 +155,14 @@ test('an account creates a graph in one step and owns it', async () => {
     { slug: 'hack-the-hub-2', name: 'Hack the hub', owner: 'ada', kind: 'created' }
   ]);
 
+  // A new graph starts as a commit: nothing is left to commit before the first edit.
+  const fresh = await ada.git.status({ graph: slug });
+  assert.deepEqual(fresh.isRepository && fresh.changes, []);
   await ada.idea.createFloatingIdea({ graph: slug, idea: { text: 'Build something' } });
   await assert.rejects(bob.idea.createFloatingIdea({ graph: slug, idea: { text: 'Mine too' } }), /open read-only for bob/);
   assert.equal((await bob.idea.list({ graph: slug })).length, 1);
 
-  // The owner's first commit, as the server's git author when git has none.
+  // The owner commits their edit, as the server's git author when git has none.
   const status = await ada.git.status({ graph: slug });
   assert.ok(status.isRepository && !('repositoryPath' in status), 'the directory on the server is not shown');
   const changed = status.isRepository ? status.changes.map(change => change.path) : [];

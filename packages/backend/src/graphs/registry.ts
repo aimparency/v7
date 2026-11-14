@@ -17,6 +17,7 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { gitRepositoryLocation, isGraphSlug, toBowmanPath, toProjectRoot } from 'shared';
 import { forgetServerFile, readServerFile, serverDir } from 'shared/server-config';
+import { commitPaths, readWorkingTreeStatus } from '../git-working-tree.js';
 import { withFileLock, writeJsonAtomic } from '../storage/json.js';
 import { updateProjectMeta } from '../storage/project.js';
 
@@ -94,6 +95,11 @@ export async function createGraph(name: string, owner: string | null): Promise<G
     await fs.ensureDir(directory);
     await execFileAsync('git', ['init', '--quiet', directory]);
     await updateProjectMeta(directory, meta => ({ ...meta, name: trimmed }));
+    // The graph starts as a commit, so its owner's first look shows nothing left to commit.
+    const status = await readWorkingTreeStatus(directory);
+    if (status.isRepository && status.changes.length) {
+      await commitPaths(directory, status.changes.map(change => change.path), `Start the graph "${trimmed}"`);
+    }
     const graph: Graph = { slug, kind: 'created', path: directory, owner, writers: [], createdAt: new Date().toISOString() };
     return { graphs: [...graphs, graph], result: graph };
   });

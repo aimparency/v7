@@ -65,6 +65,8 @@ const activeBowmanRoot = computed(() => normalizedProjectRoot.value ? `${normali
 const activeProjectName = computed(() => {
   const projectRoot = normalizedProjectRoot.value
   if (!projectRoot) return ''
+  // On a server with accounts the address is the graph's slug: show its name.
+  if (accounts) return dataStore.meta?.name || projectRoot
 
   const segments = projectRoot.split('/').filter(Boolean)
   return segments[segments.length - 1] || projectRoot
@@ -411,8 +413,14 @@ const handleGlobalKeydown = (event: KeyboardEvent) => {
   })
 }
 
+// The loop is local only; agents are for whoever may run them (see the key handler).
+const agentHints = () => [
+  ...(accounts ? [] : [{ key: 'a', action: 'toggle loop panel' }]),
+  ...(agentsAllowed.value ? [{ key: 'w', action: 'toggle watchdog' }] : [])
+]
+
 // Update keyboard hints based on navigation state and selected column
-watch(() => [uiStore.navigatingIdeas, uiStore.activeColumn], ([navigatingIdeas, activeColumn]) => {
+watch(() => [uiStore.navigatingIdeas, uiStore.activeColumn, agentsAllowed.value] as const, ([navigatingIdeas, activeColumn]) => {
   if (!navigatingIdeas) {
     const hints = [
       { key: '/', action: 'search' },
@@ -421,8 +429,7 @@ watch(() => [uiStore.navigatingIdeas, uiStore.activeColumn], ([navigatingIdeas, 
       { key: 'i', action: 'enter edit mode' },
       { key: 'o', action: 'create phase/idea' },
       { key: 'u/r', action: 'undo/redo' },
-      { key: 'a', action: 'toggle loop panel' },
-      { key: 'w', action: 'toggle watchdog' }
+      ...agentHints()
     ]
 
     if (voiceEnabled) {
@@ -448,8 +455,7 @@ watch(() => [uiStore.navigatingIdeas, uiStore.activeColumn], ([navigatingIdeas, 
       { key: 'o/O', action: 'create idea below/above' },
       { key: 'u/r', action: 'undo/redo' },
       { key: 'Esc', action: 'exit edit mode' },
-      { key: 'a', action: 'toggle loop panel' },
-      { key: 'w', action: 'toggle watchdog' }
+      ...agentHints()
     ])
   }
 }, { immediate: true })
@@ -659,12 +665,14 @@ onUnmounted(() => {
         </div>
 
         <div class="project-info">
-          <div v-if="projectStore.projectPath" class="project-location" :title="`${normalizedProjectRoot}\n${activeBowmanRoot}`">
-            <span class="project-chip-label">Project</span>
+          <div v-if="projectStore.projectPath" class="project-location" :title="accounts ? `/g/${normalizedProjectRoot}` : `${normalizedProjectRoot}\n${activeBowmanRoot}`">
+            <span class="project-chip-label">{{ accounts ? 'Graph' : 'Project' }}</span>
             <span class="project-chip-value">{{ activeProjectName }}</span>
             <span v-if="!dataStore.access.writable" class="read-only-badge" :title="dataStore.access.reason ?? ''">read-only</span>
-            <code class="project-path">{{ normalizedProjectRoot }}</code>
-            <code class="project-path bowman-path">{{ activeBowmanRoot }}</code>
+            <template v-if="!accounts">
+              <code class="project-path">{{ normalizedProjectRoot }}</code>
+              <code class="project-path bowman-path">{{ activeBowmanRoot }}</code>
+            </template>
           </div>
 
           <button
@@ -973,30 +981,6 @@ onUnmounted(() => {
   color: #888;
 }
 
-/* Uniform control: one --control-h tall, square by default, text variants widen
-   via inline width:auto. Used for every icon/text button in the bar. */
-.icon-btn {
-  background: transparent;
-  border: 1px solid #444;
-  color: #e0e0e0;
-  border-radius: 3px;
-  min-width: var(--control-h);
-  height: var(--control-h);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  line-height: 1;
-  padding: 0;
-
-  &.inbox-btn, &.commit-btn { padding: 0 0.5rem; }
-  &.commit-btn.prompt { color: var(--status-unclear); border-color: var(--status-unclear); }
-}
-
-.icon-btn:hover {
-  background: var(--toolbar-group-bg);
-}
-
 .loop-notify-dot {
   position: absolute;
   top: 3px;
@@ -1185,27 +1169,6 @@ onUnmounted(() => {
   background: #1a1a1a;
   border: 1px solid #444;
   overflow: hidden;
-}
-
-.view-btn {
-  display: flex;
-  align-items: center;
-  background: transparent;
-  border: none;
-  color: #888;
-  padding: 0 0.6rem;
-  cursor: pointer;
-  font-size: 0.8rem;
-
-  &:hover {
-    background: #333;
-    color: #ccc;
-  }
-
-  &.active {
-    background: #444;
-    color: #fff;
-  }
 }
 
 .hint {
