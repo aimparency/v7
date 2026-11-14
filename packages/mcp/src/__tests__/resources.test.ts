@@ -21,7 +21,7 @@ test('MCP Resources - List & Read', async () => {
 
   // 1. Create Data
   const idea = await caller.idea.createFloatingIdea({
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     idea: { text: 'Resource Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
@@ -33,8 +33,8 @@ test('MCP Resources - List & Read', async () => {
   assert.ok(ideaTemplate, 'Idea template not found in list');
 
   // 3. Read Idea Resource
-  // URI format: idea://{uuid}?projectPath=...
-  const ideaUri = `idea://${idea.id}?projectPath=${encodeURIComponent(ctx.projectPath)}`;
+  // URI format: idea://{uuid}?graph=...
+  const ideaUri = `idea://${idea.id}?graph=${encodeURIComponent(ctx.projectPath)}`;
   const readIdea = await server.readResource(ideaUri);
   
   const ideaContent = JSON.parse(readIdea.contents[0].text);

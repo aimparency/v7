@@ -98,7 +98,7 @@ const handleTranscript = async (text: string) => {
   error.value = ''
   try {
     proposal.value = await trpc.idea.proposeIdeaSubtree.mutate({
-      projectPath: projectStore.projectPath,
+      graph: projectStore.projectPath,
       transcript: text,
       existingParentIds: []
     })

@@ -1,4 +1,4 @@
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "shared/continue-hook";
 import type { ToolDefinition } from "./types.js";
 
@@ -113,17 +113,17 @@ pnpm test:hooks
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         agent: {
           type: "string",
           enum: [...CONTINUE_HOOK_AGENTS],
           description: "Coding assistant to install the hook for. Omit to only re-enable an already installed hook.",
         },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
-      const text = enableContinueHook(args.projectPath as string, args.agent as string | undefined);
+      const text = enableContinueHook(args.graph as string, args.agent as string | undefined);
       return { content: [{ type: "text", text }] };
     },
   },
@@ -133,12 +133,12 @@ pnpm test:hooks
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
-      const text = disableContinueHook(args.projectPath as string);
+      const text = disableContinueHook(args.graph as string);
       return { content: [{ type: "text", text }] };
     },
   },

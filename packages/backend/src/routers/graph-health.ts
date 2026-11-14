@@ -46,12 +46,12 @@ function createConsistencyIssue(code: ConsistencyIssueCode, message: string): Co
 export const graphHealthRouter = t.router({
   checkConsistency: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
       // Archived ideas exist too: links to them are not dangling.
-      const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
-      const phases = await listPhases(input.projectPath);
+      const { ideas, unreadable } = await scanIdeaFiles(input.graph, ['ideas', 'archived-ideas']);
+      const phases = await listPhases(input.graph);
       const issues: ConsistencyIssue[] = [];
 
       // Files that exist but fail to load are missing from the ideas above.
@@ -68,7 +68,7 @@ export const graphHealthRouter = t.router({
       }
 
       // Check 4: Embeddings consistency
-      const vectorStore = await loadVectorStore(input.projectPath);
+      const vectorStore = await loadVectorStore(input.graph);
       for (const ideaId of Object.keys(vectorStore)) {
           if (!ideaIds.has(ideaId) && !unreadableIds.has(ideaId)) {
               issues.push(createConsistencyIssue(
@@ -83,19 +83,19 @@ export const graphHealthRouter = t.router({
 
   fixConsistency: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .mutation(async ({ input }) => {
       const fixes: string[] = [];
       // Reads no longer upgrade idea files as a side effect; persist it here.
-      for (const ideaId of await migrateIdeaFiles(input.projectPath)) {
+      for (const ideaId of await migrateIdeaFiles(input.graph)) {
         fixes.push(`Upgraded legacy fields / placed connections of Idea ${ideaId}`);
       }
-      fixes.push(...await reconcilePhaseTree(input.projectPath));
+      fixes.push(...await reconcilePhaseTree(input.graph));
 
       // Archived ideas exist too: links to them are not dangling.
-      const { ideas, unreadable } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
-      const phases = await listPhases(input.projectPath);
+      const { ideas, unreadable } = await scanIdeaFiles(input.graph, ['ideas', 'archived-ideas']);
+      const phases = await listPhases(input.graph);
 
       const ideaMap = new Map(ideas.map((a: Idea) => [a.id, a]));
       // Unreadable ideas still exist: keep every link to them (see checkConsistency).
@@ -119,7 +119,7 @@ export const graphHealthRouter = t.router({
         });
 
         if (idea.committedIn.length !== originalCommittedIn.length) {
-          await writeIdea(input.projectPath, idea);
+          await writeIdea(input.graph, idea);
         }
       }
 
@@ -139,14 +139,14 @@ export const graphHealthRouter = t.router({
 
           if (!idea.committedIn.includes(phase.id)) {
             idea.committedIn.push(phase.id);
-            await writeIdea(input.projectPath, idea);
+            await writeIdea(input.graph, idea);
             fixes.push(`Added phase ${phase.id} to Idea ${idea.id}`);
           }
         }
 
         if (validCommitments.length !== phase.commitments.length) {
           phase.commitments = validCommitments;
-          await writePhase(input.projectPath, phase);
+          await writePhase(input.graph, phase);
         }
       }
 
@@ -170,13 +170,13 @@ export const graphHealthRouter = t.router({
 
               if (!child.supportedIdeas.includes(idea.id)) {
               child.supportedIdeas.push(idea.id);
-              await writeIdea(input.projectPath, child);
+              await writeIdea(input.graph, child);
               fixes.push(`Added supportedIdeas parent ${idea.id} to Child ${child.id}`);
               }
           }
           if (validConnections.length !== idea.supportingConnections.length) {
               idea.supportingConnections = validConnections;
-              await writeIdea(input.projectPath, idea);
+              await writeIdea(input.graph, idea);
           }
         }
 
@@ -197,13 +197,13 @@ export const graphHealthRouter = t.router({
           if (!parent.supportingConnections) parent.supportingConnections = [];
           if (!parent.supportingConnections.some((c) => c.ideaId === idea.id)) {
             parent.supportingConnections.push({ ideaId: idea.id, relativePosition: [0,0], weight: 1 });
-            await writeIdea(input.projectPath, parent);
+            await writeIdea(input.graph, parent);
             fixes.push(`Added supporting connection ${idea.id} to Parent ${parent.id}`);
           }
         }
         if (validSupportedIdeas.length !== idea.supportedIdeas.length) {
           idea.supportedIdeas = validSupportedIdeas;
-          await writeIdea(input.projectPath, idea);
+          await writeIdea(input.graph, idea);
         }
       }
 
@@ -213,23 +213,23 @@ export const graphHealthRouter = t.router({
           if (!phaseMap.has(phase.parent)) {
             fixes.push(`Removed non-existent parent phase ${phase.parent} from Phase ${phase.id}`);
             phase.parent = null;
-            await writePhase(input.projectPath, phase);
+            await writePhase(input.graph, phase);
           }
         }
       }
 
       // Fix 4: Embeddings consistency
-      const vectorStore = await loadVectorStore(input.projectPath);
+      const vectorStore = await loadVectorStore(input.graph);
       for (const ideaId of Object.keys(vectorStore)) {
           if (!ideaMap.has(ideaId) && !unreadableIds.has(ideaId)) {
-              await removeEmbedding(input.projectPath, ideaId);
+              await removeEmbedding(input.graph, ideaId);
               fixes.push(`Removed orphaned embedding for Idea ${ideaId}`);
           }
       }
 
       // Fix 5: Cache consistency (idea_values)
       try {
-          const db = getDb(input.projectPath);
+          const db = getDb(input.graph);
           const validIds = Array.from(ideaMap.keys());
           if (validIds.length > 0) {
               const placeholders = validIds.map(() => '?').join(',');
@@ -257,7 +257,7 @@ export const graphHealthRouter = t.router({
   // Use merge_ideas to act on the results.
   findDuplicates: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       threshold: z.number().min(0).max(1).optional(), // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
       limit: z.number().int().positive().max(500).optional(),   // default 50
     }))
@@ -266,8 +266,8 @@ export const graphHealthRouter = t.router({
       const limit = input.limit ?? 50;
 
       const [ideas, vectorStore] = await Promise.all([
-        listIdeas(input.projectPath),
-        loadVectorStore(input.projectPath),
+        listIdeas(input.graph),
+        loadVectorStore(input.graph),
       ]);
 
       const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
@@ -314,7 +314,7 @@ export const graphHealthRouter = t.router({
   // is an approve-a-list report, it changes nothing.
   suggestReparents: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       parentIdeaId: z.string(),                              // the catch-all parent
       candidateParentIds: z.array(z.string()).optional(),   // override structural sub-parents
       limit: z.number().int().positive().max(500).optional(),        // default 200
@@ -322,8 +322,8 @@ export const graphHealthRouter = t.router({
     .query(async ({ input }) => {
       const limit = input.limit ?? 200;
       const [ideas, vectorStore] = await Promise.all([
-        listIdeas(input.projectPath),
-        loadVectorStore(input.projectPath),
+        listIdeas(input.graph),
+        loadVectorStore(input.graph),
       ]);
       const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
       const catchAll = ideaMap.get(input.parentIdeaId);
@@ -429,7 +429,7 @@ export const graphHealthRouter = t.router({
   // duplicate clusters. Changes nothing; pairs with merge_ideas / suggest_reparents / archiving.
   graphHygiene: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       megaParentThreshold: z.number().int().positive().optional(), // default 25
       duplicateThreshold: z.number().min(0).max(1).optional(),     // default 0.92 (calibrated for bge-small-en-v1.5 on the live ~565-idea graph)
       limit: z.number().int().positive().max(500).optional(),               // per-section cap, default 30
@@ -440,8 +440,8 @@ export const graphHealthRouter = t.router({
       const limit = input.limit ?? 30;
 
       const [ideas, vectorStore] = await Promise.all([
-        listIdeas(input.projectPath),
-        loadVectorStore(input.projectPath),
+        listIdeas(input.graph),
+        loadVectorStore(input.graph),
       ]);
       const ideaMap = new Map<string, Idea>(ideas.map((a: Idea) => [a.id, a]));
       const active = ideas.filter((a: Idea) => !a.archived);

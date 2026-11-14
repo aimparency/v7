@@ -35,10 +35,10 @@ test('MCP Tools - Consistency', async () => {
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
   const call = async (name: string) =>
-    JSON.parse((await server.callTool(name, { projectPath: ctx.projectPath })).content[0].text);
+    JSON.parse((await server.callTool(name, { graph: ctx.projectPath })).content[0].text);
 
   const idea = await caller.idea.createFloatingIdea({
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     idea: { text: 'Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
@@ -68,13 +68,13 @@ test('MCP Tools - major_hypothesis_loop lists ongoing major ideas with the resea
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
   const create = (text: string, state: string, intrinsicValue: number) => caller.idea.createFloatingIdea({
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     idea: { text, intrinsicValue, status: { state, comment: '', date: Date.now() } }
   });
   await create('Valued mission', 'open', 5);
   await create('Finished mission', 'implemented', 9);
 
-  const text = (await server.callTool('major_hypothesis_loop', { projectPath: ctx.projectPath, focus: 'agents' })).content[0].text;
+  const text = (await server.callTool('major_hypothesis_loop', { graph: ctx.projectPath, focus: 'agents' })).content[0].text;
   assert.match(text, /Focus: agents/);
   assert.match(text, /Latest AI trends/);
   assert.match(text, /Where money is moving/);

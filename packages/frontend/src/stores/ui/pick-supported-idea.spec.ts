@@ -43,6 +43,6 @@ describe('pickSupportedIdea', () => {
     expect(vi.mocked(modalStore.openIdeaSearch).mock.lastCall![3]).toMatchObject({ title: 'What does "New aim" support?' })
 
     await pick({ type: 'idea', data: { id: 'grandparent', text: 'Grandparent' } })
-    expect(trpc.idea.connectIdeas.mutate).toHaveBeenCalledWith({ projectPath: '/test', parentIdeaId: 'grandparent', childIdeaId: 'new-parent' })
+    expect(trpc.idea.connectIdeas.mutate).toHaveBeenCalledWith({ graph: '/test', parentIdeaId: 'grandparent', childIdeaId: 'new-parent' })
   })
 })

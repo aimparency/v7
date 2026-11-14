@@ -64,7 +64,7 @@ const approve = async () => {
   idempotencyKey.value ||= `${draft.value.revision}:${crypto.randomUUID()}`
   try {
     const result = await trpc.idea.approveIdeaSubtree.mutate({
-      projectPath: props.projectPath,
+      graph: props.projectPath,
       proposal: draft.value,
       revision: draft.value.revision,
       idempotencyKey: idempotencyKey.value

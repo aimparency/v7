@@ -254,7 +254,7 @@ export function useGraphInteraction(
                              const relPos: [number, number] = [deltaX/rSum, deltaY/rSum]
 
                              trpc.idea.connectIdeas.mutate({
-                                projectPath: projectStore.projectPath,
+                                graph: projectStore.projectPath,
                                 parentIdeaId: parentNode.id,
                                 childIdeaId: newIdeaId,
                                 relativePosition: relPos as [number, number]
@@ -536,7 +536,7 @@ export function useGraphInteraction(
 
             try {
                 await trpc.idea.connectIdeas.mutate({
-                    projectPath: projectStore.projectPath,
+                    graph: projectStore.projectPath,
                     parentIdeaId: parent.id,
                     childIdeaId: child.id,
                     relativePosition,

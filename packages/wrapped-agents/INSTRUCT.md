@@ -2,7 +2,7 @@
 
 You drive an **idea graph** (goals/tasks with statuses and parent/child links, grouped into time-boxed phases) via the **aimparency** MCP tools. The tools and their schemas are already in your context — this is *how to work*, not a tool reference.
 
-`projectPath` for every tool is the repo root + `/.bowman`.
+`graph` for every tool is the repo root + `/.bowman` (the former name `projectPath` still works).
 
 ## Loop
 1. **Find work** with `get_prioritized_ideas` (active phase, ranked by value/cost). Read its `diagnostics`; distrust the ranking when it flags ~0-value or cost-less ideas.

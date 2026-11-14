@@ -32,7 +32,7 @@ const readRegistry = (p: string) =>
   fs.readJson(path.join(p, 'runtime', 'linked-repos.json')) as Promise<LinkedRepoRegistry>;
 
 test('repoId is generated on first read and stays stable across reads', async () => {
-  const first = await caller.project.getMeta({ projectPath: projectAPath });
+  const first = await caller.project.getMeta({ graph: projectAPath });
   assert.ok(first.repoId, 'repoId should be generated');
   assert.match(first.repoId!, /^[0-9a-f-]{36}$/);
 
@@ -41,13 +41,13 @@ test('repoId is generated on first read and stays stable across reads', async ()
   assert.equal(onDisk.repoId, first.repoId);
 
   // ...and stable on subsequent reads.
-  const second = await caller.project.getMeta({ projectPath: projectAPath });
+  const second = await caller.project.getMeta({ graph: projectAPath });
   assert.equal(second.repoId, first.repoId);
 });
 
 test('register splits portable (meta) and machine-local (runtime) parts', async () => {
   const registered = await caller.linkedRepo.register({
-    projectPath: projectAPath,
+    graph: projectAPath,
     targetPath: projectBPath,
     url: 'https://example.com/repo-b.git',
   });
@@ -75,17 +75,17 @@ test('register splits portable (meta) and machine-local (runtime) parts', async 
 
 test('resolve performs two-stage repoId -> localPath lookup', async () => {
   const { repoId } = await caller.linkedRepo.register({
-    projectPath: projectAPath,
+    graph: projectAPath,
     targetPath: projectBPath,
   });
 
-  const resolved = await caller.linkedRepo.resolve({ projectPath: projectAPath, repoId });
+  const resolved = await caller.linkedRepo.resolve({ graph: projectAPath, repoId });
   assert.equal(resolved.resolved, true);
   assert.equal(resolved.localPath, projectBPath);
 
   // An unknown repoId resolves to the not-checked-out state, not an error.
   const missing = await caller.linkedRepo.resolve({
-    projectPath: projectAPath,
+    graph: projectAPath,
     repoId: '00000000-0000-4000-8000-000000000000',
   });
   assert.equal(missing.resolved, false);
@@ -94,14 +94,14 @@ test('resolve performs two-stage repoId -> localPath lookup', async () => {
 
 test('list reports a linked-but-unresolved repo when the local entry is gone', async () => {
   const { repoId } = await caller.linkedRepo.register({
-    projectPath: projectAPath,
+    graph: projectAPath,
     targetPath: projectBPath,
   });
 
   // Simulate a collaborator who pulled meta.json but has no runtime registry.
   await fs.remove(path.join(projectAPath, 'runtime', 'linked-repos.json'));
 
-  const list = await caller.linkedRepo.list({ projectPath: projectAPath });
+  const list = await caller.linkedRepo.list({ graph: projectAPath });
   assert.equal(list.length, 1);
   assert.equal(list[0].repoId, repoId);
   assert.equal(list[0].resolved, false);
@@ -110,14 +110,14 @@ test('list reports a linked-but-unresolved repo when the local entry is gone', a
 
 test('register rejects linking a repo to itself', async () => {
   await assert.rejects(
-    () => caller.linkedRepo.register({ projectPath: projectAPath, targetPath: projectAPath }),
+    () => caller.linkedRepo.register({ graph: projectAPath, targetPath: projectAPath }),
     /itself/i,
   );
 });
 
 test('register upserts rather than duplicating on re-register', async () => {
-  await caller.linkedRepo.register({ projectPath: projectAPath, targetPath: projectBPath, access: 'read' });
-  await caller.linkedRepo.register({ projectPath: projectAPath, targetPath: projectBPath, access: 'write' });
+  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, access: 'read' });
+  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, access: 'write' });
 
   const aMeta = await readMeta(projectAPath);
   assert.equal(aMeta.linkedRepos?.length, 1, 'no duplicate portable entry');
@@ -128,9 +128,9 @@ test('register upserts rather than duplicating on re-register', async () => {
 });
 
 test('unregister removes the link from both meta and the runtime registry', async () => {
-  const { repoId } = await caller.linkedRepo.register({ projectPath: projectAPath, targetPath: projectBPath });
+  const { repoId } = await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath });
 
-  await caller.linkedRepo.unregister({ projectPath: projectAPath, repoId });
+  await caller.linkedRepo.unregister({ graph: projectAPath, repoId });
 
   const aMeta = await readMeta(projectAPath);
   assert.equal(aMeta.linkedRepos?.length, 0);

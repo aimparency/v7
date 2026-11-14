@@ -9,7 +9,7 @@ import { formatReflection, type Decomposition, type Reflection, type StatusChang
 async function callGraphTool(graph: GraphTools, projectPath: string, name: string, args: Record<string, unknown>): Promise<string> {
   const definition = toolsByName.get(name);
   if (!definition) throw new Error(`The MCP tool catalog has no ${name} tool.`);
-  const result = await definition.handler({ ...args, projectPath: toProjectRoot(projectPath) }, graph.backend);
+  const result = await definition.handler({ ...args, graph: toProjectRoot(projectPath) }, graph.backend);
   return result.content.map((part) => part.type === 'text' ? part.text : JSON.stringify(part)).join('\n');
 }
 

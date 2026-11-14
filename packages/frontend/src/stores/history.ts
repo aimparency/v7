@@ -201,7 +201,7 @@ export const useHistoryStore = defineStore('history', {
       let result
       try {
         result = await trpc.history.restore.mutate({
-          projectPath: useProjectStore().projectPath,
+          graph: useProjectStore().projectPath,
           changes
         })
       } catch (error: any) {

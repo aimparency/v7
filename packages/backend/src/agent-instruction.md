@@ -12,7 +12,7 @@ Aimparency organizes work into **Ideas** (goals/tasks) and **Phases** (time-boxe
 6.  **Breakdown:** When ideas are too complex or high level, make an effort to break them down. Do research online and think. Store an evaluatable hypothesis on the idea connection, and its evaluation once the child idea is settled. 
 
 ## Crucial Rules
--   **ProjectPath:** Always use the provided `projectPath` (usually ending in `.bowman`).
+-   **Graph:** Always pass the provided project path (usually ending in `.bowman`) as `graph`.
 -   **Status:** Keep idea status up-to-date (`open`, `implemented`, `failed`, `cancelled`). Make status updates before git committments, so that they come at once. 
 -   **Atomic Changes:** If an idea is too large, break it down using `create_idea` (as sub-ideas) instead of keeping it in progress for too long. There is also a prompt offered by the MCP for breaking down ideas that you can use.
 

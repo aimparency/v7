@@ -53,12 +53,12 @@ const commit = async () => {
   let committed = pushOnly
   try {
     if (!pushOnly) {
-      const { commit } = await trpc.git.commit.mutate({ projectPath, paths: [...chosen.value], message: message.value })
+      const { commit } = await trpc.git.commit.mutate({ graph: projectPath, paths: [...chosen.value], message: message.value })
       committed = true
       useToastStore().info(`Committed ${commit}`)
     }
     if (pushOnly || push.value) {
-      const { pushed } = await trpc.git.push.mutate({ projectPath })
+      const { pushed } = await trpc.git.push.mutate({ graph: projectPath })
       useToastStore().info(`Pushed ${pushed} ${pushed === 1 ? 'commit' : 'commits'}`)
     }
     emit('committed')

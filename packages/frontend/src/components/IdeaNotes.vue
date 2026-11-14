@@ -24,7 +24,7 @@ const text = ref('')
 const load = async () => {
   if (!accounts) return
   try {
-    const listing = await trpc.notes.list.query({ projectPath: projectStore.projectPath, ideaId: props.ideaId })
+    const listing = await trpc.notes.list.query({ graph: projectStore.projectPath, ideaId: props.ideaId })
     notes.value = listing.notes
     mayAdd.value = listing.mayAdd
   } catch (error) {
@@ -38,7 +38,7 @@ const add = async (kind: 'note' | 'interest') => {
   // Where the server gives accounts automatically, the visitor gets theirs now.
   if (!await viewer.ensureAccount()) return
   try {
-    notes.value.push(await trpc.notes.add.mutate({ projectPath: projectStore.projectPath, ideaId: props.ideaId, kind, text: text.value }))
+    notes.value.push(await trpc.notes.add.mutate({ graph: projectStore.projectPath, ideaId: props.ideaId, kind, text: text.value }))
     text.value = ''
   } catch (error) {
     useToastStore().error('Could not add the note', error)
@@ -47,7 +47,7 @@ const add = async (kind: 'note' | 'interest') => {
 
 const remove = async (id: string) => {
   try {
-    await trpc.notes.remove.mutate({ projectPath: projectStore.projectPath, id })
+    await trpc.notes.remove.mutate({ graph: projectStore.projectPath, id })
     notes.value = notes.value.filter(note => note.id !== id)
   } catch (error) {
     useToastStore().error('Could not remove the note', error)

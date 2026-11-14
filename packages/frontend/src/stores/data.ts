@@ -490,7 +490,7 @@ export const useDataStore = defineStore('data', {
         return this.meta
       }
 
-      const meta = await trpc.project.getMeta.query({ projectPath })
+      const meta = await trpc.project.getMeta.query({ graph: projectPath })
       this.meta = meta
       return meta
     },
@@ -502,7 +502,7 @@ export const useDataStore = defineStore('data', {
       // Only phases known before the request can be stale: one that arrived
       // through the subscription meanwhile is newer than the list.
       const knownPhaseIds = Object.keys(this.phases)
-      this.applyPhaseList(await trpc.phase.list.query({ projectPath }), knownPhaseIds)
+      this.applyPhaseList(await trpc.phase.list.query({ graph: projectPath }), knownPhaseIds)
     },
 
     applyPhaseList(phases: BasePhase[], knownPhaseIds: string[]) {
@@ -523,7 +523,7 @@ export const useDataStore = defineStore('data', {
 
       const revision = this.beginPhaseSync(phaseId)
       try {
-        const phase = await trpc.phase.get.query({ projectPath, phaseId })
+        const phase = await trpc.phase.get.query({ graph: projectPath, phaseId })
         this.replacePhaseIfCurrent(phase.id, phase, revision)
         return this.phases[phase.id] ?? null
       } catch (error) {
@@ -558,7 +558,7 @@ export const useDataStore = defineStore('data', {
       if (!projectPath) return;
       
       // The subscription applies the new phase and its owner before the mutation resolves.
-      const { id: newPhaseId } = await trpc.phase.create.mutate({ projectPath, phase: phaseData });
+      const { id: newPhaseId } = await trpc.phase.create.mutate({ graph: projectPath, phase: phaseData });
 
       const uiStore = useUIStore();
       const newEntries = this.getSelectableColumnEntries(columnIndex);
@@ -654,7 +654,7 @@ export const useDataStore = defineStore('data', {
     async createFloatingIdea(projectPath: string, idea: IdeaCreationParams, inheritColorFrom?: string): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createFloatingIdea.mutate({
-          projectPath,
+          graph: projectPath,
           idea,
           inheritColorFrom
         })
@@ -681,7 +681,7 @@ export const useDataStore = defineStore('data', {
     async createSubIdea(projectPath: string, parentIdeaId: string, idea: IdeaCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createSubIdea.mutate({
-          projectPath,
+          graph: projectPath,
           parentIdeaId,
           idea,
           positionInParent,
@@ -689,14 +689,14 @@ export const useDataStore = defineStore('data', {
         })
 
         // Reload parent idea to get updated connections
-        const parentIdea = await trpc.idea.get.query({ projectPath, ideaId: parentIdeaId })
+        const parentIdea = await trpc.idea.get.query({ graph: projectPath, ideaId: parentIdeaId })
         if (parentIdea) {
           this.replaceIdea(parentIdeaId, parentIdea)
         }
 
         // Reload child idea to get updated supportedIdeas array
         // This ensures it doesn't appear in floating ideas
-        const updatedChildIdea = await trpc.idea.get.query({ projectPath, ideaId: newIdea.id })
+        const updatedChildIdea = await trpc.idea.get.query({ graph: projectPath, ideaId: newIdea.id })
         if (updatedChildIdea) {
           this.replaceIdea(newIdea.id, updatedChildIdea)
         }
@@ -713,7 +713,7 @@ export const useDataStore = defineStore('data', {
     async createCommittedIdea(projectPath: string, phaseId: string, idea: IdeaCreationParams, insertionIndex?: number): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createIdeaInPhase.mutate({
-          projectPath,
+          graph: projectPath,
           phaseId,
           idea,
           insertionIndex
@@ -733,7 +733,7 @@ export const useDataStore = defineStore('data', {
       const revision = this.beginIdeaSync(ideaId)
       try {
         const updatedIdea = await trpc.idea.update.mutate({
-          projectPath,
+          graph: projectPath,
           ideaId,
           idea: updates
         })
@@ -768,7 +768,7 @@ export const useDataStore = defineStore('data', {
 
       try {
         const updatedParent = await trpc.idea.update.mutate({
-          projectPath,
+          graph: projectPath,
           ideaId: parentId,
           idea: { supportingConnections: updatedConnections }
         })
@@ -796,7 +796,7 @@ export const useDataStore = defineStore('data', {
 
       try {
         // The change events bring the persisted state of both ideas.
-        await trpc.idea.disconnect.mutate({ projectPath, parentIdeaId: parentId, childIdeaId: childId })
+        await trpc.idea.disconnect.mutate({ graph: projectPath, parentIdeaId: parentId, childIdeaId: childId })
       } catch (error) {
         this.replaceIdea(parentId, originalParent)
         this.replaceIdea(childId, originalChild)
@@ -865,7 +865,7 @@ export const useDataStore = defineStore('data', {
     async saveConnectionPositions(projectPath: string, changes: ConnectionPositionChange[]) {
       if (changes.length === 0) return
       try {
-        await trpc.idea.setConnectionPositions.mutate({ projectPath, changes })
+        await trpc.idea.setConnectionPositions.mutate({ graph: projectPath, changes })
       } catch (e) {
         useToastStore().error('Failed to save positions', e)
       }
@@ -875,20 +875,20 @@ export const useDataStore = defineStore('data', {
       try {
         // Use the new backend endpoint that maintains bidirectional relationship
         await trpc.idea.commitToPhase.mutate({
-          projectPath,
+          graph: projectPath,
           ideaId,
           phaseId,
           insertionIndex
         })
 
         // Update local state - reload the specific phase to get updated commitments
-        const phase = await trpc.phase.get.query({ projectPath, phaseId })
+        const phase = await trpc.phase.get.query({ graph: projectPath, phaseId })
         if (phase) {
           this.replacePhase(phaseId, phase)
         }
 
         // Reload the idea to get updated committedIn field
-        const idea = await trpc.idea.get.query({ projectPath, ideaId })
+        const idea = await trpc.idea.get.query({ graph: projectPath, ideaId })
         if (idea) {
           this.replaceIdea(ideaId, idea)
         }
@@ -923,20 +923,20 @@ export const useDataStore = defineStore('data', {
 
     // With cascade, descendants that no other parent or phase anchors go too.
     async deleteIdeas(projectPath: string, ideaIds: string[], { cascade }: { cascade: boolean }): Promise<string[]> {
-      const { deletedIds } = await trpc.idea.delete.mutate({ projectPath, ideaIds, cascade })
+      const { deletedIds } = await trpc.idea.delete.mutate({ graph: projectPath, ideaIds, cascade })
       this.forgetDeletedIdeas(deletedIds)
       return deletedIds
     },
 
     // What a cascading delete of these ideas would take, without deleting.
     async previewCascadingDelete(projectPath: string, ideaIds: string[]): Promise<string[]> {
-      const { deletedIds } = await trpc.idea.delete.mutate({ projectPath, ideaIds, cascade: true, dryRun: true })
+      const { deletedIds } = await trpc.idea.delete.mutate({ graph: projectPath, ideaIds, cascade: true, dryRun: true })
       return deletedIds
     },
 
     // Takes the idea out of one parent or phase; it stays, floating if nothing else anchors it.
     async detachIdea(projectPath: string, ideaId: string, from: IdeaContext): Promise<void> {
-      await trpc.idea.detach.mutate({ projectPath, ideaId, from })
+      await trpc.idea.detach.mutate({ graph: projectPath, ideaId, from })
     },
 
     // The change events remove them too; doing it now keeps the caller's
@@ -951,7 +951,7 @@ export const useDataStore = defineStore('data', {
     async removeIdeaFromPhase(projectPath: string, ideaId: string, phaseId: string) {
       try {
         await trpc.idea.removeFromPhase.mutate({
-          projectPath,
+          graph: projectPath,
           ideaId,
           phaseId
         })
@@ -967,7 +967,7 @@ export const useDataStore = defineStore('data', {
     async loadAllIdeas(projectPath: string) {
       if (!projectPath) return;
       try {
-        this.applyIdeaScan(await trpc.project.loadIdeas.query({ projectPath }));
+        this.applyIdeaScan(await trpc.project.loadIdeas.query({ graph: projectPath }));
       } catch (error) {
         console.error('Failed to load all ideas:', error);
       }
@@ -995,10 +995,10 @@ export const useDataStore = defineStore('data', {
         followIdeaActivity(projectPath);
         const knownPhaseIds = Object.keys(this.phases);
         const [meta, access, phases, ideaScan] = await Promise.all([
-          trpc.project.getMeta.query({ projectPath }),
-          trpc.project.getAccess.query({ projectPath }),
-          trpc.phase.list.query({ projectPath }),
-          trpc.project.loadIdeas.query({ projectPath })
+          trpc.project.getMeta.query({ graph: projectPath }),
+          trpc.project.getAccess.query({ graph: projectPath }),
+          trpc.phase.list.query({ graph: projectPath }),
+          trpc.project.loadIdeas.query({ graph: projectPath })
         ]);
         if (projectStore.projectPath !== projectPath) return;
         this.meta = meta;
@@ -1014,7 +1014,7 @@ export const useDataStore = defineStore('data', {
 
     // After logging in or out: what this viewer may do on the open graph.
     async refreshAccess(projectPath: string) {
-      this.applyAccess(projectPath, await trpc.project.getAccess.query({ projectPath }))
+      this.applyAccess(projectPath, await trpc.project.getAccess.query({ graph: projectPath }))
     },
 
     applyAccess(projectPath: string, access: ProjectAccess) {
@@ -1071,8 +1071,8 @@ export const useDataStore = defineStore('data', {
         return value;
       });
       const [meta, access] = await Promise.all([
-        reporting(trpc.project.getMeta.query({ projectPath })),
-        reporting(trpc.project.getAccess.query({ projectPath }))
+        reporting(trpc.project.getMeta.query({ graph: projectPath })),
+        reporting(trpc.project.getAccess.query({ graph: projectPath }))
       ]);
       if (!isCurrent()) return false;
 
@@ -1080,8 +1080,8 @@ export const useDataStore = defineStore('data', {
       // ideas); the subscription keeps it live afterwards.
       await onProgress?.('reading');
       const [phases, ideaScan] = await Promise.all([
-        trpc.phase.list.query({ projectPath }),
-        trpc.project.loadIdeas.query({ projectPath })
+        trpc.phase.list.query({ graph: projectPath }),
+        trpc.project.loadIdeas.query({ graph: projectPath })
       ]);
       if (!isCurrent()) return false;
 
@@ -1114,7 +1114,7 @@ export const useDataStore = defineStore('data', {
           ...meta
         }
         const updated = await trpc.project.updateMeta.mutate({
-          projectPath,
+          graph: projectPath,
           meta: nextMeta
         });
         this.meta = updated;
@@ -1155,13 +1155,13 @@ export const useDataStore = defineStore('data', {
         const applyEntity = (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
 
         if (data.type === 'project') {
-          this.meta = data.entity ?? await trpc.project.getMeta.query({ projectPath })
+          this.meta = data.entity ?? await trpc.project.getMeta.query({ graph: projectPath })
         } else if (data.type === 'idea') {
           if (data.deleted) {
             applyRemoteIdeaUpdate(() => applyEntity(() => this.removeIdeaLocally(data.id)))
           } else if (!this.deletedIdeas.has(data.id)) {
             const revision = this.beginIdeaSync(data.id)
-            const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ projectPath, ideaId: data.id })
+            const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ graph: projectPath, ideaId: data.id })
             applyRemoteIdeaUpdate(() => applyEntity(() => {
               if (this.replaceIdeaIfCurrent(idea.id, idea, revision)) this.syncFloatingIdea(idea)
             }))
@@ -1184,7 +1184,7 @@ export const useDataStore = defineStore('data', {
         // One mutation: the backend moves child phases into the deleted phase's
         // slot, so the column isn't re-rendered through intermediate states.
         await trpc.phase.delete.mutate({
-          projectPath: projectStore.projectPath,
+          graph: projectStore.projectPath,
           phaseId: phaseId
         });
       } catch (error) {
@@ -1198,7 +1198,7 @@ export const useDataStore = defineStore('data', {
 
       try {
         const ideas = await trpc.idea.getMany.query({
-          projectPath,
+          graph: projectPath,
           ideaIds
         });
         if (projectStore.projectPath !== projectPath) return;
@@ -1217,13 +1217,13 @@ export const useDataStore = defineStore('data', {
     async reorderPhaseIdea(projectPath: string, phaseId: string, ideaId: string, newIndex: number) {
       try {
         await trpc.idea.commitToPhase.mutate({
-          projectPath,
+          graph: projectPath,
           ideaId,
           phaseId,
           insertionIndex: newIndex
         });
         
-        const phase = await trpc.phase.get.query({ projectPath, phaseId });
+        const phase = await trpc.phase.get.query({ graph: projectPath, phaseId });
         if (phase) this.replacePhase(phaseId, phase);
       } catch (error) {
         console.error('Failed to reorder phase idea:', error);
@@ -1236,14 +1236,14 @@ export const useDataStore = defineStore('data', {
         const childSupportedIdeasIndex = childIdea?.supportedIdeas.indexOf(parentIdeaId) ?? 0;
 
         await trpc.idea.connectIdeas.mutate({
-          projectPath,
+          graph: projectPath,
           parentIdeaId,
           childIdeaId: childIdeaId,
           parentIncomingIndex: newIndex,
           childSupportedIdeasIndex: childSupportedIdeasIndex !== -1 ? childSupportedIdeasIndex : undefined
         });
 
-        const parentIdea = await trpc.idea.get.query({ projectPath, ideaId: parentIdeaId });
+        const parentIdea = await trpc.idea.get.query({ graph: projectPath, ideaId: parentIdeaId });
         if (parentIdea) this.replaceIdea(parentIdeaId, parentIdea);
         this.recalculateValues();
       } catch (error) {
@@ -1257,7 +1257,7 @@ export const useDataStore = defineStore('data', {
         if (!phase) return
 
         await trpc.phase.reorder.mutate({
-          projectPath,
+          graph: projectPath,
           phaseId,
           newIndex
         })
@@ -1279,7 +1279,7 @@ export const useDataStore = defineStore('data', {
 
         const revision = this.beginPhaseSync(phaseId)
         const updatedPhase = await trpc.phase.update.mutate({
-          projectPath,
+          graph: projectPath,
           phaseId,
           phase: { parent: parentId },
           insertionIndex: newIndex
@@ -1297,7 +1297,7 @@ export const useDataStore = defineStore('data', {
         const startedAt = performance.now();
         perfLog('data.checkConsistency:start', { projectPath });
         try {
-            const result = await trpc.graphHealth.checkConsistency.query({ projectPath });
+            const result = await trpc.graphHealth.checkConsistency.query({ graph: projectPath });
             this.consistencyErrors = result.errors;
             this.consistencyIssues = result.issues ?? result.errors.map((message) => ({
                 code: 'legacy',
@@ -1313,7 +1313,7 @@ export const useDataStore = defineStore('data', {
     async fixConsistency(projectPath: string) {
         if (!projectPath) return;
         try {
-            const result = await trpc.graphHealth.fixConsistency.mutate({ projectPath });
+            const result = await trpc.graphHealth.fixConsistency.mutate({ graph: projectPath });
             // Reload everything after fix
             await this.resyncProject(projectPath);
             this.consistencyErrors = [];

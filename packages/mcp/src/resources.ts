@@ -42,9 +42,9 @@ export function registerResources(server: Server, caller: BackendClient) {
     const parsed = parseResourceUri(uri);
 
     try {
-      // Extract projectPath from URI query parameter (e.g., idea://uuid?projectPath=/path/to/project)
+      // The graph comes as a query parameter (e.g., idea://uuid?graph=/path/to/project); `projectPath` is its former name.
       const url = new URL(uri, "http://dummy");
-      const projectPath = url.searchParams.get("projectPath");
+      const projectPath = url.searchParams.get("graph") ?? url.searchParams.get("projectPath");
 
       if (!projectPath) {
         throw new Error(PROJECT_PATH_MISSING_ERROR);
@@ -52,7 +52,7 @@ export function registerResources(server: Server, caller: BackendClient) {
 
       if (parsed.type === "idea") {
         if (parsed.id === "all") {
-          const ideas = await caller.idea.list.query({ projectPath });
+          const ideas = await caller.idea.list.query({ graph: projectPath });
           return {
             contents: [
               {
@@ -64,12 +64,12 @@ export function registerResources(server: Server, caller: BackendClient) {
           };
         }
 
-        const idea = await caller.idea.get.query({ projectPath, ideaId: parsed.id! });
+        const idea = await caller.idea.get.query({ graph: projectPath, ideaId: parsed.id! });
 
         if (parsed.subpath === "supporting_connections") {
           const connections = idea.supportingConnections || [];
           const supportingIdeas = await Promise.all(
-            connections.map((conn) => caller.idea.get.query({ projectPath, ideaId: conn.ideaId }))
+            connections.map((conn) => caller.idea.get.query({ graph: projectPath, ideaId: conn.ideaId }))
           );
           return {
             contents: [
@@ -85,7 +85,7 @@ export function registerResources(server: Server, caller: BackendClient) {
         if (parsed.subpath === "supported_ideas") {
           const supported = idea.supportedIdeas || [];
           const supportedIdeas = await Promise.all(
-            supported.map((id: string) => caller.idea.get.query({ projectPath, ideaId: id }))
+            supported.map((id: string) => caller.idea.get.query({ graph: projectPath, ideaId: id }))
           );
           return {
             contents: [
@@ -114,7 +114,7 @@ export function registerResources(server: Server, caller: BackendClient) {
         const phaseIdParam = url.searchParams.get("phaseId");
         
         const ideas = await caller.idea.list.query({
-          projectPath,
+          graph: projectPath,
           status: statusParam ? statusParam.split(',') : undefined,
           phaseId: phaseIdParam || undefined
         });
@@ -129,11 +129,11 @@ export function registerResources(server: Server, caller: BackendClient) {
       }
 
       if (parsed.type === "phase") {
-        const phase = await caller.phase.get.query({ projectPath, phaseId: parsed.id! });
+        const phase = await caller.phase.get.query({ graph: projectPath, phaseId: parsed.id! });
 
         if (parsed.subpath === "ideas") {
           const ideas = await Promise.all(
-            phase.commitments.map((id: string) => caller.idea.get.query({ projectPath, ideaId: id }))
+            phase.commitments.map((id: string) => caller.idea.get.query({ graph: projectPath, ideaId: id }))
           );
           return {
             contents: [
@@ -158,7 +158,7 @@ export function registerResources(server: Server, caller: BackendClient) {
 
       if (parsed.type === "phases") {
         if (parsed.id === "all") {
-          const phases = await caller.phase.list.query({ projectPath });
+          const phases = await caller.phase.list.query({ graph: projectPath });
           return {
             contents: [
               {
@@ -171,7 +171,7 @@ export function registerResources(server: Server, caller: BackendClient) {
         }
 
         if (parsed.subpath === "children") {
-          const phases = await caller.phase.list.query({ projectPath, parentPhaseId: parsed.id });
+          const phases = await caller.phase.list.query({ graph: projectPath, parentPhaseId: parsed.id });
           return {
             contents: [
               {
@@ -185,7 +185,7 @@ export function registerResources(server: Server, caller: BackendClient) {
       }
 
       if (parsed.type === "project" && parsed.id === "meta") {
-        const meta = await caller.project.getMeta.query({ projectPath });
+        const meta = await caller.project.getMeta.query({ graph: projectPath });
         return {
           contents: [
             {
@@ -205,7 +205,7 @@ export function registerResources(server: Server, caller: BackendClient) {
           {
             uri,
             mimeType: "text/plain",
-            text: `Error reading resource: ${errorMessage}\n\nMake sure to include projectPath as a query parameter, e.g.:\nidea://uuid?projectPath=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
+            text: `Error reading resource: ${errorMessage}\n\nMake sure to include the graph as a query parameter, e.g.:\nidea://uuid?graph=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
           },
         ],
       };

@@ -50,7 +50,7 @@ describe('IdeaProposalEntry', () => {
     await wrapper.get('button.primary').trigger('click')
 
     expect(trpc.idea.proposeIdeaSubtree.mutate).toHaveBeenCalledWith({
-      projectPath: '/project',
+      graph: '/project',
       transcript: 'Improve operations',
       existingParentIds: []
     })

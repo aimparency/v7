@@ -6,11 +6,11 @@ import { graphAddress } from '../graphs/address.js';
 export const voiceRouter = t.router({
   chat: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       transcript: z.string()
     }))
     .mutation(async ({ input }) => {
-      const response = await chatWithGemini(input.transcript, input.projectPath);
+      const response = await chatWithGemini(input.transcript, input.graph);
       return { response };
     })
 });

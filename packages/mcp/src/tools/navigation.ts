@@ -1,5 +1,5 @@
 import { calculateIdeaValues, defaultIdeaCost, resolveWorkPhase, selectWorkCandidates, type Phase } from "shared";
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea } from "./format.js";
@@ -13,21 +13,21 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         phaseId: { type: "string" },
         limit: { type: "number" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       // Fetch all phases once; we need them for both explicit lookup and time-based resolution.
       // parentPhaseId omitted → backend returns all phases
       const allPhases = await trpcClient.phase.list.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       const phaseById = new Map(allPhases.map((p) => [p.id, p]));
       // Reported once here instead of in every tool description: what cost estimates mean in this project.
-      const projectMeta = await trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null);
+      const projectMeta = await trpcClient.project.getMeta.query({ graph: args.graph as string }).catch(() => null);
 
       const targetPhase = resolveWorkPhase(allPhases, args.phaseId as string | undefined);
       if (!targetPhase) {
@@ -40,7 +40,7 @@ export const navigationTools: ToolDefinition[] = [
       // intrinsicValue/cost ignores the graph and is near-useless when most
       // intrinsic value sits at the top.
       const allIdeas = await trpcClient.idea.list.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas, defaultIdeaCost(projectMeta));
       const {
@@ -76,7 +76,7 @@ export const navigationTools: ToolDefinition[] = [
       // Realized-cost signal: real commits referencing each open idea = actual
       // output. Grounds attention in reality (which ranked ideas have actually
       // produced work) without mutating the human-set value model.
-      const commitMessages = getRepoCommitMessages(args.projectPath as string);
+      const commitMessages = getRepoCommitMessages(args.graph as string);
       const realized = countIdeaReferences(commitMessages, rankedOpenIdeas.map((a) => a.id));
       const realizedSignalAvailable = commitMessages.length > 0;
       // High-priority ideas with zero realized output are the ones the loop
@@ -98,7 +98,7 @@ export const navigationTools: ToolDefinition[] = [
 
       // The loop's next step is orienting on the top idea: save it the get_idea_context call.
       const topIdeaContext = prioritized[0]
-        ? await ideaContext(trpcClient, args.projectPath as string, prioritized[0].id, allIdeas).catch(() => undefined)
+        ? await ideaContext(trpcClient, args.graph as string, prioritized[0].id, allIdeas).catch(() => undefined)
         : undefined
 
       // Build phase path for context
@@ -178,13 +178,13 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.phase.getActivePath.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       return {
         content: [{
@@ -204,7 +204,7 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         status: { type: ["string", "array"], items: { type: "string" } },
         phaseId: { type: "string" },
         floating: { type: "boolean" },
@@ -212,11 +212,11 @@ export const navigationTools: ToolDefinition[] = [
         limit: { type: "number" },
         offset: { type: "number" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const ideas = await trpcClient.idea.list.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
         floating: args.floating as boolean | undefined,
@@ -235,22 +235,22 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         phaseId: { type: "string" },
         status: { type: ["string", "array"], items: { type: "string" } }
       },
-      required: ["projectPath", "phaseId"],
+      required: ["graph", "phaseId"],
     },
     handler: async (args, trpcClient) => {
         // 1. Get all ideas (cache them)
         const allIdeas = await trpcClient.idea.list.query({
-            projectPath: args.projectPath as string,
+            graph: args.graph as string,
         });
         const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
 
         // 2. Fetch the target phase directly
         const phase = await trpcClient.phase.get.query({
-            projectPath: args.projectPath as string,
+            graph: args.graph as string,
             phaseId: args.phaseId as string,
         });
 

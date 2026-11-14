@@ -28,12 +28,12 @@ export const spinOffRouter = t.router({
   // for the graph preview, plus a warning if the target already has a graph.
   preview: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const ideas = await listIdeas(normalizeProjectPath(input.projectPath));
+      const ideas = await listIdeas(normalizeProjectPath(input.graph));
       const plan = planSpinOff(ideas, input.rootIds);
       return {
         ...plan,
@@ -51,14 +51,14 @@ export const spinOffRouter = t.router({
   // the selection exclusively, keeping shared ideas (overlap). Conservative.
   execute: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string(),
       removeFromSource: z.boolean().default(true),
       preserveInflow: z.boolean().default(true),
     }))
     .mutation(async ({ input }) => {
-      const source = normalizeProjectPath(input.projectPath);
+      const source = normalizeProjectPath(input.graph);
       const target = resolveBowmanPath(input.targetPath);
       if (path.resolve(source) === path.resolve(target)) {
         throw new Error('The spin-off target must be a different .bowman graph from the source.');

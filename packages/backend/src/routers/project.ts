@@ -95,22 +95,22 @@ export const projectRouter = t.router({
   // One graph's changes. The client gets its own address back, never the
   // directory on the server.
   onUpdate: procedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ graph: z.string() }))
     .subscription(({ input }) => {
-      const graphPath = normalizeProjectPath(resolveGraphAddress(input.projectPath).path);
+      const graphPath = normalizeProjectPath(resolveGraphAddress(input.graph).path);
       return observable<ChangeEvent & { origin?: string }>((emit) =>
         // Listeners run inside the emitting request's context: tag the origin
         // so clients can recognize (and undo) their own changes.
         onChange((event) => {
           if (normalizeProjectPath(event.projectPath) !== graphPath) return;
-          emit.next({ ...event, projectPath: input.projectPath, origin: currentOrigin() });
+          emit.next({ ...event, projectPath: input.graph, origin: currentOrigin() });
         })
       );
     }),
 
   getMeta: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ ctx, input }) => {
       // Clients call getMeta first when opening a project: warm the search index
@@ -118,22 +118,22 @@ export const projectRouter = t.router({
       // one, and embed ideas that have no current embedding yet. Embedding costs
       // the server, so only those who write the graph set it off: a visitor
       // opening many graphs must not keep the server busy.
-      void Promise.all([ensureSearchIndex(input.projectPath), loadVectorStore(input.projectPath)])
+      void Promise.all([ensureSearchIndex(input.graph), loadVectorStore(input.graph)])
         .catch(error => console.warn('[Search] Warm-up failed:', error));
-      const writes = rightOn(findGraphByPath(input.projectPath), ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'read';
-      if (writes && process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.projectPath).catch(console.error);
-      return await readProjectMeta(input.projectPath);
+      const writes = rightOn(findGraphByPath(input.graph), ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'read';
+      if (writes && process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.graph).catch(console.error);
+      return await readProjectMeta(input.graph);
     }),
 
   // Whether the graph may be changed here; the UI disables editing otherwise.
   getAccess: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ ctx, input }) => {
-      const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.projectPath));
+      const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.graph));
       const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
-      const graph = findGraphByPath(input.projectPath);
+      const graph = findGraphByPath(input.graph);
       const reason = blocker?.message ?? readOnlyReason(graph, viewer);
       return { writable: reason === null, reason, user: viewer.name, role: rightOn(graph, viewer), serverAdmin: viewer.serverAdmin };
     }),
@@ -168,30 +168,30 @@ export const projectRouter = t.router({
     }),
 
   inspectPath: delayedProcedure
-    .input(z.object({ projectPath: graphAddress }))
+    .input(z.object({ graph: graphAddress }))
     .query(async ({ input }) => {
-      const bowmanPath = resolveBowmanPath(input.projectPath);
+      const bowmanPath = resolveBowmanPath(input.graph);
       return {
-        projectPath: input.projectPath,
+        projectPath: input.graph,
         bowmanPath,
-        bowmanExists: await bowmanExists(input.projectPath),
-        matches: await completeDirectoryPath(input.projectPath),
+        bowmanExists: await bowmanExists(input.graph),
+        matches: await completeDirectoryPath(input.graph),
       };
     }),
 
   buildSearchIndex: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .mutation(async ({ input }) => {
-      const ideas = await listIdeas(input.projectPath);
-      const phases = await listPhases(input.projectPath);
+      const ideas = await listIdeas(input.graph);
+      const phases = await listPhases(input.graph);
 
-      indexIdeas(input.projectPath, ideas);
-      indexPhases(input.projectPath, phases);
+      indexIdeas(input.graph, ideas);
+      indexPhases(input.graph, phases);
 
       // Background embedding generation
-      if (process.env.NODE_ENV !== 'test') void backfillEmbeddings(input.projectPath).catch(console.error);
+      if (process.env.NODE_ENV !== 'test') void backfillEmbeddings(input.graph).catch(console.error);
 
       return {
         success: true,
@@ -204,7 +204,7 @@ export const projectRouter = t.router({
 
   updateMeta: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       meta: z.object({
         name: z.string(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -220,7 +220,7 @@ export const projectRouter = t.router({
       })
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       await ensureProjectStructure(projectPath);
       const metaPath = path.join(projectPath, 'meta.json');
       // Preserve fields the editor doesn't send (repoId, linkedRepos, …) by
@@ -243,19 +243,19 @@ export const projectRouter = t.router({
   // The graph's Layout panel stores the settings it applied with.
   setLayoutSettings: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       layout: LayoutSettingsSchema
     }))
     .mutation(async ({ input }) => {
-      return await updateProjectMeta(input.projectPath, meta => ({ ...meta, layout: input.layout }));
+      return await updateProjectMeta(input.graph, meta => ({ ...meta, layout: input.layout }));
     }),
 
   injectAgentInstructions: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       await assertWritableBowman(projectPath); // writes into the repository itself
       const rootDir = path.dirname(projectPath); // Project root (above .bowman)
 
@@ -308,17 +308,17 @@ export const projectRouter = t.router({
   // them as warning nodes).
   loadIdeas: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       return scanIdeaFiles(projectPath, ['ideas'], (done, total) => reportProjectLoadProgress({ projectPath, done, total }));
     }),
 
   onLoadProgress: procedure
-    .input(z.object({ projectPath: graphAddress }))
+    .input(z.object({ graph: graphAddress }))
     .subscription(({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       return observable<Pick<ProjectLoadProgress, 'done' | 'total'>>((emit) =>
         onProjectLoadProgress(({ projectPath: loading, done, total }) => { if (loading === projectPath) emit.next({ done, total }); }));
     })

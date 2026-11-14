@@ -93,11 +93,11 @@ const applyChange = async (projectPath: string, change: EntityChange, current: u
 export const historyRouter = t.router({
   restore: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       changes: z.array(EntityChangeSchema)
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       const changes = input.changes as EntityChange[];
 
       const currents = await Promise.all(changes.map((change) => readCurrent(projectPath, change)));

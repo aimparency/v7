@@ -12,22 +12,22 @@ export const activityRouter = t.router({
   // The MCP server reports which ideas its read tools showed an agent.
   record: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaIds: z.array(z.string().uuid()).max(5000),
       kind: accessKind
     }))
     .mutation(({ input }) => {
-      recordIdeaAccess(input.projectPath, input.ideaIds, input.kind);
+      recordIdeaAccess(input.graph, input.ideaIds, input.kind);
     }),
 
   snapshot: delayedProcedure
-    .input(z.object({ projectPath: graphAddress }))
-    .query(({ input }) => ideaActivitySnapshot(input.projectPath)),
+    .input(z.object({ graph: graphAddress }))
+    .query(({ input }) => ideaActivitySnapshot(input.graph)),
 
   onAccess: procedure
-    .input(z.object({ projectPath: graphAddress }))
+    .input(z.object({ graph: graphAddress }))
     .subscription(({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       return observable<IdeaActivityEvent>((emit) =>
         onIdeaAccess((event) => { if (event.projectPath === projectPath) emit.next(event); }));
     })

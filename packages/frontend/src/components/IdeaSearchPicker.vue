@@ -184,14 +184,14 @@ const performSearch = async (query: string) => {
   try {
     const [keywordResults, semanticResults] = await Promise.all([
       trpc.idea.search.query({
-        projectPath: projectStore.projectPath,
+        graph: projectStore.projectPath,
         query,
         limit: props.resultLimit,
         status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
         archived: includeArchived.value
       }),
       trpc.idea.searchSemantic.query({
-        projectPath: projectStore.projectPath,
+        graph: projectStore.projectPath,
         query,
         limit: props.resultLimit * 3,
         status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined
@@ -241,7 +241,7 @@ const navigateToParents = async (idea: SearchIdeaResult, wasFocused = false) => 
   if (!idea.supportedIdeas?.length) return
   loading.value = true
   try {
-    const parents = await trpc.idea.getMany.query({ projectPath: projectStore.projectPath, ideaIds: idea.supportedIdeas })
+    const parents = await trpc.idea.getMany.query({ graph: projectStore.projectPath, ideaIds: idea.supportedIdeas })
     navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = parents.map(p => ({ ...p, score: 1 }))
     localNavigationTitle.value = `Parents of: ${idea.text}`
@@ -257,7 +257,7 @@ const navigateToParents = async (idea: SearchIdeaResult, wasFocused = false) => 
 const navigateToChildren = async (idea: SearchIdeaResult, wasFocused = false) => {
   loading.value = true
   try {
-    const children = await trpc.idea.list.query({ projectPath: projectStore.projectPath, parentIdeaId: idea.id })
+    const children = await trpc.idea.list.query({ graph: projectStore.projectPath, parentIdeaId: idea.id })
     if (children.length === 0) return
     navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = children.map(c => ({ ...c, score: 1 }))

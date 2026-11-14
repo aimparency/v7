@@ -86,10 +86,10 @@ Group") serves this MCP over SSE at `https://<host>/mcp/sse`. Without a token it
 can only read. "MCP" in the UI's account corner makes a link with `?token=…`
 that acts as that account, on all its graphs or only on chosen ones; a client
 that sends headers may pass the token as `Authorization: Bearer <token>`
-instead. There `projectPath` is the slug of a graph (the last part of
+instead. There `graph` is the slug of a graph (the last part of
 `https://<host>/g/<slug>`), never a path. A graph's own address,
 `https://<host>/g/<slug>/mcp/sse`, serves a session for that one graph: its
-tools need no `projectPath`.
+tools need no `graph`.
 
 ```bash
 claude mcp add --transport sse aimparency "https://<host>/mcp/sse?token=<token>"
@@ -106,7 +106,7 @@ chosen ones, and it comes back with a token for exactly that.
 claude mcp add --transport sse aimparency "https://<host>/mcp/login/sse"
 ```
 
-## Choosing `projectPath`
+## Choosing `graph`
 
 Aimparency stores project state inside a `.bowman` directory, but MCP calls can usually use either of these absolute paths:
 
@@ -119,31 +119,31 @@ The backend normalizes repo-root paths to the matching `.bowman` directory.
 
 ### Resources (Read-Only Context)
 
-Resources let the LLM read current state without calling functions. All resources require `?projectPath=/path/to/project` query parameter.
+Resources let the LLM read current state without calling functions. All resources require `?graph=/path/to/project` query parameter.
 
 **Ideas:**
-- `idea://<uuid>?projectPath=/path` - Single idea details
-- `idea://<uuid>/incoming?projectPath=/path` - Ideas this idea depends on
-- `idea://<uuid>/outgoing?projectPath=/path` - Ideas that depend on this idea
-- `ideas://all?projectPath=/path` - All ideas list
+- `idea://<uuid>?graph=/path` - Single idea details
+- `idea://<uuid>/incoming?graph=/path` - Ideas this idea depends on
+- `idea://<uuid>/outgoing?graph=/path` - Ideas that depend on this idea
+- `ideas://all?graph=/path` - All ideas list
 
 **Phases:**
-- `phase://<uuid>?projectPath=/path` - Single phase details
-- `phase://<uuid>/ideas?projectPath=/path` - Ideas committed to phase
-- `phases://all?projectPath=/path` - All phases
-- `phases://<parent-uuid>/children?projectPath=/path` - Child phases
+- `phase://<uuid>?graph=/path` - Single phase details
+- `phase://<uuid>/ideas?graph=/path` - Ideas committed to phase
+- `phases://all?graph=/path` - All phases
+- `phases://<parent-uuid>/children?graph=/path` - Child phases
 
 **Project:**
-- `project://meta?projectPath=/path` - Project metadata (name, color)
+- `project://meta?graph=/path` - Project metadata (name, color)
 
 **Example:**
 ```
-Read ideas://all?projectPath=/home/user/my-project to see all ideas
+Read ideas://all?graph=/home/user/my-project to see all ideas
 ```
 
 ### Tools (Actions)
 
-Tools allow the LLM to modify state. All tools require `projectPath` parameter.
+Tools allow the LLM to modify state. All tools take `graph` (until 2026-11 it was called `projectPath`; that name is still accepted).
 
 **Idea Operations:**
 - `create-idea` - Create new idea with text, status, relationships
@@ -169,14 +169,14 @@ Tools allow the LLM to modify state. All tools require `projectPath` parameter.
 ```javascript
 // Create a new idea
 create-idea({
-  projectPath: "/home/user/my-project",
+  graph: "/home/user/my-project",
   text: "Implement user authentication",
   status: { state: "open", comment: "" }
 })
 
 // Settle it: evidence in the status comment, a reflection on the parent's hypothesis
 update-idea({
-  projectPath: "/home/user/my-project",
+  graph: "/home/user/my-project",
   ideaId: "some-uuid",
   status: { state: "implemented", comment: "JWT with refresh tokens deployed; auth tests pass" },
   addSupportedIdeas: [{ ideaId: "parent-uuid", reflection: "Held: login no longer blocks the beta" }]
@@ -197,7 +197,7 @@ Prompts are pre-built workflows that guide the LLM through complex tasks:
 
 **Example usage with Claude:**
 ```
-Use the "breakdown" prompt with ideaId=<uuid> and projectPath=/path/to/project
+Use the "breakdown" prompt with ideaId=<uuid> and graph=/path/to/project
 ```
 
 ## Workflow Example: Indefinite Goal-Driven Work
@@ -287,12 +287,12 @@ Claude Code) to pick up changes. `pnpm --filter mcp dev` runs a restarting stdio
 
 1. **Check backend is running:** `pnpm dev` or `pnpm start` from the repo root
 2. **Check logs:** Backend logs will show tRPC errors
-3. **Verify projectPath:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
+3. **Verify graph:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
 4. **Verify UUIDs:** All idea/phase IDs must exist
 
 ### Resource reads failing
 
-Common issue: Missing `projectPath` query parameter
+Common issue: Missing `graph` query parameter
 
 **Wrong:**
 ```
@@ -301,7 +301,7 @@ idea://some-uuid
 
 **Correct:**
 ```
-idea://some-uuid?projectPath=/absolute/path/to/project
+idea://some-uuid?graph=/absolute/path/to/project
 ```
 
 ### Connection errors

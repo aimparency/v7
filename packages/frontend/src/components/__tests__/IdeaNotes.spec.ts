@@ -34,14 +34,14 @@ describe('IdeaNotes', () => {
 
   it('shows the notes on the idea and lets their author remove one', async () => {
     const wrapper = await mountNotes()
-    expect(notes.list.query).toHaveBeenCalledWith({ projectPath: 'hack-the-hub', ideaId: 'i1' })
+    expect(notes.list.query).toHaveBeenCalledWith({ graph: 'hack-the-hub', ideaId: 'i1' })
     expect(wrapper.findAll('.note').map(entry => entry.find('p').text())).toEqual(['Could it serve breakfast?', 'would like to work on this'])
     expect(wrapper.findAll('.remove')).toHaveLength(1)
 
     notes.remove.mutate.mockResolvedValue({ success: true })
     await wrapper.find('.remove').trigger('click')
     await flushPromises()
-    expect(notes.remove.mutate).toHaveBeenCalledWith({ projectPath: 'hack-the-hub', id: 'n2' })
+    expect(notes.remove.mutate).toHaveBeenCalledWith({ graph: 'hack-the-hub', id: 'n2' })
     expect(wrapper.findAll('.note')).toHaveLength(1)
   })
 
@@ -57,14 +57,14 @@ describe('IdeaNotes', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(ensureAccount).toHaveBeenCalledTimes(2)
-    expect(notes.add.mutate).toHaveBeenCalledWith({ projectPath: 'hack-the-hub', ideaId: 'i1', kind: 'note', text: 'I know a carpenter' })
+    expect(notes.add.mutate).toHaveBeenCalledWith({ graph: 'hack-the-hub', ideaId: 'i1', kind: 'note', text: 'I know a carpenter' })
     expect(wrapper.findAll('.note')).toHaveLength(3)
     expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe('')
 
     notes.add.mutate.mockResolvedValueOnce(note({ id: 'n4', kind: 'interest', text: '' }))
     await wrapper.find('button[type=button]').trigger('click')
     await flushPromises()
-    expect(notes.add.mutate).toHaveBeenLastCalledWith({ projectPath: 'hack-the-hub', ideaId: 'i1', kind: 'interest', text: '' })
+    expect(notes.add.mutate).toHaveBeenLastCalledWith({ graph: 'hack-the-hub', ideaId: 'i1', kind: 'interest', text: '' })
   })
 
   it('offers no form where the owner closed the graph for notes, and nothing at all without accounts', async () => {

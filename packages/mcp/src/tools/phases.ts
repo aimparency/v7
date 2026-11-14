@@ -1,4 +1,4 @@
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 
@@ -82,14 +82,14 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         parentPhaseId: { type: ["string", "null"] },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const phases = await trpcClient.phase.list.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         parentPhaseId: args.parentPhaseId as string | undefined,
       });
       return {
@@ -108,15 +108,15 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         query: { type: "string" },
         parentPhaseId: { type: ["string", "null"] },
       },
-      required: ["projectPath", "query"],
+      required: ["graph", "query"],
     },
     handler: async (args, trpcClient) => {
       const phases = await trpcClient.phase.search.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         query: args.query as string,
         parentPhaseId: args.parentPhaseId as string | undefined,
       });
@@ -136,7 +136,7 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         name: { type: "string" },
         parent: { type: ["string", "null"] },
         order: { type: "integer", minimum: 0, description: "Zero-based position among sibling phases." },
@@ -145,7 +145,7 @@ export const phaseTools: ToolDefinition[] = [
         from: { type: "number", description: "Optional phase start as Unix epoch milliseconds." },
         to: { type: "number", description: "Optional phase end as Unix epoch milliseconds." },
       },
-      required: ["projectPath", "name"],
+      required: ["graph", "name"],
     },
     handler: async (args, trpcClient) => {
       const parent = (args.parent as string | null | undefined) ?? null;
@@ -153,7 +153,7 @@ export const phaseTools: ToolDefinition[] = [
         args.order !== undefined || args.before !== undefined || args.after !== undefined;
       const siblings = hasPlacement
         ? await trpcClient.phase.list.query({
-            projectPath: args.projectPath as string,
+            graph: args.graph as string,
             parentPhaseId: parent,
           })
         : [];
@@ -166,7 +166,7 @@ export const phaseTools: ToolDefinition[] = [
         siblings as PhaseSibling[],
       );
       const result = await trpcClient.phase.create.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         phase: {
           name: args.name as string,
           parent,
@@ -193,14 +193,14 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         phaseId: { type: "string" },
         name: { type: "string" },
         parent: { type: ["string", "null"] },
         from: { type: "number", description: "Optional phase start as Unix epoch milliseconds." },
         to: { type: "number", description: "Optional phase end as Unix epoch milliseconds." },
       },
-      required: ["projectPath", "phaseId"],
+      required: ["graph", "phaseId"],
     },
     handler: async (args, trpcClient) => {
       const fields = args as BackendInputs["phase"]["update"]["phase"];
@@ -211,7 +211,7 @@ export const phaseTools: ToolDefinition[] = [
       if (fields.to !== undefined) updateData.to = fields.to;
 
       await trpcClient.phase.update.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         phaseId: args.phaseId as string,
         phase: updateData,
       });
@@ -231,14 +231,14 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         phaseId: { type: "string" }
       },
-      required: ["projectPath", "phaseId"],
+      required: ["graph", "phaseId"],
     },
     handler: async (args, trpcClient) => {
       await trpcClient.phase.delete.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         phaseId: args.phaseId as string,
       });
       return {
@@ -257,16 +257,16 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" },
         phaseId: { type: "string" },
         insertionIndex: { type: "number" },
       },
-      required: ["projectPath", "ideaId", "phaseId"],
+      required: ["graph", "ideaId", "phaseId"],
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.commitToPhase.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         ideaId: args.ideaId as string,
         phaseId: args.phaseId as string,
         insertionIndex: args.insertionIndex as number | undefined,
@@ -287,15 +287,15 @@ export const phaseTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" },
         phaseId: { type: "string" },
       },
-      required: ["projectPath", "ideaId", "phaseId"],
+      required: ["graph", "ideaId", "phaseId"],
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.removeFromPhase.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         ideaId: args.ideaId as string,
         phaseId: args.phaseId as string,
       });

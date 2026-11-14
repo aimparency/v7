@@ -89,7 +89,7 @@ watch(() => props.modelValue, (value) => {
   if (!path || gitRepositoryLocation(path)) return
   inspectionTimer = setTimeout(async () => {
     try {
-      const result = await trpc.project.inspectPath.query({ projectPath: path })
+      const result = await trpc.project.inspectPath.query({ graph: path })
       if (revision !== inspectionRevision) return
       inspectedPath.value = path
       bowmanExists.value = result.bowmanExists

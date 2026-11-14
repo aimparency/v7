@@ -1,4 +1,4 @@
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences, findReconciliationCandidates } from "../reconcile.js";
 import { extractCodeTokens, scoreCodePresence } from "../code-presence.js";
 import type { ToolDefinition } from "./types.js";
@@ -10,12 +10,12 @@ export const graphHealthTools: ToolDefinition[] = [
     description: "Check the idea graph for structural issues: broken links, mismatched parent/child references, orphaned embeddings. Run before fix_consistency.",
     inputSchema: {
       type: "object",
-      properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
-      required: ["projectPath"],
+      properties: { graph: GRAPH_TOOL_PROPERTY },
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.checkConsistency.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -27,12 +27,12 @@ export const graphHealthTools: ToolDefinition[] = [
     description: "Auto-repair structural inconsistencies found by check_consistency (rewires broken references).",
     inputSchema: {
       type: "object",
-      properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
-      required: ["projectPath"],
+      properties: { graph: GRAPH_TOOL_PROPERTY },
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.fixConsistency.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -44,12 +44,12 @@ export const graphHealthTools: ToolDefinition[] = [
     description: "Rebuild the text search index and queue background embedding generation for semantic search.",
     inputSchema: {
       type: "object",
-      properties: { projectPath: PROJECT_PATH_TOOL_PROPERTY },
-      required: ["projectPath"],
+      properties: { graph: GRAPH_TOOL_PROPERTY },
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.project.buildSearchIndex.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -62,15 +62,15 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.92)" },
         limit: { type: "number", description: "Max pairs to return (default 50)" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.findDuplicates.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         threshold: args.threshold as number | undefined,
         limit: args.limit as number | undefined,
       });
@@ -85,16 +85,16 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         parentIdeaId: { type: "string", description: "UUID of the catch-all parent idea" },
         candidateParentIds: { type: "array", items: { type: "string" }, description: "Optional explicit candidate sub-parent UUIDs (default: the catch-all's children that have children)" },
         limit: { type: "number", description: "Max suggestions to return (default 200)" },
       },
-      required: ["projectPath", "parentIdeaId"],
+      required: ["graph", "parentIdeaId"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.suggestReparents.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         parentIdeaId: args.parentIdeaId as string,
         candidateParentIds: args.candidateParentIds as string[] | undefined,
         limit: args.limit as number | undefined,
@@ -110,16 +110,16 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         megaParentThreshold: { type: "number", description: "Min direct children to flag a mega-parent (default 25)" },
         duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.92)" },
         limit: { type: "number", description: "Max items per section (default 30)" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.graphHygiene.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         megaParentThreshold: args.megaParentThreshold as number | undefined,
         duplicateThreshold: args.duplicateThreshold as number | undefined,
         limit: args.limit as number | undefined,
@@ -135,20 +135,20 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         limit: { type: "number", description: "Max candidates to return (default 30)" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const limit = (args.limit as number | undefined) ?? 30;
       const allIdeas = await trpcClient.idea.list.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
       // Code-only: a graph-bookkeeping commit that merely cites an idea id is
       // not evidence the idea was implemented (see CODE_ONLY_PATHSPEC).
-      const commitMessages = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
+      const commitMessages = getRepoCommitMessages(args.graph as string, 2000, CODE_ONLY_PATHSPEC);
       const counts = countIdeaReferences(commitMessages, openIdeas.map((a) => a.id));
       const candidates = findReconciliationCandidates(openIdeas, counts);
       return {
@@ -175,11 +175,11 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         minScore: { type: "number", description: "Min fraction of an idea's tokens present in code to flag it, 0–1 (default 0.6)" },
         limit: { type: "number", description: "Max candidates to return (default 20)" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const minScore = (args.minScore as number | undefined) ?? 0.6;
@@ -187,12 +187,12 @@ export const graphHealthTools: ToolDefinition[] = [
       const MAX_TOKENS_PER_IDEA = 12;
       const MAX_UNIQUE_TOKENS = 400;
 
-      const allIdeas = await trpcClient.idea.list.query({ projectPath: args.projectPath as string });
+      const allIdeas = await trpcClient.idea.list.query({ graph: args.graph as string });
       const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
 
       // Ideas already cited by a code commit are reconcile_status's job — skip
       // them so this heuristic focuses on its complement (no commit reference).
-      const codeCommits = getRepoCommitMessages(args.projectPath as string, 2000, CODE_ONLY_PATHSPEC);
+      const codeCommits = getRepoCommitMessages(args.graph as string, 2000, CODE_ONLY_PATHSPEC);
       const cited = countIdeaReferences(codeCommits, openIdeas.map((a) => a.id));
       const ideasToScan = openIdeas.filter((a) => !((cited.get(a.id) ?? 0) > 0));
 
@@ -208,7 +208,7 @@ export const graphHealthTools: ToolDefinition[] = [
 
       // One git grep per unique token; build the set present in code.
       const present = new Set<string>();
-      for (const tok of uniqueTokens) if (gitGrepMatches(args.projectPath as string, tok)) present.add(tok);
+      for (const tok of uniqueTokens) if (gitGrepMatches(args.graph as string, tok)) present.add(tok);
 
       const ideaById = new Map(openIdeas.map((a) => [a.id, a]));
       const candidates = [...tokensByIdea.entries()]

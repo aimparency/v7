@@ -8,7 +8,7 @@
 //             an SSH key for it; then it is committed here and pushed back.
 //   checkout  a repository on this machine that the server admin added
 //
-// The slug is the graph's name in addresses (/g/<slug>, and `projectPath` in
+// The slug is the graph's name in addresses (/g/<slug>, and `graph` in
 // the API). It is made once and stays when the graph is renamed.
 
 import { execFile } from 'node:child_process';

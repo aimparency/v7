@@ -17,11 +17,11 @@ export function followIdeaActivity(projectPath: string) {
   // Accesses add up, so none may count twice: hold live events until the
   // snapshot arrives, then replay only those it doesn't contain yet.
   let waiting: IdeaActivityEvent[] | null = []
-  const current = subscription = trpc.activity.onAccess.subscribe({ projectPath }, {
+  const current = subscription = trpc.activity.onAccess.subscribe({ graph: projectPath }, {
     onData: (event) => { if (waiting) waiting.push(event); else apply(event) },
     onError: (error) => console.warn('Idea activity feed stopped', error)
   })
-  void trpc.activity.snapshot.query({ projectPath }).then((snapshot) => {
+  void trpc.activity.snapshot.query({ graph: projectPath }).then((snapshot) => {
     if (subscription !== current) return // another project was opened meanwhile
     for (const [ideaId, activity] of Object.entries(snapshot.ideas)) ideaActivity.set(ideaId, activity)
     for (const event of waiting!) if (event.seq > snapshot.seq) apply(event)

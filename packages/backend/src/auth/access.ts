@@ -90,10 +90,10 @@ export function viewerFor(token: string | undefined, graph: Graph | null = null)
   return { ...viewer, serverAdmin: false, canCreateGraphs: false };
 }
 
-/** The graph a request names with `projectPath`; an unknown one is refused here, whatever the procedure would do with it. */
+/** The graph a request names with `graph`; an unknown one is refused here, whatever the procedure would do with it. */
 export function graphOf(input: unknown): Graph | null {
   if (!hasAccounts()) return null;
-  const address = (input as { projectPath?: unknown } | undefined)?.projectPath;
+  const address = (input as { graph?: unknown } | undefined)?.graph;
   return typeof address === 'string' ? resolveGraphAddress(address).graph : null;
 }
 

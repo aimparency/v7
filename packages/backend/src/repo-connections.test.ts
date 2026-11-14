@@ -33,7 +33,7 @@ afterEach(async () => {
 });
 
 async function makeIdea(text: string): Promise<string> {
-  const idea = await caller.idea.createFloatingIdea({ projectPath, idea: { text } });
+  const idea = await caller.idea.createFloatingIdea({ graph: projectPath, idea: { text } });
   return idea.id;
 }
 
@@ -41,12 +41,12 @@ test('update persists a {repoId}-only supportingRepos edge with defaults', async
   const ideaId = await makeIdea('local idea that leans on an external project');
 
   await caller.idea.update({
-    projectPath,
+    graph: projectPath,
     ideaId,
     idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID, weight: 2 }] },
   });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1);
   const edge = reloaded.supportingRepos![0];
   assert.equal(edge.repoId, EXTERNAL_REPO_ID);
@@ -57,21 +57,21 @@ test('update persists a {repoId}-only supportingRepos edge with defaults', async
 
 test('an unrelated update does not wipe an existing repo edge', async () => {
   const ideaId = await makeIdea('idea');
-  await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
+  await caller.idea.update({ graph: projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
   // Touch a different field; supportingRepos is absent from this payload.
-  await caller.idea.update({ projectPath, ideaId, idea: { intrinsicValue: 5 } });
+  await caller.idea.update({ graph: projectPath, ideaId, idea: { intrinsicValue: 5 } });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.intrinsicValue, 5);
   assert.equal(reloaded.supportingRepos?.length, 1, 'repo edge preserved across an unrelated update');
 });
 
 test('consistency check ignores repo edges (no phantom non-existent-child issue)', async () => {
   const ideaId = await makeIdea('idea with a black-box repo supporter');
-  await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
+  await caller.idea.update({ graph: projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
-  const report = await caller.graphHealth.checkConsistency({ projectPath });
+  const report = await caller.graphHealth.checkConsistency({ graph: projectPath });
   const messages = (report.issues ?? []).map((i: any) => `${i.code} ${i.message}`).join('\n');
   assert.ok(
     !messages.includes(EXTERNAL_REPO_ID),
@@ -81,20 +81,20 @@ test('consistency check ignores repo edges (no phantom non-existent-child issue)
 
 test('fixConsistency does not prune a repo edge', async () => {
   const ideaId = await makeIdea('idea');
-  await caller.idea.update({ projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
+  await caller.idea.update({ graph: projectPath, ideaId, idea: { supportingRepos: [{ repoId: EXTERNAL_REPO_ID }] } });
 
-  await caller.graphHealth.fixConsistency({ projectPath });
+  await caller.graphHealth.fixConsistency({ graph: projectPath });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1, 'fix must not strip the repo edge');
 });
 
 test('linkRepo attaches a {repoId}-only edge with a defaulted position', async () => {
   const ideaId = await makeIdea('idea that will lean on a repo');
 
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 3 });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 3 });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1);
   const edge = reloaded.supportingRepos![0];
   assert.equal(edge.repoId, EXTERNAL_REPO_ID);
@@ -105,10 +105,10 @@ test('linkRepo attaches a {repoId}-only edge with a defaulted position', async (
 
 test('linkRepo is idempotent on repoId (upsert, not duplicate)', async () => {
   const ideaId = await makeIdea('idea');
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 1 });
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 5, hypothesis: 'leans harder now' });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 1 });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: EXTERNAL_REPO_ID, weight: 5, hypothesis: 'leans harder now' });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1, 'no duplicate edge for the same repo');
   assert.equal(reloaded.supportingRepos![0].weight, 5, 'weight updated on re-link');
   assert.equal(reloaded.supportingRepos![0].hypothesis, 'leans harder now');
@@ -117,22 +117,22 @@ test('linkRepo is idempotent on repoId (upsert, not duplicate)', async () => {
 test('linkRepo preserves an existing edge to a different repo', async () => {
   const OTHER_REPO_ID = '22222222-2222-4222-8222-222222222222';
   const ideaId = await makeIdea('idea leaning on two repos');
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: OTHER_REPO_ID });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: OTHER_REPO_ID });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 2, 'both distinct repo edges kept');
 });
 
 test('unlinkRepo removes only the matching repo edge', async () => {
   const OTHER_REPO_ID = '22222222-2222-4222-8222-222222222222';
   const ideaId = await makeIdea('idea');
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
-  await caller.idea.linkRepo({ projectPath, ideaId, repoId: OTHER_REPO_ID });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
+  await caller.idea.linkRepo({ graph: projectPath, ideaId, repoId: OTHER_REPO_ID });
 
-  await caller.idea.unlinkRepo({ projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
+  await caller.idea.unlinkRepo({ graph: projectPath, ideaId, repoId: EXTERNAL_REPO_ID });
 
-  const reloaded = await caller.idea.get({ projectPath, ideaId });
+  const reloaded = await caller.idea.get({ graph: projectPath, ideaId });
   assert.equal(reloaded.supportingRepos?.length, 1);
   assert.equal(reloaded.supportingRepos![0].repoId, OTHER_REPO_ID, 'the other edge survives');
 });

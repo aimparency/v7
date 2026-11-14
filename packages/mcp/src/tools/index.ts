@@ -18,19 +18,28 @@ export function availableTools(withAccounts: boolean) {
 }
 
 // A session connected through a graph's own address (<host>/g/<slug>/mcp/sse)
-// works on that graph: its tools take projectPath as optional.
+// works on that graph: its tools take `graph` as optional.
 export function toolForGraph(tool: ToolDefinition, graph: string | undefined): Pick<ToolDefinition, "name" | "description" | "inputSchema"> {
   const { name, description, inputSchema } = tool;
-  if (!graph || !inputSchema.required?.includes("projectPath")) return { name, description, inputSchema };
+  if (!graph || !inputSchema.required?.includes("graph")) return { name, description, inputSchema };
   return {
     name,
     description,
     inputSchema: {
       ...inputSchema,
-      required: inputSchema.required.filter((property) => property !== "projectPath"),
-      properties: { ...inputSchema.properties, projectPath: { type: "string", description: `Leave out: this session works on the graph "${graph}"` } },
+      required: inputSchema.required.filter((property) => property !== "graph"),
+      properties: { ...inputSchema.properties, graph: { type: "string", description: `Leave out: this session works on the graph "${graph}"` } },
     },
   };
+}
+
+// The graph a call works on: the one it names; `projectPath`, as the parameter
+// was called before (agents and scripts still send it); else the session's.
+export function argumentsWithGraph(given: Record<string, unknown> | undefined, sessionGraph: string | undefined) {
+  if (!given) return given;
+  const { projectPath, ...rest } = given;
+  const graph = rest.graph ?? projectPath ?? sessionGraph;
+  return graph === undefined ? rest : { ...rest, graph };
 }
 
 export function registerTools(server: Server, trpcClient: BackendClient, graph?: string) {
@@ -49,8 +58,7 @@ export function registerTools(server: Server, trpcClient: BackendClient, graph?:
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name } = request.params;
-    const given = request.params.arguments;
-    const args = graph && given && given.projectPath === undefined ? { ...given, projectPath: graph } : given;
+    const args = argumentsWithGraph(request.params.arguments, graph);
     try {
       const tool = (await sessionTools()).find((candidate) => candidate.name === name);
       if (!tool) throw new Error(`Unknown tool: ${name}`);
@@ -64,7 +72,7 @@ export function registerTools(server: Server, trpcClient: BackendClient, graph?:
         content: [
           {
             type: "text",
-            text: `Error executing ${name}: ${errorMessage}\n\nPlease check that:\n1. The projectPath is the absolute path of the project, or the name of a graph on the server\n2. All UUIDs are valid and exist\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
+            text: `Error executing ${name}: ${errorMessage}\n\nPlease check that:\n1. "graph" is the absolute path of the project, or the name of a graph on the server\n2. All UUIDs are valid and exist\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
           },
         ],
         isError: true,

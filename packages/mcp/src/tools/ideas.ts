@@ -1,5 +1,5 @@
 import { calculateIdeaValues, childBrief, defaultIdeaCost, INITIAL_STATES, missionPathsToRoot } from "shared";
-import { IDEA_STATES_DESCRIPTION, PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { IDEA_STATES_DESCRIPTION, GRAPH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea, formatIdeas, describeRepoEdges } from "./format.js";
@@ -32,14 +32,14 @@ export function verificationHintForIdea(
  * reflect on each parent connection's hypothesis that has no reflection yet.
  */
 async function reflectionNudgeFor(trpcClient: BackendClient, projectPath: string, ideaId: string, state: string): Promise<string> {
-  const meta = await trpcClient.project.getMeta.query({ projectPath }).catch(() => null);
+  const meta = await trpcClient.project.getMeta.query({ graph: projectPath }).catch(() => null);
   const statuses = meta?.statuses ?? INITIAL_STATES;
   if (!statuses.find((status) => status.key === state)?.promptsReflection) return "";
 
-  const idea = await trpcClient.idea.get.query({ projectPath, ideaId });
+  const idea = await trpcClient.idea.get.query({ graph: projectPath, ideaId });
   const lines: string[] = [];
   for (const parentId of idea?.supportedIdeas ?? []) {
-    const parent = await trpcClient.idea.get.query({ projectPath, ideaId: parentId }).catch(() => null);
+    const parent = await trpcClient.idea.get.query({ graph: projectPath, ideaId: parentId }).catch(() => null);
     const connection = parent?.supportingConnections?.find((c) => c.ideaId === ideaId);
     if (!parent || !connection || connection.reflection?.trim()) continue;
     const hypothesis = connection.hypothesis?.trim() ? ` — hypothesis: "${connection.hypothesis.trim()}"` : " — no hypothesis recorded";
@@ -54,7 +54,7 @@ async function reflectionNudgeFor(trpcClient: BackendClient, projectPath: string
 export function ideaCreationConfirmationToken(args: Record<string, unknown>): string {
   const text = String(args.text ?? "").trim().replace(/\s+/g, " ").toLowerCase();
   return createHash("sha256")
-    .update(JSON.stringify([args.projectPath, text]))
+    .update(JSON.stringify([args.graph, text]))
     .digest("hex")
     .slice(0, 24);
 }
@@ -64,14 +64,14 @@ export function ideaCreationConfirmationToken(args: Record<string, unknown>): st
 export async function ideaContext(trpcClient: BackendClient, projectPath: string, ideaId: string, allIdeas?: Awaited<ReturnType<BackendClient["idea"]["list"]["query"]>>) {
   // The whole graph powers the value model (to choose which parent to follow
   // at branches) and resolves parent/child text from a map instead of N round-trips.
-  allIdeas ??= await trpcClient.idea.list.query({ projectPath });
+  allIdeas ??= await trpcClient.idea.list.query({ graph: projectPath });
   const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
   const { flowValues } = calculateIdeaValues(allIdeas);
 
-  const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ projectPath, ideaId });
+  const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ graph: projectPath, ideaId });
 
   const similarIdeas = await trpcClient.idea.searchSemantic.query({
-    projectPath,
+    graph: projectPath,
     query: `${idea.text} ${idea.description || ''}`.trim(),
     limit: 6 // Request 6, filter self
   });
@@ -114,17 +114,17 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" }
       },
-      required: ["projectPath", "ideaId"],
+      required: ["graph", "ideaId"],
     },
     handler: async (args, trpcClient) => {
       const idea = await trpcClient.idea.get.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         ideaId: args.ideaId as string,
       });
-      await describeRepoEdges(trpcClient, args.projectPath as string, [idea]);
+      await describeRepoEdges(trpcClient, args.graph as string, [idea]);
       return {
         content: [
           {
@@ -141,15 +141,15 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" }
       },
-      required: ["projectPath", "ideaId"],
+      required: ["graph", "ideaId"],
     },
     handler: async (args, trpcClient) => ({
       content: [{
         type: "text",
-        text: JSON.stringify(await ideaContext(trpcClient, args.projectPath as string, args.ideaId as string), null, 2),
+        text: JSON.stringify(await ideaContext(trpcClient, args.graph as string, args.ideaId as string), null, 2),
       }],
     }),
   },
@@ -159,7 +159,7 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         query: { type: "string" },
         status: { type: ["string", "array"], items: { type: "string" } },
         phaseId: { type: "string" },
@@ -167,11 +167,11 @@ export const ideaTools: ToolDefinition[] = [
         limit: { type: "number" },
         offset: { type: "number" }
       },
-      required: ["projectPath", "query"],
+      required: ["graph", "query"],
     },
     handler: async (args, trpcClient) => {
       const ideas = await trpcClient.idea.search.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         query: args.query as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
@@ -195,17 +195,17 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         query: { type: "string" },
         status: { type: ["string", "array"], items: { type: "string" } },
         phaseId: { type: "string" },
         limit: { type: "number" },
       },
-      required: ["projectPath", "query"],
+      required: ["graph", "query"],
     },
     handler: async (args, trpcClient) => {
       const results = await trpcClient.idea.searchSemantic.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         query: args.query as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
@@ -222,7 +222,7 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         text: { type: "string" },
         description: { type: "string" },
         tags: { type: "array", items: { type: "string" } },
@@ -243,7 +243,7 @@ export const ideaTools: ToolDefinition[] = [
         phaseId: { type: "string" },
         confirmationToken: { type: "string", description: "Token returned by the review-only first call. Changing the text requires a fresh review; other fields may change." },
       },
-      required: ["projectPath", "text"],
+      required: ["graph", "text"],
     },
     handler: async (args, trpcClient) => {
       if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
@@ -256,11 +256,11 @@ export const ideaTools: ToolDefinition[] = [
       if (args.confirmationToken === undefined) {
         const [related, projectMeta] = await Promise.all([
           trpcClient.idea.search.query({
-            projectPath: args.projectPath as string,
+            graph: args.graph as string,
             query: args.text as string,
             limit: 8,
           }),
-          trpcClient.project.getMeta.query({ projectPath: args.projectPath as string }).catch(() => null),
+          trpcClient.project.getMeta.query({ graph: args.graph as string }).catch(() => null),
         ]);
         return {
           content: [{
@@ -299,7 +299,7 @@ export const ideaTools: ToolDefinition[] = [
 
       const parents = (args.supportedIdeas as ConnectionInput[]) || [];
       const result = await trpcClient.idea.createFloatingIdea.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         idea: {
           text: args.text as string,
           description: args.description as string | undefined,
@@ -322,7 +322,7 @@ export const ideaTools: ToolDefinition[] = [
       for (const childInput of children) {
         const child = normalizeConnectionInput(childInput);
         await trpcClient.idea.connectIdeas.mutate({
-          projectPath: args.projectPath as string,
+          graph: args.graph as string,
           parentIdeaId: result.id,
           childIdeaId: child.ideaId,
           weight: child.weight,
@@ -334,7 +334,7 @@ export const ideaTools: ToolDefinition[] = [
       for (const parentInput of parents) {
         const parent = normalizeConnectionInput(parentInput);
         await trpcClient.idea.connectIdeas.mutate({
-          projectPath: args.projectPath as string,
+          graph: args.graph as string,
           parentIdeaId: parent.ideaId,
           childIdeaId: result.id,
           weight: parent.weight,
@@ -345,7 +345,7 @@ export const ideaTools: ToolDefinition[] = [
       // If phaseId provided, commit to phase
       if (args.phaseId) {
         await trpcClient.idea.commitToPhase.mutate({
-          projectPath: args.projectPath as string,
+          graph: args.graph as string,
           ideaId: result.id,
           phaseId: args.phaseId as string,
         });
@@ -368,7 +368,7 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" },
         text: { type: "string" },
         description: { type: "string" },
@@ -390,7 +390,7 @@ export const ideaTools: ToolDefinition[] = [
         cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit (see get_prioritized_ideas economics)" },
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
       },
-      required: ["projectPath", "ideaId"],
+      required: ["graph", "ideaId"],
     },
     handler: async (args, trpcClient) => {
       // The backend validates these; the tool schema above already names them.
@@ -410,7 +410,7 @@ export const ideaTools: ToolDefinition[] = [
       if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
           args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined) {
         const existingIdea = await trpcClient.idea.get.query({
-          projectPath: args.projectPath as string,
+          graph: args.graph as string,
           ideaId: args.ideaId as string,
         });
 
@@ -446,7 +446,7 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       await trpcClient.idea.update.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         ideaId: args.ideaId as string,
         idea: updateData,
       });
@@ -455,7 +455,7 @@ export const ideaTools: ToolDefinition[] = [
         if (parent.weight === undefined && parent.hypothesis === undefined && parent.reflection === undefined) continue;
 
         const parentIdea = await trpcClient.idea.get.query({
-          projectPath: args.projectPath as string,
+          graph: args.graph as string,
           ideaId: parent.parentIdeaId,
         });
         const childIdeaId = args.ideaId as string;
@@ -476,7 +476,7 @@ export const ideaTools: ToolDefinition[] = [
           supportingConnections[existingIndex] = next;
         }
         await trpcClient.idea.update.mutate({
-          projectPath: args.projectPath as string,
+          graph: args.graph as string,
           ideaId: parent.parentIdeaId,
           idea: { supportingConnections },
         });
@@ -490,7 +490,7 @@ export const ideaTools: ToolDefinition[] = [
       if ((args.status as { state?: string } | undefined)?.state === "implemented") {
         try {
           const idea = await trpcClient.idea.get.query({
-            projectPath: args.projectPath as string,
+            graph: args.graph as string,
             ideaId: args.ideaId as string,
           });
           if (!idea?.status?.comment?.trim()) {
@@ -506,7 +506,7 @@ export const ideaTools: ToolDefinition[] = [
 
       const newState = (args.status as { state?: string } | undefined)?.state;
       const reflectionNudge = newState
-        ? await reflectionNudgeFor(trpcClient, args.projectPath as string, args.ideaId as string, newState).catch(() => "")
+        ? await reflectionNudgeFor(trpcClient, args.graph as string, args.ideaId as string, newState).catch(() => "")
         : "";
 
       return {
@@ -525,15 +525,15 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" },
         cascade: { type: "boolean" }
       },
-      required: ["projectPath", "ideaId"],
+      required: ["graph", "ideaId"],
     },
     handler: async (args, trpcClient) => {
       const { deletedIds } = await trpcClient.idea.delete.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         ideaIds: [args.ideaId as string],
         cascade: args.cascade === true,
       });
@@ -553,15 +553,15 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         targetId: { type: "string", description: "UUID of the idea to keep (A)" },
         sourceId: { type: "string", description: "UUID of the idea to archive (B)" },
       },
-      required: ["projectPath", "targetId", "sourceId"],
+      required: ["graph", "targetId", "sourceId"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.merge.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         targetId: args.targetId as string,
         sourceId: args.sourceId as string,
       });
@@ -575,23 +575,23 @@ export const ideaTools: ToolDefinition[] = [
 // Several update_idea calls in one: the end of a work chunk usually settles a
 // few ideas at once (status, links).
 const updateIdea = ideaTools.find((tool) => tool.name === "update_idea")!;
-const { projectPath: _projectPath, ...updateFields } = (updateIdea.inputSchema.properties ?? {}) as Record<string, object>;
+const { graph: _graph, ...updateFields } = (updateIdea.inputSchema.properties ?? {}) as Record<string, object>;
 ideaTools.push({
   name: "update_ideas",
   description: "Batch of update_idea calls (same fields per entry), applied in order. Stops at the first failure and reports which updates were applied.",
   inputSchema: {
     type: "object",
     properties: {
-      projectPath: PROJECT_PATH_TOOL_PROPERTY,
+      graph: GRAPH_TOOL_PROPERTY,
       updates: { type: "array", items: { type: "object", properties: updateFields, required: ["ideaId"] } },
     },
-    required: ["projectPath", "updates"],
+    required: ["graph", "updates"],
   },
   handler: async (args, trpcClient) => {
     const applied: string[] = [];
     for (const update of (args.updates as Record<string, unknown>[]) ?? []) {
       try {
-        const result = await updateIdea.handler({ ...update, projectPath: args.projectPath }, trpcClient);
+        const result = await updateIdea.handler({ ...update, graph: args.graph }, trpcClient);
         const text = result.content.map((part) => (part.type === "text" ? part.text : "")).join("");
         if (result.isError) throw new Error(text);
         applied.push(text);

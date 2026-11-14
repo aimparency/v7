@@ -241,8 +241,8 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   like a password; the dialog lists the connected clients and revokes them. A
   client limited to graphs is nobody elsewhere: it reads other graphs like any
   visitor and cannot manage accounts or create graphs. Tools take the graph's
-  slug as `projectPath`; a link for one graph is that graph's own address
-  (`https://<host>/g/<slug>/mcp/sse`), where tools need no `projectPath`.
+  slug as `graph`; a link for one graph is that graph's own address
+  (`https://<host>/g/<slug>/mcp/sse`), where tools need no `graph`.
   Without a token the MCP can only read. With `"publicUrl"` set in
   `server.json`, a client can also log in by itself (OAuth, as the MCP
   specification describes it) at `https://<host>/mcp/login/sse`: it opens the

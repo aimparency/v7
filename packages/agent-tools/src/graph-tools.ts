@@ -32,15 +32,15 @@ export function connectGraph(projectPath: string) {
   const socket = createWSClient({ url: `ws://${host}:${process.env.PORT_BACKEND_WS || '3001'}` });
   const backend = createTRPCClient<AppRouter>({ links: [wsLink({ client: socket })] });
 
-  const listIdeas = () => backend.idea.list.query({ projectPath });
-  const listPhases = () => backend.phase.list.query({ projectPath });
+  const listIdeas = () => backend.idea.list.query({ graph: projectPath });
+  const listPhases = () => backend.phase.list.query({ graph: projectPath });
 
   // Same selection and ranking as MCP get_prioritized_ideas.
   async function getPrioritizedIdeas(limit = 10, phaseId?: string | null): Promise<PrioritizedIdea[]> {
     const [ideas, phases, meta] = await Promise.all([
       listIdeas(),
       listPhases(),
-      backend.project.getMeta.query({ projectPath }).catch(() => null)
+      backend.project.getMeta.query({ graph: projectPath }).catch(() => null)
     ]);
     const phase = resolveWorkPhase(phases, phaseId);
     if (!phase) return [];
@@ -82,7 +82,7 @@ export function connectGraph(projectPath: string) {
   }
 
   async function searchIdeas(query: string, limit = 8) {
-    const results = await backend.idea.searchSemantic.query({ projectPath, query, limit });
+    const results = await backend.idea.searchSemantic.query({ graph: projectPath, query, limit });
     return results.map((idea) => ({ id: idea.id, text: idea.text, description: idea.description, status: idea.status }));
   }
 

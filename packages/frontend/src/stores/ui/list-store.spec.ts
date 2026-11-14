@@ -71,7 +71,7 @@ describe('list store phase selection', () => {
     const result = await uiStore.mergeSelectedInto('target')
 
     expect(mockTrpc.idea.merge.mutate).toHaveBeenCalledWith({
-      projectPath: '/tmp/project',
+      graph: '/tmp/project',
       targetId: 'target',
       sourceId: 'source'
     })
@@ -368,7 +368,7 @@ describe('list store phase selection', () => {
 
     expect(uiStore.currentPhaseIdByLevel).toEqual({ 0: 'root-b', 1: 'child-b' })
     expect(mockTrpc.phase.setCursor.mutate).toHaveBeenCalledWith({
-      projectPath: '/tmp/project',
+      graph: '/tmp/project',
       cursors: { 0: 'root-b', 1: 'child-b' },
       activeLevel: 1
     })

@@ -40,7 +40,7 @@ const phaseAncestorNames = (phase: Phase, phasesById: Map<string, Phase>) => {
 export const phaseRouter = t.router({
   create: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phase: z.object({
         name: z.string(),
         order: z.number().int().nonnegative().optional(),
@@ -62,38 +62,38 @@ export const phaseRouter = t.router({
         commitments: input.phase.commitments || []
       };
 
-      await writePhase(input.projectPath, phase);
-      await updateSiblingIds(input.projectPath, phase.parent, (siblingIds) => {
+      await writePhase(input.graph, phase);
+      await updateSiblingIds(input.graph, phase.parent, (siblingIds) => {
         // A fresh meta derives its root list from the phase files, which already include this one.
         const updated = siblingIds.filter((id) => id !== phaseId);
         updated.splice(input.phase.order ?? updated.length, 0, phaseId);
         return updated;
       });
-      addPhaseToIndex(input.projectPath, phase);
+      addPhaseToIndex(input.graph, phase);
       return { id: phaseId };
     }),
 
   get: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phaseId: z.string().uuid()
     }))
     .query(async ({ input }) => {
-      return await readPhase(input.projectPath, input.phaseId);
+      return await readPhase(input.graph, input.phaseId);
     }),
 
   list: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       parentPhaseId: z.string().uuid().nullable().optional()
     }))
     .query(async ({ input }) => {
-      return await listPhases(input.projectPath, input.parentPhaseId);
+      return await listPhases(input.graph, input.parentPhaseId);
     }),
 
   update: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phaseId: z.string().uuid(),
       phase: z.object({
         name: z.string().optional(),
@@ -108,19 +108,19 @@ export const phaseRouter = t.router({
       insertionIndex: z.number().int().nonnegative().optional()
     }))
     .mutation(async ({ input }) => {
-      const oldParentId = (await readPhase(input.projectPath, input.phaseId)).parent ?? null;
+      const oldParentId = (await readPhase(input.graph, input.phaseId)).parent ?? null;
       const newParentId = input.phase.parent;
 
       if (newParentId && newParentId !== oldParentId) {
-        const parentById = new Map((await listPhases(input.projectPath)).map((phase) => [phase.id, phase.parent]));
+        const parentById = new Map((await listPhases(input.graph)).map((phase) => [phase.id, phase.parent]));
         if (isInPhaseSubtree(newParentId, input.phaseId, (phaseId) => parentById.get(phaseId))) {
           throw new Error('A phase cannot move under itself or one of its sub-phases');
         }
       }
 
       if (newParentId !== undefined && newParentId !== oldParentId) {
-        await updateSiblingIds(input.projectPath, oldParentId, (siblingIds) => siblingIds.filter((id) => id !== input.phaseId));
-        await updateSiblingIds(input.projectPath, newParentId, (siblingIds) => {
+        await updateSiblingIds(input.graph, oldParentId, (siblingIds) => siblingIds.filter((id) => id !== input.phaseId));
+        await updateSiblingIds(input.graph, newParentId, (siblingIds) => {
           const updated = siblingIds.filter((id) => id !== input.phaseId);
           updated.splice(Math.min(input.insertionIndex ?? updated.length, updated.length), 0, input.phaseId);
           return updated;
@@ -129,7 +129,7 @@ export const phaseRouter = t.router({
 
       // Only the given fields change, applied to the current file, so a
       // concurrent commitment isn't overwritten with a stale list.
-      const updatedPhase = (await updatePhase(input.projectPath, input.phaseId, (existingPhase) => ({
+      const updatedPhase = (await updatePhase(input.graph, input.phaseId, (existingPhase) => ({
         ...existingPhase,
         ...(input.phase.name !== undefined ? { name: input.phase.name } : {}),
         ...(input.phase.from !== undefined ? { from: input.phase.from } : {}),
@@ -137,19 +137,19 @@ export const phaseRouter = t.router({
         ...(newParentId !== undefined ? { parent: newParentId } : {}),
         ...(input.phase.commitments !== undefined ? { commitments: input.phase.commitments } : {})
       })))!;
-      updatePhaseInIndex(input.projectPath, updatedPhase);
+      updatePhaseInIndex(input.graph, updatedPhase);
       return updatedPhase;
     }),
 
   reorder: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phaseId: z.string().uuid(),
       newIndex: z.number().int().nonnegative()
     }))
     .mutation(async ({ input }) => {
-      const phase = await readPhase(input.projectPath, input.phaseId);
-      await updateSiblingIds(input.projectPath, phase.parent ?? null, (siblingIds) => {
+      const phase = await readPhase(input.graph, input.phaseId);
+      await updateSiblingIds(input.graph, phase.parent ?? null, (siblingIds) => {
         const currentIndex = siblingIds.indexOf(input.phaseId);
         if (currentIndex === -1) {
           throw new Error(`Phase ${input.phaseId} not found in sibling list`);
@@ -163,12 +163,12 @@ export const phaseRouter = t.router({
 
   delete: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phaseId: z.string().uuid()
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
-      const phase = await readPhase(input.projectPath, input.phaseId);
+      const projectPath = normalizeProjectPath(input.graph);
+      const phase = await readPhase(input.graph, input.phaseId);
       // Child phases take the deleted phase's slot in its parent, in order, so
       // the column keeps its shape instead of the children jumping to the end.
       const childPhaseIds = phase.childPhaseIds ?? [];
@@ -179,24 +179,24 @@ export const phaseRouter = t.router({
         return withoutPhase;
       };
       for (const childId of childPhaseIds) {
-        await updatePhase(input.projectPath, childId, (child) => ({ ...child, parent: phase.parent ?? null })).catch(() => null);
+        await updatePhase(input.graph, childId, (child) => ({ ...child, parent: phase.parent ?? null })).catch(() => null);
       }
-      await updateSiblingIds(input.projectPath, phase.parent ?? null, spliceChildren);
+      await updateSiblingIds(input.graph, phase.parent ?? null, spliceChildren);
       const phasePath = entityFile(projectPath, 'phases', input.phaseId);
       const previous = await fs.readJson(phasePath).catch(() => null);
       await assertWritableBowman(projectPath);
       await fs.remove(phasePath);
 
-      await cleanupCommitments(input.projectPath, input.phaseId);
+      await cleanupCommitments(input.graph, input.phaseId);
 
-      removePhaseFromIndex(input.projectPath, input.phaseId);
-      emitChange({ type: 'phase', id: input.phaseId, projectPath: input.projectPath, deleted: true, previous });
+      removePhaseFromIndex(input.graph, input.phaseId);
+      emitChange({ type: 'phase', id: input.phaseId, projectPath: input.graph, deleted: true, previous });
       return { success: true };
     }),
 
   search: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       query: z.string(),
       parentPhaseId: z.string().uuid().nullable().optional(),
       // Searching a new parent for this phase: leaves out the phase and its
@@ -204,8 +204,8 @@ export const phaseRouter = t.router({
       placingPhaseId: z.string().uuid().optional()
     }))
     .query(async ({ input }) => {
-      await ensureSearchIndex(input.projectPath);
-      const allPhases = await listPhases(input.projectPath);
+      await ensureSearchIndex(input.graph);
+      const allPhases = await listPhases(input.graph);
       const phasesById = new Map(allPhases.map((phase) => [phase.id, phase]));
       const { placingPhaseId } = input;
       const phases = allPhases.filter((phase) =>
@@ -213,7 +213,7 @@ export const phaseRouter = t.router({
         !(placingPhaseId && isInPhaseSubtree(phase.id, placingPhaseId, (phaseId) => phasesById.get(phaseId)?.parent)));
       const results = searchPhases(input.query, phases, placingPhaseId === undefined
         ? undefined
-        : { fromPhaseId: placingPhaseId, phases: allPhases, rootPhaseIds: (await readProjectMeta(input.projectPath)).rootPhaseIds ?? [] });
+        : { fromPhaseId: placingPhaseId, phases: allPhases, rootPhaseIds: (await readProjectMeta(input.graph)).rootPhaseIds ?? [] });
       return results.map((phase) => ({
         ...phase,
         ancestorNames: phaseAncestorNames(phase, phasesById)
@@ -222,7 +222,7 @@ export const phaseRouter = t.router({
 
   setCursor: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       cursors: z.record(z.string(), z.string()),
       activeLevel: z.number().int().min(0)
     }))
@@ -230,17 +230,17 @@ export const phaseRouter = t.router({
       // Cursors are where the viewer is, not graph content: a read-only project
       // stays navigable, it just does not remember the position. A server with
       // accounts has many viewers, so none of them moves the stored cursor.
-      if (hasAccounts() || await bowmanWriteBlocker(normalizeProjectPath(input.projectPath))) return { success: false };
-      await updateProjectMeta(input.projectPath, (meta) => ({ ...meta, phaseCursors: input.cursors, phaseActiveLevel: input.activeLevel }));
+      if (hasAccounts() || await bowmanWriteBlocker(normalizeProjectPath(input.graph))) return { success: false };
+      await updateProjectMeta(input.graph, (meta) => ({ ...meta, phaseCursors: input.cursors, phaseActiveLevel: input.activeLevel }));
       return { success: true };
     }),
 
   getActivePath: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
-      const meta = await readProjectMeta(input.projectPath);
+      const meta = await readProjectMeta(input.graph);
       const cursors = currentPhaseCursors(meta);
       const activeLevel: number = meta.phaseActiveLevel ?? 0;
 
@@ -254,7 +254,7 @@ export const phaseRouter = t.router({
         const phaseId = cursors[String(level)];
         if (!phaseId) break;
         try {
-          const phase = await readPhase(input.projectPath, phaseId);
+          const phase = await readPhase(input.graph, phaseId);
           path.push(phase);
         } catch {
           break;

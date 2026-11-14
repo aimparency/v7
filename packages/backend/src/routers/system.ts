@@ -15,51 +15,51 @@ const readContinueHook = (projectPath: string) => {
 export const systemRouter = t.router({
   // The agents' Stop continuation hook, the same switch as the MCP enable-hook / disable-hook prompts.
   getContinueHook: delayedProcedure
-    .input(z.object({ projectPath: graphAddress }))
-    .query(({ input }) => readContinueHook(input.projectPath)),
+    .input(z.object({ graph: graphAddress }))
+    .query(({ input }) => readContinueHook(input.graph)),
 
   setContinueHook: delayedProcedure
-    .input(z.object({ projectPath: graphAddress, enabled: z.boolean() }))
+    .input(z.object({ graph: graphAddress, enabled: z.boolean() }))
     .mutation(({ input }) => {
-      if (input.enabled) enableContinueHook(input.projectPath);
-      else disableContinueHook(input.projectPath);
-      return readContinueHook(input.projectPath);
+      if (input.enabled) enableContinueHook(input.graph);
+      else disableContinueHook(input.graph);
+      return readContinueHook(input.graph);
     }),
 
   getStatus: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
-      return await readSystemStatus(input.projectPath);
+      return await readSystemStatus(input.graph);
     }),
 
   updateStatus: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       status: z.object({
         computeCredits: z.number().optional(),
         funds: z.number().optional()
       })
     }))
     .mutation(async ({ input }) => {
-      const current = await readSystemStatus(input.projectPath);
+      const current = await readSystemStatus(input.graph);
       const updated = {
           ...current,
           ...(input.status.computeCredits !== undefined ? { computeCredits: input.status.computeCredits } : {}),
           ...(input.status.funds !== undefined ? { funds: input.status.funds } : {})
       };
-      await writeSystemStatus(input.projectPath, updated);
+      await writeSystemStatus(input.graph, updated);
       return updated;
     }),
 
   performWork: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       workType: z.enum(['mining', 'freelance']).optional()
     }))
     .mutation(async ({ input }) => {
-      const current = await readSystemStatus(input.projectPath);
+      const current = await readSystemStatus(input.graph);
 
       // Simulate work logic
       const earnedCredits = Math.floor(Math.random() * 5) + 5; // 5-10 credits
@@ -70,7 +70,7 @@ export const systemRouter = t.router({
         funds: current.funds + earnedFunds
       };
 
-      await writeSystemStatus(input.projectPath, updated);
+      await writeSystemStatus(input.graph, updated);
 
       return {
         ...updated,

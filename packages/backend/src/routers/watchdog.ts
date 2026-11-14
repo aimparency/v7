@@ -83,15 +83,15 @@ const writeAutonomyPolicy = async (rawProjectPath: string, policy: z.infer<typeo
 export const watchdogRouter = t.router({
   getRuntimeState: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
-      return readWatchdogRuntimeState(input.projectPath);
+      return readWatchdogRuntimeState(input.graph);
     }),
 
   updateRuntimeState: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       preferredAgentType: watchdogAgentTypeSchema.nullable().optional(),
       agentState: z.object({
         agentType: watchdogAgentTypeSchema,
@@ -102,7 +102,7 @@ export const watchdogRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const agentType = input.agentState?.agentType as z.infer<typeof watchdogAgentTypeSchema> | undefined;
-      const existing = await readWatchdogRuntimeState(input.projectPath);
+      const existing = await readWatchdogRuntimeState(input.graph);
       const nextState = {
         ...existing,
         updatedAt: Date.now(),
@@ -127,30 +127,30 @@ export const watchdogRouter = t.router({
       }
 
       const parsed = watchdogRuntimeStateSchema.parse(nextState);
-      await writeWatchdogRuntimeState(input.projectPath, parsed);
+      await writeWatchdogRuntimeState(input.graph, parsed);
       return parsed;
     }),
 
   getAutonomyPolicy: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
-      return readAutonomyPolicy(input.projectPath);
+      return readAutonomyPolicy(input.graph);
     }),
 
   updateAutonomyPolicy: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       policy: autonomyPolicySchema.partial()
     }))
     .mutation(async ({ input }) => {
-      const existing = await readAutonomyPolicy(input.projectPath);
+      const existing = await readAutonomyPolicy(input.graph);
       const merged = autonomyPolicySchema.parse({
         ...existing,
         ...input.policy
       });
-      await writeAutonomyPolicy(input.projectPath, merged);
+      await writeAutonomyPolicy(input.graph, merged);
       return merged;
     })
 });

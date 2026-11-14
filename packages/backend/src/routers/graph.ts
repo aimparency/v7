@@ -6,9 +6,9 @@ import { graphAddress } from '../graphs/address.js';
 export const graphRouter = t.router({
   getSemanticNeighbours: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress
+      graph: graphAddress
     }))
     .query(async ({ input }) => {
-      return await getSemanticNeighbours(input.projectPath);
+      return await getSemanticNeighbours(input.graph);
     })
 });

@@ -82,9 +82,9 @@ export const graphsRouter = t.router({
   // The key a remote graph is pushed with: one of the caller's own, or none.
   // With a key the graph is edited here, committed and pushed; without, it only follows its remote.
   setRemoteKey: delayedProcedure
-    .input(z.object({ projectPath: z.string(), key: z.string().nullable() }))
+    .input(z.object({ graph: z.string(), key: z.string().nullable() }))
     .mutation(async ({ ctx, input }) => {
-      const graph = listed(input.projectPath);
+      const graph = listed(input.graph);
       const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
       if (input.key !== null && (viewer.id === null || !await privateKeyFile(viewer.id, input.key))) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'Select one of your own keys.' });
@@ -95,9 +95,9 @@ export const graphsRouter = t.router({
 
   // Whose graph this is; null for a directory that is not on the list.
   getAccess: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ graph: z.string() }))
     .query(({ input }) => {
-      const { graph } = resolveGraphAddress(input.projectPath);
+      const { graph } = resolveGraphAddress(input.graph);
       return graph && {
         slug: graph.slug, kind: graph.kind, owner: ownerName(graph), writers: accountNames(graph.writers),
         notes: graph.notes ?? serverConfig().guestDefaults.notes, noteWriters: accountNames(graph.noteWriters ?? []),
@@ -108,7 +108,7 @@ export const graphsRouter = t.router({
 
   setAccess: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      graph: z.string(),
       owner: z.string().optional(),
       writers: z.array(z.string()).max(500).optional(),
       // Who may leave notes: null goes back to the server's default.
@@ -116,7 +116,7 @@ export const graphsRouter = t.router({
       noteWriters: z.array(z.string()).max(500).optional()
     }))
     .mutation(async ({ input }) => {
-      const graph = listed(input.projectPath);
+      const graph = listed(input.graph);
       await run(() => setGraphAccess(graph.slug, {
         ...(input.owner !== undefined ? { owner: accountId(input.owner) } : {}),
         ...(input.writers !== undefined ? { writers: [...new Set(input.writers.map(accountId))] } : {}),
@@ -127,9 +127,9 @@ export const graphsRouter = t.router({
     }),
 
   remove: delayedProcedure
-    .input(z.object({ projectPath: z.string() }))
+    .input(z.object({ graph: z.string() }))
     .mutation(async ({ input }) => {
-      const graph = listed(input.projectPath);
+      const graph = listed(input.graph);
       await run(() => removeGraph(graph.slug));
       clearIndices(graphBowmanPath(graph));
       return { success: true };

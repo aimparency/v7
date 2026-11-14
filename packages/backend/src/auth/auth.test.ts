@@ -66,8 +66,8 @@ test('the last server admin can be neither removed nor demoted', async () => {
 });
 
 test('everyone reads a graph, its owner and writers change it, the server admin manages accounts', async () => {
-  const phase = await as().phase.create({ projectPath, phase: { name: 'Now' } }) as { id: string };
-  const idea = await as().idea.createIdeaInPhase({ projectPath, phaseId: phase.id, idea: { text: 'Shared' } });
+  const phase = await as().phase.create({ graph: projectPath, phase: { name: 'Now' } }) as { id: string };
+  const idea = await as().idea.createIdeaInPhase({ graph: projectPath, phaseId: phase.id, idea: { text: 'Shared' } });
   await accounts.createAccount('admin', 'admin password', { serverAdmin: true });
   const owner = await accounts.createAccount('owner', 'owner password');
   await accounts.createAccount('writer', 'writer password');
@@ -75,35 +75,35 @@ test('everyone reads a graph, its owner and writers change it, the server admin 
   await host(owner.id);
 
   const guest = as();
-  assert.equal((await guest.idea.list({ projectPath: shared })).length, 1);
-  assert.deepEqual(await guest.project.getAccess({ projectPath: shared }), {
+  assert.equal((await guest.idea.list({ graph: shared })).length, 1);
+  assert.deepEqual(await guest.project.getAccess({ graph: shared }), {
     writable: false, reason: 'This graph is open read-only here: log in to edit.', user: null, role: 'read', serverAdmin: false
   });
-  const edit = (text: string) => ({ projectPath: shared, ideaId: idea.id, idea: { text } });
+  const edit = (text: string) => ({ graph: shared, ideaId: idea.id, idea: { text } });
   await assert.rejects(guest.idea.update(edit('Guest edit')), /open read-only/);
   // Re-indexing costs the server and activity is shown to every viewer: not for guests.
-  await assert.rejects(guest.project.buildSearchIndex({ projectPath: shared }), /open read-only/);
-  await assert.rejects(guest.activity.record({ projectPath: shared, ideaIds: [idea.id], kind: 'read' }), /open read-only/);
-  await assert.rejects(guest.idea.searchSemantic({ projectPath: shared, query: 'x'.repeat(2001) }));
+  await assert.rejects(guest.project.buildSearchIndex({ graph: shared }), /open read-only/);
+  await assert.rejects(guest.activity.record({ graph: shared, ideaIds: [idea.id], kind: 'read' }), /open read-only/);
+  await assert.rejects(guest.idea.searchSemantic({ graph: shared, query: 'x'.repeat(2001) }));
 
   const stranger = await loggedIn('stranger', 'stranger password');
   await assert.rejects(stranger.idea.update(edit('Stranger edit')), /open read-only for stranger: ask its owner/);
 
   const ownerCaller = await loggedIn('owner', 'owner password');
   await ownerCaller.idea.update(edit('Owner edit'));
-  assert.equal((await ownerCaller.project.getAccess({ projectPath: shared })).role, 'owner');
-  await ownerCaller.graphs.setAccess({ projectPath: shared, writers: ['writer'] });
-  const { slug, kind, owner: ownedBy, writers } = (await guest.graphs.getAccess({ projectPath: shared }))!;
+  assert.equal((await ownerCaller.project.getAccess({ graph: shared })).role, 'owner');
+  await ownerCaller.graphs.setAccess({ graph: shared, writers: ['writer'] });
+  const { slug, kind, owner: ownedBy, writers } = (await guest.graphs.getAccess({ graph: shared }))!;
   assert.deepEqual({ slug, kind, ownedBy, writers }, { slug: 'shared', kind: 'checkout', ownedBy: 'owner', writers: ['writer'] });
-  await assert.rejects(ownerCaller.graphs.setAccess({ projectPath: shared, writers: ['nobody'] }), /No account named "nobody"/);
+  await assert.rejects(ownerCaller.graphs.setAccess({ graph: shared, writers: ['nobody'] }), /No account named "nobody"/);
 
   const writer = await loggedIn('writer', 'writer password');
   await writer.idea.update(edit('Writer edit'));
-  assert.equal((await guest.idea.get({ projectPath: shared, ideaId: idea.id })).text, 'Writer edit');
+  assert.equal((await guest.idea.get({ graph: shared, ideaId: idea.id })).text, 'Writer edit');
   // Write access covers the whole graph, its settings included; who may use it stays the owner's.
-  await writer.project.updateMeta({ projectPath: shared, meta: { name: 'Renamed', color: '#123456' } });
-  await assert.rejects(writer.graphs.setAccess({ projectPath: shared, writers: [] }), /Only the owner/);
-  await assert.rejects(writer.graphs.remove({ projectPath: shared }), /Only the owner/);
+  await writer.project.updateMeta({ graph: shared, meta: { name: 'Renamed', color: '#123456' } });
+  await assert.rejects(writer.graphs.setAccess({ graph: shared, writers: [] }), /Only the owner/);
+  await assert.rejects(writer.graphs.remove({ graph: shared }), /Only the owner/);
   await assert.rejects(writer.auth.createAccount({ name: 'friend', password: 'friend password' }), /server admins/);
   await assert.rejects(writer.auth.listAccounts(), /server admins/);
 
@@ -117,23 +117,23 @@ test('with accounts a graph is named by its slug, never by a path, and local too
   await accounts.createAccount('admin', 'admin password', { serverAdmin: true });
   await host();
   const admin = await loggedIn('admin', 'admin password');
-  await assert.rejects(admin.idea.list({ projectPath }), /addressed by their name, not by a path/);
-  await assert.rejects(as().idea.list({ projectPath: path.join(os.tmpdir(), 'elsewhere') }), /addressed by their name/);
-  await assert.rejects(admin.idea.list({ projectPath: 'unknown' }), /No graph "unknown"/);
-  await assert.rejects(admin.project.inspectPath({ projectPath: shared }), /not available on a server with accounts/);
+  await assert.rejects(admin.idea.list({ graph: projectPath }), /addressed by their name, not by a path/);
+  await assert.rejects(as().idea.list({ graph: path.join(os.tmpdir(), 'elsewhere') }), /addressed by their name/);
+  await assert.rejects(admin.idea.list({ graph: 'unknown' }), /No graph "unknown"/);
+  await assert.rejects(admin.project.inspectPath({ graph: shared }), /not available on a server with accounts/);
   await assert.rejects(admin.project.discoverLocalProjects(), /not available on a server with accounts/);
-  await assert.rejects(admin.loop.getConfig({ projectPath: shared }), /not available on a server with accounts/);
-  await assert.rejects(admin.linkedRepo.register({ projectPath: shared, targetPath: '/etc' }), /not available on a server with accounts/);
+  await assert.rejects(admin.loop.getConfig({ graph: shared }), /not available on a server with accounts/);
+  await assert.rejects(admin.linkedRepo.register({ graph: shared, targetPath: '/etc' }), /not available on a server with accounts/);
 });
 
 test('without login the person at the machine may do everything, by path or by slug', async () => {
   await addCheckout(path.dirname(projectPath), null, 'mine');
-  const idea = await as().idea.createFloatingIdea({ projectPath: 'mine', idea: { text: 'By slug' } });
-  assert.equal((await as().idea.get({ projectPath, ideaId: idea.id })).text, 'By slug');
+  const idea = await as().idea.createFloatingIdea({ graph: 'mine', idea: { text: 'By slug' } });
+  assert.equal((await as().idea.get({ graph: projectPath, ideaId: idea.id })).text, 'By slug');
   assert.deepEqual(await as().auth.me(), {
     login: 'none', publicUrl: null, agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true
   });
-  assert.equal((await as().project.getAccess({ projectPath })).role, 'owner');
+  assert.equal((await as().project.getAccess({ graph: projectPath })).role, 'owner');
   await assert.rejects(as().auth.login({ name: 'x', password: 'whatever it is' }), /no accounts/);
 });
 
@@ -155,19 +155,19 @@ test('an account creates a graph in one step and owns it', async () => {
     { slug: 'hack-the-hub-2', name: 'Hack the hub', owner: 'ada', kind: 'created' }
   ]);
 
-  await ada.idea.createFloatingIdea({ projectPath: slug, idea: { text: 'Build something' } });
-  await assert.rejects(bob.idea.createFloatingIdea({ projectPath: slug, idea: { text: 'Mine too' } }), /open read-only for bob/);
-  assert.equal((await bob.idea.list({ projectPath: slug })).length, 1);
+  await ada.idea.createFloatingIdea({ graph: slug, idea: { text: 'Build something' } });
+  await assert.rejects(bob.idea.createFloatingIdea({ graph: slug, idea: { text: 'Mine too' } }), /open read-only for bob/);
+  assert.equal((await bob.idea.list({ graph: slug })).length, 1);
 
   // The owner's first commit, as the server's git author when git has none.
-  const status = await ada.git.status({ projectPath: slug });
+  const status = await ada.git.status({ graph: slug });
   assert.ok(status.isRepository && !('repositoryPath' in status), 'the directory on the server is not shown');
   const changed = status.isRepository ? status.changes.map(change => change.path) : [];
-  assert.ok((await ada.git.commit({ projectPath: slug, paths: changed, message: 'Start' })).commit);
-  await assert.rejects(bob.git.commit({ projectPath: slug, paths: [], message: 'No' }), /open read-only/);
+  assert.ok((await ada.git.commit({ graph: slug, paths: changed, message: 'Start' })).commit);
+  await assert.rejects(bob.git.commit({ graph: slug, paths: [], message: 'No' }), /open read-only/);
 
-  await assert.rejects(bob.graphs.remove({ projectPath: slug }), /open read-only/);
-  await ada.graphs.remove({ projectPath: slug });
+  await assert.rejects(bob.graphs.remove({ graph: slug }), /open read-only/);
+  await ada.graphs.remove({ graph: slug });
   assert.equal(await fs.pathExists(directory), false);
   assert.deepEqual(listGraphs().map(graph => graph.slug), ['hack-the-hub-2']);
 
@@ -184,10 +184,10 @@ test('a graph sends only its own changes, under its own address', async () => {
   const first = (await ada.graphs.create({ name: 'First' })).slug;
   const second = (await ada.graphs.create({ name: 'Second' })).slug;
   const seen: Array<{ type: string; projectPath: string }> = [];
-  const updates = await as().project.onUpdate({ projectPath: first });
+  const updates = await as().project.onUpdate({ graph: first });
   const subscription = updates.subscribe({ next: event => seen.push({ type: event.type, projectPath: event.projectPath }) });
-  await ada.idea.createFloatingIdea({ projectPath: second, idea: { text: 'Elsewhere' } });
-  await ada.idea.createFloatingIdea({ projectPath: first, idea: { text: 'Here' } });
+  await ada.idea.createFloatingIdea({ graph: second, idea: { text: 'Elsewhere' } });
+  await ada.idea.createFloatingIdea({ graph: first, idea: { text: 'Here' } });
   subscription.unsubscribe();
   assert.deepEqual(seen, [{ type: 'idea', projectPath: 'first' }]);
 });
@@ -202,12 +202,12 @@ test('a token limited to some graphs is the account there and nobody anywhere el
   const { token } = await ada.auth.issueToken({ label: 'agent', graphs: [first] });
   const agent = as(token);
 
-  await agent.idea.createFloatingIdea({ projectPath: first, idea: { text: 'In scope' } });
-  assert.deepEqual(await agent.project.getAccess({ projectPath: first }).then(({ user, role, serverAdmin }) => ({ user, role, serverAdmin })),
+  await agent.idea.createFloatingIdea({ graph: first, idea: { text: 'In scope' } });
+  assert.deepEqual(await agent.project.getAccess({ graph: first }).then(({ user, role, serverAdmin }) => ({ user, role, serverAdmin })),
     { user: 'ada', role: 'owner', serverAdmin: false });
   // The other graph is ada's too, and she is the server admin: the token is neither.
-  assert.equal((await agent.idea.list({ projectPath: second })).length, 0);
-  await assert.rejects(agent.idea.createFloatingIdea({ projectPath: second, idea: { text: 'Out of scope' } }), /log in to edit/);
+  assert.equal((await agent.idea.list({ graph: second })).length, 0);
+  await assert.rejects(agent.idea.createFloatingIdea({ graph: second, idea: { text: 'Out of scope' } }), /log in to edit/);
   await assert.rejects(agent.graphs.create({ name: 'More' }), /Log in first/);
   await assert.rejects(agent.auth.issueToken({ label: 'wider' }), /Log in first/);
   await assert.rejects(agent.auth.listAccounts(), /server admins/);
@@ -218,7 +218,7 @@ test('a token limited to some graphs is the account there and nobody anywhere el
   assert.deepEqual(tokens.map(({ label, graphs }) => ({ label, graphs })), [{ label: 'browser', graphs: null }, { label: 'agent', graphs: [first] }]);
   assert.ok(!JSON.stringify(tokens).includes(token));
   await ada.auth.revokeOwnToken({ id: tokens[1]!.id });
-  await assert.rejects(agent.idea.createFloatingIdea({ projectPath: first, idea: { text: 'Revoked' } }), /log in to edit/);
+  await assert.rejects(agent.idea.createFloatingIdea({ graph: first, idea: { text: 'Revoked' } }), /log in to edit/);
   await assert.rejects(as().auth.listTokens(), /Log in first/);
 });
 
@@ -240,9 +240,9 @@ test('the wrapped agents write as their own account, and each start replaces the
 
   await host();
   // Like any account: it writes the graphs it was given, and no others.
-  await assert.rejects(as(second).idea.createFloatingIdea({ projectPath: shared, idea: { text: 'Not yet' } }), /open read-only/);
-  await (await loggedIn('admin', 'admin password')).graphs.setAccess({ projectPath: shared, writers: [accounts.AGENTS_ACCOUNT] });
-  assert.ok(await as(second).idea.createFloatingIdea({ projectPath: shared, idea: { text: 'Written by an agent' } }));
+  await assert.rejects(as(second).idea.createFloatingIdea({ graph: shared, idea: { text: 'Not yet' } }), /open read-only/);
+  await (await loggedIn('admin', 'admin password')).graphs.setAccess({ graph: shared, writers: [accounts.AGENTS_ACCOUNT] });
+  assert.ok(await as(second).idea.createFloatingIdea({ graph: shared, idea: { text: 'Written by an agent' } }));
   await assert.rejects(as(second).auth.createAccount({ name: 'x', password: 'long enough pw', serverAdmin: true }), /server admins/);
 });
 
@@ -252,7 +252,7 @@ test('a writer cannot reach files outside the graph through history.restore', as
   const outside = path.join(root, 'repo', 'outside.json');
   await fs.writeJson(outside, { keep: true });
   await assert.rejects((await loggedIn('writer', 'writer password')).history.restore({
-    projectPath: shared,
+    graph: shared,
     changes: [{ type: 'idea', id: '../../outside', expected: { keep: true }, target: null }]
   }), /UUID/);
   assert.deepEqual(await fs.readJson(outside), { keep: true });

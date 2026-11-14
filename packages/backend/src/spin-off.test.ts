@@ -25,11 +25,11 @@ afterEach(async () => {
 
 test('spin-off merges into an existing graph, preserves metadata, and remaps collisions', async () => {
   const sourceRoot = await caller.idea.createFloatingIdea({
-    projectPath: source,
+    graph: source,
     idea: { text: 'Imported branch root' },
   });
   await caller.project.updateMeta({
-    projectPath: target,
+    graph: target,
     meta: { name: 'Existing target', color: '#123456' },
   });
 
@@ -44,7 +44,7 @@ test('spin-off merges into an existing graph, preserves metadata, and remaps col
   await fs.writeJson(path.join(target, 'ideas', `${sourceRoot.id}.json`), collision);
 
   const result = await caller.spinOff.execute({
-    projectPath: source,
+    graph: source,
     rootIds: [sourceRoot.id],
     targetPath: target,
     removeFromSource: false,
@@ -56,10 +56,10 @@ test('spin-off merges into an existing graph, preserves metadata, and remaps col
   assert.ok(importedId);
   assert.notEqual(importedId, sourceRoot.id);
 
-  const targetMeta = await caller.project.getMeta({ projectPath: target });
+  const targetMeta = await caller.project.getMeta({ graph: target });
   assert.equal(targetMeta.name, 'Existing target');
-  const original = await caller.idea.get({ projectPath: target, ideaId: sourceRoot.id });
-  const imported = await caller.idea.get({ projectPath: target, ideaId: importedId });
+  const original = await caller.idea.get({ graph: target, ideaId: sourceRoot.id });
+  const imported = await caller.idea.get({ graph: target, ideaId: importedId });
   assert.equal(original.text, 'Pre-existing target idea');
   assert.equal(imported.text, 'Imported branch root');
   assert.deepEqual(imported.supportedIdeas, []);
@@ -68,12 +68,12 @@ test('spin-off merges into an existing graph, preserves metadata, and remaps col
 
 test('spin-off refuses to target its source graph', async () => {
   const root = await caller.idea.createFloatingIdea({
-    projectPath: source,
+    graph: source,
     idea: { text: 'Root' },
   });
   await assert.rejects(
     () => caller.spinOff.execute({
-      projectPath: source,
+      graph: source,
       rootIds: [root.id],
       targetPath: source,
       removeFromSource: false,

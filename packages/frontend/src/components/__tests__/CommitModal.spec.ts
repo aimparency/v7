@@ -37,7 +37,7 @@ describe('CommitModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(mutate).toHaveBeenCalledWith({ projectPath: '/p', paths: [`.bowman/ideas/${ideaId}.json`, 'src/a.ts'], message: 'feat: commit dialog' })
+    expect(mutate).toHaveBeenCalledWith({ graph: '/p', paths: [`.bowman/ideas/${ideaId}.json`, 'src/a.ts'], message: 'feat: commit dialog' })
     expect(pushMutate).not.toHaveBeenCalled()
     expect(wrapper.emitted('committed')).toHaveLength(1)
   })
@@ -50,7 +50,7 @@ describe('CommitModal', () => {
     expect(wrapper.find('button[type=submit]').text()).toBe('Commit 1 file & push')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(pushMutate).toHaveBeenCalledWith({ projectPath: '/p' })
+    expect(pushMutate).toHaveBeenCalledWith({ graph: '/p' })
     expect(wrapper.emitted('committed')).toHaveLength(1)
   })
 
@@ -63,7 +63,7 @@ describe('CommitModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(mutate).not.toHaveBeenCalled()
-    expect(pushMutate).toHaveBeenCalledWith({ projectPath: '/p' })
+    expect(pushMutate).toHaveBeenCalledWith({ graph: '/p' })
     expect(wrapper.emitted('committed')).toHaveLength(1)
   })
 })

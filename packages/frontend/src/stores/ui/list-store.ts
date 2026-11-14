@@ -272,7 +272,7 @@ export const useUIStore = defineStore('ui', {
 
       if (projectStore.projectPath) {
         void trpc.phase.setCursor.mutate({
-          projectPath: projectStore.projectPath,
+          graph: projectStore.projectPath,
           cursors,
           activeLevel: Math.max(0, markedLevel)
         }).catch(() => {})
@@ -886,7 +886,7 @@ export const useUIStore = defineStore('ui', {
       let mergedCount = 0
       for (const sourceId of others) {
         try {
-          const res = await trpc.idea.merge.mutate({ projectPath, targetId, sourceId })
+          const res = await trpc.idea.merge.mutate({ graph: projectPath, targetId, sourceId })
           results.push({ sourceId, ...res })
           mergedCount++
         } catch (e: any) {
@@ -926,7 +926,7 @@ export const useUIStore = defineStore('ui', {
         let idea = dataStore.ideas[currentId]
         if (!idea) {
           try {
-            idea = await trpc.idea.get.query({ projectPath: projectStore.projectPath, ideaId: currentId })
+            idea = await trpc.idea.get.query({ graph: projectStore.projectPath, ideaId: currentId })
             dataStore.replaceIdea(idea.id, idea)
           } catch {
             console.error('failed to load idea', currentId)

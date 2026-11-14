@@ -1,5 +1,5 @@
-// How a request names its graph. Every procedure takes `projectPath`; its value
-// is a graph address: the slug of a graph of this server, or, only on a server
+// How a request names its graph. Every procedure takes `graph`; its value is a
+// graph address: the slug of a graph of this server, or, only on a server
 // without login, a directory on this machine. On a server with accounts a path
 // is never accepted: where graphs live is the operator's business, and nobody
 // reaches a directory that is not on the list.
@@ -29,5 +29,5 @@ export function resolveGraphAddress(address: string): ResolvedGraph {
   return { path: address, graph: findGraphByPath(address) };
 }
 
-/** The `projectPath` of a procedure's input: handlers receive the directory. */
+/** The `graph` of a procedure's input: handlers receive the directory. */
 export const graphAddress = z.string().transform(address => resolveGraphAddress(address).path);

@@ -278,7 +278,7 @@ export async function handleColumnNavigationKeysAction(uiStore: any, event: Keyb
       if (!selectedPhaseId) break
 
       const selectedPhase = await trpc.phase.get.query({
-        projectPath: projectStore.projectPath,
+        graph: projectStore.projectPath,
         phaseId: selectedPhaseId
       })
 

@@ -47,7 +47,7 @@ const generateDraft = async () => {
   error.value = ''
   try {
     proposal.value = await trpc.idea.proposeIdeaSubtree.mutate({
-      projectPath: props.projectPath,
+      graph: props.projectPath,
       transcript: text,
       existingParentIds: []
     })

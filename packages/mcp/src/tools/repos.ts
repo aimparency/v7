@@ -1,4 +1,4 @@
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import type { ToolDefinition } from "./types.js";
 
 export const repoTools: ToolDefinition[] = [
@@ -8,14 +8,14 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         repository: { type: "string", description: "owner/repo or a github.com URL" },
       },
-      required: ["projectPath", "repository"],
+      required: ["graph", "repository"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.importGithubIssues.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         repository: args.repository as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -27,14 +27,14 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         specPath: { type: "string", description: "A tasks.md file or a directory to search, relative to the repository root (e.g. 'specs' or '.')" },
       },
-      required: ["projectPath", "specPath"],
+      required: ["graph", "specPath"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.importSpecTasks.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         specPath: args.specPath as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -46,13 +46,13 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
       const repos = await trpcClient.linkedRepo.list.query({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
       });
       return {
         content: [
@@ -80,16 +80,16 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         targetPath: { type: "string", description: "Absolute path to the other project's .bowman dir (or its repo root)" },
         url: { type: "string", description: "Optional relocation hint, e.g. the git remote, so collaborators can find the repo" },
         access: { type: "string", enum: ["read", "write"], description: "Machine-local access intent for the linked checkout. Default read." },
       },
-      required: ["projectPath", "targetPath"],
+      required: ["graph", "targetPath"],
     },
     handler: async (args, trpcClient) => {
       const repo = await trpcClient.linkedRepo.register.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         targetPath: args.targetPath as string,
         url: args.url as string | undefined,
         access: (args.access as "read" | "write" | undefined) ?? "read",
@@ -110,22 +110,22 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string", description: "The LOCAL idea being supported" },
         repoId: { type: "string", description: "Linked repo UUID from list_linked_repos" },
         weight: { type: "number", description: "Share of this idea's value flowing into the repo, like any child edge. Default 1." },
         hypothesis: { type: "string", description: "Why that repo supports this idea" },
       },
-      required: ["projectPath", "ideaId", "repoId"],
+      required: ["graph", "ideaId", "repoId"],
     },
     handler: async (args, trpcClient) => {
-      const projectPath = args.projectPath as string;
+      const projectPath = args.graph as string;
       const repoId = args.repoId as string;
 
       // Fail loudly on an unregistered repoId: idea.linkRepo would happily
       // store an edge pointing at nothing, which renders as a nameless
       // black box and silently drains value into a dead sink.
-      const repos = await trpcClient.linkedRepo.list.query({ projectPath });
+      const repos = await trpcClient.linkedRepo.list.query({ graph: projectPath });
       const repo = repos.find((r) => r.repoId === repoId);
       if (!repo) {
         const known = repos.map((r) => `${r.repoId} (${r.name})`).join(", ") || "none";
@@ -135,7 +135,7 @@ export const repoTools: ToolDefinition[] = [
       }
 
       await trpcClient.idea.linkRepo.mutate({
-        projectPath,
+        graph: projectPath,
         ideaId: args.ideaId as string,
         repoId,
         weight: args.weight as number | undefined,
@@ -157,15 +157,15 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" },
         repoId: { type: "string" },
       },
-      required: ["projectPath", "ideaId", "repoId"],
+      required: ["graph", "ideaId", "repoId"],
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.unlinkRepo.mutate({
-        projectPath: args.projectPath as string,
+        graph: args.graph as string,
         ideaId: args.ideaId as string,
         repoId: args.repoId as string,
       });

@@ -38,17 +38,17 @@ afterEach(async () => {
 test('register -> link -> read -> unlink round-trip over MCP', async () => {
   const server = makeServer();
 
-  await createIdea(server, { projectPath: ctx.projectPath, text: 'Local idea carried by another repo' });
-  const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0]!.id;
+  await createIdea(server, { graph: ctx.projectPath, text: 'Local idea carried by another repo' });
+  const ideaId = (await caller.idea.list({ graph: ctx.projectPath }))[0]!.id;
 
   // register_linked_repo picks up the target's generated repoId + name.
   await server.callTool('register_linked_repo', {
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     targetPath: targetCtx.projectPath,
   });
 
   const listed = JSON.parse(
-    (await server.callTool('list_linked_repos', { projectPath: ctx.projectPath })).content[0].text
+    (await server.callTool('list_linked_repos', { graph: ctx.projectPath })).content[0].text
   );
   assert.equal(listed.length, 1);
   assert.equal(listed[0].name, 'Ways of Will');
@@ -56,7 +56,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
   const repoId = listed[0].repoId;
 
   await server.callTool('link_repo', {
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     ideaId,
     repoId,
     weight: 2,
@@ -64,7 +64,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
   });
 
   // Stored as a {repoId}-only edge — no ideaId reaches into the other repo.
-  const stored = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
+  const stored = await caller.idea.get({ graph: ctx.projectPath, ideaId });
   assert.equal(stored.supportingRepos!.length, 1);
   assert.equal(stored.supportingRepos![0]!.repoId, repoId);
   assert.equal(stored.supportingRepos![0]!.weight, 2);
@@ -72,7 +72,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
 
   // get_idea resolves the edge to a name + health so the UUID isn't opaque.
   const fetched = JSON.parse(
-    (await server.callTool('get_idea', { projectPath: ctx.projectPath, ideaId })).content[0].text
+    (await server.callTool('get_idea', { graph: ctx.projectPath, ideaId })).content[0].text
   );
   assert.deepEqual(fetched.supportingRepos, [
     { repoId, name: 'Ways of Will', weight: 2, hypothesis: 'that project does the actual work', health: 'resolved' },
@@ -80,35 +80,35 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
 
   // get_idea_context surfaces repo supporters separately from idea children.
   const context = JSON.parse(
-    (await server.callTool('get_idea_context', { projectPath: ctx.projectPath, ideaId })).content[0].text
+    (await server.callTool('get_idea_context', { graph: ctx.projectPath, ideaId })).content[0].text
   );
   assert.equal(context.supporting_repos.length, 1);
   assert.equal(context.supporting_repos[0].name, 'Ways of Will');
   assert.deepEqual(context.children, []);
 
-  await server.callTool('unlink_repo', { projectPath: ctx.projectPath, ideaId, repoId });
-  const afterUnlink = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
+  await server.callTool('unlink_repo', { graph: ctx.projectPath, ideaId, repoId });
+  const afterUnlink = await caller.idea.get({ graph: ctx.projectPath, ideaId });
   assert.deepEqual(afterUnlink.supportingRepos, []);
 
   // Unlinking an idea leaves the repo registered for other ideas to use.
   const stillListed = JSON.parse(
-    (await server.callTool('list_linked_repos', { projectPath: ctx.projectPath })).content[0].text
+    (await server.callTool('list_linked_repos', { graph: ctx.projectPath })).content[0].text
   );
   assert.equal(stillListed.length, 1);
 });
 
 test('link_repo refuses an unregistered repoId and names the known repos', async () => {
   const server = makeServer();
-  await createIdea(server, { projectPath: ctx.projectPath, text: 'Local idea' });
-  const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0]!.id;
+  await createIdea(server, { graph: ctx.projectPath, text: 'Local idea' });
+  const ideaId = (await caller.idea.list({ graph: ctx.projectPath }))[0]!.id;
 
   await server.callTool('register_linked_repo', {
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     targetPath: targetCtx.projectPath,
   });
 
   const result = await server.callTool('link_repo', {
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     ideaId,
     repoId: '4e6f9f1c-ee6c-4f35-b91e-1467ae9839ee',
   });
@@ -116,30 +116,30 @@ test('link_repo refuses an unregistered repoId and names the known repos', async
   assert.match(result.content[0].text, /not in this project's linked-repo registry/);
   assert.match(result.content[0].text, /Ways of Will/); // names what IS available
 
-  const stored = await caller.idea.get({ projectPath: ctx.projectPath, ideaId });
+  const stored = await caller.idea.get({ graph: ctx.projectPath, ideaId });
   assert.ok(!stored.supportingRepos?.length, 'no dead-sink edge is written');
 });
 
 test('a linked repo that is not checked out here reads as not-checked-out, not broken', async () => {
   const server = makeServer();
-  await createIdea(server, { projectPath: ctx.projectPath, text: 'Local idea' });
-  const ideaId = (await caller.idea.list({ projectPath: ctx.projectPath }))[0]!.id;
+  await createIdea(server, { graph: ctx.projectPath, text: 'Local idea' });
+  const ideaId = (await caller.idea.list({ graph: ctx.projectPath }))[0]!.id;
 
   await server.callTool('register_linked_repo', {
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     targetPath: targetCtx.projectPath,
   });
   const repoId = JSON.parse(
-    (await server.callTool('list_linked_repos', { projectPath: ctx.projectPath })).content[0].text
+    (await server.callTool('list_linked_repos', { graph: ctx.projectPath })).content[0].text
   )[0].repoId;
-  await server.callTool('link_repo', { projectPath: ctx.projectPath, ideaId, repoId });
+  await server.callTool('link_repo', { graph: ctx.projectPath, ideaId, repoId });
 
   // Drop only the machine-local resolution, as on a fresh clone: the portable
   // meta entry survives, so the link keeps its name and stays a valid edge.
   await fs.remove(`${ctx.projectPath}/runtime/linked-repos.json`);
 
   const fetched = JSON.parse(
-    (await server.callTool('get_idea', { projectPath: ctx.projectPath, ideaId })).content[0].text
+    (await server.callTool('get_idea', { graph: ctx.projectPath, ideaId })).content[0].text
   );
   assert.equal(fetched.supportingRepos[0].health, 'not-checked-out');
   assert.equal(fetched.supportingRepos[0].name, 'Ways of Will');

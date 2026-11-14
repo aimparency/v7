@@ -130,7 +130,7 @@ export const useProjectLoadStore = defineStore('project-load', {
         await nextPaint()
         if (!isCurrent()) return
 
-        const progress = trpc.project.onLoadProgress.subscribe({ projectPath }, {
+        const progress = trpc.project.onLoadProgress.subscribe({ graph: projectPath }, {
           onData: ({ done, total }) => {
             if (isCurrent() && this.steps[this.stepIndex] === 'read') this.setDetail(done, total, 'Reading ideas')
           },

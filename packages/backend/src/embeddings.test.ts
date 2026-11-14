@@ -71,11 +71,11 @@ test('stores vectors one row each and reads them back', async () => {
 
 test('semantic search works with local embeddings', async () => {
   const releaseIdea = await caller.idea.createFloatingIdea({
-    projectPath: testRootPath,
+    graph: testRootPath,
     idea: { text: 'Open source release checklist', status: { state: 'open', comment: '', date: Date.now() } }
   });
   const gardenIdea = await caller.idea.createFloatingIdea({
-    projectPath: testRootPath,
+    graph: testRootPath,
     idea: { text: 'Water the balcony tomatoes', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
@@ -89,7 +89,7 @@ test('semantic search works with local embeddings', async () => {
   await saveEmbedding(testRootPath, gardenIdea.id, gardenVector);
 
   const results = await caller.idea.searchSemantic({
-    projectPath: testRootPath,
+    graph: testRootPath,
     query: 'release docs open source',
     limit: 2,
   });

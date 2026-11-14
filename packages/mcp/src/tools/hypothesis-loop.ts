@@ -1,5 +1,5 @@
 import { isOngoingState, type Idea } from "shared";
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import type { ToolDefinition } from "./types.js";
 
 const MAJOR_IDEA_LIMIT = 12;
@@ -47,13 +47,13 @@ export const hypothesisLoopTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         focus: { type: "string", description: "Optional theme or idea UUID to steer the loop" },
       },
-      required: ["projectPath"],
+      required: ["graph"],
     },
     handler: async (args, trpcClient) => {
-      const ideas = await trpcClient.idea.list.query({ projectPath: args.projectPath as string });
+      const ideas = await trpcClient.idea.list.query({ graph: args.graph as string });
       const major = selectMajorIdeas(ideas);
       const listing = major.length
         ? major.map((idea) => `- ${idea.id} ${idea.text} (intrinsic value ${idea.intrinsicValue}, ${idea.status.state}, ${idea.supportingConnections.length} sub ideas${idea.supportedIdeas.length ? "" : ", root"})`).join("\n")

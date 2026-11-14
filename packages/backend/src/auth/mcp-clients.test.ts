@@ -57,8 +57,8 @@ test('a person approves a client for chosen graphs, and the client gets a token 
 
   const agent = appRouter.createCaller({ session: { token } });
   assert.deepEqual(await agent.mcpAuth.tokenInfo(), { account: 'ana', graphs: [first] });
-  await agent.idea.createFloatingIdea({ projectPath: first, idea: { text: 'From the agent' } });
-  await assert.rejects(agent.idea.createFloatingIdea({ projectPath: second, idea: { text: 'Not chosen' } }), /log in to edit/);
+  await agent.idea.createFloatingIdea({ graph: first, idea: { text: 'From the agent' } });
+  await assert.rejects(agent.idea.createFloatingIdea({ graph: second, idea: { text: 'Not chosen' } }), /log in to edit/);
   assert.deepEqual((await ana.auth.listTokens()).map(({ label, graphs }) => ({ label, graphs })).at(-1), { label: 'Coding agent', graphs: [first] });
   assert.equal(await mcpServer().mcpAuth.tokenInfo(), null);
 });

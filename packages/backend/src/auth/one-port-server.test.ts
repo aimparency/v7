@@ -81,12 +81,12 @@ test('sign in, create a graph, write it with the bearer token; no token only rea
   const projectPath = graph.result.data.slug;
   assert.equal(projectPath, 'hack-the-hub');
 
-  const anonymous = await call('idea.createFloatingIdea', { projectPath, idea: { text: 'Anonymous' } });
+  const anonymous = await call('idea.createFloatingIdea', { graph: projectPath, idea: { text: 'Anonymous' } });
   assert.equal(anonymous.status, 403);
   assert.match(anonymous.body.error.message, /log in to edit/);
-  assert.equal((await call('idea.createFloatingIdea', { projectPath, idea: { text: 'Shared' } }, token)).status, 200);
+  assert.equal((await call('idea.createFloatingIdea', { graph: projectPath, idea: { text: 'Shared' } }, token)).status, 200);
 
-  const input = encodeURIComponent(JSON.stringify({ projectPath }));
+  const input = encodeURIComponent(JSON.stringify({ graph: projectPath }));
   const ideas = await (await fetch(`${base}/trpc/idea.list?input=${input}`)).json() as any;
   assert.deepEqual(ideas.result.data.map((idea: { text: string }) => idea.text), ['Shared']);
   // Nothing a visitor gets names a directory of the server.
@@ -102,7 +102,7 @@ test('errors carry no server stack trace', async () => {
   const refused = await call('graphs.create', { name: 'Anonymous' });
   assert.equal(refused.status, 401);
   assert.equal(refused.body.error.data.stack, undefined);
-  const input = encodeURIComponent(JSON.stringify({ projectPath: '/etc' }));
+  const input = encodeURIComponent(JSON.stringify({ graph: '/etc' }));
   const path = await fetch(`${base}/trpc/idea.list?input=${input}`);
   assert.equal(path.status, 403);
   assert.equal((await path.json() as any).error.data.stack, undefined);
@@ -116,7 +116,7 @@ test('other websites read a server with accounts, and none of them writes', asyn
   const projectPath = graph.result.data.slug;
   const elsewhere = 'https://another-aimparency.example';
 
-  const input = encodeURIComponent(JSON.stringify({ projectPath }));
+  const input = encodeURIComponent(JSON.stringify({ graph: projectPath }));
   const read = await fetch(`${base}/trpc/idea.list?input=${input}`, { headers: { origin: elsewhere } });
   assert.equal(read.status, 200);
   assert.equal(read.headers.get('access-control-allow-origin'), '*');
@@ -127,7 +127,7 @@ test('other websites read a server with accounts, and none of them writes', asyn
   assert.match(preflight.headers.get('access-control-allow-headers')!, /authorization/);
 
   // Even holding a valid token, a page of another website does not write.
-  const idea = { projectPath, idea: { text: 'From elsewhere' } };
+  const idea = { graph: projectPath, idea: { text: 'From elsewhere' } };
   const written = await call('idea.createFloatingIdea', idea, token, elsewhere);
   assert.equal(written.status, 403);
   assert.match(written.body.error.message, /Other websites may read this server/);
@@ -141,7 +141,7 @@ test('without login only pages of this machine reach the API', async () => {
   await start('none');
   const repository = path.join(root, 'repo');
   await fs.ensureDir(repository);
-  const idea = { projectPath: repository, idea: { text: 'Mine' } };
+  const idea = { graph: repository, idea: { text: 'Mine' } };
   assert.equal((await call('idea.createFloatingIdea', idea, undefined, 'http://localhost:4000')).status, 200);
   assert.equal((await call('idea.createFloatingIdea', idea)).status, 200, 'a local program sends no Origin');
   const foreign = await fetch(`${base}/trpc/auth.me`, { headers: { origin: 'https://evil.example' } });

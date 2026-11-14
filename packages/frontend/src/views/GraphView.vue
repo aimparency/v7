@@ -394,7 +394,7 @@ async function startLayoutPreview() {
   if (layoutPreview.value || layoutSolving.value) return
   layoutSolving.value = true
   try {
-    const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ projectPath: projectStore.projectPath })
+    const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ graph: projectStore.projectPath })
     const saved = withLayoutDefaults(dataStore.meta?.layout)
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
@@ -517,7 +517,7 @@ async function applyLayoutPreview() {
   closeLayoutPreview()
   if (applied.length > 0) await dataStore.setConnectionPositions(projectStore.projectPath, applied)
   if (!sameLayoutSettings(settings, preview.saved)) {
-    dataStore.meta = await trpc.project.setLayoutSettings.mutate({ projectPath: projectStore.projectPath, layout: settings })
+    dataStore.meta = await trpc.project.setLayoutSettings.mutate({ graph: projectStore.projectPath, layout: settings })
   }
   const files = new Set(applied.map(change => change.parentId)).size
   useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files.`)

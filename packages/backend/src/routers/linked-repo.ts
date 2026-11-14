@@ -21,12 +21,12 @@ const LinkedRepoStatusSchema = LinkedRepoSchema.extend({
 export const linkedRepoRouter = t.router({
   // Portable links (from meta) merged with this machine's resolution status.
   list: delayedProcedure
-    .input(z.object({ projectPath: graphAddress }))
+    .input(z.object({ graph: graphAddress }))
     .output(z.array(LinkedRepoStatusSchema))
     .query(async ({ ctx, input }) => {
       const showPaths = seesServerPaths(ctx.viewer);
-      const meta = await readProjectMeta(input.projectPath);
-      const registry = await readLinkedRepoRegistry(input.projectPath);
+      const meta = await readProjectMeta(input.graph);
+      const registry = await readLinkedRepoRegistry(input.graph);
       const localById = new Map(registry.map((r) => [r.repoId, r]));
       return (meta.linkedRepos ?? []).map((link) => {
         const local = localById.get(link.repoId);
@@ -44,7 +44,7 @@ export const linkedRepoRouter = t.router({
   // meta and the machine-local path in the runtime registry.
   register: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       targetPath: z.string(),
       url: z.string().optional(),
       access: z.enum(['read', 'write']).default('read'),
@@ -56,7 +56,7 @@ export const linkedRepoRouter = t.router({
         throw new Error(`No .bowman found at target: ${target}`);
       }
 
-      const selfMeta = await readProjectMeta(input.projectPath);
+      const selfMeta = await readProjectMeta(input.graph);
       const targetMeta = await readProjectMeta(target); // generates+persists target repoId if missing
       const repoId = targetMeta.repoId!;
 
@@ -69,28 +69,28 @@ export const linkedRepoRouter = t.router({
       const links = (selfMeta.linkedRepos ?? []).filter((l) => l.repoId !== repoId);
       links.push(portable);
       selfMeta.linkedRepos = links;
-      await writeProjectMeta(input.projectPath, selfMeta);
+      await writeProjectMeta(input.graph, selfMeta);
 
       // Machine-local part → runtime registry (upsert by repoId).
       const local: LinkedRepoLocal = { repoId, localPath: target, access: input.access };
-      const registry = (await readLinkedRepoRegistry(input.projectPath)).filter((r) => r.repoId !== repoId);
+      const registry = (await readLinkedRepoRegistry(input.graph)).filter((r) => r.repoId !== repoId);
       registry.push(local);
-      await writeLinkedRepoRegistry(input.projectPath, registry);
+      await writeLinkedRepoRegistry(input.graph, registry);
 
       return { ...portable, localPath: target, access: input.access, resolved: true };
     }),
 
   // Drop a linked repo from both the portable list and the local registry.
   unregister: delayedProcedure
-    .input(z.object({ projectPath: graphAddress, repoId: z.string().uuid() }))
+    .input(z.object({ graph: graphAddress, repoId: z.string().uuid() }))
     .output(z.object({ repoId: z.string().uuid(), removed: z.boolean() }))
     .mutation(async ({ input }) => {
-      const meta = await readProjectMeta(input.projectPath);
+      const meta = await readProjectMeta(input.graph);
       meta.linkedRepos = (meta.linkedRepos ?? []).filter((l) => l.repoId !== input.repoId);
-      await writeProjectMeta(input.projectPath, meta);
+      await writeProjectMeta(input.graph, meta);
 
-      const registry = (await readLinkedRepoRegistry(input.projectPath)).filter((r) => r.repoId !== input.repoId);
-      await writeLinkedRepoRegistry(input.projectPath, registry);
+      const registry = (await readLinkedRepoRegistry(input.graph)).filter((r) => r.repoId !== input.repoId);
+      await writeLinkedRepoRegistry(input.graph, registry);
 
       return { repoId: input.repoId, removed: true };
     }),
@@ -98,7 +98,7 @@ export const linkedRepoRouter = t.router({
   // Resolve a repoId to its local checkout — for the black-box node's name and
   // health only. Ideas inside the linked repo are never read (see e81b11c3).
   resolve: delayedProcedure
-    .input(z.object({ projectPath: graphAddress, repoId: z.string().uuid() }))
+    .input(z.object({ graph: graphAddress, repoId: z.string().uuid() }))
     .output(z.object({
       repoId: z.string().uuid(),
       name: z.string().optional(),
@@ -106,9 +106,9 @@ export const linkedRepoRouter = t.router({
       resolved: z.boolean(),
     }))
     .query(async ({ ctx, input }) => {
-      const meta = await readProjectMeta(input.projectPath);
+      const meta = await readProjectMeta(input.graph);
       const link = (meta.linkedRepos ?? []).find((l) => l.repoId === input.repoId);
-      const localPath = await resolveLinkedRepoLocalPath(input.projectPath, input.repoId);
+      const localPath = await resolveLinkedRepoLocalPath(input.graph, input.repoId);
       return { repoId: input.repoId, name: link?.name, localPath: (seesServerPaths(ctx.viewer) && localPath) || undefined, resolved: !!localPath };
     }),
 });

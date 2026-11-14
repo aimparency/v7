@@ -10,26 +10,26 @@ import { graphAddress } from '../graphs/address.js';
 // The project's .bowman as part of its repository's working tree.
 export const gitRouter = t.router({
   status: delayedProcedure
-    .input(z.object({ projectPath: graphAddress }))
+    .input(z.object({ graph: graphAddress }))
     .query(async ({ ctx, input }) => {
-      const status = await readWorkingTreeStatus(normalizeProjectPath(input.projectPath));
+      const status = await readWorkingTreeStatus(normalizeProjectPath(input.graph));
       if (!status.isRepository || seesServerPaths(ctx.viewer)) return status;
       const { repositoryPath: _hidden, ...rest } = status;
       return rest;
     }),
 
   commit: delayedProcedure
-    .input(z.object({ projectPath: graphAddress, paths: z.array(z.string()), message: z.string() }))
+    .input(z.object({ graph: graphAddress, paths: z.array(z.string()), message: z.string() }))
     .mutation(async ({ input }) => {
-      const bowmanPath = normalizeProjectPath(input.projectPath);
+      const bowmanPath = normalizeProjectPath(input.graph);
       await assertWritableBowman(bowmanPath);
       return { commit: await commitPaths(bowmanPath, input.paths, input.message) };
     }),
 
   push: delayedProcedure
-    .input(z.object({ projectPath: graphAddress }))
+    .input(z.object({ graph: graphAddress }))
     .mutation(async ({ input }) => {
-      const bowmanPath = normalizeProjectPath(input.projectPath);
+      const bowmanPath = normalizeProjectPath(input.graph);
       await assertWritableBowman(bowmanPath);
       return { pushed: await pushToUpstream(bowmanPath, await gitEnvFor(bowmanPath)) };
     })

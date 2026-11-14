@@ -103,7 +103,7 @@ async function handleToolCall(name: string, args: any, projectPath: string) {
       case 'get_prioritized_ideas': {
         // Fetch ideas with open status
         const ideas = await trpc.idea.list.query({ 
-          projectPath, 
+          graph: projectPath, 
           status: 'open',
           sortBy: 'priority',
           sortOrder: 'desc',
@@ -113,14 +113,14 @@ async function handleToolCall(name: string, args: any, projectPath: string) {
       }
       case 'create_idea': {
         const res = await trpc.idea.createFloatingIdea.mutate({ 
-          projectPath, 
+          graph: projectPath, 
           idea: { 
             text: args.text,
             status: { state: 'open' }
           } 
         });
         if (args.phaseId) {
-            await trpc.idea.commitToPhase.mutate({ projectPath, ideaId: res.id, phaseId: args.phaseId });
+            await trpc.idea.commitToPhase.mutate({ graph: projectPath, ideaId: res.id, phaseId: args.phaseId });
         }
         return res;
       }

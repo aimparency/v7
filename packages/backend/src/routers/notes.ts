@@ -49,9 +49,9 @@ function shown(notes: Note[], graph: Graph, viewer: Viewer) {
 export const notesRouter = t.router({
   // The notes on one idea, oldest first, and whether the viewer may add one.
   list: delayedProcedure
-    .input(z.object({ projectPath: z.string(), ideaId: z.string().uuid() }))
+    .input(z.object({ graph: z.string(), ideaId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const graph = listedGraph(input.projectPath);
+      const graph = listedGraph(input.graph);
       const viewer = viewerOf(ctx);
       if (!graph) return { notes: [], mayAdd: false };
       const notes = (await listNotes(graph)).filter(note => note.ideaId === input.ideaId);
@@ -63,13 +63,13 @@ export const notesRouter = t.router({
 
   add: delayedProcedure
     .input(z.object({
-      projectPath: z.string(),
+      graph: z.string(),
       ideaId: z.string().uuid(),
       kind: z.enum(NOTE_KINDS),
       text: z.string().max(MAX_NOTE_LENGTH + 100)
     }))
     .mutation(async ({ ctx, input }) => {
-      const graph = requireGraph(input.projectPath);
+      const graph = requireGraph(input.graph);
       const viewer = viewerOf(ctx);
       const author = accountOf(viewer);
       if (!mayAddNotes(graph, author, rightOn(graph, viewer) !== 'read')) {
@@ -84,9 +84,9 @@ export const notesRouter = t.router({
     }),
 
   remove: delayedProcedure
-    .input(z.object({ projectPath: z.string(), id: z.string().uuid() }))
+    .input(z.object({ graph: z.string(), id: z.string().uuid() }))
     .mutation(async ({ ctx, input }) => {
-      const graph = requireGraph(input.projectPath);
+      const graph = requireGraph(input.graph);
       const viewer = viewerOf(ctx);
       const account = accountOf(viewer);
       const writes = rightOn(graph, viewer) !== 'read';

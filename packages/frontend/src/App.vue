@@ -123,14 +123,14 @@ const refreshContinueHook = async () => {
   const projectPath = projectStore.projectPath
   let hook = { installed: false, enabled: false }
   try {
-    if (projectPath) hook = await trpc.system.getContinueHook.query({ projectPath })
+    if (projectPath) hook = await trpc.system.getContinueHook.query({ graph: projectPath })
   } catch {
     // stays off
   }
   if (projectPath === projectStore.projectPath) continueHook.value = hook
 }
 const toggleContinueHook = async () => {
-  continueHook.value = await trpc.system.setContinueHook.mutate({ projectPath: projectStore.projectPath, enabled: !continueHook.value.enabled })
+  continueHook.value = await trpc.system.setContinueHook.mutate({ graph: projectStore.projectPath, enabled: !continueHook.value.enabled })
 }
 watch(() => projectStore.projectPath, refreshContinueHook, { immediate: true })
 // Uncommitted work of the project's repository; the header prompts a commit when it piles up.
@@ -140,7 +140,7 @@ const refreshWorkingTree = async () => {
   const projectPath = projectStore.projectPath
   let status = null
   try {
-    if (projectPath) status = await trpc.git.status.query({ projectPath })
+    if (projectPath) status = await trpc.git.status.query({ graph: projectPath })
   } catch {
     // treated as no repository
   }

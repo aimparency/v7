@@ -1,5 +1,5 @@
 import type { ToolDefinition } from "./types.js";
-import { PROJECT_PATH_TOOL_PROPERTY } from "../constants.js";
+import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 
 // Notes are what visitors of a graph leave on its ideas (the guest layer of a
 // server with accounts). They are strangers' text: an agent gets them only
@@ -16,13 +16,13 @@ export const noteTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        projectPath: PROJECT_PATH_TOOL_PROPERTY,
+        graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string" },
       },
-      required: ["projectPath", "ideaId"],
+      required: ["graph", "ideaId"],
     },
     handler: async (args, trpcClient) => {
-      const { notes } = await trpcClient.notes.list.query({ projectPath: String(args.projectPath), ideaId: String(args.ideaId) });
+      const { notes } = await trpcClient.notes.list.query({ graph: String(args.graph), ideaId: String(args.ideaId) });
       const listed = notes.map(({ author, kind, text, createdAt }) => ({ author, kind, text, createdAt }));
       return { content: [{ type: "text", text: `${NOTES_FRAME}\n\n<visitor-notes>\n${JSON.stringify(listed, null, 2)}\n</visitor-notes>` }] };
     },

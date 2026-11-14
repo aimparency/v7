@@ -55,9 +55,9 @@ test('a remote graph is read-only until its owner selects a key, then commits ar
   assert.equal(await fs.pathExists(path.join(graph.path, 'src', 'code.ts')), false, 'only the .bowman is cloned');
 
   const caller = await loggedIn('ana');
-  const idea = { projectPath: 'plans', idea: { text: 'From the server' } };
+  const idea = { graph: 'plans', idea: { text: 'From the server' } };
   await assert.rejects(caller.idea.createFloatingIdea(idea), /open read-only/);
-  assert.deepEqual(await caller.project.getAccess({ projectPath: 'plans' }).then(({ writable, role }) => ({ writable, role })), { writable: false, role: 'owner' });
+  assert.deepEqual(await caller.project.getAccess({ graph: 'plans' }).then(({ writable, role }) => ({ writable, role })), { writable: false, role: 'owner' });
 
   // Only public halves leave the server, and a key is its account's alone.
   const key = await caller.keys.create({ label: 'plans on GitHub' });
@@ -65,21 +65,21 @@ test('a remote graph is read-only until its owner selects a key, then commits ar
   assert.deepEqual(await caller.keys.list(), [key]);
   const ben = await loggedIn('ben');
   assert.deepEqual(await ben.keys.list(), []);
-  await assert.rejects(ben.graphs.setRemoteKey({ projectPath: 'plans', key: key.id }), /open read-only for ben/);
+  await assert.rejects(ben.graphs.setRemoteKey({ graph: 'plans', key: key.id }), /open read-only for ben/);
   const benKey = await ben.keys.create({ label: 'mine' });
-  await assert.rejects(caller.graphs.setRemoteKey({ projectPath: 'plans', key: benKey.id }), /one of your own keys/);
-  await assert.rejects(caller.graphs.setRemoteKey({ projectPath: 'plans', key: '../../etc' }), /one of your own keys/);
+  await assert.rejects(caller.graphs.setRemoteKey({ graph: 'plans', key: benKey.id }), /one of your own keys/);
+  await assert.rejects(caller.graphs.setRemoteKey({ graph: 'plans', key: '../../etc' }), /one of your own keys/);
 
-  await caller.graphs.setRemoteKey({ projectPath: 'plans', key: key.id });
-  assert.deepEqual((await caller.graphs.getAccess({ projectPath: 'plans' }))?.remote, { url, key: key.id, keyOwner: 'ana' });
-  const stored = JSON.stringify(await caller.graphs.getAccess({ projectPath: 'plans' })) + JSON.stringify(await caller.keys.list());
+  await caller.graphs.setRemoteKey({ graph: 'plans', key: key.id });
+  assert.deepEqual((await caller.graphs.getAccess({ graph: 'plans' }))?.remote, { url, key: key.id, keyOwner: 'ana' });
+  const stored = JSON.stringify(await caller.graphs.getAccess({ graph: 'plans' })) + JSON.stringify(await caller.keys.list());
   assert.ok(!stored.includes('PRIVATE KEY') && !stored.includes(path.join(root, 'server')), 'neither the private key nor its file is shown');
 
   await caller.idea.createFloatingIdea(idea);
-  const status = await caller.git.status({ projectPath: 'plans' });
+  const status = await caller.git.status({ graph: 'plans' });
   const changed = status.isRepository ? status.changes.map(change => change.path) : [];
-  await caller.git.commit({ projectPath: 'plans', paths: changed, message: 'An idea from the server' });
-  assert.deepEqual(await caller.git.push({ projectPath: 'plans' }), { pushed: 1 });
+  await caller.git.commit({ graph: 'plans', paths: changed, message: 'An idea from the server' });
+  assert.deepEqual(await caller.git.push({ graph: 'plans' }), { pushed: 1 });
   assert.equal(git(upstream, 'log', '-1', '--format=%s', 'main'), 'An idea from the server');
 
   // What is pushed elsewhere arrives here, through the graph's own git environment.
@@ -89,15 +89,15 @@ test('a remote graph is read-only until its owner selects a key, then commits ar
   git(author, 'push', '-q', 'origin', 'HEAD:main');
   const current = listGraphs()[0]!;
   assert.equal((await pullFastForward(path.join(current.path, '.bowman'), await graphGitEnv(current))).state, 'updated');
-  assert.equal((await caller.project.getMeta({ projectPath: 'plans' })).name, 'Renamed upstream');
+  assert.equal((await caller.project.getMeta({ graph: 'plans' })).name, 'Renamed upstream');
 
   // Without the key it follows its remote again and nobody edits it here.
-  await caller.graphs.setRemoteKey({ projectPath: 'plans', key: null });
+  await caller.graphs.setRemoteKey({ graph: 'plans', key: null });
   await assert.rejects(caller.idea.createFloatingIdea(idea), /open read-only/);
   await caller.keys.remove({ id: key.id });
   assert.deepEqual(await caller.keys.list(), []);
 
-  await caller.graphs.remove({ projectPath: 'plans' });
+  await caller.graphs.remove({ graph: 'plans' });
   assert.equal(await fs.pathExists(current.path), false);
 });
 

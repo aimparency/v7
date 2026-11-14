@@ -63,7 +63,7 @@ const selectCommit = async (hash: string) => {
   loadingDiff.value = true
   error.value = ''
   try {
-    const diff = await trpc.idea.commitDiff.query({ projectPath: projectStore.projectPath, hash })
+    const diff = await trpc.idea.commitDiff.query({ graph: projectStore.projectPath, hash })
     if (selectedHash.value !== hash) return
     files.value = diff
     // Start on the code the status change came with, not the idea's own JSON.
@@ -86,7 +86,7 @@ watch(() => [props.show, props.ideaId] as const, async ([show, ideaId]) => {
   await nextTick()
   shell.value?.$el?.focus?.()
   try {
-    history.value = await trpc.idea.statusHistory.query({ projectPath: projectStore.projectPath, ideaId })
+    history.value = await trpc.idea.statusHistory.query({ graph: projectStore.projectPath, ideaId })
     const latest = history.value[history.value.length - 1]
     if (history.value.length > 1 && latest) await selectCommit(latest.commit.hash)
   } catch (e) {

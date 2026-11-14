@@ -157,12 +157,12 @@ const ideaContextSchema = z.union([
 export const ideaRouter = t.router({
   commitEvidence: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       limit: z.number().int().min(1).max(100).optional()
     }))
     .query(async ({ input }) => {
-      const bowmanPath = normalizeProjectPath(input.projectPath);
+      const bowmanPath = normalizeProjectPath(input.graph);
       const repositoryPath = path.dirname(bowmanPath);
       return getIdeaCommitEvidence(repositoryPath, input.ideaId, input.limit);
     }),
@@ -170,52 +170,52 @@ export const ideaRouter = t.router({
   // Status changes of the idea as committed to git, oldest first.
   statusHistory: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid()
     }))
     .query(async ({ input }) => {
-      return getIdeaStatusHistory(normalizeProjectPath(input.projectPath), input.ideaId);
+      return getIdeaStatusHistory(normalizeProjectPath(input.graph), input.ideaId);
     }),
 
   // Who worked on the idea per git: authors and co-authors of commits that
   // change its file or name it.
   contributors: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid()
     }))
     .query(async ({ input }) => {
-      return getIdeaContributors(normalizeProjectPath(input.projectPath), input.ideaId);
+      return getIdeaContributors(normalizeProjectPath(input.graph), input.ideaId);
     }),
 
   // Per-file patches of one commit in the project's repository.
   commitDiff: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       hash: z.string().regex(/^[0-9a-f]{7,40}$/i)
     }))
     .query(async ({ input }) => {
-      const bowmanPath = normalizeProjectPath(input.projectPath);
+      const bowmanPath = normalizeProjectPath(input.graph);
       return getCommitDiff(bowmanPath, input.hash, hasAccounts() ? bowmanPath : undefined);
     }),
 
   get: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid()
     }))
     .query(async ({ input }) => {
-      return await readIdea(input.projectPath, input.ideaId);
+      return await readIdea(input.graph, input.ideaId);
     }),
 
   getMany: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaIds: z.array(z.string().uuid())
     }))
     .query(async ({ input }) => {
       const results = await Promise.allSettled(
-        input.ideaIds.map((ideaId: string) => readIdea(input.projectPath, ideaId))
+        input.ideaIds.map((ideaId: string) => readIdea(input.graph, ideaId))
       );
 
       return results.flatMap((result, index) => {
@@ -231,7 +231,7 @@ export const ideaRouter = t.router({
 
   list: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional(),
       parentIdeaId: z.string().uuid().optional(),
@@ -245,7 +245,7 @@ export const ideaRouter = t.router({
       sortOrder: z.enum(['asc', 'desc']).optional()
     }))
     .query(async ({ input }) => {
-      let ideas = await listIdeas(input.projectPath, input.archived);
+      let ideas = await listIdeas(input.graph, input.archived);
 
       if (input.ids) {
         ideas = ideas.filter((idea: Idea) => input.ids!.includes(idea.id));
@@ -273,7 +273,7 @@ export const ideaRouter = t.router({
       // Sorting
       if (input.sortBy) {
         const defaultCost = input.sortBy === 'priority'
-          ? defaultIdeaCost(await readProjectMeta(input.projectPath).catch(() => null))
+          ? defaultIdeaCost(await readProjectMeta(input.graph).catch(() => null))
           : DEFAULT_IDEA_COST;
         ideas.sort((a: Idea, b: Idea) => {
           let valA: any, valB: any;
@@ -316,16 +316,16 @@ export const ideaRouter = t.router({
 
   getRecursive: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phaseId: z.string().uuid()
     }))
     .query(async ({ input }) => {
-      const allIdeas = await listIdeas(input.projectPath);
+      const allIdeas = await listIdeas(input.graph);
       const ideaMap = new Map(allIdeas.map((a: Idea) => [a.id, a]));
       const result = new Set<Idea>();
 
       // Get phase root commitments
-      const phase = await readPhase(input.projectPath, input.phaseId);
+      const phase = await readPhase(input.graph, input.phaseId);
       const queue = [...phase.commitments];
 
       while (queue.length > 0) {
@@ -350,19 +350,19 @@ export const ideaRouter = t.router({
 
   proposeIdeaSubtree: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       transcript: z.string().trim().min(1).max(10_000),
       existingParentIds: z.array(z.string().uuid()).max(20).default([]),
       phaseId: z.string().uuid().optional()
     }))
     .mutation(async ({ input }) => {
-      const parents = await Promise.all(input.existingParentIds.map((id: string) => readIdea(input.projectPath, id)));
+      const parents = await Promise.all(input.existingParentIds.map((id: string) => readIdea(input.graph, id)));
       if (parents.some(parent => parent.archived || parent.status.state === 'archived')) {
         throw new Error('Cannot generate a proposal under an archived idea');
       }
-      if (input.phaseId) await readPhase(input.projectPath, input.phaseId);
+      if (input.phaseId) await readPhase(input.graph, input.phaseId);
       return generateIdeaProposal({
-        projectPath: normalizeProjectPath(input.projectPath),
+        projectPath: normalizeProjectPath(input.graph),
         transcript: input.transcript,
         existingParentIds: input.existingParentIds,
         phaseId: input.phaseId,
@@ -375,7 +375,7 @@ export const ideaRouter = t.router({
 
   approveIdeaSubtree: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       proposal: IdeaProposalSchema,
       revision: z.string().trim().min(1).max(200),
       idempotencyKey: z.string().trim().min(8).max(500)
@@ -388,16 +388,16 @@ export const ideaRouter = t.router({
 
       // Validate every external reference before the first graph write.
       for (const parentId of proposal.existingParentIds) {
-        const parent = await readIdea(input.projectPath, parentId);
+        const parent = await readIdea(input.graph, parentId);
         if (parent.archived || parent.status.state === 'archived') {
           throw new Error(`Cannot attach proposal to archived idea ${parentId}`);
         }
       }
-      if (proposal.phaseId) await readPhase(input.projectPath, proposal.phaseId);
+      if (proposal.phaseId) await readPhase(input.graph, proposal.phaseId);
 
       const flat = flattenIdeaProposal(proposal.root);
       const hash = proposalHash(proposal);
-      const journalPath = approvalJournalPath(input.projectPath, input.idempotencyKey);
+      const journalPath = approvalJournalPath(input.graph, input.idempotencyKey);
       await fs.ensureDir(path.dirname(journalPath));
 
       let journal: ApprovalJournal;
@@ -477,16 +477,16 @@ export const ideaRouter = t.router({
           archived: false,
           color: defaultIdeaColor()
         };
-        await writeIdea(input.projectPath, idea);
-        addIdeaToIndex(input.projectPath, idea);
+        await writeIdea(input.graph, idea);
+        addIdeaToIndex(input.graph, idea);
       });
 
       const rootIdeaId = durableId(proposal.root.proposalId);
       for (const parentId of proposal.existingParentIds) {
-        operations.push(() => connectIdeasInternal(input.projectPath, parentId, rootIdeaId));
+        operations.push(() => connectIdeasInternal(input.graph, parentId, rootIdeaId));
       }
       if (proposal.phaseId) {
-        operations.push(() => commitIdeaToPhase(input.projectPath, rootIdeaId, proposal.phaseId!));
+        operations.push(() => commitIdeaToPhase(input.graph, rootIdeaId, proposal.phaseId!));
       }
 
       try {
@@ -521,7 +521,7 @@ export const ideaRouter = t.router({
 
   update: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       idea: z.object({
         text: z.string().optional(),
@@ -563,10 +563,10 @@ export const ideaRouter = t.router({
       })
     }))
     .mutation(async ({ input }) => {
-      const existingIdea = await readIdea(input.projectPath, input.ideaId);
+      const existingIdea = await readIdea(input.graph, input.ideaId);
       const newState = input.idea.status?.state;
       if (newState !== undefined && newState !== existingIdea.status.state) {
-        await assertKnownState(input.projectPath, newState);
+        await assertKnownState(input.graph, newState);
       }
 
       // Handle consistency for supportedIdeas (Parents)
@@ -578,10 +578,10 @@ export const ideaRouter = t.router({
           for (const parentId of oldParents) {
               if (!newParents.has(parentId)) {
                   try {
-                      const parent = await readIdea(input.projectPath, parentId);
+                      const parent = await readIdea(input.graph, parentId);
                       if (parent.supportingConnections) {
                           parent.supportingConnections = parent.supportingConnections.filter((c) => c.ideaId !== input.ideaId);
-                          await writeIdea(input.projectPath, parent);
+                          await writeIdea(input.graph, parent);
                       }
                   } catch(e) { console.warn(`Failed to update removed parent ${parentId}`, e); }
               }
@@ -591,7 +591,7 @@ export const ideaRouter = t.router({
           for (const parentId of Array.from(newParents)) {
               if (!oldParents.has(parentId)) {
                   try {
-                      const parent = await readIdea(input.projectPath, parentId);
+                      const parent = await readIdea(input.graph, parentId);
                       if (!parent.supportingConnections) parent.supportingConnections = [];
                       if (!parent.supportingConnections.some((c) => c.ideaId === input.ideaId)) {
                           parent.supportingConnections.push({
@@ -599,7 +599,7 @@ export const ideaRouter = t.router({
                               relativePosition: getRandomRelativePosition(),
                               weight: 1
                           });
-                          await writeIdea(input.projectPath, parent);
+                          await writeIdea(input.graph, parent);
                       }
                   } catch(e) { console.warn(`Failed to update added parent ${parentId}`, e); }
               }
@@ -615,10 +615,10 @@ export const ideaRouter = t.router({
            for (const childId of oldChildren) {
                if (!newChildren.has(childId)) {
                    try {
-                       const child = await readIdea(input.projectPath, childId);
+                       const child = await readIdea(input.graph, childId);
                        if (child.supportedIdeas) {
                            child.supportedIdeas = child.supportedIdeas.filter((id: string) => id !== input.ideaId);
-                           await writeIdea(input.projectPath, child);
+                           await writeIdea(input.graph, child);
                        }
                    } catch(e) { console.warn(`Failed to update removed child ${childId}`, e); }
                }
@@ -628,11 +628,11 @@ export const ideaRouter = t.router({
            for (const childId of Array.from(newChildren)) {
                if (!oldChildren.has(childId)) {
                    try {
-                       const child = await readIdea(input.projectPath, childId);
+                       const child = await readIdea(input.graph, childId);
                        if (!child.supportedIdeas) child.supportedIdeas = [];
                        if (!child.supportedIdeas.includes(input.ideaId)) {
                            child.supportedIdeas.push(input.ideaId);
-                           await writeIdea(input.projectPath, child);
+                           await writeIdea(input.graph, child);
                        }
                    } catch(e) { console.warn(`Failed to update added child ${childId}`, e); }
                }
@@ -682,9 +682,9 @@ export const ideaRouter = t.router({
         supportingRepos
       };
 
-      await writeIdea(input.projectPath, updatedIdea);
-      updateIdeaInIndex(input.projectPath, updatedIdea);
-      refreshEmbeddingInBackground(input.projectPath, updatedIdea);
+      await writeIdea(input.graph, updatedIdea);
+      updateIdeaInIndex(input.graph, updatedIdea);
+      refreshEmbeddingInBackground(input.graph, updatedIdea);
 
       return updatedIdea;
     }),
@@ -693,36 +693,36 @@ export const ideaRouter = t.router({
   // no phase commitment) are deleted too. dryRun only reports what would go.
   delete: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaIds: z.array(z.string().uuid()).min(1),
       cascade: z.boolean().default(false),
       dryRun: z.boolean().default(false)
     }))
     .mutation(async ({ input }) => {
-      const deletedIds = await deleteIdeas(input.projectPath, input.ideaIds, input);
+      const deletedIds = await deleteIdeas(input.graph, input.ideaIds, input);
       return { deletedIds };
     }),
 
   disconnect: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       parentIdeaId: z.string().uuid(),
       childIdeaId: z.string().uuid()
     }))
     .mutation(async ({ input }) => {
-      await disconnectIdeas(input.projectPath, input.parentIdeaId, input.childIdeaId);
+      await disconnectIdeas(input.graph, input.parentIdeaId, input.childIdeaId);
       return { success: true };
     }),
 
   // Removes the idea from one parent or phase; the idea itself stays.
   detach: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       from: ideaContextSchema
     }))
     .mutation(async ({ input }) => {
-      await detachIdea(input.projectPath, input.ideaId, input.from);
+      await detachIdea(input.graph, input.ideaId, input.from);
       return { success: true };
     }),
 
@@ -730,36 +730,36 @@ export const ideaRouter = t.router({
   // touched ideas and phases so the client needs no reload.
   move: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       from: ideaContextSchema.optional(),
       to: ideaContextSchema.optional(),
       index: z.number().int().min(0).optional()
     }))
     .mutation(async ({ input }) => {
-      return await moveIdea(input.projectPath, input.ideaId, input);
+      return await moveIdea(input.graph, input.ideaId, input);
     }),
 
   commitToPhase: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       phaseId: z.string().uuid(),
       insertionIndex: z.number().optional()
     }))
     .mutation(async ({ input }) => {
-      await commitIdeaToPhase(input.projectPath, input.ideaId, input.phaseId, input.insertionIndex);
+      await commitIdeaToPhase(input.graph, input.ideaId, input.phaseId, input.insertionIndex);
       return { success: true };
     }),
 
   removeFromPhase: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       phaseId: z.string().uuid()
     }))
     .mutation(async ({ input }) => {
-      await removeIdeaFromPhase(input.projectPath, input.ideaId, input.phaseId);
+      await removeIdeaFromPhase(input.graph, input.ideaId, input.phaseId);
       return { success: true };
     }),
 
@@ -767,7 +767,7 @@ export const ideaRouter = t.router({
   // file is rewritten once; every other field, including hypotheses, is kept.
   setConnectionPositions: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       changes: z.array(z.object({
         parentId: z.string().uuid(),
         childId: z.string().uuid(),
@@ -783,7 +783,7 @@ export const ideaRouter = t.router({
       }
       let updated = 0;
       for (const [parentId, children] of byParent) {
-        await updateIdea(input.projectPath, parentId, (parent) => ({
+        await updateIdea(input.graph, parentId, (parent) => ({
           ...parent,
           supportingConnections: parent.supportingConnections.map((connection) => {
             const relativePosition = children.get(connection.ideaId);
@@ -798,7 +798,7 @@ export const ideaRouter = t.router({
 
   connectIdeas: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       parentIdeaId: z.string().uuid(),
       childIdeaId: z.string().uuid(),
       parentIncomingIndex: z.number().optional(),
@@ -808,7 +808,7 @@ export const ideaRouter = t.router({
       hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      await connectIdeasInternal(input.projectPath, input.parentIdeaId, input.childIdeaId, input.parentIncomingIndex, input.childSupportedIdeasIndex, input.relativePosition, input.weight, input.hypothesis);
+      await connectIdeasInternal(input.graph, input.parentIdeaId, input.childIdeaId, input.parentIncomingIndex, input.childSupportedIdeasIndex, input.relativePosition, input.weight, input.hypothesis);
     }),
 
   // Repo-level cross-repo link: attach a {repoId} edge (no ideaId) to an idea's
@@ -819,7 +819,7 @@ export const ideaRouter = t.router({
   // that another repo needs you), so there is no reciprocal write.
   linkRepo: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       repoId: z.string().uuid(),
       relativePosition: z.tuple([z.number(), z.number()]).optional(),
@@ -827,7 +827,7 @@ export const ideaRouter = t.router({
       hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      const idea = await readIdea(input.projectPath, input.ideaId);
+      const idea = await readIdea(input.graph, input.ideaId);
       const existing = idea.supportingRepos ?? [];
       const idx = existing.findIndex((r) => r.repoId === input.repoId);
       const edge = {
@@ -840,29 +840,29 @@ export const ideaRouter = t.router({
         ? existing.map((r, i) => (i === idx ? { ...r, ...edge } : r))
         : [...existing, edge];
       const updatedIdea = { ...idea, supportingRepos };
-      await writeIdea(input.projectPath, updatedIdea);
-      updateIdeaInIndex(input.projectPath, updatedIdea);
+      await writeIdea(input.graph, updatedIdea);
+      updateIdeaInIndex(input.graph, updatedIdea);
       return updatedIdea;
     }),
 
   unlinkRepo: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       ideaId: z.string().uuid(),
       repoId: z.string().uuid()
     }))
     .mutation(async ({ input }) => {
-      const idea = await readIdea(input.projectPath, input.ideaId);
+      const idea = await readIdea(input.graph, input.ideaId);
       const supportingRepos = (idea.supportingRepos ?? []).filter((r) => r.repoId !== input.repoId);
       const updatedIdea = { ...idea, supportingRepos };
-      await writeIdea(input.projectPath, updatedIdea);
-      updateIdeaInIndex(input.projectPath, updatedIdea);
+      await writeIdea(input.graph, updatedIdea);
+      updateIdeaInIndex(input.graph, updatedIdea);
       return updatedIdea;
     }),
 
   createFloatingIdea: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       idea: newIdeaInputSchema,
       // Parent the caller will connect right after creation (graph drag, MCP):
       // the default color derives from it.
@@ -870,21 +870,21 @@ export const ideaRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       // The first idea of a project is its root mission and carries the value.
-      const ideasDir = path.join(normalizeProjectPath(input.projectPath), 'ideas');
+      const ideasDir = path.join(normalizeProjectPath(input.graph), 'ideas');
       const isFirstIdea = !(await fs.pathExists(ideasDir))
         || !(await fs.readdir(ideasDir)).some(file => file.endsWith('.json'));
 
-      const idea = await storeNewIdea(input.projectPath, input.idea, {
+      const idea = await storeNewIdea(input.graph, input.idea, {
         colorParentId: input.inheritColorFrom ?? input.idea.supportedIdeas?.[0],
         defaultIntrinsicValue: isFirstIdea ? 1000 : 0
       });
-      await connectNewIdea(input.projectPath, idea.id, input.idea);
+      await connectNewIdea(input.graph, idea.id, input.idea);
       return idea;
     }),
 
   createSubIdea: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       parentIdeaId: z.string().uuid(),
       idea: newIdeaInputSchema,
       positionInParent: z.number().optional(),
@@ -892,32 +892,32 @@ export const ideaRouter = t.router({
       hypothesis: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      const idea = await storeNewIdea(input.projectPath, input.idea, { colorParentId: input.parentIdeaId });
-      await connectIdeasInternal(input.projectPath, input.parentIdeaId, idea.id, input.positionInParent, 0, undefined, input.weight, input.hypothesis);
-      await connectNewIdea(input.projectPath, idea.id, input.idea, input.parentIdeaId);
+      const idea = await storeNewIdea(input.graph, input.idea, { colorParentId: input.parentIdeaId });
+      await connectIdeasInternal(input.graph, input.parentIdeaId, idea.id, input.positionInParent, 0, undefined, input.weight, input.hypothesis);
+      await connectNewIdea(input.graph, idea.id, input.idea, input.parentIdeaId);
       return idea;
     }),
 
   createIdeaInPhase: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       phaseId: z.string().uuid(),
       idea: newIdeaInputSchema,
       insertionIndex: z.number().optional()
     }))
     .mutation(async ({ input }) => {
-      const idea = await storeNewIdea(input.projectPath, input.idea, {
+      const idea = await storeNewIdea(input.graph, input.idea, {
         colorParentId: input.idea.supportedIdeas?.[0],
         committedIn: [input.phaseId]
       });
-      await commitIdeaToPhase(input.projectPath, idea.id, input.phaseId, input.insertionIndex);
-      await connectNewIdea(input.projectPath, idea.id, input.idea);
+      await commitIdeaToPhase(input.graph, idea.id, input.phaseId, input.insertionIndex);
+      await connectNewIdea(input.graph, idea.id, input.idea);
       return idea;
     }),
 
   search: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       query: z.string().max(MAX_QUERY_CHARS),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional(),
@@ -926,7 +926,7 @@ export const ideaRouter = t.router({
       archived: z.boolean().optional()
     }))
     .query(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.projectPath);
+      const projectPath = normalizeProjectPath(input.graph);
       await ensureSearchIndex(projectPath);
       const allIdeas = await listIdeas(projectPath, input.archived);
       console.log(`[Search] Query: "${input.query}" | Total Ideas: ${allIdeas.length} | Archived: ${input.archived}`);
@@ -1021,25 +1021,25 @@ export const ideaRouter = t.router({
 
   searchSemantic: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       query: z.string().max(MAX_QUERY_CHARS),
       limit: z.number().optional(),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional()
     }))
     .query(async ({ input }) => {
-      await ensureSearchIndex(input.projectPath);
+      await ensureSearchIndex(input.graph);
       const queryVector = await generateQueryEmbedding(input.query);
       if (!queryVector) return [];
 
       // Increase limit to account for potential filtering
       const fetchLimit = (input.limit || 10) * 3;
-      const vectorResults = await searchVectors(input.projectPath, queryVector, fetchLimit);
+      const vectorResults = await searchVectors(input.graph, queryVector, fetchLimit);
 
       const results = [];
       for (const res of vectorResults) {
           try {
-              const idea = await readIdea(input.projectPath, res.id);
+              const idea = await readIdea(input.graph, res.id);
 
               let match = true;
               if (input.status) {
@@ -1071,7 +1071,7 @@ export const ideaRouter = t.router({
   // description marks what was imported, so re-running only adds new issues.
   importGithubIssues: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       repository: z.string().min(1) // owner/repo or a github.com URL
     }))
     .mutation(async ({ input }) => {
@@ -1080,25 +1080,25 @@ export const ideaRouter = t.router({
       const { owner, repo } = parsed;
       const issues = await fetchOpenGithubIssues(owner, repo);
 
-      const { ideas } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
+      const { ideas } = await scanIdeaFiles(input.graph, ['ideas', 'archived-ideas']);
       const imported = new Set(ideas.flatMap((idea) => idea.description?.match(/https:\/\/github\.com\/\S+\/issues\/\d+/g) ?? []));
       const parentText = `Open GitHub issues of ${owner}/${repo}`;
       const fresh = issues.filter((issue) => !imported.has(issue.url));
       let parent = ideas.find((idea) => idea.text === parentText && idea.status.state !== 'archived');
       if (!parent && fresh.length > 0) {
-        parent = await storeNewIdea(input.projectPath, {
+        parent = await storeNewIdea(input.graph, {
           text: parentText,
           description: `Imported from https://github.com/${owner}/${repo}/issues`,
           tags: ['github']
         }, {});
       }
       for (const issue of fresh) {
-        const child = await storeNewIdea(input.projectPath, {
+        const child = await storeNewIdea(input.graph, {
           text: issue.title,
           description: [issue.body.trim().slice(0, 4000), `GitHub issue #${issue.number}: ${issue.url}`].filter(Boolean).join('\n\n'),
           tags: ['github-issue', ...issue.labels]
         }, { colorParentId: parent!.id });
-        await connectIdeasInternal(input.projectPath, parent!.id, child.id);
+        await connectIdeasInternal(input.graph, parent!.id, child.id);
       }
       return { parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: issues.length - fresh.length };
     }),
@@ -1109,16 +1109,16 @@ export const ideaRouter = t.router({
   // forward (open -> partially -> implemented), never back. Paths stay inside the repository.
   importSpecTasks: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       specPath: z.string().min(1) // a tasks.md file or a directory, relative to the repository root or absolute
     }))
     .mutation(async ({ input }) => {
-      const repoRoot = path.dirname(normalizeProjectPath(input.projectPath));
+      const repoRoot = path.dirname(normalizeProjectPath(input.graph));
       const target = path.resolve(repoRoot, input.specPath);
       if (path.relative(repoRoot, target).startsWith('..')) throw new Error(`specPath must be inside the repository: ${input.specPath}`);
       const files = await findSpecTaskFiles(target);
 
-      const { ideas } = await scanIdeaFiles(input.projectPath, ['ideas', 'archived-ideas']);
+      const { ideas } = await scanIdeaFiles(input.graph, ['ideas', 'archived-ideas']);
       const importedIdeas = new Map(ideas.flatMap((idea) => (idea.description?.match(/^Spec task \S+$/gm) ?? []).map((marker) => [marker, idea] as const)));
       const progress = ['open', 'partially', 'implemented'];
       const result = { files: [] as { file: string; parentId: string | null; imported: number; alreadyImported: number; advanced: number }[] };
@@ -1130,23 +1130,23 @@ export const ideaRouter = t.router({
         for (const task of tasks) {
           const idea = importedIdeas.get(specTaskMarker(relative, task.key));
           if (!idea || idea.archived || !progress.includes(idea.status.state) || progress.indexOf(task.state) <= progress.indexOf(idea.status.state)) continue;
-          const updated = await updateIdea(input.projectPath, idea.id, (current) => ({ ...current, status: { state: task.state, comment: `Checked in ${relative} (spec import).`, date: Date.now() } }));
-          if (updated) updateIdeaInIndex(normalizeProjectPath(input.projectPath), updated);
+          const updated = await updateIdea(input.graph, idea.id, (current) => ({ ...current, status: { state: task.state, comment: `Checked in ${relative} (spec import).`, date: Date.now() } }));
+          if (updated) updateIdeaInIndex(normalizeProjectPath(input.graph), updated);
           advanced++;
         }
         const parentText = `Spec tasks: ${path.basename(path.dirname(file))}`;
         let parent = ideas.find((idea) => idea.text === parentText && idea.description?.includes(`Imported from ${relative}`) && idea.status.state !== 'archived');
         if (!parent && fresh.length > 0) {
-          parent = await storeNewIdea(input.projectPath, { text: parentText, description: `Imported from ${relative}`, tags: ['spec'] }, {});
+          parent = await storeNewIdea(input.graph, { text: parentText, description: `Imported from ${relative}`, tags: ['spec'] }, {});
         }
         for (const task of fresh) {
-          const child = await storeNewIdea(input.projectPath, {
+          const child = await storeNewIdea(input.graph, {
             text: task.title,
             description: [task.details, specTaskMarker(relative, task.key)].filter(Boolean).join('\n\n'),
             tags: ['spec-task'],
             status: { state: task.state, comment: task.state === 'open' ? '' : `Checked in ${relative} when imported.`, date: Date.now() }
           }, { colorParentId: parent!.id });
-          await connectIdeasInternal(input.projectPath, parent!.id, child.id);
+          await connectIdeasInternal(input.graph, parent!.id, child.id);
         }
         result.files.push({ file: relative, parentId: parent?.id ?? null, imported: fresh.length, alreadyImported: tasks.length - fresh.length, advanced });
       }
@@ -1155,12 +1155,12 @@ export const ideaRouter = t.router({
 
   merge: delayedProcedure
     .input(z.object({
-      projectPath: graphAddress,
+      graph: graphAddress,
       targetId: z.string().uuid(),  // A — the idea to keep
       sourceId: z.string().uuid(),  // B — the idea to archive
     }))
     .mutation(async ({ input }) => {
-      const { projectPath, targetId, sourceId } = input;
+      const { graph: projectPath, targetId, sourceId } = input;
 
       if (targetId === sourceId) {
         throw new Error('Cannot merge an idea into itself');

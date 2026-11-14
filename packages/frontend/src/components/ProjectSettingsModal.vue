@@ -61,7 +61,7 @@ const projectLabel = (p: { path: string }) => p.path.split('/').filter(Boolean).
 
 async function loadLinkedRepos() {
   if (!projectStore.projectPath) return
-  linkedRepos.value = await trpc.linkedRepo.list.query({ projectPath: projectStore.projectPath })
+  linkedRepos.value = await trpc.linkedRepo.list.query({ graph: projectStore.projectPath })
 }
 
 // With accounts other people use this server: no directories of the machine,
@@ -74,13 +74,13 @@ const newWriter = ref('')
 const mayManageAccess = computed(() => dataStore.access.role === 'owner')
 
 async function loadGraphAccess() {
-  if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ projectPath: projectStore.projectPath })
+  if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ graph: projectStore.projectPath })
 }
 
-type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'projectPath'>
+type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'graph'>
 async function setAccess(change: AccessChange) {
   try {
-    await trpc.graphs.setAccess.mutate({ projectPath: projectStore.projectPath, ...change })
+    await trpc.graphs.setAccess.mutate({ graph: projectStore.projectPath, ...change })
     newWriter.value = newNoteWriter.value = ''
     await loadGraphAccess()
   } catch (e) {
@@ -101,7 +101,7 @@ async function loadKeys() {
 
 async function selectKey(id: string | null) {
   try {
-    await trpc.graphs.setRemoteKey.mutate({ projectPath: projectStore.projectPath, key: id })
+    await trpc.graphs.setRemoteKey.mutate({ graph: projectStore.projectPath, key: id })
     await loadGraphAccess()
     await dataStore.refreshAccess(projectStore.projectPath)
   } catch (e) {
@@ -122,7 +122,7 @@ async function createKey() {
 async function removeGraph() {
   if (!window.confirm(`Remove the graph "${name.value}" from this server? A graph created here is deleted with its history.`)) return
   try {
-    await trpc.graphs.remove.mutate({ projectPath: projectStore.projectPath })
+    await trpc.graphs.remove.mutate({ graph: projectStore.projectPath })
     modalStore.closeSettingsModal()
     projectStore.setProjectPath('')
   } catch (e) {
@@ -145,7 +145,7 @@ async function addLinkedRepo() {
   if (!selectedTargetPath.value || repoBusy.value) return
   repoBusy.value = true
   try {
-    await trpc.linkedRepo.register.mutate({ projectPath: projectStore.projectPath, targetPath: selectedTargetPath.value })
+    await trpc.linkedRepo.register.mutate({ graph: projectStore.projectPath, targetPath: selectedTargetPath.value })
     selectedTargetPath.value = ''
     await loadLinkedRepos()
     // Refresh the store's meta so the idea-edit 'link a whole repo' picker sees it.
@@ -165,7 +165,7 @@ async function removeLinkedRepo(repoId: string) {
   confirmUnlinkRepoId.value = null
   repoBusy.value = true
   try {
-    await trpc.linkedRepo.unregister.mutate({ projectPath: projectStore.projectPath, repoId })
+    await trpc.linkedRepo.unregister.mutate({ graph: projectStore.projectPath, repoId })
     await loadLinkedRepos()
     await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
   } catch (e) {
@@ -223,8 +223,8 @@ async function loadAutonomyState() {
   if (!projectStore.projectPath || accounts) return
 
   const [watchdogRuntime, policy] = await Promise.all([
-    trpc.watchdog.getRuntimeState.query({ projectPath: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
-    trpc.watchdog.getAutonomyPolicy.query({ projectPath: projectStore.projectPath }) as Promise<{
+    trpc.watchdog.getRuntimeState.query({ graph: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
+    trpc.watchdog.getAutonomyPolicy.query({ graph: projectStore.projectPath }) as Promise<{
       autonomyMode: 'manual' | 'supervised' | 'autonomous'
       preferredAgentType: AgentType | null
       sessionLeaseMinutes: number
@@ -263,7 +263,7 @@ onMounted(async () => {
   // Load data
   loading.value = true
   try {
-    const meta = dataStore.meta || await trpc.project.getMeta.query({ projectPath: projectStore.projectPath })
+    const meta = dataStore.meta || await trpc.project.getMeta.query({ graph: projectStore.projectPath })
     if (meta) {
         name.value = meta.name
         color.value = meta.color
@@ -307,7 +307,7 @@ const updateInstructions = async () => {
     isUpdatingInstructions.value = true
     updateResults.value = []
     try {
-        const res = await trpc.project.injectAgentInstructions.mutate({ projectPath: projectStore.projectPath })
+        const res = await trpc.project.injectAgentInstructions.mutate({ graph: projectStore.projectPath })
         updateResults.value = res.results
     } catch (e: any) {
         updateResults.value = [`Error: ${e.message}`]
@@ -320,7 +320,7 @@ const importIssues = async () => {
     isImportingIssues.value = true
     issueImportResult.value = ''
     try {
-        const { imported, alreadyImported } = await trpc.idea.importGithubIssues.mutate({ projectPath: projectStore.projectPath, repository: issueRepository.value })
+        const { imported, alreadyImported } = await trpc.idea.importGithubIssues.mutate({ graph: projectStore.projectPath, repository: issueRepository.value })
         issueImportResult.value = `Imported ${imported} issue${imported === 1 ? '' : 's'}${alreadyImported ? `, ${alreadyImported} already there` : ''}.`
     } catch (error) {
         useToastStore().error('Issue import failed', error)
@@ -347,7 +347,7 @@ const save = async () => {
           statuses: statuses.value.map((status) => ({ ...status, promptsReflection: !!status.promptsReflection }))
         })
         if (!accounts) await trpc.watchdog.updateAutonomyPolicy.mutate({
-          projectPath: projectStore.projectPath,
+          graph: projectStore.projectPath,
           policy: {
             autonomyMode: autonomyMode.value,
             preferredAgentType: preferredAgentType.value || null,

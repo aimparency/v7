@@ -20,26 +20,26 @@ test('MCP Tools - Search', async () => {
   registerTools(server as any, callerProxy as any);
 
   await caller.idea.createFloatingIdea({
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     idea: { text: 'Find Me', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
   await caller.phase.create({
-    projectPath: ctx.projectPath,
+    graph: ctx.projectPath,
     phase: { name: 'Search Phase', from: 0, to: 1000 }
   });
 
   // 1. Build Index (optional now, but good to test)
-  await server.callTool('build_search_index', { projectPath: ctx.projectPath });
+  await server.callTool('build_search_index', { graph: ctx.projectPath });
 
   // 2. Search Ideas
-  const ideaRes = await server.callTool('search_ideas', { projectPath: ctx.projectPath, query: 'Find' });
+  const ideaRes = await server.callTool('search_ideas', { graph: ctx.projectPath, query: 'Find' });
   const ideas = JSON.parse(ideaRes.content[0].text);
   assert.equal(ideas.length, 1);
   assert.equal(ideas[0].text, 'Find Me');
 
   // 3. Search Phases
-  const phaseRes = await server.callTool('search_phases', { projectPath: ctx.projectPath, query: 'Search' });
+  const phaseRes = await server.callTool('search_phases', { graph: ctx.projectPath, query: 'Search' });
   const phases = JSON.parse(phaseRes.content[0].text);
   assert.equal(phases.length, 1);
   assert.equal(phases[0].name, 'Search Phase');
