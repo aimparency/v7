@@ -23,8 +23,9 @@ if (!target) {
   console.error('usage: pnpm verify:migration <repo or .bowman path> [--keep]');
   process.exit(2);
 }
-const isBowman = (dir: string) => ['meta.json', 'ideas', 'aims'].map((entry) => fs.access(path.join(dir, entry)).then(() => true, () => false));
-const source = path.resolve((await Promise.all(isBowman(target))).some(Boolean) ? target : path.join(target, AIMPARENCY_DIR_NAME));
+// A repo root holds a .bowman; take that first, since the root may have its own ideas/ folder.
+const exists = (entry: string) => fs.access(entry).then(() => true, () => false);
+const source = path.resolve(await exists(path.join(target, AIMPARENCY_DIR_NAME)) ? path.join(target, AIMPARENCY_DIR_NAME) : target);
 const workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'verify-bowman-'));
 const copy = path.join(workDir, AIMPARENCY_DIR_NAME);
 await fs.cp(source, copy, { recursive: true, filter: (file) => path.basename(file) !== 'secrets.json' });

@@ -1,0 +1,39 @@
+{
+  "name": "Fixture v2",
+  "color": "#007acc",
+  "statuses": [
+    {
+      "key": "open",
+      "color": "#40abbf"
+    },
+    {
+      "key": "implemented",
+      "color": "#52bf40",
+      "promptsReflection": true
+    },
+    {
+      "key": "review",
+      "color": "#64b5f6",
+      "ongoing": true
+    },
+    {
+      "key": "cancelled",
+      "color": "#ffa348",
+      "promptsReflection": true
+    }
+  ],
+  "dataModelVersion": 6,
+  "rootPhaseIds": [
+    "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+  ],
+  "phaseCursors": {},
+  "phaseActiveLevel": 0,
+  "repoId": "99999999-9999-4999-8999-999999999999",
+  "linkedRepos": [
+    {
+      "repoId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+      "name": "Sibling",
+      "url": "https://example.org/sibling.git"
+    }
+  ]
+}

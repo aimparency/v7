@@ -373,6 +373,7 @@ export const useDataStore = defineStore('data', {
         fy: null as number | null,
         value: state.calculatedValues.get(idea.id) || 0, // Add value here for graph
         isRepo: false, // real idea node (vs. a black-box linked-repo node, below)
+        host: undefined as string | undefined, // a linked graph's address on its server (repo nodes, below)
         unreadable: undefined as string | undefined // load error of a warning node (below)
       }))
 
@@ -420,6 +421,7 @@ export const useDataStore = defineStore('data', {
           fy: null as number | null,
           value: 0,
           isRepo: false,
+          host: undefined,
           unreadable: entry.error
         })
         entry.supportingIdeaIds.forEach(childId => {
@@ -435,7 +437,7 @@ export const useDataStore = defineStore('data', {
       // flows into these repo sink nodes via calculateIdeaValues' repo expansion
       // (the sink node is keyed by the repoId), so we reuse calculatedValues and
       // flowValues/flowShares keyed `${ideaId}->${repoId}` here.
-      const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string }>
+      const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string; host?: string }>
       const linkedRepoById = new Map(linkedRepos.map(repo => [repo.repoId, repo]))
       const repoNodeIds = new Set<string>()
       ideas.forEach(idea => {
@@ -461,6 +463,7 @@ export const useDataStore = defineStore('data', {
               fy: null as number | null,
               value: state.calculatedValues.get(repoId) || 0,
               isRepo: true,
+              host: linked?.host,
               unreadable: undefined
             })
           }

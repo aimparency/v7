@@ -96,11 +96,12 @@ describe('ProjectSettingsModal linked repos', () => {
     await flushPromises()
 
     // The sibling is offered (self excluded).
-    const select = wrapper.find('.add-repo-row select')
+    const row = wrapper.findAll('.add-repo-row').find((r) => r.find('select').exists())!
+    const select = row.find('select')
     expect(select.findAll('option').map((o) => o.element.value)).toContain(SIBLING.path)
 
     await select.setValue(SIBLING.path)
-    await wrapper.find('.add-repo-btn').trigger('click')
+    await row.find('.add-repo-btn').trigger('click')
     await flushPromises()
 
     expect(registerMock).toHaveBeenCalledWith({ graph: SELF_BOWMAN, targetPath: SIBLING.path })

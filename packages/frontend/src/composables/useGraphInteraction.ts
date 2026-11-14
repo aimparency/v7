@@ -564,8 +564,11 @@ export function useGraphInteraction(
         }
         // Repo and unreadable-idea nodes have no idea detail to select or track
         // (the label tooltip shows an unreadable idea's error); never select
-        // them as ideas.
-        if (!isIdeaNode(node)) return
+        // them as ideas. A linked graph with an address opens on its server.
+        if (!isIdeaNode(node)) {
+            if (node.host && !mapStore.cursorMoved) window.open(node.host, '_blank', 'noopener')
+            return
+        }
 
         const isCtrl = event && (event.ctrlKey || event.metaKey)
         const isShift = event && event.shiftKey

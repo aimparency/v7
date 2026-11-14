@@ -36,6 +36,7 @@ export interface GraphNode {
   freezeCounter?: number
   loadable?: boolean
   isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
+  host?: string // a linked graph's address on its server; clicking the node opens it
   unreadable?: string // load error of an idea file the backend cannot read (read-only warning node)
 }
 
@@ -212,6 +213,7 @@ export function useGraphSimulation() {
           customColor: raw.color ?? null,
           loadable: isLoadable,
           isRepo: raw.isRepo ?? false,
+          host: raw.host,
           unreadable: raw.unreadable
         }
         nodeMap.set(raw.id, existing)
@@ -224,6 +226,7 @@ export function useGraphSimulation() {
         existing.customColor = raw.color ?? null
         existing.loadable = isLoadable
         existing.isRepo = raw.isRepo ?? false
+        existing.host = raw.host
         existing.unreadable = raw.unreadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }

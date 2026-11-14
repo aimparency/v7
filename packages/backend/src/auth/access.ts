@@ -53,7 +53,7 @@ const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // viewer (activity): not for visitors.
 const WRITE_MUTATIONS = new Set([
   'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
-  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister'
+  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost'
 ]);
 const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).

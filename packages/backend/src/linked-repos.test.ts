@@ -138,3 +138,24 @@ test('unregister removes the link from both meta and the runtime registry', asyn
   const registry = await readRegistry(projectAPath);
   assert.equal(registry.repos.length, 0);
 });
+
+test('linkHost stores a graph by its address on its server, with no checkout', async () => {
+  const repoId = '22222222-2222-4222-8222-222222222222';
+  const link = await caller.linkedRepo.linkHost({ graph: projectAPath, host: 'https://hub.example.org/g/commons-hub/', repoId, name: 'Commons Hub' });
+  assert.deepStrictEqual(link, { repoId, name: 'Commons Hub', host: 'https://hub.example.org/g/commons-hub' });
+  assert.deepStrictEqual((await readMeta(projectAPath)).linkedRepos, [link]);
+  const [listed] = await caller.linkedRepo.list({ graph: projectAPath });
+  assert.equal(listed!.host, link.host);
+  assert.equal(listed!.resolved, false, 'not checked out here, and it need not be');
+
+  // Registering a local checkout of the same graph later keeps its address.
+  await fs.writeJson(path.join(projectBPath, 'meta.json'), { name: 'Commons Hub', repoId });
+  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath });
+  assert.equal((await readMeta(projectAPath)).linkedRepos![0]!.host, link.host);
+});
+
+test('linkHost refuses what is not a graph address, and the graph itself', async () => {
+  await assert.rejects(caller.linkedRepo.linkHost({ graph: projectAPath, host: 'https://hub.example.org/', repoId: '22222222-2222-4222-8222-222222222222', name: 'x' }));
+  const self = await caller.project.getMeta({ graph: projectAPath });
+  await assert.rejects(caller.linkedRepo.linkHost({ graph: projectAPath, host: 'https://hub.example.org/g/me', repoId: self.repoId!, name: 'me' }), /itself/);
+});

@@ -71,6 +71,15 @@ export const BOWMAN_MIGRATIONS: BowmanMigration[] = [
     name: 'loopWeight is selfWeight',
     pending: needsSelfWeightMigration,
     run: migrateSelfWeightFiles
+  },
+  {
+    version: 7,
+    name: 'a link to another graph carries the address of its Aimparency server',
+    // meta.linkedRepos entries gained `host`. Existing links stay as they are
+    // (they have none and resolve through a local checkout as before), so
+    // nothing is rewritten. The version still moves: code from before would
+    // drop the new field when it rewrites meta.json, and now it only reads.
+    run: async () => {}
   }
 ];
 

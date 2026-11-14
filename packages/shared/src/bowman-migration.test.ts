@@ -14,7 +14,7 @@ import {
 } from './bowman-migration.js';
 import { diffGraphSignatures, readGraphSignature } from './bowman-migrations/graph-signature.js';
 import { CURRENT_DATA_MODEL_VERSION } from './constants.js';
-import { IdeaSchema, PhaseSchema } from './types.js';
+import { IdeaSchema, LinkedRepoSchema, PhaseSchema } from './types.js';
 
 const FIXTURES = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'fixtures');
 
@@ -33,7 +33,7 @@ test('the registry ends at the current data model version, in order', () => {
   assert.equal(versions[versions.length - 1], CURRENT_DATA_MODEL_VERSION);
 });
 
-for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-model-v4', 'data-model-v5']) {
+for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-model-v4', 'data-model-v5', 'data-model-v6']) {
   test(`${fixture} migrates to the current version with an unchanged graph`, async () => {
     const bowman = await copyFixture(fixture);
     const before = await readGraphSignature(bowman);
@@ -43,13 +43,16 @@ for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-
     if (fixture === 'data-model-v1' || fixture === 'data-model-v2') {
       assert.ok(result.applied.some((step) => step.startsWith('3:')), 'the ideas layout migration ran');
     }
-    if (fixture !== 'data-model-v4' && fixture !== 'data-model-v5') {
+    if (!['data-model-v4', 'data-model-v5', 'data-model-v6'].includes(fixture)) {
       assert.ok(result.applied.some((step) => step.startsWith('4:')), 'the connection hypothesis migration ran');
     }
-    if (fixture !== 'data-model-v5') {
+    if (fixture !== 'data-model-v5' && fixture !== 'data-model-v6') {
       assert.ok(result.applied.some((step) => step.startsWith('5:')), 'the two-notes migration ran');
     }
-    assert.ok(result.applied.some((step) => step.startsWith('6:')), 'the self weight migration ran');
+    if (fixture !== 'data-model-v6') {
+      assert.ok(result.applied.some((step) => step.startsWith('6:')), 'the self weight migration ran');
+    }
+    assert.ok(result.applied.some((step) => step.startsWith('7:')), 'the version moved to graph links with a host');
     assert.deepStrictEqual(result.conflicts, []);
 
     assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), []);
@@ -144,4 +147,13 @@ test('the graph signature notices a lost connection or a changed status', async 
   const root = await readJson(rootFile);
   await fs.writeFile(rootFile, JSON.stringify({ ...root, supportingConnections: root.supportingConnections.slice(1), status: { ...root.status, state: 'review' } }));
   assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), ['connections', 'states']);
+});
+
+test('a link to another graph from before data model 7 stays as it was and still parses', async () => {
+  const bowman = await copyFixture('data-model-v6');
+  const before = await readJson(path.join(bowman, 'meta.json'));
+  await migrateBowman(bowman);
+  const after = await readJson(path.join(bowman, 'meta.json'));
+  assert.deepStrictEqual(after.linkedRepos, before.linkedRepos);
+  assert.deepStrictEqual(LinkedRepoSchema.parse(after.linkedRepos[0]), before.linkedRepos[0]);
 });

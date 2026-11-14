@@ -5,7 +5,7 @@ import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
 import { trpc } from '../trpc'
 import { useToastStore } from '../stores/toast'
-import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost } from 'shared'
+import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost, fetchGraphAtHost } from 'shared'
 import type { AgentType } from '../stores/watchdog'
 import { Check, X } from 'lucide-vue-next'
 import { hasAccounts } from '../utils/runtime-config'
@@ -40,7 +40,7 @@ const askForHumanOnText = ref('destructive-git, network, api-keys')
 // repo' picker then reads. Register/unregister are applied immediately (their
 // own mutations); the modal's Save merges name/color/statuses and preserves
 // linkedRepos, so there's no clobber.
-type LinkedRepoRow = { repoId: string, name: string, url?: string, localPath?: string, access?: string, resolved: boolean }
+type LinkedRepoRow = { repoId: string, name: string, host?: string, url?: string, localPath?: string, access?: string, resolved: boolean }
 const linkedRepos = ref<LinkedRepoRow[]>([])
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const selectedTargetPath = ref('')
@@ -152,6 +152,28 @@ async function addLinkedRepo() {
     await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
   } catch (e) {
     console.error('Failed to register linked repo', e)
+  } finally {
+    repoBusy.value = false
+  }
+}
+
+// Link a graph by its address on its server. The browser asks that server
+// itself; this graph's server never fetches foreign graphs.
+const hostAddress = ref('')
+const hostLabel = (host: string) => host.replace(/^https?:\/\//, '')
+const hostError = ref('')
+async function linkByHost() {
+  if (!hostAddress.value.trim() || repoBusy.value) return
+  repoBusy.value = true
+  hostError.value = ''
+  try {
+    const target = await fetchGraphAtHost(hostAddress.value)
+    await trpc.linkedRepo.linkHost.mutate({ graph: projectStore.projectPath, ...target })
+    hostAddress.value = ''
+    await loadLinkedRepos()
+    await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
+  } catch (e) {
+    hostError.value = e instanceof Error ? e.message : String(e)
   } finally {
     repoBusy.value = false
   }
@@ -469,12 +491,13 @@ const save = async () => {
 
         <div class="form-group">
           <label>Linked repos</label>
-          <p class="hint-text">Whole external projects this one can link to as black-box supporters. Registering a sibling project here makes it pickable from an idea's "link a whole repo".</p>
+          <p class="hint-text">Whole other graphs this one can link to as supporters: by their address on the server hosting them, or as a project checked out here. A graph linked here is pickable from an idea's "link a whole repo".</p>
 
           <div v-if="linkedRepos.length > 0" class="status-list">
             <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">
               <span class="linked-repo-name">{{ repo.name }}</span>
-              <span class="linked-repo-chip" :class="{ unresolved: !repo.resolved }">
+              <a v-if="repo.host" class="linked-repo-chip" :href="repo.host" target="_blank" rel="noopener">{{ hostLabel(repo.host) }}</a>
+              <span v-else class="linked-repo-chip" :class="{ unresolved: !repo.resolved }">
                 {{ repo.resolved ? 'checked out' : 'not here' }}
               </span>
               <button
@@ -487,6 +510,11 @@ const save = async () => {
           </div>
           <p v-else class="hint-text">No linked repos yet.</p>
 
+          <div class="add-repo-row">
+            <input v-model="hostAddress" placeholder="https://server/g/graph" :disabled="repoBusy" @keydown.enter="linkByHost" />
+            <button @click="linkByHost" class="action-btn add-repo-btn" :disabled="!hostAddress.trim() || repoBusy">Link</button>
+          </div>
+          <p v-if="hostError" class="hint-text">{{ hostError }}</p>
           <div v-if="!accounts" class="add-repo-row">
             <select v-model="selectedTargetPath" :disabled="availableRepoTargets.length === 0 || repoBusy">
               <option value="">

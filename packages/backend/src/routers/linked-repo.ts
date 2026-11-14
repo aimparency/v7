@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import fs from 'fs-extra';
-import { LinkedRepoSchema } from 'shared';
+import { LinkedRepoSchema, parseGraphHost, graphHostUrl } from 'shared';
 import type { LinkedRepo, LinkedRepoLocal } from 'shared';
 import { t, delayedProcedure } from '../trpc.js';
 import { seesServerPaths } from '../auth/access.js';
@@ -65,7 +65,8 @@ export const linkedRepoRouter = t.router({
       }
 
       // Portable part → meta.linkedRepos (upsert by repoId).
-      const portable: LinkedRepo = { repoId, name: targetMeta.name, ...(input.url ? { url: input.url } : {}) };
+      const known = selfMeta.linkedRepos?.find((l) => l.repoId === repoId);
+      const portable: LinkedRepo = { ...known, repoId, name: targetMeta.name, ...(input.url ? { url: input.url } : {}) };
       const links = (selfMeta.linkedRepos ?? []).filter((l) => l.repoId !== repoId);
       links.push(portable);
       selfMeta.linkedRepos = links;
@@ -78,6 +79,27 @@ export const linkedRepoRouter = t.router({
       await writeLinkedRepoRegistry(input.graph, registry);
 
       return { ...portable, localPath: target, access: input.access, resolved: true };
+    }),
+
+  // Link a graph by its address on the server hosting it. The caller (browser
+  // or MCP client) asked that server for the graph's identity and name; this
+  // server never fetches foreign graphs. No checkout is involved.
+  linkHost: delayedProcedure
+    .input(z.object({
+      graph: graphAddress,
+      host: z.string().refine((address) => parseGraphHost(address) !== null, 'Not the address of a graph: https://<server>/g/<graph>'),
+      repoId: z.string().uuid(),
+      name: z.string().min(1),
+    }))
+    .output(LinkedRepoSchema)
+    .mutation(async ({ input }) => {
+      const meta = await readProjectMeta(input.graph);
+      if (input.repoId === meta.repoId) throw new Error('Cannot link a graph to itself.');
+      const known = meta.linkedRepos?.find((l) => l.repoId === input.repoId);
+      const link: LinkedRepo = { ...known, repoId: input.repoId, name: input.name, host: graphHostUrl(parseGraphHost(input.host)!) };
+      meta.linkedRepos = [...(meta.linkedRepos ?? []).filter((l) => l.repoId !== input.repoId), link];
+      await writeProjectMeta(input.graph, meta);
+      return link;
     }),
 
   // Drop a linked repo from both the portable list and the local registry.

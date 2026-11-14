@@ -83,13 +83,15 @@ export const IdeaStateSchema = z.object({
 });
 
 // Portable linked-repo entry — committed in meta.json so the link travels with
-// the repo. Carries identity (repoId) and human/relocation hints (name, url),
-// but NEVER a localPath: where the repo is checked out is machine-specific and
-// lives in the runtime registry instead.
+// the repo. Carries identity (repoId), the graph's address on its Aimparency
+// server (host) and human/relocation hints (name, url), but NEVER a localPath:
+// where the repo is checked out is machine-specific and lives in the runtime
+// registry instead.
 export const LinkedRepoSchema = z.object({
-  repoId: z.string().uuid(), // stable identity of the linked repo
-  name: z.string(),          // display name (snapshot of the target's name)
-  url: z.string().optional() // optional relocation hint (e.g. git remote)
+  repoId: z.string().uuid(),  // stable identity of the linked repo
+  name: z.string(),           // display name (snapshot of the target's name)
+  host: z.string().optional(), // <origin>/g/<slug> of the graph on its server (data model 7); absent on links to a local checkout
+  url: z.string().optional()  // optional relocation hint (e.g. git remote)
 });
 
 export type LinkedRepo = z.infer<typeof LinkedRepoSchema>;
