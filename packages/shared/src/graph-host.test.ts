@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert';
-import { fetchGraphAtHost, fetchIdeasAtHost, parseGraphHost, spreadInflow } from './graph-host.js';
+import { fetchGraphAtHost, fetchIdeasAtHost, intrinsicShares, parseGraphHost, spreadInflow } from './graph-host.js';
+import type { Idea } from './types.js';
 
 test('a graph address is the origin and the slug of the page URL', () => {
   assert.deepStrictEqual(parseGraphHost(' https://hub.example.org/g/commons-hub/?x=1#top '), { origin: 'https://hub.example.org', slug: 'commons-hub' });
@@ -36,4 +37,10 @@ test('the ideas at a host are read through its API, unparsable ones left out', a
 
 test('the inflow takes the place of the linked graph\'s whole intrinsic value', () => {
   assert.deepStrictEqual([...spreadInflow(0.4, new Map([['top', 0.5], ['child', 1]]))], [['top', 0.2], ['child', 0.4]]);
+});
+
+test('the inflow enters a linked graph at its ideas with intrinsic value, or at its top ideas', () => {
+  const idea = (id: string, intrinsicValue: number, supportedIdeas: string[] = []) => ({ id, intrinsicValue, supportedIdeas }) as unknown as Idea;
+  assert.deepStrictEqual(intrinsicShares([idea('a', 3), idea('b', 1, ['a']), idea('c', 0, ['a'])]), [['a', 0.75], ['b', 0.25]]);
+  assert.deepStrictEqual(intrinsicShares([idea('a', 0), idea('b', 0), idea('c', 0, ['a'])]), [['a', 0.5], ['b', 0.5]]);
 });

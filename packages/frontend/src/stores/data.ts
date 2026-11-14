@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
-import { calculateIdeaValues, defaultIdeaCost, fetchIdeasAtHost, INITIAL_STATES, spreadInflow, toProjectRoot } from 'shared'
+import { calculateIdeaValues, defaultIdeaCost, fetchGraphAtHost, fetchIdeasAtHost, INITIAL_STATES, intrinsicShares, spreadInflow, toProjectRoot } from 'shared'
 import { trpc } from '../trpc'
 import { followIdeaActivity } from '../utils/idea-activity-feed'
 import { backendConnection } from '../utils/backend-connection'
@@ -49,7 +49,7 @@ const REPO_NODE_COLOR = '#9e9e9e'
 // server hosting it, with the values that graph gives them itself.
 type LinkedGraphView =
   | { state: 'loading' }
-  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number> }
+  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string }
   | { state: 'unavailable' }
 
 // Ideas of an opened linked graph get ids of their own in this graph.
@@ -490,16 +490,25 @@ export const useDataStore = defineStore('data', {
           }
           const share = state.flowShares.get(`${idea.id}->${repoId}`) || 0
           const flowValue = state.flowValues.get(`${idea.id}->${repoId}`) || 0
-          links.push({
-            source: repoId,
-            target: idea.id,
-            type: 'hierarchy',
-            relativePosition: [edge.relativePosition?.[0] ?? 0, edge.relativePosition?.[1] ?? 0],
-            weight: edge.weight ?? 1,
-            share,
-            flowValue,
-            attributionShare: state.attributionShares.get(`${idea.id}->${repoId}`) || 0
-          })
+          const relativePosition: [number, number] = [edge.relativePosition?.[0] ?? 0, edge.relativePosition?.[1] ?? 0]
+          const attributionShare = state.attributionShares.get(`${idea.id}->${repoId}`) || 0
+          // One connection in the data. While the graph is open in place it
+          // is drawn from each of its ideas with intrinsic value, each with
+          // its part of the flow.
+          const view = state.linkedGraphViews[repoId]
+          const contributors = view?.state === 'shown' ? intrinsicShares(view.ideas) : [[repoId, 1] as const]
+          for (const [contributor, part] of contributors) {
+            links.push({
+              source: contributor === repoId ? repoId : linkedIdeaNodeId(repoId, contributor),
+              target: idea.id,
+              type: 'hierarchy',
+              relativePosition,
+              weight: (edge.weight ?? 1) * part,
+              share: share * part,
+              flowValue: flowValue * part,
+              attributionShare: attributionShare * part
+            })
+          }
         })
       })
 
@@ -554,8 +563,9 @@ export const useDataStore = defineStore('data', {
       if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
       this.linkedGraphViews[repoId] = { state: 'loading' }
       try {
-        const ideas = await fetchIdeasAtHost(host)
-        this.linkedGraphViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values }
+        // Its color only tints the outline, so the graph opens without it.
+        const [ideas, graph] = await Promise.all([fetchIdeasAtHost(host), fetchGraphAtHost(host).catch(() => undefined)])
+        this.linkedGraphViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values, color: graph?.color }
       } catch (error) {
         this.linkedGraphViews[repoId] = { state: 'unavailable' }
         useToastStore().warning(`Not available: ${error instanceof Error ? error.message : String(error)}`)

@@ -1,6 +1,7 @@
 import { defineStore } from 'pinia'
 import * as vec2 from '../utils/vec2'
 import { useGraphUIStore } from './ui/graph-store'
+import type { ConnectDrop } from '../utils/connect-drop'
 
 export const LOGICAL_HALF_SIDE = 1000
 
@@ -210,6 +211,7 @@ export const useMapStore = defineStore('map', {
     clientOffset: vec2.create(),
     isTracking: false,
     connectFrom: undefined as undefined | MapNode,
+    connectDrop: { kind: 'new' } as ConnectDrop, // what releasing the connection drag here does
     dragCandidate: undefined as undefined | MapNode, 
     
     anim: {
@@ -255,6 +257,7 @@ export const useMapStore = defineStore('map', {
     },
     startConnecting(node: MapNode) {
       this.connectFrom = node
+      this.connectDrop = { kind: 'new' }
       this.connecting = true
       this.dragCandidate = undefined
     },

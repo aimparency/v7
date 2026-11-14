@@ -18,6 +18,7 @@ import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
 import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
+import { useLinkedGraphOutlines } from '../composables/useLinkedGraphOutlines'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { connectionArrowWidth, narrowestHitLink } from '../webgl/utils/arrow-geometry'
@@ -50,8 +51,12 @@ const { nodes, links, trigger, randomizeLayout, setLayoutForces } = simulation
 // WebGL renderer
 const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
 
+// Strings around the linked graphs opened in place
+const { outlines: linkedGraphOutlines, graphAt } = useLinkedGraphOutlines(nodes, trigger)
+const dropGraphId = computed(() => mapStore.connecting && mapStore.connectDrop.kind === 'graph' ? mapStore.connectDrop.repoId : undefined)
+
 // Use canvas for interaction (same API as SVG)
-const interaction = useGraphInteraction(canvasRef, width, height, simulation)
+const interaction = useGraphInteraction(canvasRef, width, height, simulation, graphAt)
 const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, onMouseDown, onMouseMove, onMouseUp, isZooming } = interaction
 
 // Hit test helper - find node at physical position
@@ -586,6 +591,15 @@ function toggleSpinOffPreview() {
         @mouseup="onMouseUp"
     >
       <g :transform="transform">
+        <path
+          v-for="outline in linkedGraphOutlines"
+          :key="outline.repoId"
+          class="linked-graph-outline"
+          :class="{ 'drop-target': dropGraphId === outline.repoId }"
+          :d="outline.path"
+          :stroke="outline.color"
+          :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
+        />
         <!-- Labels rendered as SVG text on top of WebGL -->
         <g class="labels" v-if="graphUIStore.graphShowLabels">
           <g
@@ -802,6 +816,15 @@ function toggleSpinOffPreview() {
 
 .graph-overlay .labels {
   pointer-events: auto;
+}
+
+.linked-graph-outline {
+  fill: none;
+  opacity: 0.55;
+  pointer-events: none;
+  &.drop-target {
+    opacity: 1;
+  }
 }
 
 .node-label-group {

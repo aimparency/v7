@@ -306,8 +306,9 @@ export function useWebGLGraphRenderer(
         id: `temp-connector-${target.id}`,
         sourceId: '__cursor__',
         targetId: target.id,
-        color: [0.5, 0.5, 0.5],
-        opacity: 0.6,
+        // Red over an idea across the boundary between graphs: dropping there does nothing.
+        color: mapStore.connectDrop.kind === 'blocked' ? [0.9, 0.2, 0.2] : [0.5, 0.5, 0.5],
+        opacity: mapStore.connectDrop.kind === 'blocked' ? 0.85 : 0.6,
         geometry: calculateArrowGeometry(
           {
             x: source[0],

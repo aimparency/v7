@@ -53,6 +53,10 @@ describe('a linked graph opened in place', () => {
     expect(compost.value).toBeCloseTo(0.4)
     expect(links).toContainEqual(expect.objectContaining({ source: garden.id, target: REPO_ID }))
     expect(links).toContainEqual(expect.objectContaining({ source: compost.id, target: garden.id }))
+    // The one connection idea-1 ← graph is drawn from each idea with intrinsic
+    // value, each carrying its share; none from the graph's node any more.
+    const intoIdea = links.filter(link => link.target === 'idea-1')
+    expect(intoIdea.map(link => [link.source, link.weight])).toEqual([[garden.id, 0.5], [compost.id, 0.5]])
 
     await store.toggleLinkedGraph(REPO_ID) // closes it again
     expect(store.graphData.nodes.some(n => n.linked)).toBe(false)

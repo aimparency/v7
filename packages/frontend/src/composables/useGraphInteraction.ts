@@ -9,12 +9,15 @@ import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
 import { type GraphNode, type GraphLink, isIdeaNode, useGraphSimulation } from './useGraphSimulation'
+import { connectDrop } from '../utils/connect-drop'
 
 export function useGraphInteraction(
     elementRef: Ref<HTMLElement | SVGSVGElement | undefined>,
     width: Ref<number>,
     height: Ref<number>,
-    simulation: ReturnType<typeof useGraphSimulation>
+    simulation: ReturnType<typeof useGraphSimulation>,
+    // The linked graph opened in place whose outline holds a logical point.
+    graphAt: (pos: vec2.T) => string | undefined = () => undefined
 ) {
     // Alias for backwards compatibility
     const svgRef = elementRef
@@ -221,7 +224,10 @@ export function useGraphInteraction(
             mapStore.layouting = false
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
-            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved) {
+            const drop = mapStore.connectDrop
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
+                void contributeGraph(mapStore.connectFrom as GraphNode, drop.repoId)
+            } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'new') {
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
@@ -292,6 +298,7 @@ export function useGraphInteraction(
             }
             mapStore.connecting = false
             mapStore.connectFrom = undefined
+            mapStore.connectDrop = { kind: 'new' }
         }
         
         setTimeout(() => { mapStore.cursorMoved = false })
@@ -313,7 +320,7 @@ export function useGraphInteraction(
                 mapStore.layouting = true
                 updateLayout(d);
             } else if (mapStore.connecting) {
-                // Keep actionOngoing true
+                updateConnectDrop()
             } else {
                 actionOngoing = false
             }
@@ -321,6 +328,37 @@ export function useGraphInteraction(
                 mapStore.cursorMoved = true
                 mapStore.stopAnim()
             }
+        }
+    }
+
+    // What releasing the connection drag at the cursor would do; the preview
+    // arrow and the outlines show it.
+    const updateConnectDrop = () => {
+        const at = mapStore.mouse.logical
+        const over = nodes.value.find(node =>
+            node.id !== mapStore.connectFrom?.id &&
+            (node.renderPos[0] - at[0]) ** 2 + (node.renderPos[1] - at[1]) ** 2 <= node.r * node.r
+        )
+        mapStore.connectDrop = connectDrop(over, over ? undefined : graphAt(at))
+    }
+
+    // The linked graph supports the idea: one connection on the benefiting
+    // idea (supportingRepos), placed where the graph's node is now.
+    const contributeGraph = async (benefiting: GraphNode, repoId: string) => {
+        if (dataStore.ideas[benefiting.id]?.supportingRepos?.some(edge => edge.repoId === repoId)) {
+            toastStore.info('That graph already supports this idea.')
+            return
+        }
+        const graphNode = nodeMap.get(repoId)
+        const rSum = benefiting.r + (graphNode?.r ?? 0)
+        const relativePosition: [number, number] | undefined = graphNode && rSum > 0
+            ? [(graphNode.pos[0] - benefiting.pos[0]) / rSum, (graphNode.pos[1] - benefiting.pos[1]) / rSum]
+            : undefined
+        try {
+            await trpc.idea.linkRepo.mutate({ graph: projectStore.projectPath, ideaId: benefiting.id, repoId, relativePosition })
+            await dataStore.loadIdeas(projectStore.projectPath, [benefiting.id])
+        } catch (e) {
+            toastStore.error('Failed to link the graph', e)
         }
     }
 
@@ -514,12 +552,15 @@ export function useGraphInteraction(
             const parent = mapStore.connectFrom as GraphNode
             const child = node
 
-            // Can't form a normal idea→idea connection onto a black-box repo node.
-            // Repo links are created through the dedicated 'link a whole repo' UX,
-            // not by dragging a connection onto the repo node.
-            if (!isIdeaNode(parent) || !isIdeaNode(child)) {
+            if (!isIdeaNode(parent)) return
+            // Dropped on a linked graph's node: that graph supports the idea.
+            if (child.isRepo) {
+                await contributeGraph(parent, child.id)
                 return
             }
+            // An idea of a linked graph lies across the boundary between
+            // graphs, and an unreadable idea can't be written.
+            if (!isIdeaNode(child)) return
 
             // Validate positions and radii
             const parentX = parent.pos?.[0] ?? 0

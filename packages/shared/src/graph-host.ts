@@ -28,8 +28,8 @@ export function graphHostUrl(host: GraphHost): string {
   return `${host.origin}/g/${host.slug}`;
 }
 
-/** What a server says about one of its graphs: enough to store a link to it. */
-export type GraphAtHost = { host: string; repoId: string; name: string };
+/** What a server says about one of its graphs: enough to store a link to it, and its color. */
+export type GraphAtHost = { host: string; repoId: string; name: string; color?: string };
 
 // One read query of the hosting server's API, as any visitor's page makes it.
 async function queryAtHost(address: string, procedure: string, fetchImpl: typeof fetch): Promise<{ host: GraphHost; data: unknown }> {
@@ -49,9 +49,14 @@ async function queryAtHost(address: string, procedure: string, fetchImpl: typeof
 /** Asks the server hosting the graph for its identity and name, through its public API. */
 export async function fetchGraphAtHost(address: string, fetchImpl: typeof fetch = fetch): Promise<GraphAtHost> {
   const { host, data } = await queryAtHost(address, 'project.getMeta', fetchImpl);
-  const meta = data as { repoId?: unknown; name?: unknown } | undefined;
+  const meta = data as { repoId?: unknown; name?: unknown; color?: unknown } | undefined;
   if (typeof meta?.repoId !== 'string') throw new Error(`${host.origin} did not name graph "${host.slug}".`);
-  return { host: graphHostUrl(host), repoId: meta.repoId, name: typeof meta.name === 'string' ? meta.name : host.slug };
+  return {
+    host: graphHostUrl(host),
+    repoId: meta.repoId,
+    name: typeof meta.name === 'string' ? meta.name : host.slug,
+    ...(typeof meta.color === 'string' ? { color: meta.color } : {})
+  };
 }
 
 /** The ideas of the graph at its host; ideas that do not parse are left out. */
@@ -74,4 +79,18 @@ export async function fetchIdeasAtHost(address: string, fetchImpl: typeof fetch 
  */
 export function spreadInflow(inflow: number, ownValues: Map<string, number>): Map<string, number> {
   return new Map([...ownValues].map(([id, value]) => [id, value * inflow]));
+}
+
+/**
+ * Where the inflow enters a linked graph: its ideas with intrinsic value, each
+ * taking its share of the graph's whole intrinsic value. A graph without any
+ * intrinsic value takes it in at its top ideas, equally.
+ */
+export function intrinsicShares(ideas: Idea[]): Array<[string, number]> {
+  const valued = ideas.filter((idea) => (idea.intrinsicValue ?? 0) > 0);
+  const total = valued.reduce((sum, idea) => sum + idea.intrinsicValue!, 0);
+  if (total > 0) return valued.map((idea) => [idea.id, idea.intrinsicValue! / total]);
+  const ids = new Set(ideas.map((idea) => idea.id));
+  const tops = ideas.filter((idea) => !idea.supportedIdeas.some((parent) => ids.has(parent)));
+  return tops.map((idea) => [idea.id, 1 / tops.length]);
 }
