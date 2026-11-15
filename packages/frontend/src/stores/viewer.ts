@@ -19,6 +19,8 @@ export const useViewerStore = defineStore('viewer', {
     permanentLogin: true,
     // How a visitor gets an account without the server admin (server.json).
     signUp: { open: false, browserKey: false, wallet: false },
+    // The address people open this server at, when the server admin named it.
+    publicUrl: null as string | null,
   }),
 
   getters: {
@@ -30,8 +32,8 @@ export const useViewerStore = defineStore('viewer', {
     // Never rejects: until the server answers, the defaults above hold.
     async load() {
       try {
-        const { name, serverAdmin, canCreateGraphs, permanentLogin, signUp } = await trpc.auth.me.query()
-        Object.assign(this, { name, serverAdmin, canCreateGraphs, permanentLogin, signUp })
+        const { name, serverAdmin, canCreateGraphs, permanentLogin, signUp, publicUrl } = await trpc.auth.me.query()
+        Object.assign(this, { name, serverAdmin, canCreateGraphs, permanentLogin, signUp, publicUrl })
       } catch (error) {
         useToastStore().error('Could not ask the server who you are', error)
       }

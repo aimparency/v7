@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import { flushPromises, mount } from '@vue/test-utils'
+import { createTestingPinia } from '@pinia/testing'
 import McpConnectModal from '../McpConnectModal.vue'
 
 const { listGraphs, listTokens, issueToken, revokeOwnToken } = vi.hoisted(() => ({
@@ -12,8 +13,9 @@ vi.mock('../../trpc', () => ({
   }
 }))
 
-const mountModal = async () => {
-  const wrapper = mount(McpConnectModal, { global: { stubs: { teleport: true } }, attachTo: document.body })
+const mountModal = async (publicUrl: string | null = null) => {
+  const pinia = createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { publicUrl, name: 'ana' } } })
+  const wrapper = mount(McpConnectModal, { global: { plugins: [pinia], stubs: { teleport: true } }, attachTo: document.body })
   await flushPromises()
   return wrapper
 }
@@ -38,7 +40,7 @@ describe('McpConnectModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(issueToken).toHaveBeenCalledWith({ label: 'laptop', graphs: undefined })
-    expect(wrapper.find('code').text()).toBe(`${window.location.origin}/mcp/sse?token=the-token`)
+    expect(wrapper.find('pre').text()).toBe(`claude mcp add --transport sse aimparency "${window.location.origin}/mcp/sse?token=the-token"`)
   })
 
   it('limits a client to chosen graphs the account writes; one graph gets its own address', async () => {
@@ -52,7 +54,7 @@ describe('McpConnectModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(issueToken).toHaveBeenCalledWith({ label: 'mcp', graphs: ['mine'] })
-    expect(wrapper.find('code').text()).toBe(`${window.location.origin}/g/mine/mcp/sse?token=the-token`)
+    expect(wrapper.find('pre').text()).toContain(`"${window.location.origin}/g/mine/mcp/sse?token=the-token"`)
   })
 
   it('lists the connected clients, not the browsers, and revokes one', async () => {
@@ -65,12 +67,37 @@ describe('McpConnectModal', () => {
   })
 })
 
+describe('McpConnectModal with a public address', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    listGraphs.mockResolvedValue([])
+    listTokens.mockResolvedValue([])
+  })
+
+  it('gives one command per agent that logs in by itself, and the token link only on request', async () => {
+    const wrapper = await mountModal('https://graphs.example.org')
+    expect(wrapper.find('pre').text()).toBe('claude mcp add --transport sse aimparency "https://graphs.example.org/mcp/login/sse"')
+    expect(wrapper.find('form').exists()).toBe(false)
+
+    await wrapper.findAll('[role=tab]').find(tab => tab.text() === 'Codex')!.trigger('click')
+    expect(wrapper.find('pre').text()).toBe('codex mcp add aimparency -- npx -y mcp-remote "https://graphs.example.org/mcp/login/sse"')
+    await wrapper.findAll('[role=tab]').find(tab => tab.text() === 'Gemini CLI')!.trigger('click')
+    expect(wrapper.find('pre').text()).toBe('gemini mcp add --transport sse aimparency "https://graphs.example.org/mcp/login/sse"')
+
+    await wrapper.find('.link-toggle').trigger('click')
+    expect(wrapper.find('form').exists()).toBe(true)
+  })
+})
+
 describe('McpAuthorizeModal', () => {
   const { pending, approve, deny } = vi.hoisted(() => ({ pending: vi.fn(), approve: vi.fn(), deny: vi.fn() }))
 
   it('shows who asks, lets the person choose graphs and sends the browser back with the approval', async () => {
     const { trpc } = await import('../../trpc') as unknown as { trpc: Record<string, unknown> }
     trpc.mcpAuth = { pending: { query: pending }, approve: { mutate: approve }, deny: { mutate: deny } }
+    listGraphs.mockResolvedValue([
+      { slug: 'mine', name: 'Mine', right: 'owner' }, { slug: 'shared', name: 'Shared', right: 'write' }, { slug: 'theirs', name: 'Theirs', right: 'read' }
+    ])
     pending.mockResolvedValue({ clientName: 'Coding agent', redirectHost: 'localhost:7777' })
     approve.mockResolvedValue({ redirectTo: 'http://localhost:7777/callback?code=abc' })
     const location = { href: '' }

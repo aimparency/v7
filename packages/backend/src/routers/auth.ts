@@ -1,6 +1,6 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
-import { hasAccounts, serverConfig } from 'shared/server-config';
+import { hasAccounts, serverConfig, updateServerConfig } from 'shared/server-config';
 import { t, delayedProcedure, type Context } from '../trpc.js';
 import { agentsEnabled, mayCreateGraphs, viewerFor } from '../auth/access.js';
 import * as accounts from '../auth/accounts.js';
@@ -273,6 +273,35 @@ export const authRouter = t.router({
     .input(z.object({ name: z.string().max(200), password: z.string().max(1000), ...rights }))
     .mutation(async ({ input }) => {
       await run(() => accounts.createAccount(input.name, input.password, input));
+      return { success: true };
+    }),
+
+  // The settings a server admin changes in the UI; server.json holds them and
+  // the rest (port, host, agents, limits), which stays a matter of the file.
+  getServerSettings: delayedProcedure.query(() => {
+    assertAccounts();
+    const { publicUrl, graphCreation, signUp, guestDefaults } = serverConfig();
+    return { publicUrl: publicUrl ?? null, graphCreation, signUp, notes: guestDefaults.notes };
+  }),
+
+  setServerSettings: delayedProcedure
+    .input(z.object({
+      // Empty: the server has no public address (no wallet login, no MCP login by itself).
+      publicUrl: z.union([z.literal(''), z.string().url().max(500).refine(url => /^https?:\/\//.test(url), 'An address starts with https:// or http://')]).optional(),
+      graphCreation: z.enum(['everyone', 'selected']).optional(),
+      signUp: z.object({ open: z.boolean(), browserKey: z.boolean(), wallet: z.boolean() }).partial().optional(),
+      notes: z.enum(['everyone', 'selected', 'nobody']).optional()
+    }))
+    .mutation(({ input }) => {
+      assertAccounts();
+      const current = serverConfig();
+      const publicUrl = input.publicUrl?.replace(/\/+$/, '');
+      updateServerConfig({
+        ...(publicUrl ? { publicUrl } : {}),
+        ...(input.graphCreation ? { graphCreation: input.graphCreation } : {}),
+        ...(input.signUp ? { signUp: { ...current.signUp, ...input.signUp } } : {}),
+        ...(input.notes ? { guestDefaults: { ...current.guestDefaults, notes: input.notes } } : {})
+      }, input.publicUrl === '' ? ['publicUrl'] : []);
       return { success: true };
     }),
 

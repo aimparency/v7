@@ -84,7 +84,7 @@ onMounted(() => run(loadInvitations))
 
 <template>
   <FormModalShell show title="Accounts" width="min(90vw, 40rem)" @request-close="emit('close')">
-    <div class="accounts">
+    <div class="accounts stack">
       <div v-for="account in accounts" :key="account.name" class="row">
         <span class="name">{{ account.name }}{{ account.name === me ? ' (you)' : '' }}</span>
         <AccountRights :rights="account" :who="account.name" :apply="setRights(account)" />
@@ -99,14 +99,14 @@ onMounted(() => run(loadInvitations))
       </form>
       <p v-if="error" class="error">{{ error }}</p>
 
-      <h4>Invitations</h4>
+      <h4 class="section-title">Invitations</h4>
       <div v-for="invitation in invitations" :key="invitation.id" class="row">
         <span class="name">{{ describeInvitation(invitation) }}</span>
         <button class="btn-secondary" @click="uninvite(invitation.id)">Remove</button>
       </div>
-      <form class="invite" @submit.prevent="invite">
+      <form class="stack invite" @submit.prevent="invite">
         <div class="row">
-          <label><input v-model="invitationOnce" type="checkbox" /> for one person only</label>
+          <label class="check"><input v-model="invitationOnce" type="checkbox" /> for one person only</label>
           <input v-model.number="invitationDays" type="number" min="1" placeholder="Valid for days (empty: no end)" />
         </div>
         <div class="row">
@@ -120,7 +120,7 @@ onMounted(() => run(loadInvitations))
           <button class="btn-primary" type="submit">Invite</button>
         </div>
       </form>
-      <p v-if="invitationLink" class="hint">Send this link; it is shown only now: <code>{{ invitationLink }}</code></p>
+      <template v-if="invitationLink"><p class="hint">Send this link; it is shown only now:</p><code class="copyable">{{ invitationLink }}</code></template>
 
       <p class="hint">"creates graphs" matters where the server lets only selected accounts create graphs. Who may write a graph is set in that graph's settings, by its owner.</p>
       <p class="hint warning">{{ ADMIN_SHELL_WARNING }}</p>
@@ -130,64 +130,13 @@ onMounted(() => run(loadInvitations))
 
 <style scoped>
 .accounts {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-
-  .row {
-    display: flex;
-    gap: 0.375rem;
-    align-items: center;
-
-    .name {
-      flex: 1;
-    }
-
-    /* Text fields share the row evenly (the global inputs are width: 100%). */
-    input:not([type=checkbox]) {
-      flex: 1 1 0;
-      min-width: 0;
-    }
-
-    label {
-      display: flex;
-      gap: 0.25rem;
-      align-items: center;
-      white-space: nowrap;
-    }
-
-    input[type=checkbox] {
-      width: auto;
-    }
+  .row .name {
+    flex: 1 1 10rem;
+    min-width: 0;
   }
 
   .invite {
-    display: flex;
-    flex-direction: column;
-    gap: 0.375rem;
-  }
-
-  .error {
-    color: #e57373;
-    margin: 0;
-  }
-
-  h4 {
-    margin: 0.5rem 0 0;
-  }
-
-  code {
-    user-select: all;
-    word-break: break-all;
-  }
-
-  .hint {
-    color: #888;
-    margin: 0;
-
-    &.warning {
-      color: #e0a050;
-    }
+    gap: var(--gap-s);
   }
 }
 </style>

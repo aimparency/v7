@@ -46,7 +46,7 @@ import { getRuntimeConfig, hasAccounts } from './utils/runtime-config'
 import { useViewerStore } from './stores/viewer'
 import { isModalOpen } from './stores/ui/modal-helpers'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
-import { Check, GitCommitHorizontal, Hourglass, Info, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
+import { Check, ChevronUp, EllipsisVertical, GitCommitHorizontal, Hourglass, Info, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -121,6 +121,8 @@ const agentsAllowed = computed(() => !accounts || (getRuntimeConfig().agents && 
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
 const continueHook = ref({ installed: false, enabled: false })
 const showHookInfo = ref(false)
+// Narrow screens: the bar's further controls fold out below it.
+const headerOpen = ref(false)
 const refreshContinueHook = async () => {
   const projectPath = projectStore.projectPath
   let hook = { installed: false, enabled: false }
@@ -535,57 +537,63 @@ onUnmounted(() => {
 <template>
   <div class="app">
     <!-- Header -->
-    <header v-if="!projectStore.isInProjectSelection" v-show="!projectStore.terminalFullscreen" class="header">
-      <div class="status">
+    <header v-if="!projectStore.isInProjectSelection" v-show="!projectStore.terminalFullscreen" class="header" :class="{ open: headerOpen }">
+      <div v-if="projectStore.projectPath" class="project-location" :title="accounts ? `/g/${normalizedProjectRoot}` : `${normalizedProjectRoot}\n${activeBowmanRoot}`">
         <span
-          class="connection-status"
+          class="connection-dot"
           :class="projectStore.connectionStatus"
           :title="`aimparency server: ${projectStore.connectionStatus}`"
-        >
-          {{ projectStore.connectionStatus === 'connected' ? 'Connected' : projectStore.connectionStatus }}
-        </span>
-        
-        <div class="column-controls" v-if="projectStore.currentView === 'columns'">
+        ></span>
+        <span class="project-chip-value">{{ activeProjectName }}</span>
+        <span v-if="!dataStore.access.writable" class="read-only-badge" :title="dataStore.access.reason ?? ''">read-only</span>
+        <template v-if="!accounts">
+          <code class="project-path">{{ normalizedProjectRoot }}</code>
+        </template>
+      </div>
+
+      <div class="view-controls">
+        <button
+          @click="uiStore.setView('columns')"
+          :class="{ active: projectStore.currentView === 'columns' }"
+          class="view-btn"
+        >Columns</button>
+        <button
+          @click="uiStore.setView('graph')"
+          :class="{ active: projectStore.currentView === 'graph' }"
+          class="view-btn"
+        >Graph</button>
+        <button
+          v-if="voiceEnabled"
+          @click="uiStore.setView('voice')"
+          :class="{ active: projectStore.currentView === 'voice' }"
+          class="view-btn"
+        >Voice</button>
+      </div>
+
+      <button
+        class="icon-btn"
+        @click="modalStore.openIdeaSearch()"
+        title="Search ideas (/)"
+      ><Search /></button>
+
+      <div class="header-more">
+        <div class="column-controls group" v-if="projectStore.currentView === 'columns'">
           <button @click="uiStore.setWindowSize(uiStore.windowSize - 1)" class="icon-btn" title="Decrease columns"><Minus /></button>
           <span>{{ uiStore.windowSize }} columns</span>
           <button @click="uiStore.setWindowSize(uiStore.windowSize + 1)" class="icon-btn" title="Increase columns"><Plus /></button>
         </div>
 
         <button
-          class="icon-btn search-btn"
-          @click="modalStore.openIdeaSearch()"
-          title="Search ideas (/)"
-        ><Search /></button>
-
-        <button
-          class="view-btn"
+          class="icon-btn text"
           title="Turn a goal into an editable idea tree"
           @click="showIdeaProposalEntry = true"
         >New goal</button>
 
-        <div class="view-controls">
-          <button
-            @click="uiStore.setView('columns')"
-            :class="{ active: projectStore.currentView === 'columns' }"
-            class="view-btn"
-          >Columns</button>
-          <button 
-            @click="uiStore.setView('graph')" 
-            :class="{ active: projectStore.currentView === 'graph' }"
-            class="view-btn"
-          >Graph</button>
-          <button 
-            v-if="voiceEnabled"
-            @click="uiStore.setView('voice')" 
-            :class="{ active: projectStore.currentView === 'voice' }"
-            class="view-btn"
-          >Voice</button>
-        </div>
+        <span class="spacer"></span>
 
-        <label v-if="continueHook.installed && !accounts" class="hook-control" @mouseenter="refreshContinueHook">
-          Hook
+        <label v-if="continueHook.installed && !accounts" class="hook-control group check" @mouseenter="refreshContinueHook">
           <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
-          <span class="state">{{ continueHook.enabled ? 'on' : 'off' }}</span>
+          Hook {{ continueHook.enabled ? 'on' : 'off' }}
           <button
             type="button"
             class="info-btn"
@@ -600,23 +608,19 @@ onUnmounted(() => {
           </span>
         </label>
 
-        <div v-if="agentsAllowed" class="watchdog-controls">
+        <div v-if="agentsAllowed" class="watchdog-controls group">
           <button
             @click="projectStore.showWatchdog = !projectStore.showWatchdog"
-            class="icon-btn"
-            style="width: auto; padding: 0 0.5rem;"
-            :style="{ background: projectStore.showWatchdog ? '#444' : 'transparent' }"
+            class="icon-btn text"
+            :class="{ on: projectStore.showWatchdog }"
             title="Toggle Watchdog Panel"
-          >
-            Watchdog
-          </button>
+          >Watchdog</button>
 
           <button
             v-if="!accounts"
             @click="projectStore.showLoop = !projectStore.showLoop"
-            class="icon-btn"
-            style="width: auto; padding: 0 0.5rem; position: relative;"
-            :style="{ background: projectStore.showLoop ? '#444' : 'transparent' }"
+            class="icon-btn text loop-btn"
+            :class="{ on: projectStore.showLoop }"
             title="Toggle Loop Panel"
           >
             Loop
@@ -627,54 +631,36 @@ onUnmounted(() => {
             v-if="projectStore.showWatchdog"
             @click="watchdogStore.showActionsOverlay = !watchdogStore.showActionsOverlay"
             class="icon-btn"
-            :style="{ background: watchdogStore.showActionsOverlay ? '#444' : 'transparent' }"
+            :class="{ on: watchdogStore.showActionsOverlay }"
             title="Watchdog actions menu (Ctrl+Space)"
-          >
-            <Menu />
-          </button>
+          ><Menu /></button>
 
           <button
             v-if="projectStore.showWatchdog"
             @click="projectStore.watchdogMaximized = !projectStore.watchdogMaximized"
             class="icon-btn"
-            :style="{ background: projectStore.watchdogMaximized ? '#444' : 'transparent' }"
+            :class="{ on: projectStore.watchdogMaximized }"
             :title="projectStore.watchdogMaximized ? 'Exit fullscreen' : 'Maximize watchdog panel'"
-          >
-            <Minimize2 v-if="projectStore.watchdogMaximized" /><Maximize2 v-else />
-          </button>
+          ><Minimize2 v-if="projectStore.watchdogMaximized" /><Maximize2 v-else /></button>
 
           <button
             v-if="projectStore.showLoop"
             @click="projectStore.showLoopActionsOverlay = !projectStore.showLoopActionsOverlay"
             class="icon-btn"
-            :style="{ background: projectStore.showLoopActionsOverlay ? '#444' : 'transparent' }"
+            :class="{ on: projectStore.showLoopActionsOverlay }"
             title="Loop actions menu (Ctrl+Space)"
-          >
-            <Menu />
-          </button>
+          ><Menu /></button>
 
           <button
             v-if="projectStore.showLoop"
             @click="projectStore.loopMaximized = !projectStore.loopMaximized"
             class="icon-btn"
-            :style="{ background: projectStore.loopMaximized ? '#444' : 'transparent' }"
+            :class="{ on: projectStore.loopMaximized }"
             :title="projectStore.loopMaximized ? 'Exit fullscreen' : 'Maximize loop panel'"
-          >
-            <Minimize2 v-if="projectStore.loopMaximized" /><Maximize2 v-else />
-          </button>
+          ><Minimize2 v-if="projectStore.loopMaximized" /><Maximize2 v-else /></button>
         </div>
 
-        <div class="project-info">
-          <div v-if="projectStore.projectPath" class="project-location" :title="accounts ? `/g/${normalizedProjectRoot}` : `${normalizedProjectRoot}\n${activeBowmanRoot}`">
-            <span class="project-chip-label">{{ accounts ? 'Graph' : 'Project' }}</span>
-            <span class="project-chip-value">{{ activeProjectName }}</span>
-            <span v-if="!dataStore.access.writable" class="read-only-badge" :title="dataStore.access.reason ?? ''">read-only</span>
-            <template v-if="!accounts">
-              <code class="project-path">{{ normalizedProjectRoot }}</code>
-              <code class="project-path bowman-path">{{ activeBowmanRoot }}</code>
-            </template>
-          </div>
-
+        <div class="project-info group">
           <button
             v-if="workingTree && dataStore.access.writable"
             class="icon-btn commit-btn"
@@ -698,11 +684,11 @@ onUnmounted(() => {
 
           <NotesInbox v-if="accounts" @open="openNote" />
 
-          <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings" style="width: auto; padding: 0 0.5rem; font-size: 0.9rem;">
+          <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings">
             <Settings />
           </button>
 
-          <button 
+          <button
             v-if="projectStore.projectPath"
             class="consistency-btn"
             :class="{ 'has-errors': dataStore.consistencyErrors.length > 0 }"
@@ -712,20 +698,27 @@ onUnmounted(() => {
             <X v-if="dataStore.consistencyErrors.length > 0" /><Check v-else />
           </button>
 
-          <button 
+          <button
             v-if="projectStore.projectPath"
             class="icon-btn"
             title="Refresh Consistency Check"
             @click="dataStore.checkConsistency(projectStore.projectPath)"
-            style="font-size: 0.7rem; margin-left: 2px"
           >
             <RefreshCw />
           </button>
         </div>
 
-        <LoginControl v-if="accounts" />
-        <a @click="closeProject" class="close-project">{{ accounts ? 'Graphs' : 'Switch Project' }}</a>
+        <button class="icon-btn text close-project" @click="closeProject">{{ accounts ? 'Graphs' : 'Switch project' }}</button>
       </div>
+
+      <button
+        class="icon-btn menu-toggle"
+        :aria-expanded="headerOpen"
+        :title="headerOpen ? 'Fewer controls' : 'More controls'"
+        @click="headerOpen = !headerOpen"
+      ><ChevronUp v-if="headerOpen" /><EllipsisVertical v-else /></button>
+
+      <LoginControl v-if="accounts" />
     </header>
 
     <ProjectSelectionView
@@ -887,196 +880,187 @@ onUnmounted(() => {
 }
 
 .header {
-  background: #2d2d2d;
-  padding: 0.2rem 0.6rem;
-  border-bottom: 1px solid #444;
-  font-size: 0.8rem;
-}
-
-.status {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  flex-wrap: wrap;
-  gap: 0.25rem 0.4rem;
-}
+  gap: var(--gap-s);
+  padding: 0.3rem 0.6rem;
+  background: var(--bg-bar);
+  border-bottom: 1px solid var(--line);
+  font-size: var(--font-size-label);
 
-.hook-control {
-  position: relative;
-  cursor: pointer;
-
-  & .info-btn {
-    background: none;
-    border: none;
-    color: #888;
-    cursor: pointer;
-    padding: 0;
+  .project-location {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    min-width: 0;
+    height: var(--control-h);
+    padding: 0 0.6rem;
+    border-radius: var(--radius);
+    background: #00000033;
   }
 
-  & input { width: auto; margin: 0; }
-  & .state { color: #aaa; min-width: 1.6rem; }
+  .connection-dot {
+    flex-shrink: 0;
+    width: 0.5rem;
+    height: 0.5rem;
+    border-radius: 50%;
+    background: var(--text-muted);
 
-  & .hook-info {
-    position: absolute;
-    top: calc(100% + 0.3rem);
-    left: 0;
-    z-index: 100;
-    width: 22rem;
-    padding: 0.5rem 0.6rem;
-    background: #2a2a2a;
-    border: 1px solid #555;
-    border-radius: 0.3rem;
-    color: #ddd;
+    &.connected { background: #6c6; }
+    &.connecting { background: #ffa566; }
+    &.no-connection { background: #f66; }
+  }
+
+  .project-chip-value {
+    color: #f0f0f0;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .read-only-badge {
+    flex-shrink: 0;
+    padding: 0 0.35rem;
+    border: 1px solid var(--status-unclear);
+    border-radius: var(--radius);
+    color: var(--status-unclear);
+    font-size: var(--font-size-tiny);
+  }
+
+  .project-path {
+    color: #b6d7ff;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: var(--font-size-small);
-    white-space: normal;
-    cursor: default;
+  }
+
+  .view-controls {
+    display: flex;
+    height: var(--control-h);
+    background: var(--bg-field);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    overflow: hidden;
+    flex-shrink: 0;
+
+    .view-btn.active { outline: none; }
+  }
+
+  /* Everything after the main controls; folds out below the bar on narrow screens. */
+  .header-more {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: var(--gap-s);
+    min-width: 0;
+
+    .spacer { flex: 1; }
+  }
+
+  /* A cluster of controls: one control tall, a faint pill. */
+  .group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    height: var(--control-h);
+    padding: 0 0.3rem;
+    border-radius: var(--radius);
+    background: var(--toolbar-group-bg);
+  }
+
+  .column-controls { color: var(--text-muted); }
+
+  .hook-control {
+    position: relative;
+    padding: 0 0.5rem;
+
+    .info-btn {
+      display: flex;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+    }
+
+    .hook-info {
+      position: absolute;
+      top: calc(100% + 0.3rem);
+      left: 0;
+      z-index: 100;
+      width: min(22rem, 90vw);
+      padding: 0.5rem 0.6rem;
+      background: var(--bg-menu);
+      border: 1px solid var(--line-strong);
+      border-radius: var(--radius);
+      color: #ddd;
+      font-size: var(--font-size-small);
+      white-space: normal;
+      cursor: default;
+    }
+  }
+
+  .loop-btn { position: relative; }
+
+  .loop-notify-dot {
+    position: absolute;
+    top: 3px;
+    right: 3px;
+    width: 0.45rem;
+    height: 0.45rem;
+    border-radius: 999px;
+    background: #ffd166;
+    box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.18);
+  }
+
+  .consistency-btn {
+    width: var(--control-h);
+    height: var(--control-h);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    border-radius: var(--radius);
+    background: var(--accent);
+    color: white;
+    cursor: pointer;
+
+    &:hover { background: var(--accent-hover); }
+    &.has-errors { background: #ff4444; }
+    &.has-errors:hover { background: #ff6666; }
+  }
+
+  .close-project { color: var(--text-muted); }
+
+  .menu-toggle { display: none; }
+
+  /* Narrow screens: one row with the main controls; the rest folds out below. */
+  @media (max-width: 760px) {
+    flex-wrap: wrap;
+
+    .project-location {
+      flex: 1;
+      .project-path { display: none; }
+    }
+
+    .menu-toggle { display: flex; }
+
+    .header-more {
+      display: none;
+      order: 10;
+      flex-basis: 100%;
+      padding: var(--gap-s) 0 0.2rem;
+      border-top: 1px solid var(--line);
+
+      .spacer { display: none; }
+    }
+
+    &.open .header-more { display: flex; }
   }
 }
-
-/* Push the project/close cluster to the right edge of the first row. */
-.status .project-info {
-  margin-left: auto;
-}
-
-/* Shared cluster styling: every group is one control tall and reads as a faint
-   pill so wrapped rows stay tidy. */
-.column-controls,
-.watchdog-controls,
-.hook-control,
-.project-info,
-.project-location,
-.view-controls {
-  height: var(--control-h);
-  border-radius: 0.3rem;
-}
-
-.column-controls,
-.watchdog-controls,
-.hook-control,
-.project-info {
-  display: flex;
-  align-items: center;
-  gap: 0.25rem;
-  padding: 0 0.3rem;
-  background: var(--toolbar-group-bg);
-}
-
-.connection-status {
-  opacity: 0.5;
-}
-
-.connection-status.connecting {
-  color: #ffa566;
-}
-
-.connection-status.connected {
-  color: #88ff88;
-}
-
-.connection-status.no-connection {
-  color: #ff6666;
-}
-
-.column-controls {
-  color: #888;
-}
-
-.loop-notify-dot {
-  position: absolute;
-  top: 3px;
-  right: 3px;
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 999px;
-  background: #ffd166;
-  box-shadow: 0 0 0 2px rgba(255, 209, 102, 0.18);
-}
-
-.search-btn {
-  font-size: 0.95rem;
-}
-
-.project-info {
-  min-width: 0;
-}
-
-.project-location {
-  display: flex;
-  align-items: center;
-  gap: 0.3rem;
-  min-width: 0;
-  padding: 0 0.45rem;
-  background: #00000033;
-}
-
-.project-chip-label {
-  color: #7f7f7f;
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  flex-shrink: 0;
-}
-
-.project-chip-value {
-  color: #f0f0f0;
-  flex-shrink: 0;
-}
-
-.read-only-badge {
-  flex-shrink: 0;
-  padding: 0 0.35rem;
-  border: 1px solid var(--status-unclear);
-  border-radius: 3px;
-  color: var(--status-unclear);
-  font-size: var(--font-size-tiny);
-}
-
-.project-path {
-  color: #b6d7ff;
-  min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.76rem;
-}
-
-.close-project {
-  color: #888;
-  text-decoration: underline;
-  cursor: pointer;
-}
-
-.close-project:hover {
-  color: #ccc;
-}
-
-.consistency-btn {
-  width: var(--control-h);
-  height: var(--control-h);
-  background: #007acc;
-  color: white;
-  border-radius: 0.3rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: bold;
-  cursor: pointer;
-  border: none;
-  font-size: 0.85rem;
-}
-
-.consistency-btn:hover {
-  background: #005a99;
-}
-
-.consistency-btn.has-errors {
-  background: #ff4444;
-}
-
-.consistency-btn.has-errors:hover {
-  background: #ff6666;
-}
-
 
 .main-split {
   flex: 1;
@@ -1163,14 +1147,6 @@ onUnmounted(() => {
   color: #888;
 }
 
-.view-controls {
-  display: flex;
-  gap: 0;
-  background: #1a1a1a;
-  border: 1px solid #444;
-  overflow: hidden;
-}
-
 .hint {
   display: inline-block;
   margin-right: 2rem;
@@ -1185,20 +1161,5 @@ onUnmounted(() => {
 
 .action {
   color: #888;
-}
-
-kbd {
-  color: #fff;
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.1875rem;
-  font-size: 0.8rem;
-}
-
-/* Global styles */
-kbd {
-  color: #fff;
-  padding: 0.125rem 0.25rem;
-  border-radius: 0.1875rem;
-  font-size: 0.8rem;
 }
 </style>

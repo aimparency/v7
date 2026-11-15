@@ -128,7 +128,9 @@ pnpm start
 `pnpm start` asks:
 
 1. whether other people use this server: answer yes;
-2. the port (default 4000) and the address to listen on (`127.0.0.1` behind nginx);
+2. the port (default 4000), the address to listen on (`127.0.0.1` behind nginx)
+   and the public address people open (`https://<host>`, for MCP clients that
+   log in by themselves and for wallet login; also set later under Server settings);
 3. whether visitors get an account without asking, and whether anyone may sign up;
 4. whether server admins may run wrapped agents (a shell on the server);
 5. the first server admin's name and password;
@@ -162,7 +164,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   `pnpm dev --server hub` runs that server from source with hot reload.
 - **Graphs.** An account creates a graph in the browser in one step and owns
   it; it gets a git repository of its own on the server. The owner gives other
-  accounts write access in the graph's settings. `pnpm graphs add <path>` lists
+  accounts write access in the graph's settings. `pnpm graphs add <path>` (or, as server admin, "Add a repository on this server" in the browser) lists
   a repository that is already on the machine, `pnpm graphs list|owner|writers|remove`
   manage the list from the terminal.
 - **Graphs from a Git URL.** Any account adds a repository that has a

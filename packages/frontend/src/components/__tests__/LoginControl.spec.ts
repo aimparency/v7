@@ -31,12 +31,17 @@ const mountControl = async (answer: object) => {
   const pinia = createPinia()
   setActivePinia(pinia)
   await useViewerStore().load()
-  const wrapper = mount(LoginControl, { global: { plugins: [pinia], stubs: { teleport: true, AccountsModal: true, McpConnectModal: true } }, attachTo: document.body })
+  const wrapper = mount(LoginControl, { global: { plugins: [pinia], stubs: { teleport: true, AccountsModal: true, McpConnectModal: true, ServerSettingsModal: true } }, attachTo: document.body })
   await flushPromises()
   return wrapper
 }
 
 const buttons = (wrapper: Awaited<ReturnType<typeof mountControl>>) => wrapper.findAll('.login-control > button').map(button => button.text())
+// A logged-in account's things are in the menu under its name.
+const menuItems = async (wrapper: Awaited<ReturnType<typeof mountControl>>) => {
+  if (!wrapper.find('.menu').exists()) await wrapper.find('.account-btn').trigger('click')
+  return wrapper.findAll('.menu-item').map(item => item.text())
+}
 
 describe('LoginControl', () => {
   beforeEach(() => {
@@ -58,7 +63,7 @@ describe('LoginControl', () => {
     await flushPromises()
     expect(auth.login.mutate).toHaveBeenCalledWith({ name: 'ana', password: 'ana password' })
     expect(localStorage.getItem('aimparency-token')).toBe('the-token')
-    expect(wrapper.find('.who').text()).toBe('ana')
+    expect(wrapper.find('.account-name').text()).toBe('ana')
   })
 
   it('opens the sign-up for an invitation link and sends its code', async () => {
@@ -75,22 +80,22 @@ describe('LoginControl', () => {
     await flushPromises()
     expect(auth.signUp.mutate).toHaveBeenCalledWith({ name: 'ben', password: 'ben password', invitation: 'the-code' })
     expect(window.location.search).toBe('')
-    expect(wrapper.find('.who').text()).toBe('ben')
+    expect(wrapper.find('.account-name').text()).toBe('ben')
   })
 
   it('recommends a permanent login to an account that lives only in this browser', async () => {
     const wrapper = await mountControl({ name: 'guest-1a2b3c', permanentLogin: false })
-    expect(buttons(wrapper)).toEqual(['Keep account', 'MCP', 'Log out'])
+    expect(await menuItems(wrapper)).toEqual(['Keep account', 'Connect an agent (MCP)', 'Log out'])
 
     auth.makePermanent.mutate.mockResolvedValue({ success: true })
     auth.me.query.mockResolvedValue(me({ name: 'Cleo', permanentLogin: true }))
-    await wrapper.find('.keep').trigger('click')
+    await wrapper.find('.menu-item.attention').trigger('click')
     await wrapper.find('#permanent-form input').setValue('Cleo')
     await wrapper.find('#permanent-form input[type=password]').setValue('cleo password')
     await wrapper.find('#permanent-form').trigger('submit')
     await flushPromises()
     expect(auth.makePermanent.mutate).toHaveBeenCalledWith({ name: 'Cleo', password: 'cleo password' })
-    expect(buttons(wrapper)).toEqual(['MCP', 'Password', 'Log out'])
+    expect(await menuItems(wrapper)).toEqual(['Connect an agent (MCP)', 'Password', 'Log out'])
   })
 
   it('gives a visitor an account with the browser key the moment one is needed', async () => {
@@ -130,6 +135,6 @@ describe('LoginControl', () => {
     expect(auth.walletChallenge.mutate).toHaveBeenCalledWith({ address: '0x52908400098527886E0F7030069857D2E4169EE7', chainId: 1 })
     expect(request).toHaveBeenLastCalledWith({ method: 'personal_sign', params: ['0x4869', '0x52908400098527886E0F7030069857D2E4169EE7'] })
     expect(auth.walletLogin.mutate).toHaveBeenCalledWith({ message: 'Hi', signature: '0xsigned' })
-    expect(wrapper.find('.who').text()).toBe('0x5290…9EE7')
+    expect(wrapper.find('.account-name').text()).toBe('0x5290…9EE7')
   })
 })

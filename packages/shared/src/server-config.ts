@@ -115,11 +115,12 @@ export function hasAccounts(): boolean {
   return serverConfig().login === 'accounts';
 }
 
-/** Sets some settings, keeping the rest of the file (the setup of `pnpm start`). */
-export function updateServerConfig(values: z.input<typeof ServerConfigSchema>) {
+/** Sets some settings and drops the ones named in `remove`, keeping the rest of the file (the setup of `pnpm start`, the server settings in the UI). */
+export function updateServerConfig(values: z.input<typeof ServerConfigSchema>, remove: Array<keyof ServerConfig> = []) {
   const file = path.join(serverDir(), 'server.json');
   const current = fs.existsSync(file) ? JSON.parse(fs.readFileSync(file, 'utf8')) : {};
   const next = { ...current, ...values };
+  for (const key of remove) delete next[key];
   ServerConfigSchema.parse(next);
   fs.mkdirSync(serverDir(), { recursive: true, mode: 0o700 });
   fs.writeFileSync(file, JSON.stringify(next, null, 2) + '\n');

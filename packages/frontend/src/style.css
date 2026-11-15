@@ -1,3 +1,7 @@
+/* The app's shared look. Anything that should look the same in several places
+   lives here (native CSS nesting); a component's scoped style keeps only what
+   is its own layout. */
+
 * {
   margin: 0;
   padding: 0;
@@ -16,13 +20,11 @@ svg.lucide {
 
 html {
   /* Single density knob for the whole UI. A percentage keeps `rem` relative to
-     the device/browser default font size (so the user's preference still
-     scales), just dialed down so the monospace UI stays compact. Tune this one
-     value to make everything denser/looser. */
-  font-size: 87.5%; /* ~14px when the device default is 16px */
-  /* Stop mobile browsers from auto-inflating text on narrow viewports. Without
-     this, phones render larger text than desktop for the same rem — this makes
-     sizing identical across devices, no media queries needed. */
+     the device/browser default font size, so the user's preference still
+     scales. 100%: the browser's own size (usually 16px). */
+  font-size: 100%;
+  /* Stop mobile browsers from auto-inflating text on narrow viewports, so
+     sizing is identical across devices. */
   -webkit-text-size-adjust: 100%;
   text-size-adjust: 100%;
 }
@@ -34,17 +36,32 @@ html {
   --status-partially: #ffff00;
   --status-failed: #ff6666;
   --status-unclear: #ffa500;
-  --font-size-ui: 1rem;
-  --font-size-label: 0.9rem;
-  --font-size-small: 0.85rem;
-  --font-size-tiny: 0.78rem;
+  --font-size-ui: 0.9375rem;
+  --font-size-label: 0.875rem;
+  --font-size-small: 0.8125rem;
+  --font-size-tiny: 0.75rem;
   --font-size-title: 1.2rem;
-  /* Uniform height for header/toolbar controls so bars stay slim and aligned. */
-  --control-h: 1.6rem;
+  /* Uniform height for header/toolbar controls so bars stay aligned. */
+  --control-h: 2rem;
+  /* Spacing steps: between items of a row, between rows of a form. */
+  --gap-s: 0.375rem;
+  --gap-m: 0.625rem;
+  --radius: 0.25rem;
   /* Faint pill background used to keep control clusters legible after they wrap. */
   --toolbar-group-bg: #ffffff14;
+  /* Surfaces, lines and text */
+  --bg-bar: #2d2d2d;
+  --bg-field: #1a1a1a;
+  --bg-menu: #262626;
+  --line: #444;
+  --line-strong: #555;
+  --text: #e0e0e0;
+  --text-muted: #8a8a8a;
+  --error: #e57373;
+  --warning: #e0a050;
   /* App accent: primary buttons, focus, progress. */
   --accent: #007acc;
+  --accent-hover: #005a99;
 }
 
 body {
@@ -53,7 +70,7 @@ body {
   font-family: monospace, sans-serif;
   font-size: var(--font-size-ui);
   background: #000;
-  color: #e0e0e0;
+  color: var(--text);
   overflow: hidden;
 }
 
@@ -68,43 +85,46 @@ textarea {
 .btn-primary, .btn-secondary {
   padding: 0.5rem 1rem;
   border: none;
-  border-radius: 0.1875rem;
+  border-radius: var(--radius);
   cursor: pointer;
+  white-space: nowrap;
 }
 
 .btn-primary {
   background: var(--accent);
   color: white;
-  &:hover:not(:disabled) { background: #005a99; }
-  &:disabled { background: #444; color: #666; cursor: not-allowed; }
+  &:hover:not(:disabled) { background: var(--accent-hover); }
+  &:disabled { background: var(--line); color: #666; cursor: not-allowed; }
 }
 
 .btn-secondary {
-  background: #444;
-  color: #e0e0e0;
-  &:hover { background: #555; }
+  background: var(--line);
+  color: var(--text);
+  &:hover:not(:disabled) { background: var(--line-strong); }
+  &:disabled { color: #777; cursor: not-allowed; }
 }
 
 /* Controls of the bar: one --control-h tall, square by default; a label widens
    it (.text). Global, so the bar's child components use them too. */
 .icon-btn {
   background: transparent;
-  border: 1px solid #444;
-  color: #e0e0e0;
-  border-radius: 3px;
+  border: 1px solid var(--line);
+  color: var(--text);
+  border-radius: var(--radius);
   min-width: var(--control-h);
   height: var(--control-h);
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.25rem;
+  gap: 0.3rem;
   cursor: pointer;
   line-height: 1;
   padding: 0;
   white-space: nowrap;
 
-  &.text, &.inbox-btn, &.commit-btn { padding: 0 0.5rem; }
+  &.text, &.inbox-btn, &.commit-btn { padding: 0 0.6rem; }
   &.commit-btn.prompt { color: var(--status-unclear); border-color: var(--status-unclear); }
+  &.on { background: var(--line); }
   &:hover { background: var(--toolbar-group-bg); }
 }
 
@@ -114,10 +134,10 @@ textarea {
   align-items: center;
   background: transparent;
   border: none;
-  color: #888;
-  padding: 0 0.6rem;
+  color: var(--text-muted);
+  padding: 0 0.7rem;
   cursor: pointer;
-  font-size: 0.8rem;
+  font-size: var(--font-size-label);
 
   &:hover {
     background: #333;
@@ -125,13 +145,13 @@ textarea {
   }
 
   &.active {
-    background: #444;
+    background: var(--line);
     color: #fff;
   }
 }
 
 /* Global focusable element styling */
-.focusable{
+.focusable {
   background-color: #3333;
   border-radius: 0.3rem;
   &:focus {
@@ -141,30 +161,172 @@ textarea {
   }
 }
 
-/* Global Input Styling */
-input, select, textarea {
+/* Text fields: full width of what holds them, unless a .row shares it out. */
+input:not([type=checkbox], [type=radio], [type=range], [type=color]), select, textarea {
   width: 100%;
   padding: 0.5rem;
-  background: #1a1a1a;
-  border: 1px solid #555;
-  border-radius: 0.1875rem;
-  color: #e0e0e0;
+  background: var(--bg-field);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--text);
   font-size: inherit;
-  
+
   &:focus {
     outline: none;
-    border-color: #007acc;
+    border-color: var(--accent);
   }
-  
+
   &::placeholder {
     color: #666;
   }
 }
 
+input[type=range] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+
+/* Checkboxes and radios keep their own size, in the app's accent. */
+input[type=checkbox], input[type=radio] {
+  width: auto;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+/* A checkbox (or radio) with its label on the right: <label class="check"><input type="checkbox" /> text</label> */
+.check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  white-space: nowrap;
+  cursor: pointer;
+
+  &:has(input:disabled) { color: var(--text-muted); cursor: default; }
+}
+
+/* Layout helpers for dialogs and forms */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--gap-m);
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--gap-s);
+
+  /* Text fields share the row evenly. */
+  & > input:not([type=checkbox], [type=radio]), & > select {
+    flex: 1 1 10rem;
+    min-width: 0;
+  }
+}
+
+.grow {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Small headings inside dialogs */
+.section-title {
+  margin: var(--gap-s) 0 0;
+  font-size: var(--font-size-label);
+  color: #bbb;
+}
+
+/* Explanations, errors and warnings in dialogs */
+.hint {
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.error {
+  color: var(--error);
+  margin: 0;
+}
+
+.warning {
+  color: var(--warning);
+}
+
+/* Something to copy: selected with one click */
+.copyable {
+  display: block;
+  padding: 0.4rem 0.5rem;
+  background: var(--bg-field);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  user-select: all;
+  word-break: break-all;
+  font-size: var(--font-size-small);
+}
+
+/* A dropdown menu under its trigger:
+   <div class="menu-anchor"><button>…</button><div class="menu">…</div></div> */
+.menu-anchor {
+  position: relative;
+}
+
+.menu {
+  position: absolute;
+  top: calc(100% + 0.25rem);
+  right: 0;
+  z-index: 200;
+  min-width: 12rem;
+  padding: 0.25rem;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-menu);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  box-shadow: 0 0.5rem 1.5rem #0008;
+
+  .menu-label {
+    padding: 0.4rem 0.6rem;
+    color: var(--text-muted);
+    font-size: var(--font-size-small);
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 0.25rem;
+  }
+
+  .menu-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.6rem;
+    background: none;
+    border: none;
+    border-radius: var(--radius);
+    color: var(--text);
+    text-align: left;
+    cursor: pointer;
+    white-space: nowrap;
+
+    &:hover, &:focus-visible { background: var(--line); outline: none; }
+    &.attention { color: var(--status-unclear); }
+  }
+
+  .menu-separator {
+    height: 1px;
+    margin: 0.25rem 0;
+    background: var(--line);
+  }
+}
+
 /* Selected element with inset outline */
 .active {
-  outline: 0.15rem solid #007acc;
+  outline: 0.15rem solid var(--accent);
   outline-offset: -0.15rem;
+}
+
+kbd {
+  color: #fff;
+  padding: 0.125rem 0.25rem;
+  border-radius: 0.1875rem;
+  font-size: var(--font-size-small);
 }
 
 /* Custom Scrollbar */
@@ -174,18 +336,18 @@ input, select, textarea {
 }
 
 ::-webkit-scrollbar-track {
-  background: #1a1a1a; 
+  background: var(--bg-field);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #444; 
+  background: var(--line);
   border-radius: 5px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #555; 
+  background: var(--line-strong);
 }
 
 ::-webkit-scrollbar-corner {
-  background: #1a1a1a;
+  background: var(--bg-field);
 }

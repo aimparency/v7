@@ -71,6 +71,17 @@ const addRemote = async () => {
     addingRemote.value = false
   }
 }
+// A repository already on this machine, by its path: server admins only.
+const checkoutPath = ref('')
+const addCheckout = async () => {
+  try {
+    const { slug } = await trpc.graphs.addCheckout.mutate({ path: checkoutPath.value.trim() })
+    checkoutPath.value = ''
+    emit('open-graph', slug)
+  } catch (error) {
+    useToastStore().error('Could not add the repository', error)
+  }
+}
 onMounted(() => loadGraphs().catch(error => useToastStore().error('Could not list the graphs of this server', error)))
 
 const inspectedPath = ref('')
@@ -280,6 +291,10 @@ onUnmounted(revokeThumbnails)
       <form v-if="accounts && (viewer.name || viewer.getsAccountAutomatically)" class="project-input-container" @submit.prevent="addRemote">
         <input v-model="remoteUrl" class="project-input" placeholder="Git URL of a repository with a .bowman (https or ssh)" />
         <button class="select-project" type="submit" :disabled="!remoteUrl.trim() || addingRemote">{{ addingRemote ? 'Cloning…' : 'Add from Git' }}</button>
+      </form>
+      <form v-if="accounts && viewer.serverAdmin" class="project-input-container" @submit.prevent="addCheckout">
+        <input v-model="checkoutPath" class="project-input" placeholder="Path of a repository on this server, e.g. /srv/repos/project" />
+        <button class="select-project" type="submit" :disabled="!checkoutPath.trim()">Add from server</button>
       </form>
       <p v-if="accounts && !(viewer.canCreateGraphs || viewer.getsAccountAutomatically)" class="empty-state">{{ viewer.name ? 'Creating graphs here is for selected accounts.' : 'Log in to create a graph.' }}</p>
     </div>

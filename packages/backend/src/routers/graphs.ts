@@ -6,7 +6,7 @@ import { t, delayedProcedure } from '../trpc.js';
 import { mayCreateGraphs, rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
-import { createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, type Graph } from '../graphs/registry.js';
+import { addCheckout, createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, type Graph } from '../graphs/registry.js';
 import { addRemote, selectRemoteKey } from '../graphs/remote-graph.js';
 import { privateKeyFile } from '../graphs/ssh-keys.js';
 import { clearIndices } from '../search.js';
@@ -65,6 +65,15 @@ export const graphsRouter = t.router({
       }
       assertBelowGraphLimit(viewer);
       const graph = await run(() => createGraph(input.name, viewer.id));
+      return { slug: graph.slug };
+    }),
+
+  // A repository that is already on this machine, by its path: the operator's
+  // doing, so server admins only (like `pnpm graphs add`). It belongs to the server admins.
+  addCheckout: delayedProcedure
+    .input(z.object({ path: z.string().min(1).max(1000), slug: z.string().max(100).optional() }))
+    .mutation(async ({ input }) => {
+      const graph = await run(() => addCheckout(input.path, null, input.slug || undefined));
       return { slug: graph.slug };
     }),
 

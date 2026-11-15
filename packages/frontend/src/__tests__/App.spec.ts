@@ -126,7 +126,7 @@ describe('App', () => {
     expect(wrapper.exists()).toBe(true)
   })
 
-  it('shows both project root and .bowman root in the header for an open project', async () => {
+  it('shows the project and its root once in the header', async () => {
     const wrapper = mount(App, {
       global: {
         plugins: [createTestingPinia({
@@ -153,10 +153,8 @@ describe('App', () => {
     projectStore.projectPath = '/workspaces/aimparency-demo'
     await nextTick()
 
-    expect(wrapper.text()).toContain('Project')
-    expect(wrapper.text()).toContain('aimparency-demo')
-    expect(wrapper.text()).toContain('/workspaces/aimparency-demo')
-    expect(wrapper.text()).toContain('/workspaces/aimparency-demo/.bowman')
+    expect(wrapper.find('.project-chip-value').text()).toBe('aimparency-demo')
+    expect(wrapper.findAll('.project-path').map(path => path.text())).toEqual(['/workspaces/aimparency-demo'])
   })
 
   it('passes discovered projects into the selection screen', async () => {

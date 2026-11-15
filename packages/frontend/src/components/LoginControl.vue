@@ -1,17 +1,18 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
-import { CircleAlert } from 'lucide-vue-next'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { ChevronDown, CircleAlert, CircleUser, KeyRound, LogOut, Plug, Server, Users } from 'lucide-vue-next'
 import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
 import { browserWallets, signWithWallet, type Wallet } from '../utils/wallets'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 import McpConnectModal from './McpConnectModal.vue'
+import ServerSettingsModal from './ServerSettingsModal.vue'
 
 // The account corner on a server with accounts: anyone reads, accounts write
 // the graphs they own or were given.
 const viewer = useViewerStore()
-type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'mcp'
+type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'server' | 'mcp'
 const dialog = ref<Dialog | null>(null)
 const name = ref('')
 const password = ref('')
@@ -29,7 +30,26 @@ const forgetInvitation = () => {
   window.history.replaceState({}, '', url)
 }
 
+// The account's own things sit in one menu under its name.
+const root = ref<HTMLElement | null>(null)
+const menuOpen = ref(false)
+const closeMenuOutside = (event: PointerEvent) => {
+  if (menuOpen.value && !root.value?.contains(event.target as Node)) menuOpen.value = false
+}
+const closeMenuOnEscape = (event: KeyboardEvent) => {
+  if (menuOpen.value && event.key === 'Escape') menuOpen.value = false
+}
+onMounted(() => {
+  document.addEventListener('pointerdown', closeMenuOutside)
+  document.addEventListener('keydown', closeMenuOnEscape)
+})
+onUnmounted(() => {
+  document.removeEventListener('pointerdown', closeMenuOutside)
+  document.removeEventListener('keydown', closeMenuOnEscape)
+})
+
 const open = (which: Dialog) => {
+  menuOpen.value = false
   dialog.value = which
   name.value = password.value = current.value = error.value = ''
 }
@@ -87,6 +107,7 @@ const makePermanent = () => submit(async () => {
 })
 
 const logout = async () => {
+  menuOpen.value = false
   await trpc.auth.logout.mutate().catch(() => undefined)
   await viewer.loginChanged(null)
 }
@@ -94,24 +115,44 @@ const logout = async () => {
 </script>
 
 <template>
-  <div class="login-control">
+  <div ref="root" class="login-control">
     <template v-if="!viewer.name">
       <button class="icon-btn text" @click="open('login')">Log in</button>
       <button v-if="maySignUp" class="icon-btn text" @click="open('sign-up')">Create account</button>
     </template>
-    <template v-else>
-      <span class="who" :title="viewer.serverAdmin ? 'server admin' : 'account on this server'">{{ viewer.name }}</span>
+    <div v-else class="menu-anchor">
       <button
-        v-if="!viewer.permanentLogin"
-        class="icon-btn text keep"
-        title="This account lives only in this browser: clearing the browser's data loses it. Choose a name and a password to keep it."
-        @click="open('permanent')"
-      ><CircleAlert /> Keep account</button>
-      <button v-if="viewer.serverAdmin" class="icon-btn text" @click="open('accounts')">Accounts</button>
-      <button class="icon-btn text" title="Let an MCP client, such as a coding agent, act as you" @click="open('mcp')">MCP</button>
-      <button v-if="viewer.permanentLogin" class="icon-btn text" @click="open('password')">Password</button>
-      <button class="icon-btn text" @click="logout">Log out</button>
-    </template>
+        class="icon-btn text account-btn"
+        :class="{ on: menuOpen, attention: !viewer.permanentLogin }"
+        :aria-expanded="menuOpen"
+        aria-haspopup="menu"
+        :title="viewer.permanentLogin ? 'Your account' : 'This account lives only in this browser'"
+        @click="menuOpen = !menuOpen"
+      >
+        <CircleAlert v-if="!viewer.permanentLogin" /><CircleUser v-else />
+        <span class="account-name">{{ viewer.name }}</span>
+        <ChevronDown />
+      </button>
+      <div v-if="menuOpen" class="menu" role="menu">
+        <div class="menu-label">{{ viewer.name }} · {{ viewer.serverAdmin ? 'server admin' : 'account' }}</div>
+        <button
+          v-if="!viewer.permanentLogin"
+          class="menu-item attention"
+          role="menuitem"
+          title="This account lives only in this browser: clearing the browser's data loses it. Choose a name and a password to keep it."
+          @click="open('permanent')"
+        ><CircleAlert /> Keep account</button>
+        <button class="menu-item" role="menuitem" title="Let an MCP client, such as a coding agent, act as you" @click="open('mcp')"><Plug /> Connect an agent (MCP)</button>
+        <button v-if="viewer.permanentLogin" class="menu-item" role="menuitem" @click="open('password')"><KeyRound /> Password</button>
+        <template v-if="viewer.serverAdmin">
+          <div class="menu-separator"></div>
+          <button class="menu-item" role="menuitem" @click="open('accounts')"><Users /> Accounts</button>
+          <button class="menu-item" role="menuitem" @click="open('server')"><Server /> Server settings</button>
+        </template>
+        <div class="menu-separator"></div>
+        <button class="menu-item" role="menuitem" @click="logout"><LogOut /> Log out</button>
+      </div>
+    </div>
 
     <FormModalShell :show="dialog === 'login'" title="Log in" width="min(90vw, 22rem)" @request-close="dialog = null">
       <form id="login-form" @submit.prevent="login">
@@ -167,6 +208,7 @@ const logout = async () => {
 
     <AccountsModal v-if="dialog === 'accounts'" :me="viewer.name" @close="dialog = null" />
     <McpConnectModal v-if="dialog === 'mcp'" @close="dialog = null" />
+    <ServerSettingsModal v-if="dialog === 'server'" @close="dialog = null" />
   </div>
 </template>
 
@@ -174,31 +216,22 @@ const logout = async () => {
 .login-control {
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: var(--gap-s);
 
-  .who {
-    color: #aaa;
+  .account-btn {
+    &.attention { color: var(--status-unclear); border-color: var(--status-unclear); }
   }
 
-  .keep {
-    color: var(--status-unclear);
-    border-color: var(--status-unclear);
+  .account-name {
+    max-width: 12rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   form {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .hint {
-    color: #888;
-    margin: 0;
-  }
-
-  .error {
-    color: #e57373;
-    margin: 0;
+    gap: var(--gap-m);
   }
 }
 </style>

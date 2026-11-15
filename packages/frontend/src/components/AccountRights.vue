@@ -27,26 +27,16 @@ const toggle = async (right: Right, box: HTMLInputElement) => {
 
 <template>
   <span class="account-rights">
-    <label><input type="checkbox" :checked="rights.canCreateGraphs" @change="toggle('canCreateGraphs', $event.target as HTMLInputElement)" /> creates graphs</label>
-    <label :title="adminUnavailable"><input type="checkbox" :checked="rights.serverAdmin" :disabled="!!adminUnavailable" @change="toggle('serverAdmin', $event.target as HTMLInputElement)" /> server admin</label>
+    <label class="check"><input type="checkbox" :checked="rights.canCreateGraphs" @change="toggle('canCreateGraphs', $event.target as HTMLInputElement)" /> creates graphs</label>
+    <label class="check" :title="adminUnavailable"><input type="checkbox" :checked="rights.serverAdmin" :disabled="!!adminUnavailable" @change="toggle('serverAdmin', $event.target as HTMLInputElement)" /> server admin</label>
   </span>
 </template>
 
 <style scoped>
 .account-rights {
   display: flex;
-  gap: 0.375rem;
+  flex-wrap: wrap;
+  gap: var(--gap-m);
   align-items: center;
-
-  label {
-    display: flex;
-    gap: 0.25rem;
-    align-items: center;
-    white-space: nowrap;
-  }
-
-  input {
-    width: auto;
-  }
 }
 </style>
