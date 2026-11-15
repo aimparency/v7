@@ -326,8 +326,7 @@ async function setup() {
   console.log('[local-runtime] Setup. The answers go to .env; `pnpm start --setup` asks again.');
   const project = await askRepository();
   const hosted = project !== '' && await askYesNo('Host it for other people? (reading open to anyone, writing with an account)', process.env.AIMPARENCY_HOSTED === 'true');
-  const readOnly = hosted && await askYesNo('Read-only? (no accounts: the project changes only through its Git repository)', process.env.AIMPARENCY_READ_ONLY === 'true');
-  const values = { AIMPARENCY_PROJECT: project, AIMPARENCY_HOSTED: hosted, AIMPARENCY_READ_ONLY: readOnly };
+  const values = { AIMPARENCY_PROJECT: project, AIMPARENCY_HOSTED: hosted };
   if (hosted) {
     values.PORT = parsePort(await ask('Port:', process.env.PORT ?? '4000'), 4000);
     values.BIND_HOST = await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', process.env.BIND_HOST || '127.0.0.1');
@@ -337,7 +336,7 @@ async function setup() {
     );
   }
   await saveEnv(values);
-  if (hosted && !readOnly && !hasAdmin(project)) {
+  if (hosted && !hasAdmin(project)) {
     console.log('[local-runtime] The first account, an admin, who manages the others in the UI:');
     const name = await ask('Admin name:', process.env.USER ?? 'admin');
     const password = await askNewPassword(name);
@@ -386,8 +385,9 @@ async function startHosted() {
   if (!project || !existsSync(project)) {
     throw new UsageError(`AIMPARENCY_PROJECT (${project || 'unset'}) is no directory. Run \`pnpm start --setup\`.`);
   }
-  if (process.env.AIMPARENCY_READ_ONLY !== 'true' && !hasAdmin(project)) {
-    throw new UsageError('No admin account yet. Run `pnpm start --setup` once in a terminal, or `pnpm accounts add <name> admin`.');
+  // Without accounts everyone only reads: the project changes through its Git repository.
+  if (!hasAdmin(project)) {
+    console.log('[local-runtime] No admin account yet, so nobody can edit here. Add one with `pnpm accounts add <name> admin`.');
   }
   const port = portOverride ?? parsePort(process.env.PORT, 4000);
   const mcpPort = parsePort(process.env.PORT_MCP, 3005);
