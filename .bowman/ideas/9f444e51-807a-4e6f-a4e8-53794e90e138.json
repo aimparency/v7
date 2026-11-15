@@ -1,0 +1,24 @@
+{
+  "id": "9f444e51-807a-4e6f-a4e8-53794e90e138",
+  "text": "An open linked graph sits inside a wobbly string in its graph's color",
+  "description": "Felix 2026-11-14: a closed, gently moving curve around a linked graph's node and its ideas while the graph is open in place, drawn in the linked graph's color. It makes clear what is external. It gets thicker and brighter while a connection drag is over it.",
+  "archived": false,
+  "color": "#30632e",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "588568b7-aa5b-41ec-bdbf-10e3f10f2409"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "review",
+    "comment": "063f0b42: utils/graph-outline.ts (radial support around the ideas + margin, wobble only adds to the margin, Catmull-Rom path), drawn in GraphView's SVG overlay by useLinkedGraphOutlines in the linked graph's meta color (default #8fa3bf), animated while a graph is open, thicker and opaque while a drag would drop into it. graph-outline.spec: encloses every idea at any wobble, excludes far points. Not looked at in the browser. Question for Felix: does the string's look and movement feel right?",
+    "date": 1794658725157
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

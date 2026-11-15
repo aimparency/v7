@@ -50,7 +50,8 @@
         1.84
       ],
       "weight": 1,
-      "hypothesis": "A link by server address can be followed by anyone from anywhere, so graphs on different servers join into one."
+      "hypothesis": "A link by server address can be followed by anyone from anywhere, so graphs on different servers join into one.",
+      "reflection": "Partly held: a link now carries an address anyone can open, with no checkout. Joining graphs into one view still waits on expanding linked graphs in the browser (588568b7)."
     },
     {
       "ideaId": "588568b7-aa5b-41ec-bdbf-10e3f10f2409",

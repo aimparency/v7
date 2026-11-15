@@ -1,0 +1,24 @@
+{
+  "id": "443ca535-6d03-4a9b-9469-f974ccea2c7c",
+  "text": "Dragging from an idea into a linked graph's outline makes that graph contribute to the idea",
+  "description": "Felix 2026-11-14: the idea the drag starts from is the one that benefits. Dropping inside an open linked graph's outline adds the graph to that idea's supportingRepos (one connection in the data). While the graph is open, that connection is drawn as arrows from each of the linked graph's ideas with intrinsic value to the host idea.",
+  "archived": false,
+  "color": "#456a31",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "588568b7-aa5b-41ec-bdbf-10e3f10f2409"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "063f0b42: releasing inside an open graph's outline, or on its node, calls idea.linkRepo for the idea the drag started from (an existing link gives a toast instead). While the graph is open, data.ts draws that one connection from each idea with intrinsic value with its share of weight and flow (shared intrinsicShares; top ideas equally when none has intrinsic value). Tests: useGraphInteraction.connect-drop.spec (drag into the outline → linkRepo), data-linked-graph-view.spec (arrows 0.5/0.5 from the two valued ideas), graph-host.test; pnpm check 25/25.",
+    "date": 1794658725397
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

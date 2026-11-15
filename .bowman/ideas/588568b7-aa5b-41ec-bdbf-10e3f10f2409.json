@@ -5,15 +5,45 @@
   "archived": false,
   "color": "#35612c",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "9f444e51-807a-4e6f-a4e8-53794e90e138",
+      "relativePosition": [
+        2.32,
+        -2.94
+      ],
+      "weight": 1,
+      "hypothesis": "With an outline, people can tell external ideas from their own at a glance."
+    },
+    {
+      "ideaId": "478e3ef1-c340-4f95-83b3-529229e8d5d0",
+      "relativePosition": [
+        0.01,
+        -3.75
+      ],
+      "weight": 1,
+      "hypothesis": "The red arrow says why the drop does nothing, so nobody makes connections that can't be stored.",
+      "reflection": "In part: the code now refuses those drops and shows the red arrow (tested). Whether people understand the red as 'not across graphs' hasn't been watched in use."
+    },
+    {
+      "ideaId": "443ca535-6d03-4a9b-9469-f974ccea2c7c",
+      "relativePosition": [
+        -3.56,
+        1.19
+      ],
+      "weight": 1,
+      "hypothesis": "Linking support right where the other graph is open is quicker than going through the settings dialog.",
+      "reflection": "Mechanically yes: one drag now writes the link that used to take the idea's edit dialog. It works only for a graph already linked to some idea here, since an outline appears only for a graph that is open in place."
+    }
+  ],
   "supportedIdeas": [
     "d4203221-939e-44e6-bf3f-b3933c790e6b"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "2026-11-13 (32ba03c0): the server side exists. A server with accounts answers pages of any origin for reading and refuses their writes (auth/one-port-server.test.ts). Not built: the web app loading a linked graph from another server and expanding it in place, and the value and priority rules across graphs.",
-    "date": 1794511916405
+    "state": "partially",
+    "comment": "8b945c1f: clicking a linked graph's node loads its ideas in the browser from the server hosting it and hangs them below the node (read-only, click on one opens the graph on its server, click on the node closes it). Value: the inflow takes the place of the linked graph's whole intrinsic value and flows along its own connections; priority stays in the host graph. An unreachable graph keeps its node, labelled '(not available)'. Tests: shared graph-host.test.ts, frontend data-linked-graph-view.spec.ts, pnpm check 25/25. Open: editing in place where the viewer has rights on the other server (always read-only now); expanding graphs linked inside an opened graph; not tried live between two running servers (cross-origin read).",
+    "date": 1794647219824
   },
   "intrinsicValue": 0,
   "cost": 6,

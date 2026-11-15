@@ -1,0 +1,24 @@
+{
+  "id": "478e3ef1-c340-4f95-83b3-529229e8d5d0",
+  "text": "Connections across a graph boundary are blocked, with the preview arrow shown in red",
+  "description": "Felix 2026-11-14: while dragging a connection, hovering over an idea in an open linked graph turns the preview arrow red. This applies from the host graph into the linked graph, the other way, and inside the read-only linked graph. Dropping there creates nothing. Connecting to the linked graph's own node stays allowed.",
+  "archived": false,
+  "color": "#37662c",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "588568b7-aa5b-41ec-bdbf-10e3f10f2409"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "063f0b42: utils/connect-drop.ts decides each move what releasing would do; over an idea of a linked graph (or an unreadable idea) it is 'blocked', the renderer draws the preview arrow red and onNodeUp creates nothing. Tests: connect-drop.spec, useGraphInteraction.connect-drop.spec (drag over a linked idea → blocked, release links nothing); pnpm check 25/25.",
+    "date": 1794658725287
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

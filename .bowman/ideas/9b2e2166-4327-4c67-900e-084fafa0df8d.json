@@ -1,0 +1,23 @@
+{
+  "id": "9b2e2166-4327-4c67-900e-084fafa0df8d",
+  "text": "Instead of limiting connection resets, limit updated aims",
+  "description": "",
+  "archived": false,
+  "color": "#725530",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3f299b1d-845f-4f24-8729-11a70c2a636b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794576012744
+  },
+  "intrinsicValue": 0,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
