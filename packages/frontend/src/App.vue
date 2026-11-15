@@ -41,7 +41,6 @@ import { useToastStore } from './stores/toast'
 import { gitRepositoryLocation } from 'shared'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
-import IdeaProposalEntry from './components/IdeaProposalEntry.vue'
 import { getRuntimeConfig, hasAccounts } from './utils/runtime-config'
 import { useViewerStore } from './stores/viewer'
 import { isModalOpen } from './stores/ui/modal-helpers'
@@ -111,8 +110,12 @@ const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const loopRef = ref<InstanceType<typeof LoopPanel>>()
 const showConsistencyModal = ref(false)
 const showReviewInbox = ref(false)
+const handleProposalPersisted = async (result: { rootIdeaId: string }) => {
+  await dataStore.loadAllIdeas(projectStore.projectPath)
+  uiStore.setView('graph')
+  graphUIStore.setGraphSelection(result.rootIdeaId)
+}
 const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities).length)
-const showIdeaProposalEntry = ref(false)
 // With accounts other people use this server: no loops, and wrapped agents (a
 // shell on the server) only for server admins, when the operator turned them on.
 const accounts = hasAccounts()
@@ -342,12 +345,6 @@ const handleVisibilityChange = () => {
   }
 }
 
-const handleProposalPersisted = async (result: { rootIdeaId: string }) => {
-  showIdeaProposalEntry.value = false
-  await dataStore.loadAllIdeas(projectStore.projectPath)
-  uiStore.setView('graph')
-  graphUIStore.setGraphSelection(result.rootIdeaId)
-}
 
 // Opened here, not on mount: the first render already has the loading screen,
 // and no view mounts before the project is there.
@@ -583,12 +580,6 @@ onUnmounted(() => {
           <button @click="uiStore.setWindowSize(uiStore.windowSize + 1)" class="icon-btn" title="Increase columns"><Plus /></button>
         </div>
 
-        <button
-          class="icon-btn text"
-          title="Turn a goal into an editable idea tree"
-          @click="showIdeaProposalEntry = true"
-        >New goal</button>
-
         <span class="spacer"></span>
 
         <label v-if="continueHook.installed && !accounts" class="hook-control group check" @mouseenter="refreshContinueHook">
@@ -674,7 +665,7 @@ onUnmounted(() => {
           </button>
 
           <button
-            v-if="projectStore.projectPath"
+            v-if="projectStore.projectPath && dataStore.access.writable"
             class="icon-btn inbox-btn"
             title="Ideas awaiting your review or decision, by priority"
             @click="showReviewInbox = true"
@@ -684,12 +675,12 @@ onUnmounted(() => {
 
           <NotesInbox v-if="accounts" @open="openNote" />
 
-          <button @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings">
+          <button v-if="dataStore.access.writable" @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings">
             <Settings />
           </button>
 
           <button
-            v-if="projectStore.projectPath"
+            v-if="projectStore.projectPath && dataStore.access.writable"
             class="consistency-btn"
             :class="{ 'has-errors': dataStore.consistencyErrors.length > 0 }"
             @click="showConsistencyModal = true"
@@ -699,7 +690,7 @@ onUnmounted(() => {
           </button>
 
           <button
-            v-if="projectStore.projectPath"
+            v-if="projectStore.projectPath && dataStore.access.writable"
             class="icon-btn"
             title="Refresh Consistency Check"
             @click="dataStore.checkConsistency(projectStore.projectPath)"
@@ -845,12 +836,6 @@ onUnmounted(() => {
     />
 
     <ProjectSettingsModal v-if="modalStore.showSettingsModal" />
-    <IdeaProposalEntry
-      :show="showIdeaProposalEntry"
-      :project-path="projectStore.projectPath"
-      @close="showIdeaProposalEntry = false"
-      @persisted="handleProposalPersisted"
-    />
     <LoopActionsOverlay
       v-if="projectStore.showLoopActionsOverlay"
       @action="handleLoopAction"
@@ -970,6 +955,9 @@ onUnmounted(() => {
     padding: 0 0.3rem;
     border-radius: var(--radius);
     background: var(--toolbar-group-bg);
+
+    /* Everything inside hidden (only v-if comments left): no empty pill. */
+    &:empty { display: none; }
   }
 
   .column-controls { color: var(--text-muted); }
