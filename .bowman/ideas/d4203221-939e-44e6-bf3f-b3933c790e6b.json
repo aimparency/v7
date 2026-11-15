@@ -50,7 +50,8 @@
         1.84
       ],
       "weight": 1,
-      "hypothesis": "A link by server address can be followed by anyone from anywhere, so graphs on different servers join into one."
+      "hypothesis": "A link by server address can be followed by anyone from anywhere, so graphs on different servers join into one.",
+      "reflection": "Holds in mechanism: the link is the space's address on its server, and that server answers reads from any origin (checked 2026-11-15 on ideas.commons-hub.at: access-control-allow-origin *, writes from other sites refused). The browser follows it; no server fetches foreign spaces. Joining real spaces on two different servers is still to be tried by Felix by hand, not waiting for Hack the Hub."
     },
     {
       "ideaId": "588568b7-aa5b-41ec-bdbf-10e3f10f2409",
@@ -59,7 +60,8 @@
         -0.18
       ],
       "weight": 1,
-      "hypothesis": "When a linked graph opens in place, people experience the graphs of many owners on many servers as one graph."
+      "hypothesis": "When a linked graph opens in place, people experience the graphs of many owners on many servers as one graph.",
+      "reflection": "Not yet observed with people: the mechanics work in tests and the live server answers other origins. Felix tests it by hand now (link a space on another server, open it in place), not waiting for Hack the Hub."
     },
     {
       "ideaId": "b7e0b972-4b5e-4fce-b6c6-f47f1c3d0e45",

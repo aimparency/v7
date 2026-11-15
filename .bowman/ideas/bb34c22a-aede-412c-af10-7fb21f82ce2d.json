@@ -26,9 +26,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Fixed 2026-11-09 in 38e428c3, ed16c952, 270d37db and the README nginx rate limit:\n#1 commitDiff only accepts commits (`<hash>^{commit}`, no blob/tree content) and, hosted, shows only the served .bowman.\n#3 one id guard (storage/json.ts entityFile) on every idea/phase file path, which also closes history.restore (write role could write or delete any *.json); uuid ids in idea.create and activity.record.\n#4 no stack traces when hosted or in production (tRPC isDev).\n#6 MCP SSE binds MCP_BIND_HOST || BIND_HOST || 127.0.0.1 and refuses foreign browser origins (was all interfaces + open CORS in local dev:full / dev:host, acting with full local rights).\n#2 8 MiB cap on HTTP bodies and WebSocket messages; queries max 2000 chars; graph-health limits max 500; MCP max 50 sessions; hosted, buildSearchIndex and activity.record need the write role (also ends #5 spoofing); body-parser, qs, undici, fast-uri updated (audit 14 -> 2); README nginx example now has limit_req (20 r/s, burst 200).\nLow path leaks: hosted, git.status repositoryPath and linkedRepo localPath only for admins.\nEvidence: auth.test, git-evidence.test, storage/json.test, backend 161/161, pnpm check 25/25, validate:local-runtime PASS.\n\nRemaining: zod v3 -> v4 (audit high, oversized collections; bounded by the 8 MiB cap; a major upgrade across 6 packages), and serving a .bowman-only sparse clone as defence in depth, which belongs to the read-only design questions on 06d83e94.",
-    "date": 1794220569026
+    "state": "implemented",
+    "comment": "All findings fixed 2026-11-09 (38e428c3, ed16c952, 270d37db, README nginx limit_req); the remaining zod v3 -> v4 upgrade is done (37fc08b8). The other remaining item, serving a .bowman-only sparse clone as defence in depth, belonged to the read-only hosting design, which the many-space server replaced (33ee5ab9, 145874fa); commitDiff still shows only the served .bowman. Evidence as listed before: auth.test, git-evidence.test, storage/json.test; backend suite 198/198 on 2026-11-15.",
+    "date": 1794781532735
   },
   "intrinsicValue": 0,
   "cost": 3,

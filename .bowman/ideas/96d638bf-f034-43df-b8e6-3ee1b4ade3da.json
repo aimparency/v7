@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built.",
-    "date": 1794511916271
+    "state": "implemented",
+    "comment": "Built in 0101a3c3: data model 7, meta.linkedRepos entries carry host (<origin>/spaces/<slug> since e0baae2a, was /g/<slug>); older links stay as they are, frozen data-model-v6 fixture. linkedRepo.linkHost stores a space by that address after the caller asks the hosting server for its identity (fetchGraphAtHost); this server never fetches foreign spaces. The settings dialog and the MCP register_linked_repo tool link by address, also with accounts. Local checkouts keep working. Evidence: backend linked-repos.test.ts (linkHost), shared graph-host.test.ts.",
+    "date": 1794781757390
   },
   "intrinsicValue": 0,
   "cost": 3,

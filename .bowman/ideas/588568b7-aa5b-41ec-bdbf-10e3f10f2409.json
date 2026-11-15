@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "2026-11-13 (32ba03c0): the server side exists. A server with accounts answers pages of any origin for reading and refuses their writes (auth/one-port-server.test.ts). Not built: the web app loading a linked graph from another server and expanding it in place, and the value and priority rules across graphs.",
-    "date": 1794511916405
+    "state": "implemented",
+    "comment": "Built in 8b945c1f and 063f0b42 (server side in 32ba03c0). The browser reads a linked space's ideas from the server hosting it (fetchIdeasAtHost); a click on its node expands them in place, read-only, inside an outline in the space's color; a click on one opens that space on its server. The value flowing into the node replaces the linked space's whole intrinsic value and spreads along its own connections (spreadInflow); priority stays in the host space. An unreachable server keeps the node, marked \"(not available)\". Drops across the outline are blocked, drops inside it link the space. Evidence: frontend data-linked-graph-view.spec.ts, graph-outline.spec.ts, connect-drop specs; shared graph-host.test.ts.",
+    "date": 1794781531872
   },
   "intrinsicValue": 0,
   "cost": 6,
