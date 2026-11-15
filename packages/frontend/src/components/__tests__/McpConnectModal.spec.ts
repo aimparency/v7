@@ -125,7 +125,29 @@ describe('McpAuthorizeModal', () => {
     await wrapper.find('.btn-primary').trigger('click')
     await flushPromises()
     expect(approve).toHaveBeenCalledWith({ requestId: 'r1', graphs: ['shared'] })
+    // A localhost answer may be on another computer: shown to copy, followed only on request.
+    expect(location.href).toBe('')
+    expect(wrapper.find('.return-address code').text()).toBe('http://localhost:7777/callback?code=abc')
+    await wrapper.find('.btn-primary').trigger('click')
     expect(location.href).toBe('http://localhost:7777/callback?code=abc')
+
+    // An answer to a website goes there right away.
+    const { default: Modal } = await import('../McpAuthorizeModal.vue')
+    approve.mockResolvedValue({ redirectTo: 'https://agent.example.org/callback?code=def' })
+    location.href = ''
+    const second = mount(Modal, {
+      props: { requestId: 'r2' },
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: 'ana', signUp: { open: false, browserKey: false, wallet: false } } } })],
+        stubs: { teleport: true, LoginControl: true }
+      },
+      attachTo: document.body
+    })
+    vi.mocked(useViewerStore().ensureAccount).mockResolvedValue(true)
+    await flushPromises()
+    await second.find('.btn-primary').trigger('click')
+    await flushPromises()
+    expect(location.href).toBe('https://agent.example.org/callback?code=def')
     vi.unstubAllGlobals()
   })
 })
