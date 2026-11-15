@@ -4,9 +4,10 @@ import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
 import { useViewerStore } from '../stores/viewer'
 
-const { inspectPath, listGraphs, createGraph, addRemote, accounts } = vi.hoisted(() => ({
+const { inspectPath, listGraphs, createGraph, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
   inspectPath: vi.fn(),
   addRemote: vi.fn(),
+  addCheckout: vi.fn(),
   listGraphs: vi.fn().mockResolvedValue([]),
   createGraph: vi.fn(),
   accounts: { on: false }
@@ -14,7 +15,7 @@ const { inspectPath, listGraphs, createGraph, addRemote, accounts } = vi.hoisted
 vi.mock('../trpc', () => ({
   trpc: {
     project: { inspectPath: { query: inspectPath } },
-    graphs: { list: { query: listGraphs }, create: { mutate: createGraph }, addRemote: { mutate: addRemote } }
+    graphs: { list: { query: listGraphs }, create: { mutate: createGraph }, addRemote: { mutate: addRemote }, addCheckout: { mutate: addCheckout } }
   },
 }))
 vi.mock('../utils/runtime-config', () => ({ hasAccounts: () => accounts.on }))
@@ -48,11 +49,11 @@ describe('ProjectSelectionView project kind', () => {
     inspectPath.mockReset()
   })
 
-  it('labels paths with an existing .bowman as Open Project', async () => {
+  it('labels paths with an existing .bowman as Open space', async () => {
     inspectPath.mockResolvedValue({ bowmanExists: true, matches: [] })
     const wrapper = mountView('/work/existing')
     await vi.advanceTimersByTimeAsync(200)
-    expect(wrapper.find('.select-project').text()).toBe('Open Project')
+    expect(wrapper.find('.select-project').text()).toBe('Open space')
   })
 
   it('offers to open a Git URL read-only without inspecting it as a folder', async () => {
@@ -62,11 +63,11 @@ describe('ProjectSelectionView project kind', () => {
     expect(inspectPath).not.toHaveBeenCalled()
   })
 
-  it('labels paths without a .bowman as New Project', async () => {
+  it('labels paths without a .bowman as New space', async () => {
     inspectPath.mockResolvedValue({ bowmanExists: false, matches: [] })
     const wrapper = mountView('/work/fresh')
     await vi.advanceTimersByTimeAsync(200)
-    expect(wrapper.find('.select-project').text()).toBe('New Project')
+    expect(wrapper.find('.select-project').text()).toBe('New space')
   })
 
   it('shows the common folder completion and accepts it with Tab', async () => {
@@ -181,65 +182,113 @@ describe('ProjectSelectionView on a server with accounts', () => {
   beforeEach(() => {
     vi.useRealTimers()
     accounts.on = true
-    listGraphs.mockResolvedValue([{ slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' }])
+    listGraphs.mockResolvedValue([
+      { slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' },
+      { slug: 'garden', kind: 'created', name: 'Garden', color: null, owner: null }
+    ])
     createGraph.mockReset().mockResolvedValue({ slug: 'my-idea' })
+    addRemote.mockReset()
+    addCheckout.mockReset()
   })
   afterEach(() => { accounts.on = false })
 
-  it('lists the server\'s graphs instead of this machine\'s directories and opens one by its slug', async () => {
-    const wrapper = mountView('', true, { name: 'ben', serverAdmin: false })
+  const mountServer = (modelValue: string, viewer = {}, lists = false) => mountView(modelValue, lists, { name: 'ben', serverAdmin: false, ...viewer })
+  const titles = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('.history-path').map(title => title.text())
+
+  it('lists the server\'s spaces instead of this machine\'s directories and opens one by its slug', async () => {
+    const wrapper = mountServer('', {}, true)
     await flushPromises()
-    expect(wrapper.find('.project-input-shell').exists()).toBe(false)
     expect(wrapper.text()).not.toContain('/work/entour')
-    expect(wrapper.text()).toContain('Hack the Hub')
+    expect(titles(wrapper)).toEqual(['Hack the Hub', 'Garden'])
     expect(wrapper.text()).toContain('ana · /g/hack-the-hub')
     await wrapper.find('.history-open-button').trigger('click')
     expect(wrapper.emitted('open-graph')).toEqual([['hack-the-hub']])
   })
 
-  it('creates a graph in one step and opens it', async () => {
-    const wrapper = mountView('', false, { name: 'ben', serverAdmin: false })
+  it('shows the recently opened spaces first, with the same keys as on this machine', async () => {
+    const wrapper = mount(ProjectSelectionView, {
+      attachTo: document.body,
+      global: {
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: 'ben', serverAdmin: false, canCreateGraphs: true, signUp: { open: false, browserKey: false } } } })],
+        stubs: { LoginControl: true }
+      },
+      props: { modelValue: '', projectHistory: [{ path: 'garden', lastOpened: Date.now(), failedToLoad: false }, { path: '/work/entour', lastOpened: 0, failedToLoad: false }], discoveredProjects: [], scannedRoots: [], isRefreshingDiscoveredProjects: false }
+    })
+    await flushPromises()
+    expect(wrapper.findAll('h3').map(title => title.text())).toEqual(['Recent spaces', 'Spaces on this server'])
+    expect(titles(wrapper)).toEqual(['Garden', 'Hack the Hub'])
+    await wrapper.find('input').trigger('keydown', { key: 'Tab' })
+    await wrapper.vm.$nextTick()
+    const list = wrapper.find('.project-lists')
+    await list.trigger('keydown', { key: 'd' })
+    await list.trigger('keydown', { key: 'd' })
+    expect(wrapper.emitted('remove-from-history')).toEqual([['garden']])
+    await list.trigger('keydown', { key: 'j' })
+    expect(wrapper.find('.history-item.selected .history-path').text()).toBe('Hack the Hub')
+    wrapper.unmount()
+  })
+
+  it('filters by name and opens a perfect match with Enter', async () => {
+    const wrapper = mountServer('garden')
+    await flushPromises()
+    expect(titles(wrapper)).toEqual(['Garden'])
+    expect(wrapper.find('.select-project').text()).toBe('Open')
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' })
+    expect(wrapper.emitted('open-graph')).toEqual([['garden']])
+  })
+
+  it('creates a space from a new name in the box, and opens it', async () => {
+    const wrapper = mountServer('My idea')
     vi.mocked(useViewerStore().ensureAccount).mockResolvedValue(true)
     await flushPromises()
-    await wrapper.find('form input').setValue('My idea')
-    await wrapper.find('form').trigger('submit')
+    expect(wrapper.find('.select-project').text()).toBe('New space')
+    await wrapper.find('input').trigger('keydown', { key: 'Enter' })
     await flushPromises()
     expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
     expect(wrapper.emitted('open-graph')).toEqual([['my-idea']])
   })
 
-  it('lets a visitor create a graph where accounts are given automatically, and gets them one first', async () => {
-    const wrapper = mountView('', false, { name: null, serverAdmin: false, canCreateGraphs: false, signUp: { open: false, browserKey: true } })
+  it('lets a visitor create a space where accounts are given automatically, and gets them one first', async () => {
+    const wrapper = mountServer('My idea', { name: null, canCreateGraphs: false, signUp: { open: false, browserKey: true } })
     const ensureAccount = vi.mocked(useViewerStore().ensureAccount).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     await flushPromises()
-    await wrapper.find('form input').setValue('My idea')
-    await wrapper.find('form').trigger('submit')
+    await wrapper.find('.select-project').trigger('click')
     await flushPromises()
     expect(createGraph).not.toHaveBeenCalled()
 
-    await wrapper.find('form').trigger('submit')
+    await wrapper.find('.select-project').trigger('click')
     await flushPromises()
     expect(ensureAccount).toHaveBeenCalledTimes(2)
     expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
   })
 
-  it('adds a repository from a Git URL and opens it', async () => {
+  it('adds a repository from a Git URL in the box and opens it', async () => {
     addRemote.mockResolvedValue({ slug: 'plans' })
-    const wrapper = mountView('', false, { name: 'ben', serverAdmin: false })
+    const wrapper = mountServer('https://github.com/someone/plans.git')
     vi.mocked(useViewerStore().ensureAccount).mockResolvedValue(true)
     await flushPromises()
-    const form = wrapper.findAll('form')[1]!
-    await form.find('input').setValue('https://github.com/someone/plans.git')
-    await form.trigger('submit')
+    expect(wrapper.find('.select-project').text()).toBe('Add from Git')
+    await wrapper.find('.select-project').trigger('click')
     await flushPromises()
     expect(addRemote).toHaveBeenCalledWith({ url: 'https://github.com/someone/plans.git' })
     expect(wrapper.emitted('open-graph')).toEqual([['plans']])
   })
 
-  it('asks a visitor to log in before creating a graph', async () => {
-    const wrapper = mountView('', false, { name: null, serverAdmin: false, canCreateGraphs: false })
+  it('adds a repository of the server by its path, for server admins only', async () => {
+    addCheckout.mockResolvedValue({ slug: 'repo' })
+    const admin = mountServer('/srv/repo', { serverAdmin: true })
     await flushPromises()
-    expect(wrapper.find('form').exists()).toBe(false)
-    expect(wrapper.text()).toContain('Log in to create a graph.')
+    expect(admin.find('.select-project').text()).toBe('Add from server')
+    await admin.find('.select-project').trigger('click')
+    await flushPromises()
+    expect(addCheckout).toHaveBeenCalledWith({ path: '/srv/repo' })
+    expect(mountServer('/srv/repo').find('.select-project').text()).toBe('New space')
+  })
+
+  it('asks a visitor to log in before creating a space', async () => {
+    const wrapper = mountServer('My idea', { name: null, canCreateGraphs: false })
+    await flushPromises()
+    expect(wrapper.find('.select-project').attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('Log in to create a space.')
   })
 })

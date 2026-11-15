@@ -65,18 +65,18 @@ const save = async () => {
       </div>
 
       <label class="stack field">
-        <span>Who creates graphs</span>
+        <span>Who creates spaces</span>
         <select v-model="settings.graphCreation">
           <option value="everyone">every account</option>
-          <option value="selected">accounts marked "creates graphs"</option>
+          <option value="selected">accounts marked "creates spaces"</option>
         </select>
       </label>
 
       <label class="stack field">
-        <span>Who leaves notes on graphs they cannot change (unless a graph sets it)</span>
+        <span>Who leaves notes on spaces they cannot change (unless a space sets it)</span>
         <select v-model="settings.notes">
           <option value="everyone">every account</option>
-          <option value="selected">accounts the graph's owner selected</option>
+          <option value="selected">accounts the space's owner selected</option>
           <option value="nobody">nobody</option>
         </select>
       </label>

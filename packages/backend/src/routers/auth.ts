@@ -205,7 +205,7 @@ export const authRouter = t.router({
     .input(z.object({ label: z.string().min(1).max(100).default('mcp'), graphs: z.array(z.string()).max(200).optional() }))
     .mutation(async ({ ctx, input }) => {
       for (const slug of input.graphs ?? []) {
-        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No graph "${slug}" on this server.` });
+        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
       }
       return { token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), input.label, input.graphs)) };
     }),

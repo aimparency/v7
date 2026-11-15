@@ -77,7 +77,7 @@ test('everyone reads a graph, its owner and writers change it, the server admin 
   const guest = as();
   assert.equal((await guest.idea.list({ graph: shared })).length, 1);
   assert.deepEqual(await guest.project.getAccess({ graph: shared }), {
-    writable: false, reason: 'This graph is open read-only here: log in to edit.', user: null, role: 'read', serverAdmin: false
+    writable: false, reason: 'This space is open read-only here: log in to edit.', user: null, role: 'read', serverAdmin: false
   });
   const edit = (text: string) => ({ graph: shared, ideaId: idea.id, idea: { text } });
   await assert.rejects(guest.idea.update(edit('Guest edit')), /open read-only/);
@@ -119,7 +119,7 @@ test('with accounts a graph is named by its slug, never by a path, and local too
   const admin = await loggedIn('admin', 'admin password');
   await assert.rejects(admin.idea.list({ graph: projectPath }), /addressed by their name, not by a path/);
   await assert.rejects(as().idea.list({ graph: path.join(os.tmpdir(), 'elsewhere') }), /addressed by their name/);
-  await assert.rejects(admin.idea.list({ graph: 'unknown' }), /No graph "unknown"/);
+  await assert.rejects(admin.idea.list({ graph: 'unknown' }), /No space "unknown"/);
   await assert.rejects(admin.project.inspectPath({ graph: shared }), /not available on a server with accounts/);
   await assert.rejects(admin.project.discoverLocalProjects(), /not available on a server with accounts/);
   await assert.rejects(admin.loop.getConfig({ graph: shared }), /not available on a server with accounts/);
@@ -201,7 +201,7 @@ test('a token limited to some graphs is the account there and nobody anywhere el
   const ada = await loggedIn('ada', 'ada password');
   const first = (await ada.graphs.create({ name: 'First' })).slug;
   const second = (await ada.graphs.create({ name: 'Second' })).slug;
-  await assert.rejects(ada.auth.issueToken({ label: 'agent', graphs: ['unknown'] }), /No graph "unknown"/);
+  await assert.rejects(ada.auth.issueToken({ label: 'agent', graphs: ['unknown'] }), /No space "unknown"/);
   const { token } = await ada.auth.issueToken({ label: 'agent', graphs: [first] });
   const agent = as(token);
 

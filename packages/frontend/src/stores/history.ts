@@ -229,7 +229,7 @@ export const useHistoryStore = defineStore('history', {
       const value = (snapshot ?? (type === 'idea' ? dataStore.ideas[id] : dataStore.phases[id])) as any
       if (type === 'idea') return `idea "${value?.text ?? id.slice(0, 8)}"`
       if (type === 'phase') return `phase "${value?.name ?? id.slice(0, 8)}"`
-      return 'project settings'
+      return 'space settings'
     },
 
     describe(entry: HistoryEntry): string {

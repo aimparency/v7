@@ -30,7 +30,7 @@ function listedGraph(address: string): Graph | null {
 
 function requireGraph(address: string): Graph {
   const graph = listedGraph(address);
-  if (!graph) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Notes exist on graphs of a server, not on a bare directory.' });
+  if (!graph) throw new TRPCError({ code: 'BAD_REQUEST', message: 'Notes exist on spaces of a server, not on a bare directory.' });
   return graph;
 }
 
@@ -73,7 +73,7 @@ export const notesRouter = t.router({
       const viewer = viewerOf(ctx);
       const author = accountOf(viewer);
       if (!mayAddNotes(graph, author, rightOn(graph, viewer) !== 'read')) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'The owner of this graph has not opened it for your notes.' });
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'The owner of this space has not opened it for your notes.' });
       }
       if (!withinLimit('notes', author, serverConfig().limits.notesPerAccountPerHour)) {
         throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Too many notes in the last hour: try again later.' });

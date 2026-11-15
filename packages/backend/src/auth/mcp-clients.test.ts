@@ -42,7 +42,7 @@ test('a person approves a client for chosen graphs, and the client gets a token 
   assert.deepEqual(await ana.mcpAuth.pending({ requestId }), { clientName: 'Coding agent', redirectHost: 'localhost:7777' });
 
   await assert.rejects(mcpServer().mcpAuth.approve({ requestId }), /Log in first/);
-  await assert.rejects(ana.mcpAuth.approve({ requestId, graphs: ['unknown'] }), /No graph "unknown"/);
+  await assert.rejects(ana.mcpAuth.approve({ requestId, graphs: ['unknown'] }), /No space "unknown"/);
   const redirect = new URL((await ana.mcpAuth.approve({ requestId, graphs: [first] })).redirectTo);
   assert.equal(redirect.origin + redirect.pathname, 'http://localhost:7777/callback');
   assert.equal(redirect.searchParams.get('state'), 'xyz');

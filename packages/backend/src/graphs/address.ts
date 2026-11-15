@@ -20,11 +20,11 @@ export type ResolvedGraph = {
 export function resolveGraphAddress(address: string): ResolvedGraph {
   if (isGraphSlug(address)) {
     const graph = findGraph(address);
-    if (!graph) throw new TRPCError({ code: 'NOT_FOUND', message: `No graph "${address}" on this server.` });
+    if (!graph) throw new TRPCError({ code: 'NOT_FOUND', message: `No space "${address}" on this server.` });
     return { path: graphBowmanPath(graph), graph };
   }
   if (hasAccounts()) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Graphs on this server are addressed by their name, not by a path.' });
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Spaces on this server are addressed by their name, not by a path.' });
   }
   return { path: address, graph: findGraphByPath(address) };
 }

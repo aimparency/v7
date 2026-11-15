@@ -6,7 +6,7 @@ import { t, delayedProcedure } from '../trpc.js';
 import { mayCreateGraphs, rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
-import { addCheckout, createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, type Graph } from '../graphs/registry.js';
+import { addCheckout, createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, setGraphSlug, type Graph } from '../graphs/registry.js';
 import { addRemote, selectRemoteKey } from '../graphs/remote-graph.js';
 import { privateKeyFile } from '../graphs/ssh-keys.js';
 import { clearIndices } from '../search.js';
@@ -24,7 +24,7 @@ async function run<T>(action: () => Promise<T>): Promise<T> {
 
 function listed(address: string): Graph {
   const { graph } = resolveGraphAddress(address);
-  if (!graph) throw new TRPCError({ code: 'NOT_FOUND', message: 'This directory is not on the list of this server\'s graphs.' });
+  if (!graph) throw new TRPCError({ code: 'NOT_FOUND', message: 'This directory is not on the list of this server\'s spaces.' });
   return graph;
 }
 
@@ -38,7 +38,7 @@ function accountId(name: string): string {
 function assertBelowGraphLimit(viewer: Viewer) {
   const owned = listGraphs().filter(graph => graph.owner === viewer.id).length;
   if (!viewer.serverAdmin && owned >= serverConfig().limits.graphsPerAccount) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: `An account has at most ${serverConfig().limits.graphsPerAccount} graphs on this server.` });
+    throw new TRPCError({ code: 'FORBIDDEN', message: `An account has at most ${serverConfig().limits.graphsPerAccount} spaces on this server.` });
   }
 }
 
@@ -61,7 +61,7 @@ export const graphsRouter = t.router({
     .mutation(async ({ ctx, input }) => {
       const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
       if (!mayCreateGraphs(viewer)) {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Creating graphs on this server is for accounts the server admin selected.' });
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Creating spaces on this server is for accounts the server admin selected.' });
       }
       assertBelowGraphLimit(viewer);
       const graph = await run(() => createGraph(input.name, viewer.id));
@@ -133,6 +133,15 @@ export const graphsRouter = t.router({
         ...(input.noteWriters !== undefined ? { noteWriters: [...new Set(input.noteWriters.map(accountId))] } : {})
       }));
       return { success: true };
+    }),
+
+  // The graph's address (/g/<slug>). The old one keeps leading here.
+  setSlug: delayedProcedure
+    .input(z.object({ graph: z.string(), slug: z.string().trim().max(100) }))
+    .mutation(async ({ input }) => {
+      const graph = listed(input.graph);
+      const renamed = await run(() => setGraphSlug(graph.slug, input.slug));
+      return { slug: renamed.slug };
     }),
 
   remove: delayedProcedure

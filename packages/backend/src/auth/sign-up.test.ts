@@ -168,5 +168,5 @@ test('one address makes only so many accounts an hour, one account only so many 
   await back.auth.keyLogin({ publicKey: key.publicKey, nonce: next.nonce, signature: await key.sign(next.nonce) });
 
   await ben.graphs.create({ name: 'First' });
-  await assert.rejects(ben.graphs.create({ name: 'Second' }), /at most 1 graphs/);
+  await assert.rejects(ben.graphs.create({ name: 'Second' }), /at most 1 spaces/);
 });

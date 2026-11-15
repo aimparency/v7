@@ -45,7 +45,7 @@ export async function cloneBowman(url: string, projectRoot: string, env: NodeJS.
   }
   if (!(await fs.pathExists(path.join(projectRoot, AIMPARENCY_DIR_NAME)))) {
     await fs.remove(projectRoot);
-    throw new Error(`${url} has no ${AIMPARENCY_DIR_NAME} directory, so it holds no Aimparency project.`);
+    throw new Error(`${url} has no ${AIMPARENCY_DIR_NAME} directory, so it holds no Aimparency space.`);
   }
 }
 

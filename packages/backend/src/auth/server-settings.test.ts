@@ -63,3 +63,23 @@ test('only a server admin sees or changes the settings and adds a repository by 
   await assert.rejects(admin.graphs.addCheckout({ path: repository }), /already/);
   await assert.rejects(admin.graphs.addCheckout({ path: path.join(root, 'nowhere') }), /No such directory/);
 });
+
+test('the owner changes a graph\'s address; the old one keeps leading there and stays reserved', async () => {
+  const admin = await loggedIn('admin');
+  const { slug } = await admin.graphs.create({ name: 'Old Name' });
+  assert.equal(slug, 'old-name');
+  const ana = await loggedIn('ana');
+  await assert.rejects(ana.graphs.setSlug({ graph: slug, slug: 'mine' }), /owner|FORBIDDEN|may not/i);
+  await assert.rejects(admin.graphs.setSlug({ graph: slug, slug: 'Not Valid' }), /lower-case/);
+
+  assert.equal((await admin.graphs.setSlug({ graph: slug, slug: 'new-name' })).slug, 'new-name');
+  // The old address answers with the renamed graph.
+  assert.equal((await admin.graphs.getAccess({ graph: 'old-name' }))?.slug, 'new-name');
+  assert.deepEqual((await admin.graphs.list()).map(graph => graph.slug), ['new-name']);
+  // Nobody else gets the old address.
+  assert.equal((await admin.graphs.create({ name: 'Old Name' })).slug, 'old-name-2');
+  await assert.rejects(admin.graphs.setSlug({ graph: 'old-name-2', slug: 'old-name' }), /taken/);
+  // The graph itself may take its old address back.
+  assert.equal((await admin.graphs.setSlug({ graph: 'new-name', slug: 'old-name' })).slug, 'old-name');
+  assert.equal((await admin.graphs.getAccess({ graph: 'new-name' }))?.slug, 'old-name');
+});

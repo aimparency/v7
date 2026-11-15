@@ -27,7 +27,7 @@ const toggle = async (right: Right, box: HTMLInputElement) => {
 
 <template>
   <span class="account-rights">
-    <label class="check"><input type="checkbox" :checked="rights.canCreateGraphs" @change="toggle('canCreateGraphs', $event.target as HTMLInputElement)" /> creates graphs</label>
+    <label class="check"><input type="checkbox" :checked="rights.canCreateGraphs" @change="toggle('canCreateGraphs', $event.target as HTMLInputElement)" /> creates spaces</label>
     <label class="check" :title="adminUnavailable"><input type="checkbox" :checked="rights.serverAdmin" :disabled="!!adminUnavailable" @change="toggle('serverAdmin', $event.target as HTMLInputElement)" /> server admin</label>
   </span>
 </template>

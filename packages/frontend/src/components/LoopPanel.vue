@@ -639,7 +639,7 @@ onUnmounted(() => {
           <span>Worktree path <em>optional</em></span>
           <input v-model="worktreePath" spellcheck="false" placeholder="Use the project repository" @input="configDirty = true">
         </label>
-        <p class="hint">Coding and command tools run here; the aimgraph remains in the open project.</p>
+        <p class="hint">Coding and command tools run here; the ideas remain in the open space.</p>
 
         <fieldset class="capability-field">
           <legend>Capability packs</legend>

@@ -90,7 +90,7 @@ describe('AccountsModal', () => {
   it('gives an invitation the rights of an account: server admin only for one person, after confirming', async () => {
     listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, serverAdmin: true, canCreateGraphs: true, redeemedBy: null, createdAt: '' }])
     const wrapper = await mountModal()
-    expect(wrapper.text()).toContain('for one person · no end · server admin · creates graphs')
+    expect(wrapper.text()).toContain('for one person · no end · server admin · creates spaces')
 
     const form = wrapper.find('form.invite')
     const [once, createsGraphs, serverAdmin] = form.findAll('input[type=checkbox]')

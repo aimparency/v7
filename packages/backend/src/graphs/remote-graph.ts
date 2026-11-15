@@ -26,7 +26,7 @@ async function assertFitsLimit(directory: string) {
   await measure(directory);
   if (bytes > limit * 1024 * 1024) {
     await fs.remove(directory);
-    throw new Error(`This graph is larger than the ${limit} MB a graph may have on this server.`);
+    throw new Error(`This space is larger than the ${limit} MB a space may have on this server.`);
   }
 }
 

@@ -71,7 +71,7 @@ const describeInvitation = (invitation: (typeof invitations.value)[number]) => [
   invitation.redeemedBy ? `used by ${invitation.redeemedBy}`
     : invitation.expiresAt ? `until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'no end',
   ...(invitation.serverAdmin ? ['server admin'] : []),
-  ...(invitation.canCreateGraphs ? ['creates graphs'] : [])
+  ...(invitation.canCreateGraphs ? ['creates spaces'] : [])
 ].join(' · ')
 
 const resetPassword = (account: string) => {
@@ -122,7 +122,7 @@ onMounted(() => run(loadInvitations))
       </form>
       <template v-if="invitationLink"><p class="hint">Send this link; it is shown only now:</p><code class="copyable">{{ invitationLink }}</code></template>
 
-      <p class="hint">"creates graphs" matters where the server lets only selected accounts create graphs. Who may write a graph is set in that graph's settings, by its owner.</p>
+      <p class="hint">"creates spaces" matters where the server lets only selected accounts create spaces. Who may write a space is set in that space's settings, by its owner.</p>
       <p class="hint warning">{{ ADMIN_SHELL_WARNING }}</p>
     </div>
   </FormModalShell>

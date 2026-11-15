@@ -238,7 +238,7 @@ const handleSelectProject = () => {
   const target = projectPathInput.value.trim()
   // A bare name would resolve against the backend's working directory.
   if (!gitRepositoryLocation(target) && !/^(\/|[A-Za-z]:[\\/])/.test(target)) {
-    useToastStore().error('Type a full path, starting with /, or pick a project from the list')
+    useToastStore().error('Type a full path, starting with /, or pick a space from the list')
     return
   }
   projectSelectionReturnPath.value = ''
@@ -594,7 +594,7 @@ onUnmounted(() => {
           ><Info /></button>
           <span v-if="showHookInfo" class="hook-info" role="tooltip" @click.prevent>
             The Stop hook of your coding agent (Claude Code, Codex) in this repository.
-            On: when the agent finishes, it is sent back to work on the next idea of the graph.
+            On: when the agent finishes, it is sent back to work on the next idea of the space.
             Off: the agent stops normally. Applies from its next stop, only in this clone.
           </span>
         </label>
@@ -675,7 +675,7 @@ onUnmounted(() => {
 
           <NotesInbox v-if="accounts" @open="openNote" />
 
-          <button v-if="dataStore.access.writable" @click="modalStore.openSettingsModal()" class="icon-btn" title="Project Settings">
+          <button v-if="dataStore.access.writable" @click="modalStore.openSettingsModal()" class="icon-btn" title="Space settings">
             <Settings />
           </button>
 
@@ -699,7 +699,7 @@ onUnmounted(() => {
           </button>
         </div>
 
-        <button class="icon-btn text close-project" @click="closeProject">{{ accounts ? 'Graphs' : 'Switch project' }}</button>
+        <button class="icon-btn text close-project" @click="closeProject">Spaces</button>
       </div>
 
       <button

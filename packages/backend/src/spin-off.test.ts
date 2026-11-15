@@ -79,6 +79,6 @@ test('spin-off refuses to target its source graph', async () => {
       removeFromSource: false,
       preserveInflow: false,
     }),
-    /different .bowman graph/i,
+    /different .bowman space/i,
   );
 });

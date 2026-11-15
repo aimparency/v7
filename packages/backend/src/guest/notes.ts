@@ -56,7 +56,7 @@ export async function addNote(graph: Graph, note: Pick<Note, 'ideaId' | 'kind' |
   if (text.length > MAX_NOTE_LENGTH) throw new NoteError(`A note has at most ${MAX_NOTE_LENGTH} characters.`);
   if (!text && note.kind === 'note') throw new NoteError('Write something first.');
   return change(graph, (notes) => {
-    if (notes.length >= MAX_NOTES_PER_GRAPH) throw new NoteError('This graph holds as many notes as it can.');
+    if (notes.length >= MAX_NOTES_PER_GRAPH) throw new NoteError('This space holds as many notes as it can.');
     if (notes.filter(existing => existing.ideaId === note.ideaId).length >= MAX_NOTES_PER_IDEA) throw new NoteError('This idea holds as many notes as it can.');
     const added: Note = { id: crypto.randomUUID(), ideaId: note.ideaId, kind: note.kind, text, author: note.author, createdAt: new Date().toISOString() };
     return { notes: [...notes, added], result: added };
@@ -68,7 +68,7 @@ export async function removeNote(graph: Graph, id: string, allowed: (note: Note)
   await change(graph, (notes) => {
     const note = notes.find(candidate => candidate.id === id);
     if (!note) throw new NoteError('This note is gone already.');
-    if (!allowed(note)) throw new NoteError('Only its author or the people who write this graph remove a note.');
+    if (!allowed(note)) throw new NoteError('Only its author or the people who write this space remove a note.');
     return { notes: notes.filter(candidate => candidate.id !== id), result: undefined };
   });
 }

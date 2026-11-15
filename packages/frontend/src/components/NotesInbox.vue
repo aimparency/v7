@@ -55,13 +55,13 @@ onUnmounted(() => {
     v-if="notes.length > 0"
     class="icon-btn inbox-btn"
     :class="{ unseen: unseen > 0 }"
-    title="Notes visitors left on your graphs"
+    title="Notes visitors left on your spaces"
     @click="open"
   >
     <MessageSquare /> {{ unseen || '' }}
   </button>
 
-  <FormModalShell :show="show" title="Notes on your graphs" width="min(90vw, 40rem)" @request-close="show = false">
+  <FormModalShell :show="show" title="Notes on your spaces" width="min(90vw, 40rem)" @request-close="show = false">
     <div class="notes-inbox">
       <button v-for="note in notes" :key="note.id" class="entry" @click="openNote(note.slug, note.ideaId)">
         <span class="where">{{ note.slug }} · {{ note.ideaText }}</span>

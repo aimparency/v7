@@ -771,7 +771,7 @@ function toggleSpinOffPreview() {
             class="spinoff-split-apply"
             :disabled="graphUIStore.spinOffPreviewRootIds.length === 0"
             @click="modalStore.openSpinOffApplyModal()"
-            title="Apply the spin-off: write the selected branch into a new graph"
+            title="Apply the spin-off: write the selected branch into a new space"
         ><GitBranch /> Apply</button>
         <button
             class="spinoff-split-cancel"

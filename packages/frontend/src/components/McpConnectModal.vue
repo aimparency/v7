@@ -59,12 +59,12 @@ const revoke = (id: string) => run(async () => {
 <template>
   <FormModalShell show title="Connect an agent (MCP)" width="min(94vw, 42rem)" @request-close="emit('close')">
     <div class="stack">
-      <p class="hint">A coding agent (an MCP client) acts as you on this server: it reads the graphs and changes the ones you may change.</p>
+      <p class="hint">A coding agent (an MCP client) acts as you on this server: it reads the spaces and changes the ones you may change.</p>
 
       <template v-if="loginUrl">
         <h4 class="section-title">Add it to your agent</h4>
         <AgentCommands :url="loginUrl" login />
-        <p class="hint">On first use the agent opens this server in the browser: you log in, choose the graphs it may reach and approve.</p>
+        <p class="hint">On first use the agent opens this server in the browser: you log in, choose the spaces it may reach and approve.</p>
         <button v-if="!showLinkForm" type="button" class="btn-secondary link-toggle" @click="showLinkForm = true">Or make a link with a token instead</button>
       </template>
 

@@ -3,6 +3,7 @@ import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
+import { useProjectLoadStore } from '../stores/project-load'
 import { trpc } from '../trpc'
 import { useToastStore } from '../stores/toast'
 import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost, fetchGraphAtHost } from 'shared'
@@ -75,6 +76,7 @@ const mayManageAccess = computed(() => dataStore.access.role === 'owner')
 
 async function loadGraphAccess() {
   if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ graph: projectStore.projectPath })
+  slug.value = graphAccess.value?.slug ?? ''
 }
 
 type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'graph'>
@@ -84,7 +86,7 @@ async function setAccess(change: AccessChange) {
     newWriter.value = newNoteWriter.value = ''
     await loadGraphAccess()
   } catch (e) {
-    useToastStore().error('Could not change who may use this graph', e)
+    useToastStore().error('Could not change who may use this space', e)
   }
 }
 const setWriters = (writers: string[]) => setAccess({ writers })
@@ -119,14 +121,32 @@ async function createKey() {
   }
 }
 
+// The space's address on this server (/g/<slug>); the old one keeps leading here.
+const slug = ref('')
+const slugBusy = ref(false)
+async function changeSlug() {
+  const next = slug.value.trim()
+  if (!graphAccess.value || next === graphAccess.value.slug) return
+  slugBusy.value = true
+  try {
+    const result = await trpc.graphs.setSlug.mutate({ graph: projectStore.projectPath, slug: next })
+    modalStore.closeSettingsModal()
+    await useProjectLoadStore().open(result.slug)
+  } catch (e) {
+    useToastStore().error('Could not change the address', e)
+  } finally {
+    slugBusy.value = false
+  }
+}
+
 async function removeGraph() {
-  if (!window.confirm(`Remove the graph "${name.value}" from this server? A graph created here is deleted with its history.`)) return
+  if (!window.confirm(`Remove the space "${name.value}" from this server? A space created here is deleted with its history.`)) return
   try {
     await trpc.graphs.remove.mutate({ graph: projectStore.projectPath })
     modalStore.closeSettingsModal()
     projectStore.setProjectPath('')
   } catch (e) {
-    useToastStore().error('Could not remove the graph', e)
+    useToastStore().error('Could not remove the space', e)
   }
 }
 
@@ -395,22 +415,22 @@ const save = async () => {
   <div v-if="modalStore.showSettingsModal" class="modal-overlay" aria-modal="true">
     <div class="modal">
       <div class="modal-header">
-        <h3>Project Settings</h3>
+        <h3>Space settings</h3>
       </div>
       
       <div class="modal-body">
         <div class="form-group">
-          <label>Project Name</label>
+          <label>Name</label>
           <input 
             v-model="name" 
             type="text" 
-            placeholder="Project Name"
+            placeholder="Name of this space"
             @keydown="handleKeydown"
           />
         </div>
 
         <div class="form-group">
-          <label>Project Color</label>
+          <label>Color</label>
           <div class="color-picker-row">
             <input 
                 v-model="color" 
@@ -433,26 +453,26 @@ const save = async () => {
             v-model="initialInstructions"
             class="instructions-input"
             rows="4"
-            placeholder="Project-wide instructions for the coding agent…"
+            placeholder="Instructions for the coding agent, for this whole space…"
             @keydown="blockLeakage"
           ></textarea>
         </div>
 
         <div class="form-group">
           <label>Supervisor Guidance Prefix</label>
-          <p class="hint-text">Optional reminder prefixed to each natural-language supervisor message. Leave empty for ordinary projects.</p>
+          <p class="hint-text">Optional reminder prefixed to each natural-language supervisor message. Leave empty for ordinary spaces.</p>
           <textarea
             v-model="supervisorGuidancePrefix"
             class="supervisor-guidance-input"
             rows="2"
-            placeholder="Project-specific reminder for the coding agent…"
+            placeholder="Reminder for the coding agent, for this space…"
             @keydown="blockLeakage"
           ></textarea>
         </div>
 
         <div class="form-group">
           <label>Cost Unit</label>
-          <p class="hint-text">What one unit of idea cost means in this project, e.g. "hours" or "€". Shown next to cost fields and told to agents. Leave empty for abstract units.</p>
+          <p class="hint-text">What one unit of idea cost means in this space, e.g. "hours" or "€". Shown next to cost fields and told to agents. Leave empty for abstract units.</p>
           <input v-model="costUnit" type="text" placeholder="abstract units" @keydown="blockLeakage" />
         </div>
 
@@ -491,7 +511,7 @@ const save = async () => {
 
         <div class="form-group">
           <label>Linked repos</label>
-          <p class="hint-text">Whole other graphs this one can link to as supporters: by their address on the server hosting them, or as a project checked out here. A graph linked here is pickable from an idea's "link a whole repo".</p>
+          <p class="hint-text">Whole other spaces this one can link to as supporters: by their address on the server hosting them, or as a folder checked out here. A space linked here is pickable from an idea's "link a whole repo".</p>
 
           <div v-if="linkedRepos.length > 0" class="status-list">
             <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">
@@ -518,7 +538,7 @@ const save = async () => {
           <div v-if="!accounts" class="add-repo-row">
             <select v-model="selectedTargetPath" :disabled="availableRepoTargets.length === 0 || repoBusy">
               <option value="">
-                {{ availableRepoTargets.length === 0 ? 'No other local projects found' : 'Select a project to link…' }}
+                {{ availableRepoTargets.length === 0 ? 'No other local spaces found' : 'Select a space to link…' }}
               </option>
               <option v-for="p in availableRepoTargets" :key="p.bowmanPath" :value="p.path">{{ projectLabel(p) }}</option>
             </select>
@@ -528,7 +548,14 @@ const save = async () => {
 
         <div v-if="graphAccess" class="form-group">
           <label>Access</label>
-          <p class="hint-text">Everyone may read this graph. {{ graphAccess.owner ?? 'The server admin' }} owns it; the accounts below may also change it.</p>
+          <div v-if="mayManageAccess" class="add-repo-row">
+            <span class="linked-repo-name">Address</span>
+            <span class="address-prefix">/g/</span>
+            <input v-model="slug" type="text" spellcheck="false" placeholder="address" @keydown.enter="changeSlug" />
+            <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
+          </div>
+          <p v-if="mayManageAccess" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
+          <p class="hint-text">Everyone may read this space. {{ graphAccess.owner ?? 'The server admin' }} owns it; the accounts below may also change it.</p>
           <div v-if="graphAccess.writers.length > 0" class="status-list">
             <div v-for="writer in graphAccess.writers" :key="writer" class="linked-repo-row">
               <span class="linked-repo-name">{{ writer }}</span>
@@ -576,7 +603,7 @@ const save = async () => {
               <code class="public-key">{{ selectedKey.publicKey }}</code>
             </p>
           </template>
-          <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Remove this graph from the server</button>
+          <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Remove this space from the server</button>
         </div>
 
         <div class="form-group">
@@ -666,7 +693,7 @@ const save = async () => {
 
           <div class="runtime-box">
             <div class="runtime-line">
-              <span class="runtime-key">Project Root</span>
+              <span class="runtime-key">Folder</span>
               <code>{{ projectStore.projectPath.replace(/\/\.bowman$/, '') }}</code>
             </div>
             <div class="runtime-line">
@@ -934,6 +961,7 @@ const save = async () => {
       margin-top: 0.5rem;
 
       select, input { flex: 1; }
+      .address-prefix { align-self: center; color: var(--text-muted); }
 
       .add-repo-btn {
         width: auto;
