@@ -1,3 +1,5 @@
+import { ref } from 'vue'
+
 // The login of a hosted instance. The token rides on the WebSocket's connection
 // params, which are sent once per connection, so logging in or out reloads.
 const KEY = 'aimparency-token'
@@ -31,4 +33,12 @@ export function ensureAgentCookie(): Promise<boolean> {
     headers: { authorization: `Bearer ${loginToken() ?? ''}` },
   }).then(response => response.ok, () => false)
   return agentCookie
+}
+
+// Something only an account may do was tried while logged out: the header's
+// login dialog opens with this note.
+export const loginRequest = ref<string | null>(null)
+
+export function requestLogin(note: string) {
+  loginRequest.value = note
 }

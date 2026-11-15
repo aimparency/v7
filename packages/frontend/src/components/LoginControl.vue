@@ -1,9 +1,9 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { trpc } from '../trpc'
 import { useDataStore } from '../stores/data'
 import { useToastStore } from '../stores/toast'
-import { setLoginToken } from '../utils/login'
+import { loginRequest, setLoginToken } from '../utils/login'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 
@@ -15,12 +15,22 @@ const name = ref('')
 const password = ref('')
 const current = ref('')
 const error = ref('')
+const note = ref('')
 const busy = ref(false)
 
 const open = (which: 'login' | 'password' | 'accounts') => {
   dialog.value = which
-  name.value = password.value = current.value = error.value = ''
+  name.value = password.value = current.value = error.value = note.value = ''
 }
+
+// Asked from elsewhere, e.g. dragging a new idea out of one while logged out.
+watch(loginRequest, (request) => {
+  if (!request) return
+  loginRequest.value = null
+  if (dataStore.access.user) return
+  open('login')
+  note.value = request
+})
 
 const submit = async (action: () => Promise<void>) => {
   busy.value = true
@@ -74,6 +84,7 @@ const copyMcpLink = async () => {
 
     <FormModalShell :show="dialog === 'login'" title="Log in" width="min(90vw, 22rem)" @request-close="dialog = null">
       <form id="login-form" @submit.prevent="login">
+        <p v-if="note" class="note">{{ note }}</p>
         <input v-model="name" placeholder="Name" autocomplete="username" autofocus />
         <input v-model="password" type="password" placeholder="Password" autocomplete="current-password" />
         <p v-if="error" class="error">{{ error }}</p>
@@ -112,6 +123,10 @@ const copyMcpLink = async () => {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .note {
+    margin: 0;
   }
 
   .error {

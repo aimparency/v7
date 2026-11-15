@@ -8,6 +8,8 @@ import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
+import { requestLogin } from '../utils/login'
+import { getRuntimeConfig } from '../utils/runtime-config'
 import { type GraphNode, type GraphLink, isIdeaNode, useGraphSimulation } from './useGraphSimulation'
 
 export function useGraphInteraction(
@@ -31,6 +33,18 @@ export function useGraphInteraction(
     // State for layouting handle
     const layoutingHandlePos = vec2.create()
     let connectionHandled = false
+
+    // Creating and connecting ideas needs write access. Logged out on a hosted
+    // instance, that means logging in; otherwise the reason says why not.
+    const mayEdit = () => {
+        if (dataStore.access.writable) return true
+        if (getRuntimeConfig().hosted && !dataStore.access.user) {
+            requestLogin('Log in to propose ideas and connections.')
+        } else {
+            toastStore.info(dataStore.access.reason ?? 'This project is read-only here.')
+        }
+        return false
+    }
     
     // Zoom state
     const isZooming = ref(false)
@@ -221,7 +235,7 @@ export function useGraphInteraction(
             mapStore.layouting = false
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
-            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved) {
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && mayEdit()) {
                 const parentNode = mapStore.connectFrom
                 const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
                 
@@ -511,6 +525,7 @@ export function useGraphInteraction(
                 return
             }
             connectionHandled = true
+            if (!mayEdit()) return
             const parent = mapStore.connectFrom as GraphNode
             const child = node
 
@@ -657,7 +672,7 @@ export function useGraphInteraction(
             }
         }
         
-        if (!hitNode) {
+        if (!hitNode && mayEdit()) {
             // Deselect to ensure creating floating idea
             graphUIStore.setGraphSelection(null)
             uiStore.deselectIdea()
