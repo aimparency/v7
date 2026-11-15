@@ -2,7 +2,9 @@
 // ideas. Notes are kept in the server directory (guest/<slug>/notes.json),
 // never in the graph's repository: the graph stays its owner's, and a note is
 // to a graph what an issue is to a repository. Its owner or writers read them
-// and turn what they want into ideas.
+// and turn what they want into ideas. An offer is a note that proposes a whole
+// space as support for the idea, with the proposer's pitch as its text;
+// accepting it links that space (routers/notes.ts).
 
 import crypto from 'node:crypto';
 import fs from 'fs-extra';
@@ -11,12 +13,16 @@ import { serverConfig, serverDir } from 'shared/server-config';
 import type { Graph } from '../graphs/registry.js';
 import { readJsonOrNull, withFileLock, writeJsonAtomic } from '../storage/json.js';
 
-export const NOTE_KINDS = ['note', 'interest'] as const; // interest: "I'd like to work on this"
+export const NOTE_KINDS = ['note', 'interest', 'offer'] as const; // interest: "I'd like to work on this"
+/** The space an offer proposes, by its address on the server hosting it. */
+export type OfferedSpace = { host: string; repoId: string; name: string };
 export type Note = {
   id: string;
   ideaId: string;
   kind: typeof NOTE_KINDS[number];
   text: string;
+  /** Only on an offer. */
+  space?: OfferedSpace;
   /** Account id. */
   author: string;
   createdAt: string;
@@ -51,16 +57,29 @@ export function mayAddNotes(graph: Graph, accountId: string, hasWriteAccess: boo
   return setting === 'everyone' || (setting === 'selected' && (graph.noteWriters ?? []).includes(accountId));
 }
 
-export async function addNote(graph: Graph, note: Pick<Note, 'ideaId' | 'kind' | 'text' | 'author'>): Promise<Note> {
+export async function addNote(graph: Graph, note: Pick<Note, 'ideaId' | 'kind' | 'text' | 'author' | 'space'>): Promise<Note> {
   const text = note.text.trim();
   if (text.length > MAX_NOTE_LENGTH) throw new NoteError(`A note has at most ${MAX_NOTE_LENGTH} characters.`);
   if (!text && note.kind === 'note') throw new NoteError('Write something first.');
+  if ((note.kind === 'offer') !== (note.space !== undefined)) throw new NoteError('An offer names the space it offers, and only an offer does.');
   return change(graph, (notes) => {
     if (notes.length >= MAX_NOTES_PER_GRAPH) throw new NoteError('This space holds as many notes as it can.');
     if (notes.filter(existing => existing.ideaId === note.ideaId).length >= MAX_NOTES_PER_IDEA) throw new NoteError('This idea holds as many notes as it can.');
-    const added: Note = { id: crypto.randomUUID(), ideaId: note.ideaId, kind: note.kind, text, author: note.author, createdAt: new Date().toISOString() };
+    if (note.space && notes.some(existing => existing.ideaId === note.ideaId && existing.space?.repoId === note.space!.repoId)) {
+      throw new NoteError(`${note.space.name} is offered to this idea already.`);
+    }
+    const added: Note = {
+      id: crypto.randomUUID(), ideaId: note.ideaId, kind: note.kind, text, ...(note.space ? { space: note.space } : {}),
+      author: note.author, createdAt: new Date().toISOString()
+    };
     return { notes: [...notes, added], result: added };
   });
+}
+
+export async function findNote(graph: Graph, id: string): Promise<Note> {
+  const note = (await listNotes(graph)).find(candidate => candidate.id === id);
+  if (!note) throw new NoteError('This note is gone already.');
+  return note;
 }
 
 /** Removes the note when `allowed` says this note may go (its author's, or the graph's owner and writers). */

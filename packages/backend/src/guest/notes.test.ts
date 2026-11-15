@@ -115,3 +115,30 @@ test('the owner sees recent notes of others on their graphs; an account writes o
   await ana.graphs.remove({ graph: projectPath });
   assert.equal(await fs.pathExists(path.join(root, 'guest', 'hack-the-hub')), false, 'the notes go with the graph');
 });
+
+test('a guest offers a space of theirs to an idea; the owner accepts it and the space supports the idea', async () => {
+  const kitchen = (await ben.graphs.create({ name: 'Ben cooks' })).slug;
+  const offered = await ben.project.getMeta({ graph: kitchen });
+  const space = { host: `https://hub.example.org/spaces/${kitchen}/`, repoId: offered.repoId!, name: 'Ben cooks' };
+
+  await assert.rejects(ben.notes.add({ graph: projectPath, ideaId, kind: 'offer', text: 'Without a space' }), /names the space it offers/);
+  await assert.rejects(ben.notes.add({ graph: projectPath, ideaId, kind: 'note', text: 'x', space }), /only an offer does/);
+  const own = await ana.project.getMeta({ graph: projectPath });
+  await assert.rejects(ben.notes.add({ graph: projectPath, ideaId, kind: 'offer', text: '', space: { ...space, repoId: own.repoId! } }), /offered to itself/);
+
+  const offer = await ben.notes.add({ graph: projectPath, ideaId, kind: 'offer', text: 'Cooking every Friday feeds the kitchen.', space });
+  assert.equal(offer.space?.host, `https://hub.example.org/spaces/${kitchen}`, 'the address is kept in its plain form');
+  await assert.rejects(ben.notes.add({ graph: projectPath, ideaId, kind: 'offer', text: 'Again', space }), /offered to this idea already/);
+  assert.deepEqual((await ana.notes.recent()).map(note => note.space?.name), ['Ben cooks'], 'the owner sees the offer');
+
+  await assert.rejects(ben.notes.acceptOffer({ graph: projectPath, id: offer.id }), /open read-only/);
+  await assert.rejects(ana.notes.acceptOffer({ graph: projectPath, id: (await ben.notes.add({ graph: projectPath, ideaId, kind: 'note', text: 'Just a note' })).id }), /offers no space/);
+  await ana.notes.acceptOffer({ graph: projectPath, id: offer.id, weight: 2 });
+
+  const idea = await ana.idea.get({ graph: projectPath, ideaId });
+  assert.deepEqual(idea.supportingRepos?.map(({ repoId, weight, hypothesis }) => ({ repoId, weight, hypothesis })),
+    [{ repoId: offered.repoId, weight: 2, hypothesis: 'Cooking every Friday feeds the kitchen.' }]);
+  const links = (await ana.project.getMeta({ graph: projectPath })).linkedRepos;
+  assert.deepEqual(links?.map(({ repoId, name, host }) => ({ repoId, name, host })), [{ repoId: offered.repoId, name: 'Ben cooks', host: `https://hub.example.org/spaces/${kitchen}` }]);
+  assert.deepEqual((await texts(ana)).filter(text => text.includes('offer')), [], 'the accepted offer is done');
+});

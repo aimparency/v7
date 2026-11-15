@@ -19,6 +19,7 @@ import type { PhaseSearchSelection } from './stores/ui/phase-search-types'
 import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import IdeaCreationModal from './components/IdeaCreationModal.vue'
 import ConnectionDetailsModal from './components/ConnectionDetailsModal.vue'
+import ProposeSpaceModal from './components/ProposeSpaceModal.vue'
 import IdeaRemovalDialog from './components/IdeaRemovalDialog.vue'
 import IdeaEditModal from './components/IdeaEditModal.vue'
 import IdeaSearchModal from './components/IdeaSearchModal.vue'
@@ -812,6 +813,13 @@ onUnmounted(() => {
       :idea-id="modalStore.ideaEditModalIdeaId"
       :idea-ids="modalStore.ideaEditModalIdeaIds"
       @close="modalStore.closeIdeaEditModal()"
+    />
+
+    <!-- After the idea editor: its notes offer a space too -->
+    <ProposeSpaceModal
+      v-if="modalStore.proposeForIdeaId"
+      :idea-id="modalStore.proposeForIdeaId"
+      @close="modalStore.proposeForIdeaId = null"
     />
 
     <!-- Idea Search Modal -->

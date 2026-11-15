@@ -53,7 +53,9 @@ const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // viewer (activity): not for visitors.
 const WRITE_MUTATIONS = new Set([
   'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
-  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost'
+  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost',
+  // Accepting an offer links the offered space into the graph (routers/notes.ts).
+  'notes.acceptOffer'
 ]);
 const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).

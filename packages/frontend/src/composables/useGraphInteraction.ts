@@ -34,6 +34,14 @@ export function useGraphInteraction(
     // State for layouting handle
     const layoutingHandlePos = vec2.create()
     let connectionHandled = false
+
+    // Creating and connecting ideas needs write access; without it the
+    // reason shows. (Dragging out into empty space proposes a space instead.)
+    const mayEdit = () => {
+        if (dataStore.access.writable) return true
+        toastStore.info(dataStore.access.reason ?? 'This space is open read-only here.')
+        return false
+    }
     
     // Zoom state
     const isZooming = ref(false)
@@ -225,7 +233,11 @@ export function useGraphInteraction(
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
             const drop = mapStore.connectDrop
-            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && !dataStore.access.writable) {
+                // A visitor proposes: a space of their own that supports the idea.
+                if (drop.kind === 'new' && isIdeaNode(mapStore.connectFrom as GraphNode)) modalStore.openProposeModal(mapStore.connectFrom.id)
+                else mayEdit()
+            } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
                 void contributeGraph(mapStore.connectFrom as GraphNode, drop.repoId)
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'new') {
                 const parentNode = mapStore.connectFrom
@@ -549,6 +561,7 @@ export function useGraphInteraction(
                 return
             }
             connectionHandled = true
+            if (!mayEdit()) return
             const parent = mapStore.connectFrom as GraphNode
             const child = node
 
@@ -705,7 +718,7 @@ export function useGraphInteraction(
             }
         }
         
-        if (!hitNode) {
+        if (!hitNode && mayEdit()) {
             // Deselect to ensure creating floating idea
             graphUIStore.setGraphSelection(null)
             uiStore.deselectIdea()

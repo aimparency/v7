@@ -1,14 +1,17 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { serverConfig } from 'shared/server-config';
+import { graphHostUrl, parseGraphHost, type LinkedRepo } from 'shared';
 import { t, delayedProcedure, type Context } from '../trpc.js';
 import { rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
 import { graphBowmanPath, listGraphs, type Graph } from '../graphs/registry.js';
-import { addNote, listNotes, mayAddNotes, MAX_NOTE_LENGTH, NOTE_KINDS, NoteError, removeNote, type Note } from '../guest/notes.js';
+import { addNote, findNote, listNotes, mayAddNotes, MAX_NOTE_LENGTH, NOTE_KINDS, NoteError, removeNote, type Note } from '../guest/notes.js';
 import { withinLimit } from '../rate-limit.js';
-import { readIdea } from '../storage/ideas.js';
+import { getRandomRelativePosition, readIdea, writeIdea } from '../storage/ideas.js';
+import { readProjectMeta, writeProjectMeta } from '../storage/project.js';
+import { updateIdeaInIndex } from '../search.js';
 
 const RECENT_LIMIT = 50;
 
@@ -66,7 +69,14 @@ export const notesRouter = t.router({
       graph: z.string(),
       ideaId: z.string().uuid(),
       kind: z.enum(NOTE_KINDS),
-      text: z.string().max(MAX_NOTE_LENGTH + 100)
+      text: z.string().max(MAX_NOTE_LENGTH + 100),
+      // An offer's space, as the proposer's browser read it from its server:
+      // this server never fetches foreign spaces. Its owner previews it before accepting.
+      space: z.object({
+        host: z.string().max(500).refine(address => parseGraphHost(address) !== null, 'Not the address of a space: https://<server>/spaces/<space>'),
+        repoId: z.string().uuid(),
+        name: z.string().trim().min(1).max(200)
+      }).optional()
     }))
     .mutation(async ({ ctx, input }) => {
       const graph = requireGraph(input.graph);
@@ -79,7 +89,11 @@ export const notesRouter = t.router({
         throw new TRPCError({ code: 'TOO_MANY_REQUESTS', message: 'Too many notes in the last hour: try again later.' });
       }
       await readIdea(graphBowmanPath(graph), input.ideaId); // a note needs its idea
-      const note = await run(() => addNote(graph, { ideaId: input.ideaId, kind: input.kind, text: input.text, author }));
+      const space = input.space && { ...input.space, host: graphHostUrl(parseGraphHost(input.space.host)!) };
+      if (space && space.repoId === (await readProjectMeta(graphBowmanPath(graph))).repoId) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'A space cannot be offered to itself.' });
+      }
+      const note = await run(() => addNote(graph, { ideaId: input.ideaId, kind: input.kind, text: input.text, author, ...(space ? { space } : {}) }));
       return shown([note], graph, viewer)[0]!;
     }),
 
@@ -92,6 +106,38 @@ export const notesRouter = t.router({
       const writes = rightOn(graph, viewer) !== 'read';
       await run(() => removeNote(graph, input.id, note => writes || note.author === account));
       return { success: true };
+    }),
+
+  // The offered space supports the idea from now on: it is linked by its
+  // address, the idea gets the space as a supporting connection with the
+  // proposer's pitch as its hypothesis, and the offer is done.
+  acceptOffer: delayedProcedure
+    .input(z.object({ graph: z.string(), id: z.string().uuid(), weight: z.number().min(0).optional() }))
+    .mutation(async ({ input }) => {
+      const graph = requireGraph(input.graph);
+      const offer = await run(() => findNote(graph, input.id));
+      if (offer.kind !== 'offer' || !offer.space) throw new TRPCError({ code: 'BAD_REQUEST', message: 'This note offers no space.' });
+      const bowman = graphBowmanPath(graph);
+      const idea = await readIdea(bowman, offer.ideaId);
+      const { host, repoId, name } = offer.space;
+
+      const meta = await readProjectMeta(bowman);
+      const known = meta.linkedRepos?.find(link => link.repoId === repoId);
+      const link: LinkedRepo = { ...known, repoId, name, host };
+      meta.linkedRepos = [...(meta.linkedRepos ?? []).filter(other => other.repoId !== repoId), link];
+      await writeProjectMeta(bowman, meta);
+
+      const edge = {
+        repoId,
+        relativePosition: idea.supportingRepos?.find(other => other.repoId === repoId)?.relativePosition ?? getRandomRelativePosition(),
+        weight: input.weight ?? 1,
+        ...(offer.text ? { hypothesis: offer.text } : {})
+      };
+      const accepted = { ...idea, supportingRepos: [...(idea.supportingRepos ?? []).filter(other => other.repoId !== repoId), edge] };
+      await writeIdea(bowman, accepted);
+      updateIdeaInIndex(bowman, accepted);
+      await run(() => removeNote(graph, offer.id, () => true));
+      return { ideaId: idea.id };
     }),
 
   // New notes on the graphs the viewer owns or writes, newest first: what the
