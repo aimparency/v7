@@ -90,6 +90,15 @@
       "weight": 1,
       "hypothesis": "When a person can connect an agent to chosen graphs in one approval step, agents work on hosted graphs without receiving more rights than the task needs.",
       "reflection": "2026-11-13: one approval step exists in both forms, and in the tests a token limited to chosen graphs writes only those and has none of the account's server-wide rights. Not yet tried with a real agent on a hosted graph."
+    },
+    {
+      "ideaId": "1f6f2c46-2913-40e5-880f-77e02a59854e",
+      "relativePosition": [
+        -0.8,
+        -3.66
+      ],
+      "weight": 1,
+      "hypothesis": "With one key that signs in everywhere, a person takes part in spaces on any server without registering on each, so spaces of many servers work as one."
     }
   ],
   "supportedIdeas": [
