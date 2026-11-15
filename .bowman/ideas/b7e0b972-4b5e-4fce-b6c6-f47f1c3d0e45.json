@@ -12,9 +12,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Planned 2026-11-12 at Felix's request; nothing built.",
-    "date": 1794511916523
+    "state": "partially",
+    "comment": "Built in e1fc9b7e. Without write access, dragging out of an idea into empty space opens 'Propose a space', which offers a new space on this server, one of your own spaces, or a space on another server by its /spaces/ address, plus a pitch. Offers are guest notes of kind 'offer' (guest/<slug>/notes.json). The owner sees them in the inbox and in the idea's notes: Accept runs notes.acceptOffer (linkedRepos by host plus supportingRepos, with the pitch as hypothesis); X declines. Covered by a backend test in guest/notes.test.ts. Open: offering while logged in on another server only (needs 1f6f2c46); a new space starts empty, so the dragged idea is not copied in; the weight is fixed at 1 on accept; not yet tried in a browser.",
+    "date": 1794782889372
   },
   "intrinsicValue": 0,
   "cost": 6,
