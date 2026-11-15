@@ -12,8 +12,8 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "0101a3c3: data model 7, meta.linkedRepos entries carry host (<origin>/g/<slug>); links from before are kept unchanged (frozen fixture data-model-v6, migration test). linkedRepo.linkHost stores a link by address; the browser or MCP client asks the hosting server itself (fetchGraphAtHost, shared/graph-host.test.ts), this server never fetches foreign graphs. Settings dialog and MCP register_linked_repo link by address, also on a server with accounts; clicking a linked graph's node opens its host. Local-checkout links keep working. Evidence: backend linked-repos tests (43 with auth), verify:migration on v7 (898 ideas, graph unchanged), pnpm check 25/25. Not tried live between two running servers.",
-    "date": 1794646838727
+    "comment": "Built in 0101a3c3: data model 7, meta.linkedRepos entries carry host (<origin>/spaces/<slug> since e0baae2a, was /g/<slug>); older links stay as they are, frozen data-model-v6 fixture. linkedRepo.linkHost stores a space by that address after the caller asks the hosting server for its identity (fetchGraphAtHost); this server never fetches foreign spaces. The settings dialog and the MCP register_linked_repo tool link by address, also with accounts. Local checkouts keep working. Evidence: backend linked-repos.test.ts (linkHost), shared graph-host.test.ts.",
+    "date": 1794781757390
   },
   "intrinsicValue": 0,
   "cost": 3,

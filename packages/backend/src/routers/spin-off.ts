@@ -61,7 +61,7 @@ export const spinOffRouter = t.router({
       const source = normalizeProjectPath(input.graph);
       const target = resolveBowmanPath(input.targetPath);
       if (path.resolve(source) === path.resolve(target)) {
-        throw new Error('The spin-off target must be a different .bowman graph from the source.');
+        throw new Error('The spin-off target must be a different .bowman space from the source.');
       }
       const integrateIntoExisting = await bowmanExists(target);
 

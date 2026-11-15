@@ -147,8 +147,8 @@ function startOnePortServer() {
     const route = agents ? agentRoute(url, agentPorts) : null;
     if (route) return await isAdminRequest(req) ? proxyAgentRequest(req, res, route) : refuse(res, 'Agents are for server admins.');
     if (agents && url === '/auth/agent-cookie') return issueAgentCookie(req, res);
-    // <host>/g/<slug>/mcp/...: the MCP server for that one graph.
-    const graphMcp = /^\/g\/([a-z0-9-]+)(\/mcp\/[^?]*)(\?.*)?$/.exec(url);
+    // <host>/spaces/<slug>/mcp/...: the MCP server for that one graph.
+    const graphMcp = /^\/spaces\/([a-z0-9-]+)(\/mcp\/[^?]*)(\?.*)?$/.exec(url);
     if (graphMcp) {
       req.url = `${graphMcp[2]}${graphMcp[3] ? `${graphMcp[3]}&` : '?'}graph=${graphMcp[1]}`;
       return proxy(req, res, mcpPort);

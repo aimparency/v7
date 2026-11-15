@@ -691,9 +691,9 @@ function toggleSpinOffPreview() {
       <button
         class="control-btn"
         :class="{ active: layoutPreview }"
-        :disabled="!!layoutPreview || layoutSolving"
-        @click="startLayoutPreview"
-        title="Shorter connections, room between ideas, similar branches nearby; tune and preview live, saves on Apply"
+        :disabled="layoutSolving && !layoutPreview"
+        @click="layoutPreview ? cancelLayoutPreview() : startLayoutPreview()"
+        :title="layoutPreview ? 'Cancel the layout preview' : 'Shorter connections, room between ideas, similar branches nearby; tune and preview live, saves on Apply'"
       >
         Layout
       </button>
@@ -771,7 +771,7 @@ function toggleSpinOffPreview() {
             class="spinoff-split-apply"
             :disabled="graphUIStore.spinOffPreviewRootIds.length === 0"
             @click="modalStore.openSpinOffApplyModal()"
-            title="Apply the spin-off: write the selected branch into a new graph"
+            title="Apply the spin-off: write the selected branch into a new space"
         ><GitBranch /> Apply</button>
         <button
             class="spinoff-split-cancel"

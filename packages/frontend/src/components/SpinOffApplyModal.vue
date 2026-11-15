@@ -181,7 +181,7 @@ watch(() => modalStore.showSpinOffApplyModal, async (show) => {
 
     <label class="checkbox-row">
       <input type="checkbox" v-model="removeFromSource" />
-      <span>Remove spun-off ideas from source graph (keeps shared ideas)</span>
+      <span>Remove spun-off ideas from the source space (keeps shared ideas)</span>
     </label>
 
     <label class="checkbox-row">

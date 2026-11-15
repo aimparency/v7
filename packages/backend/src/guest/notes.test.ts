@@ -71,7 +71,7 @@ test('a note is removed by its author or by those who write the graph', async ()
   assert.deepEqual(await flags(cleo), [false, false]);
   assert.deepEqual(await flags(ana), [true, true]);
 
-  await assert.rejects(cleo.notes.remove({ graph: projectPath, id: note.id }), /Only its author or the people who write this graph/);
+  await assert.rejects(cleo.notes.remove({ graph: projectPath, id: note.id }), /Only its author or the people who write this space/);
   await ben.notes.remove({ graph: projectPath, id: note.id });
   await ana.notes.remove({ graph: projectPath, id: other.id });
   assert.deepEqual(await texts(ana), []);

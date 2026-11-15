@@ -77,7 +77,7 @@ const approve = async () => {
     if (!result.rootIdeaId) throw new Error('Persistence completed without returning a root idea ID')
     emit('persisted', { rootIdeaId: result.rootIdeaId, idMap: result.idMap })
   } catch (cause) {
-    error.value = cause instanceof Error ? cause.message : 'Could not add the proposal to the graph'
+    error.value = cause instanceof Error ? cause.message : 'Could not add the proposal to the space'
   } finally {
     persisting.value = false
   }
@@ -98,7 +98,7 @@ const approve = async () => {
         Edit the proposed decomposition before reviewing it.
       </p>
       <p v-else class="nothing-added">
-        Nothing has been added to the graph yet.
+        Nothing has been added to the space yet.
       </p>
       <p class="summary">
         {{ ideaCount }} idea{{ ideaCount === 1 ? '' : 's' }} and

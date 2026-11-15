@@ -87,8 +87,8 @@ can only read. "MCP" in the UI's account corner makes a link with `?token=…`
 that acts as that account, on all its graphs or only on chosen ones; a client
 that sends headers may pass the token as `Authorization: Bearer <token>`
 instead. There `graph` is the slug of a graph (the last part of
-`https://<host>/g/<slug>`), never a path. A graph's own address,
-`https://<host>/g/<slug>/mcp/sse`, serves a session for that one graph: its
+`https://<host>/spaces/<slug>`), never a path. A graph's own address,
+`https://<host>/spaces/<slug>/mcp/sse`, serves a session for that one graph: its
 tools need no `graph`.
 
 ```bash

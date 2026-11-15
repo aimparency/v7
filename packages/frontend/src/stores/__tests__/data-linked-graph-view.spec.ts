@@ -7,7 +7,7 @@ vi.mock('../../trpc', () => ({ trpc: {} }))
 vi.mock('../../utils/perf-log', () => ({ perfLog: vi.fn() }))
 
 const REPO_ID = '11111111-1111-4111-8111-111111111111'
-const HOST = 'https://hub.example.org/g/commons-hub'
+const HOST = 'https://hub.example.org/spaces/commons-hub'
 
 const mkIdea = (partial: Partial<Idea> & { id: string }): Idea => ({
   text: partial.id, archived: false, tags: [], supportingConnections: [], supportedIdeas: [], committedIn: [],

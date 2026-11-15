@@ -14,7 +14,7 @@ import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 //   pnpm accounts creates-graphs <name> on|off
 //   pnpm accounts password <name>
 //   pnpm accounts remove <name>
-//   pnpm accounts invite [--once] [--days <n>] [--creates-graphs]   (prints the link's path)
+//   pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-graphs]   (prints the link's path)
 //   pnpm accounts invitations
 //   pnpm accounts uninvite <id>
 //   pnpm accounts agent-token   (prints a fresh token of the wrapped agents' account)
@@ -81,6 +81,7 @@ async function main() {
       if (days !== undefined && !(days > 0)) throw new accounts.AccountError('--days needs a number of days.');
       const code = await accounts.createInvitation({
         kind: once ? 'once' : 'permanent',
+        serverAdmin: admin,
         canCreateGraphs: createsGraphs,
         expiresAt: days ? new Date(Date.now() + days * 24 * 60 * 60_000).toISOString() : undefined,
       });
@@ -90,7 +91,7 @@ async function main() {
     case 'invitations':
       for (const invitation of accounts.listInvitations()) {
         const state = invitation.redeemedBy ? `used by ${invitation.redeemedBy}` : invitation.expiresAt ? `until ${invitation.expiresAt}` : 'no end';
-        console.log(`${invitation.id}\t${invitation.kind}\t${state}${invitation.canCreateGraphs ? '\tcreates graphs' : ''}`);
+        console.log(`${invitation.id}\t${invitation.kind}\t${state}${invitation.serverAdmin ? '\tserver admin' : ''}${invitation.canCreateGraphs ? '\tcreates graphs' : ''}`);
       }
       return;
     case 'uninvite':
@@ -106,7 +107,7 @@ async function main() {
       console.log(`Removed ${name}.`);
       return;
     default:
-      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-graphs] | admin <name> on|off | creates-graphs <name> on|off | password <name> | remove <name> | invite [--once] [--days <n>] [--creates-graphs] | invitations | uninvite <id>');
+      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-graphs] | admin <name> on|off | creates-graphs <name> on|off | password <name> | remove <name> | invite [--once] [--days <n>] [--admin] [--creates-graphs] | invitations | uninvite <id>');
   }
 }
 

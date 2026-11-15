@@ -346,7 +346,7 @@ export function useGraphInteraction(
     // idea (supportingRepos), placed where the graph's node is now.
     const contributeGraph = async (benefiting: GraphNode, repoId: string) => {
         if (dataStore.ideas[benefiting.id]?.supportingRepos?.some(edge => edge.repoId === repoId)) {
-            toastStore.info('That graph already supports this idea.')
+            toastStore.info('That space already supports this idea.')
             return
         }
         const graphNode = nodeMap.get(repoId)
@@ -358,7 +358,7 @@ export function useGraphInteraction(
             await trpc.idea.linkRepo.mutate({ graph: projectStore.projectPath, ideaId: benefiting.id, repoId, relativePosition })
             await dataStore.loadIdeas(projectStore.projectPath, [benefiting.id])
         } catch (e) {
-            toastStore.error('Failed to link the graph', e)
+            toastStore.error('Failed to link the space', e)
         }
     }
 

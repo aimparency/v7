@@ -42,6 +42,7 @@ import {
   type PersistedListViewState
 } from './ui-persistence'
 import { hasQueryFlag } from '../../utils/perf-log'
+import { mergePathsByEnd } from '../../utils/path-merge'
 
 // A new idea from the idea modal; unset fields take the defaults.
 export type NewIdea = {
@@ -1023,6 +1024,26 @@ export const useUIStore = defineStore('ui', {
       if (firstPath) {
         await this.executeNavigation(firstPath)
       }
+    },
+
+    // Follows the only way to an idea, or lets the person choose between several.
+    // Decided before anything is shown, so a single way never flashes the chooser.
+    // Paths through the same parent count as one (as the chooser merges them).
+    async navigateOrChoose(ideaId: string) {
+      if (useProjectStore().currentView === 'graph') return useUIModalStore().openPathsModal(ideaId)
+      const ways = mergePathsByEnd(await this.prepareNavigation(ideaId), 2)
+      if (ways.length === 1) await this.executeNavigation(ways[0]!.path)
+      else if (ways.length > 1) useUIModalStore().openPathsModal(ideaId)
+    },
+
+    // The same for the ideas this one supports (its parents).
+    async navigateToParentOrChoose(ideaId: string) {
+      const parents = useDataStore().ideas[ideaId]?.supportedIdeas ?? []
+      if (parents.length > 0) {
+        const ways = mergePathsByEnd((await Promise.all(parents.map(parent => this.prepareNavigation(parent)))).flat(), 1)
+        if (ways.length === 1) return this.executeNavigation(ways[0]!.path)
+      }
+      useUIModalStore().openParentPathsModal(ideaId)
     },
 
     // Global keyboard handler - single source of truth for all navigation

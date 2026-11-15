@@ -442,7 +442,7 @@ export async function handleIdeaNavigationKeysAction(uiStore: any, event: Keyboa
     event.preventDefault()
     if (currentIdea) {
       // Show parent paths
-      modalStore.openParentPathsModal(currentIdea.id)
+      await uiStore.navigateToParentOrChoose(currentIdea.id)
     }
     return
   }

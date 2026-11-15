@@ -97,9 +97,20 @@ function readJson(file, fallback) {
 }
 const serverSettings = () => readJson(serverSettingsFile(), {});
 
-async function saveServerSettings(values) {
+// Merged into the file, or with `replace` written as given.
+async function saveServerSettings(values, { replace = false } = {}) {
   await fs.mkdir(serverDir(), { recursive: true, mode: 0o700 });
-  await fs.writeFile(serverSettingsFile(), JSON.stringify({ ...serverSettings(), ...values }, null, 2) + '\n');
+  await fs.writeFile(serverSettingsFile(), JSON.stringify(replace ? values : { ...serverSettings(), ...values }, null, 2) + '\n');
+}
+
+// The address people open the server at; MCP clients log in by themselves and
+// wallets sign in only where it is known. Also set later in the UI (Server settings).
+async function askPublicUrl() {
+  for (;;) {
+    const answer = (await ask('The address people open (e.g. https://graphs.example.org; empty: none, then MCP clients need a link and wallets cannot log in):', serverSettings().publicUrl ?? '')).trim().replace(/\/+$/, '');
+    if (!answer || /^https?:\/\/[^/\s]+/.test(answer)) return answer;
+    console.log('An address starts with https:// (or http://) and a host name.');
+  }
 }
 
 // The port people open: --port, the server's own setting, then .env.
@@ -388,6 +399,7 @@ async function setup() {
   }
   const port = parsePort(await ask('Port:', String(onePortAddress().port)), 4000);
   const host = await ask('Listen on (127.0.0.1 behind nginx, 0.0.0.0 for everyone, or a Tailscale IP):', onePortAddress().host);
+  const publicUrl = await askPublicUrl();
   const signUp = serverSettings().signUp ?? {};
   const browserKey = await askYesNo('Give every visitor an account without asking, the moment they first need one? (held by a key in their browser)', signUp.browserKey === true);
   const open = await askYesNo('Let anyone sign up with a name and a password?', signUp.open === true);
@@ -395,7 +407,8 @@ async function setup() {
     'Let server admins run wrapped agents? That is a shell on this server for every server admin: commands as this user, /etc and the secrets in .env included.',
     serverSettings().agents === true,
   );
-  await saveServerSettings({ login: 'accounts', port, host, signUp: { ...signUp, browserKey, open }, agents });
+  const { publicUrl: _previous, ...kept } = serverSettings();
+  await saveServerSettings({ ...kept, login: 'accounts', port, host, ...(publicUrl ? { publicUrl } : {}), signUp: { ...signUp, browserKey, open }, agents }, { replace: true });
   if (!hasAdmin()) {
     console.log('[local-runtime] The first account, a server admin, who manages the others in the UI:');
     const name = await ask('Name:', process.env.USER ?? 'admin');

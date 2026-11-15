@@ -13,7 +13,8 @@
         3
       ],
       "weight": 1,
-      "hypothesis": "A public read-only instance is only acceptable if an anonymous visitor can read nothing beyond the graph and cannot exhaust the server; refuted if a re-audit after these fixes still finds a path to code, server files or unbounded work."
+      "hypothesis": "A public read-only instance is only acceptable if an anonymous visitor can read nothing beyond the graph and cannot exhaust the server; refuted if a re-audit after these fixes still finds a path to code, server files or unbounded work.",
+      "reflection": "Not tested as stated: no re-audit was run after the fixes, and read-only hosting itself was replaced by the many-space server, where anonymous visitors read through the same roles (neededRole). A fresh audit of the running public server is the open check, tracked on 8a303626 (nothing tried against a running public server yet)."
     }
   ],
   "supportedIdeas": [

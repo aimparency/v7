@@ -1,5 +1,5 @@
 // The address of a graph on the Aimparency server that hosts it:
-// <origin>/g/<slug>, the same URL a person opens in the browser. A link to
+// <origin>/spaces/<slug>, the same URL a person opens in the browser. A link to
 // another graph stores it, so following the link needs no checkout and no
 // path on this machine. Whoever follows a link (the browser, an MCP client)
 // talks to that server itself; the server of the linking graph never fetches
@@ -10,7 +10,7 @@ import { IdeaSchema, type Idea } from './types.js';
 
 export type GraphHost = { origin: string; slug: string };
 
-/** Reads `https://hub.example.org/g/commons-hub` (trailing slash, query and hash ignored); null when it is no graph address. */
+/** Reads `https://hub.example.org/spaces/commons-hub` (trailing slash, query and hash ignored); null when it is no graph address. */
 export function parseGraphHost(address: string): GraphHost | null {
   let url: URL;
   try {
@@ -19,13 +19,13 @@ export function parseGraphHost(address: string): GraphHost | null {
     return null;
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
-  const match = /^\/g\/([^/]+)\/?$/.exec(url.pathname);
+  const match = /^\/spaces\/([^/]+)\/?$/.exec(url.pathname);
   if (!match || !isGraphSlug(match[1]!)) return null;
   return { origin: url.origin, slug: match[1]! };
 }
 
 export function graphHostUrl(host: GraphHost): string {
-  return `${host.origin}/g/${host.slug}`;
+  return `${host.origin}/spaces/${host.slug}`;
 }
 
 /** What a server says about one of its graphs: enough to store a link to it, and its color. */
@@ -34,7 +34,7 @@ export type GraphAtHost = { host: string; repoId: string; name: string; color?: 
 // One read query of the hosting server's API, as any visitor's page makes it.
 async function queryAtHost(address: string, procedure: string, fetchImpl: typeof fetch): Promise<{ host: GraphHost; data: unknown }> {
   const host = parseGraphHost(address);
-  if (!host) throw new Error(`"${address}" is not the address of a graph; it looks like https://<server>/g/<graph>.`);
+  if (!host) throw new Error(`"${address}" is not the address of a space; it looks like https://<server>/spaces/<space>.`);
   const input = encodeURIComponent(JSON.stringify({ graph: host.slug }));
   let response: Response;
   try {
@@ -42,7 +42,7 @@ async function queryAtHost(address: string, procedure: string, fetchImpl: typeof
   } catch {
     throw new Error(`${host.origin} cannot be reached.`);
   }
-  if (!response.ok) throw new Error(`${host.origin} has no graph "${host.slug}" to show (HTTP ${response.status}).`);
+  if (!response.ok) throw new Error(`${host.origin} has no space "${host.slug}" to show (HTTP ${response.status}).`);
   return { host, data: (await response.json() as { result?: { data?: unknown } }).result?.data };
 }
 
@@ -50,7 +50,7 @@ async function queryAtHost(address: string, procedure: string, fetchImpl: typeof
 export async function fetchGraphAtHost(address: string, fetchImpl: typeof fetch = fetch): Promise<GraphAtHost> {
   const { host, data } = await queryAtHost(address, 'project.getMeta', fetchImpl);
   const meta = data as { repoId?: unknown; name?: unknown; color?: unknown } | undefined;
-  if (typeof meta?.repoId !== 'string') throw new Error(`${host.origin} did not name graph "${host.slug}".`);
+  if (typeof meta?.repoId !== 'string') throw new Error(`${host.origin} did not name space "${host.slug}".`);
   return {
     host: graphHostUrl(host),
     repoId: meta.repoId,
@@ -63,7 +63,7 @@ export async function fetchGraphAtHost(address: string, fetchImpl: typeof fetch 
 export async function fetchIdeasAtHost(address: string, fetchImpl: typeof fetch = fetch): Promise<Idea[]> {
   const { host, data } = await queryAtHost(address, 'project.loadIdeas', fetchImpl);
   const ideas = (data as { ideas?: unknown } | undefined)?.ideas;
-  if (!Array.isArray(ideas)) throw new Error(`${host.origin} sent no ideas for graph "${host.slug}".`);
+  if (!Array.isArray(ideas)) throw new Error(`${host.origin} sent no ideas for space "${host.slug}".`);
   return ideas.flatMap((idea) => {
     const parsed = IdeaSchema.safeParse(idea);
     return parsed.success ? [parsed.data] : [];

@@ -87,14 +87,14 @@ export const linkedRepoRouter = t.router({
   linkHost: delayedProcedure
     .input(z.object({
       graph: graphAddress,
-      host: z.string().refine((address) => parseGraphHost(address) !== null, 'Not the address of a graph: https://<server>/g/<graph>'),
+      host: z.string().refine((address) => parseGraphHost(address) !== null, 'Not the address of a graph: https://<server>/spaces/<space>'),
       repoId: z.string().uuid(),
       name: z.string().min(1),
     }))
     .output(LinkedRepoSchema)
     .mutation(async ({ input }) => {
       const meta = await readProjectMeta(input.graph);
-      if (input.repoId === meta.repoId) throw new Error('Cannot link a graph to itself.');
+      if (input.repoId === meta.repoId) throw new Error('Cannot link a space to itself.');
       const known = meta.linkedRepos?.find((l) => l.repoId === input.repoId);
       const link: LinkedRepo = { ...known, repoId: input.repoId, name: input.name, host: graphHostUrl(parseGraphHost(input.host)!) };
       meta.linkedRepos = [...(meta.linkedRepos ?? []).filter((l) => l.repoId !== input.repoId), link];

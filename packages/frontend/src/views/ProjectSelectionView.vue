@@ -11,6 +11,12 @@ import { useToastStore } from '../stores/toast'
 import { useViewerStore } from '../stores/viewer'
 import { hasAccounts } from '../utils/runtime-config'
 
+// The start page: one box and one list, alike on a server with accounts and on
+// this machine alone. The box filters the list and opens or adds what is typed;
+// the list holds the recent spaces, the server's spaces and, without accounts,
+// the .bowman folders nearby. Recent: what this browser opened before, first. Keys: Tab or ↓ into the list, j/k (arrows, Tab)
+// to move, Enter to open, e to copy an entry into the box, d d to forget a recent one.
+
 type DiscoveredProject = {
   path: string
   bowmanPath: string
@@ -35,44 +41,44 @@ const emit = defineEmits<{
   (event: 'open-graph', slug: string): void
 }>()
 
-// The graphs of this server. With accounts they are all there is to open: the
-// directories of the machine are the operator's business.
+// With accounts the server's spaces are all there is to open: the directories
+// of the machine are the operator's business.
 const accounts = hasAccounts()
 const viewer = useViewerStore()
-const graphs = ref<Awaited<ReturnType<typeof trpc.graphs.list.query>>>([])
-const newGraphName = ref('')
-const loadGraphs = async () => {
-  graphs.value = await trpc.graphs.list.query()
+const toast = useToastStore()
+const spaces = ref<Awaited<ReturnType<typeof trpc.graphs.list.query>>>([])
+const loadSpaces = async () => {
+  spaces.value = await trpc.graphs.list.query()
 }
-const createGraph = async () => {
-  // Where the server gives accounts automatically, the visitor gets theirs now.
-  if (!await viewer.ensureAccount()) return
-  try {
-    const { slug } = await trpc.graphs.create.mutate({ name: newGraphName.value })
-    newGraphName.value = ''
-    emit('open-graph', slug)
-  } catch (error) {
-    useToastStore().error('Could not create the graph', error)
-  }
-}
-// A graph that lives in a repository elsewhere: the server clones its .bowman.
-const remoteUrl = ref('')
-const addingRemote = ref(false)
-const addRemote = async () => {
-  if (!await viewer.ensureAccount()) return
-  addingRemote.value = true
-  try {
-    const { slug } = await trpc.graphs.addRemote.mutate({ url: remoteUrl.value })
-    remoteUrl.value = ''
-    emit('open-graph', slug)
-  } catch (error) {
-    useToastStore().error('Could not add the repository', error)
-  } finally {
-    addingRemote.value = false
-  }
-}
-onMounted(() => loadGraphs().catch(error => useToastStore().error('Could not list the graphs of this server', error)))
+onMounted(() => loadSpaces().catch(error => toast.error('Could not list the spaces of this server', error)))
 
+const typed = computed(() => props.modelValue.trim())
+const busy = ref(false)
+const act = async (failure: string, action: () => Promise<{ slug: string }>, needsAccount = true) => {
+  // Where the server gives accounts automatically, the visitor gets theirs now.
+  if (needsAccount && !await viewer.ensureAccount()) return
+  busy.value = true
+  try {
+    const { slug } = await action()
+    emit('update:modelValue', '')
+    emit('open-graph', slug)
+  } catch (error) {
+    toast.error(failure, error)
+  } finally {
+    busy.value = false
+  }
+}
+const createSpace = () => act('Could not create the space', () => trpc.graphs.create.mutate({ name: typed.value }))
+// A space that lives in a repository elsewhere: the server clones its .bowman.
+const addRemote = () => act('Could not add the repository', () => trpc.graphs.addRemote.mutate({ url: typed.value }))
+// A repository already on this machine, by its path: server admins only.
+const addCheckout = () => act('Could not add the repository', () => trpc.graphs.addCheckout.mutate({ path: typed.value }), false)
+
+const mayCreate = computed(() => viewer.canCreateGraphs || viewer.getsAccountAutomatically)
+const mayAddRemote = computed(() => !!viewer.name || viewer.getsAccountAutomatically)
+
+// Without accounts: what the typed folder is (has a .bowman or not), and the
+// common start of the folders it may continue to (Tab completes).
 const inspectedPath = ref('')
 const bowmanExists = ref<boolean | null>(null)
 const completionValue = ref('')
@@ -86,7 +92,7 @@ watch(() => props.modelValue, (value) => {
   inspectedPath.value = ''
   bowmanExists.value = null
   completionValue.value = ''
-  if (!path || gitRepositoryLocation(path)) return
+  if (accounts || !path || gitRepositoryLocation(path)) return
   inspectionTimer = setTimeout(async () => {
     try {
       const result = await trpc.project.inspectPath.query({ graph: path })
@@ -111,47 +117,134 @@ watch(() => props.modelValue, (value) => {
 
 onUnmounted(() => clearTimeout(inspectionTimer))
 
-const selectButtonLabel = computed(() => {
-  if (gitRepositoryLocation(props.modelValue)) return 'Open read-only'
-  return props.modelValue.trim() && inspectedPath.value === props.modelValue.trim() && bowmanExists.value === false
-    ? 'New Project'
-    : 'Open Project'
-})
-const completionSuffix = computed(() => completionValue.value.slice(props.modelValue.trim().length))
-
-const acceptCompletion = (event: KeyboardEvent) => {
-  if (!completionValue.value) return
-  event.preventDefault()
-  emit('update:modelValue', completionValue.value)
-}
+const completionSuffix = computed(() => completionValue.value.slice(typed.value.length))
 
 const onInput = (event: Event) => {
-  const target = event.target as HTMLInputElement
-  emit('update:modelValue', target.value)
+  emit('update:modelValue', (event.target as HTMLInputElement).value)
 }
 
-const loadPathIntoInput = (path: string) => {
-  emit('update:modelValue', path)
+// One list of entries, in sections; the selection is an index into all of them.
+type Entry = {
+  key: string
+  title: string
+  /** Under the title, smaller (where a nearby folder keeps its .bowman). */
+  sub?: string
+  /** Right of the title: owner and address, or when it was opened. */
+  detail: string
+  /** What the box filters by and a perfect match is, lower case. */
+  searchable: string[]
+  thumbnail: string
+  color?: string | null
+  failed?: boolean
+  /** A recent entry: d d (or ×) forgets it. */
+  recent?: boolean
+  /** What e (or the pencil) copies into the box. */
+  edit: string
+  open: () => void
 }
+type Section = { id: string, title: string, empty?: string, entries: Entry[] }
 
-// The input filters both lists by path; one entry named exactly like the input is
-// the perfect match: highlighted, and Enter opens it.
-const query = computed(() => props.modelValue.trim().replace(/\/+$/, '').toLowerCase())
-const matchesQuery = (path: string) => !query.value || path.toLowerCase().includes(query.value)
-const recentResults = computed(() => props.projectHistory.filter(project => matchesQuery(project.path)))
-const discoveredResults = computed(() => {
-  const recent = new Set(props.projectHistory.map(project => project.path))
-  return props.discoveredProjects.filter(project => !recent.has(project.path) && matchesQuery(project.path))
+const query = computed(() => typed.value.replace(/\/+$/, '').toLowerCase())
+const matchesQuery = (entry: Entry) => !query.value || entry.searchable.some(text => text.includes(query.value))
+
+type Space = (typeof spaces.value)[number]
+const spaceEntry = (space: Space): Entry => ({
+  key: `space:${space.slug}`,
+  title: space.name,
+  detail: `${space.owner ?? 'server'} · /spaces/${space.slug}`,
+  searchable: [space.name.toLowerCase(), space.slug],
+  thumbnail: space.slug,
+  color: space.color,
+  edit: space.slug,
+  open: () => emit('open-graph', space.slug)
 })
-const results = computed(() => [
-  ...recentResults.value.map(project => ({ path: project.path, recent: true })),
-  ...discoveredResults.value.map(project => ({ path: project.path, recent: false }))
-])
+const pathSearchable = (path: string) => [path.toLowerCase(), path.toLowerCase().split('/').pop() ?? '']
+// A recent space of the server looks like its entry below, with when it was opened.
+// With accounts only the server's spaces count: a folder path opens nothing there.
+const recentEntries = computed<Entry[]>(() => props.projectHistory.flatMap(project => {
+  const opened = formatRelativeTime(project.lastOpened)
+  const space = spaces.value.find(candidate => candidate.slug === project.path)
+  if (space) return [{ ...spaceEntry(space), key: `recent:${project.path}`, detail: `${space.owner ?? 'server'} · ${opened}`, recent: true }]
+  if (accounts) return []
+  return [{
+    key: `recent:${project.path}`,
+    title: project.path,
+    detail: opened,
+    searchable: pathSearchable(project.path),
+    thumbnail: project.path,
+    failed: project.failedToLoad,
+    recent: true,
+    edit: project.path,
+    open: () => emit('open-project-from-history', project.path)
+  }]
+}))
+const recentPaths = computed(() => new Set(props.projectHistory.map(project => project.path)))
+const spaceEntries = computed<Entry[]>(() => spaces.value.filter(space => !recentPaths.value.has(space.slug)).map(spaceEntry))
+const nearbyEntries = computed<Entry[]>(() => {
+  return props.discoveredProjects.filter(project => !recentPaths.value.has(project.path)).map(project => ({
+    key: `nearby:${project.path}`,
+    title: project.path,
+    sub: project.bowmanPath,
+    detail: `from ${project.sourceRoot}`,
+    searchable: pathSearchable(project.path),
+    thumbnail: project.path,
+    edit: project.path,
+    open: () => emit('open-discovered-project', project.path)
+  }))
+})
+
+const sections = computed<Section[]>(() => {
+  const all: Section[] = []
+  const recent = recentEntries.value.filter(matchesQuery)
+  if (recent.length > 0) all.push({ id: 'recent', title: 'Recent spaces', entries: recent })
+  if (accounts || spaceEntries.value.length > 0) {
+    const others = spaceEntries.value.filter(matchesQuery)
+    // Every space of the server is among the recent ones: no empty section for the rest.
+    if (others.length > 0 || recentEntries.value.length === 0 || query.value) {
+      all.push({ id: 'spaces', title: accounts ? 'Spaces on this server' : 'Spaces of the local server', empty: query.value ? 'No other matching space.' : 'No spaces yet.', entries: others })
+    }
+  }
+  if (!accounts) {
+    all.push({ id: 'nearby', title: 'Nearby spaces (.bowman folders)', empty: query.value ? 'No other matching spaces.' : 'No nearby spaces found yet.', entries: nearbyEntries.value.filter(matchesQuery) })
+  }
+  return all
+})
+const entries = computed(() => sections.value.flatMap(section => section.entries))
+const indexOf = (entry: Entry) => entries.value.indexOf(entry)
+
+// One entry whose name (or folder) is exactly what was typed: highlighted, and Enter opens it.
 const perfectMatchIndex = computed(() => {
   if (!query.value) return -1
-  const matches = results.value.flatMap(({ path }, index) =>
-    path.toLowerCase() === query.value || path.toLowerCase().split('/').pop() === query.value ? [index] : [])
+  const matches = entries.value.flatMap((entry, index) => entry.searchable.includes(query.value) ? [index] : [])
   return matches.length === 1 ? matches[0]! : -1
+})
+
+// What the box's button does with what was typed.
+const primary = computed<{ label: string, run: () => unknown, disabled?: boolean } | null>(() => {
+  const text = typed.value
+  if (perfectMatchIndex.value >= 0) return { label: 'Open', run: () => entries.value[perfectMatchIndex.value]!.open() }
+  if (!accounts) {
+    const label = gitRepositoryLocation(text) ? 'Open read-only'
+      : text && inspectedPath.value === text && bowmanExists.value === false ? 'New space' : 'Open space'
+    return { label, run: () => emit('select-project') }
+  }
+  if (!text) return null
+  if (gitRepositoryLocation(text)) return mayAddRemote.value ? { label: busy.value ? 'Cloning…' : 'Add from Git', run: addRemote } : null
+  if (text.startsWith('/') && viewer.serverAdmin) return { label: 'Add from server', run: addCheckout }
+  return mayCreate.value ? { label: 'New space', run: createSpace } : null
+})
+const runPrimary = () => {
+  if (primary.value && !busy.value) void primary.value.run()
+}
+// Why the box adds nothing here.
+const addHint = computed(() => {
+  if (!accounts || mayCreate.value) return ''
+  return viewer.name ? 'Creating spaces here is for selected accounts.' : 'Log in to create a space.'
+})
+const placeholder = computed(() => {
+  if (!accounts) return 'Find a space, or a folder path or Git URL to open'
+  const adds = [mayCreate.value && 'name a new one', mayAddRemote.value && 'paste a Git URL', viewer.serverAdmin && 'a path on this server'].filter(Boolean)
+  return adds.length ? `Find a space, ${adds.join(', ')}` : 'Find a space'
 })
 
 const listRef = ref<HTMLElement>()
@@ -160,15 +253,9 @@ onMounted(() => inputRef.value?.focus())
 const selectedIndex = ref(-1)
 watch(perfectMatchIndex, (index) => { selectedIndex.value = index }, { immediate: true })
 
-const openResult = (index: number) => {
-  const result = results.value[index]
-  if (!result) return
-  if (result.recent) emit('open-project-from-history', result.path)
-  else emit('open-discovered-project', result.path)
-}
-
 const focusResult = (index: number) => {
-  selectedIndex.value = Math.max(0, Math.min(index, results.value.length - 1))
+  if (entries.value.length === 0) return
+  selectedIndex.value = Math.max(0, Math.min(index, entries.value.length - 1))
   nextTick(() => {
     listRef.value?.querySelectorAll<HTMLElement>('.history-open-button')[selectedIndex.value]?.focus()
   })
@@ -181,66 +268,73 @@ const focusInput = () => {
 
 const onInputTab = (event: KeyboardEvent) => {
   if (event.shiftKey) return
-  if (completionValue.value) return acceptCompletion(event)
-  if (results.value.length === 0) return
+  if (completionValue.value) {
+    event.preventDefault()
+    emit('update:modelValue', completionValue.value)
+    return
+  }
+  if (entries.value.length === 0) return
   event.preventDefault()
   focusResult(Math.max(selectedIndex.value, 0))
 }
 
-const onInputEnter = () => {
-  if (perfectMatchIndex.value >= 0) openResult(perfectMatchIndex.value)
-  else emit('select-project')
+const onInputDown = (event: KeyboardEvent) => {
+  if (entries.value.length === 0) return
+  event.preventDefault()
+  focusResult(Math.max(selectedIndex.value, 0))
 }
 
-// d marks the selected recent project for removal (red), a second d removes it.
+// d marks the selected recent space for forgetting (red), a second d forgets it.
 const pendingRemoval = ref('')
 watch(selectedIndex, () => { pendingRemoval.value = '' })
+
+const copyIntoBox = (entry: Entry) => {
+  emit('update:modelValue', entry.edit)
+  focusInput()
+}
 
 const onListKeydown = (event: KeyboardEvent) => {
   if (event.ctrlKey || event.metaKey || event.altKey) return
   const key = event.key
   const confirmingRemoval = pendingRemoval.value
   pendingRemoval.value = ''
+  const entry = entries.value[selectedIndex.value]
   if (key === 'd') {
-    const result = results.value[selectedIndex.value]
-    if (!result?.recent) return
-    if (confirmingRemoval !== result.path) pendingRemoval.value = result.path
+    if (!entry?.recent) return
+    if (confirmingRemoval !== entry.key) pendingRemoval.value = entry.key
     else {
-      emit('remove-from-history', result.path)
+      emit('remove-from-history', entry.key.slice('recent:'.length))
       focusResult(selectedIndex.value)
     }
   } else if (key === 'j' || key === 'ArrowDown' || (key === 'Tab' && !event.shiftKey)) focusResult(selectedIndex.value + 1)
-  else if ((key === 'Tab' && event.shiftKey && selectedIndex.value === 0) || key === 'Escape') {
+  else if ((key === 'Tab' && event.shiftKey && selectedIndex.value === 0) || key === 'Escape' || (key === 'ArrowUp' && selectedIndex.value === 0)) {
     event.stopPropagation()
     focusInput()
   } else if (key === 'k' || key === 'ArrowUp' || key === 'Tab') focusResult(selectedIndex.value - 1)
   else if (key === 'e') {
-    const result = results.value[selectedIndex.value]
-    if (result) loadPathIntoInput(result.path)
-    focusInput()
+    if (entry) copyIntoBox(entry)
+    else focusInput()
   } else return
   event.preventDefault()
 }
 
-// Screenshots of each project's graph, taken by the graph view (utils/db).
+// Screenshots of each space's graph, taken by the graph view (utils/db).
 const thumbnails = ref(new Map<string, string>())
 const revokeThumbnails = () => thumbnails.value.forEach(url => URL.revokeObjectURL(url))
-watch(() => [...props.projectHistory, ...props.discoveredProjects].map(project => project.path), async (paths) => {
-  const blobs = await loadProjectThumbnails(paths).catch(() => new Map<string, Blob>())
+watch(() => [...spaceEntries.value, ...recentEntries.value, ...nearbyEntries.value].map(entry => entry.thumbnail), async (keys) => {
+  const blobs = await loadProjectThumbnails(keys).catch(() => new Map<string, Blob>())
   revokeThumbnails()
-  thumbnails.value = new Map([...blobs].map(([path, blob]) => [path, URL.createObjectURL(blob)]))
+  thumbnails.value = new Map([...blobs].map(([key, blob]) => [key, URL.createObjectURL(blob)]))
 }, { immediate: true })
 onUnmounted(revokeThumbnails)
-
 </script>
 
 <template>
   <div class="project-selection">
     <h1>Aimparency</h1>
     <LoginControl v-if="accounts" />
-    <p v-if="!accounts">Select a project base folder to get started</p>
 
-    <div v-if="!accounts" class="project-input-container">
+    <div class="project-input-container">
       <div class="project-input-shell">
         <div v-if="completionSuffix" class="path-completion" aria-hidden="true">
           <span class="typed-path">{{ props.modelValue }}</span><span>{{ completionSuffix }}</span>
@@ -249,86 +343,24 @@ onUnmounted(revokeThumbnails)
           ref="inputRef"
           :value="props.modelValue"
           type="text"
-          placeholder="Project folder path, or a Git URL to view read-only"
+          :placeholder="placeholder"
           class="project-input"
           @input="onInput"
           @keydown.tab="onInputTab"
-          @keydown.enter="onInputEnter"
+          @keydown.down="onInputDown"
+          @keydown.enter.prevent="runPrimary"
         />
       </div>
-      <button @click="emit('select-project')" class="select-project">{{ selectButtonLabel }}</button>
+      <button class="select-project" :disabled="!primary || busy" @click="runPrimary">{{ primary?.label ?? 'Open' }}</button>
     </div>
+    <p v-if="addHint" class="empty-state">{{ addHint }}</p>
 
-    <div v-if="accounts || graphs.length > 0" class="project-history" :class="{ 'project-lists': accounts }">
-      <h3>Graphs on this server</h3>
-      <div class="history-list">
-        <div v-for="graph in graphs" :key="graph.slug" class="history-item">
-          <span class="thumbnail" :style="{ background: graph.color ?? undefined }"></span>
-          <button type="button" class="history-open-button" @click="emit('open-graph', graph.slug)">
-            <div class="history-item-content">
-              <div class="history-path">{{ graph.name }}</div>
-              <div class="history-time">{{ graph.owner ?? 'server' }} · /g/{{ graph.slug }}</div>
-            </div>
-          </button>
-        </div>
-      </div>
-      <p v-if="graphs.length === 0" class="empty-state">No graphs yet.</p>
-      <form v-if="viewer.canCreateGraphs || viewer.getsAccountAutomatically" class="project-input-container" @submit.prevent="createGraph">
-        <input v-model="newGraphName" class="project-input" placeholder="Name of a new graph" />
-        <button class="select-project" type="submit" :disabled="!newGraphName.trim()">New graph</button>
-      </form>
-      <form v-if="accounts && (viewer.name || viewer.getsAccountAutomatically)" class="project-input-container" @submit.prevent="addRemote">
-        <input v-model="remoteUrl" class="project-input" placeholder="Git URL of a repository with a .bowman (https or ssh)" />
-        <button class="select-project" type="submit" :disabled="!remoteUrl.trim() || addingRemote">{{ addingRemote ? 'Cloning…' : 'Add from Git' }}</button>
-      </form>
-      <p v-if="accounts && !(viewer.canCreateGraphs || viewer.getsAccountAutomatically)" class="empty-state">{{ viewer.name ? 'Creating graphs here is for selected accounts.' : 'Log in to create a graph.' }}</p>
-    </div>
-
-    <div v-if="!accounts" ref="listRef" class="project-lists" @keydown="onListKeydown">
-      <div v-if="recentResults.length > 0" class="project-history">
-        <h3>Recent Projects</h3>
-        <div class="history-list">
-          <div
-            v-for="(project, index) in recentResults"
-            :key="project.path"
-            class="history-item"
-            :class="{ failed: project.failedToLoad, selected: index === selectedIndex, removing: project.path === pendingRemoval }"
-          >
-            <img v-if="thumbnails.get(project.path)" class="thumbnail" :src="thumbnails.get(project.path)" alt="" />
-            <span v-else class="thumbnail"></span>
-            <button
-              type="button"
-              class="history-open-button"
-              @click="emit('open-project-from-history', project.path)"
-              @focus="selectedIndex = index"
-            >
-              <div class="history-item-content">
-                <div class="history-path">{{ project.path }}</div>
-                <div class="history-time">{{ formatRelativeTime(project.lastOpened) }}</div>
-              </div>
-            </button>
-            <button
-              type="button"
-              class="edit-button"
-              tabindex="-1"
-              title="Edit path before opening"
-              aria-label="Edit path before opening"
-              @click.stop="loadPathIntoInput(project.path)"
-            ><Pencil /></button>
-            <button
-              class="remove-button"
-              tabindex="-1"
-              @click.stop="emit('remove-from-history', project.path)"
-              title="Remove from history (d d)"
-            ><X /></button>
-          </div>
-        </div>
-      </div>
-
-      <div class="project-discovery">
+    <div ref="listRef" class="project-lists" @keydown="onListKeydown">
+      <section v-for="section in sections" :key="section.id" class="project-history">
         <div class="section-header">
-          <h3>Nearby .bowman Projects</h3>
+          <h3>{{ section.title }}</h3>
           <button
+            v-if="section.id === 'nearby'"
             class="refresh-button"
             :disabled="props.isRefreshingDiscoveredProjects"
             @click="emit('refresh-discovered-projects')"
@@ -336,46 +368,54 @@ onUnmounted(revokeThumbnails)
             {{ props.isRefreshingDiscoveredProjects ? 'Refreshing…' : 'Refresh' }}
           </button>
         </div>
-
-        <p class="discovery-hint" v-if="props.scannedRoots.length > 0">
+        <p v-if="section.id === 'nearby' && props.scannedRoots.length > 0" class="discovery-hint">
           Scanned {{ props.scannedRoots.join(', ') }}
         </p>
 
-        <div v-if="discoveredResults.length > 0" class="history-list">
+        <div v-if="section.entries.length > 0" class="history-list">
           <div
-            v-for="(project, index) in discoveredResults"
-            :key="project.path"
-            class="history-item discovered-item"
-            :class="{ selected: recentResults.length + index === selectedIndex }"
+            v-for="entry in section.entries"
+            :key="entry.key"
+            class="history-item"
+            :class="{ failed: entry.failed, selected: indexOf(entry) === selectedIndex, removing: entry.key === pendingRemoval, 'discovered-item': section.id === 'nearby' }"
           >
-            <img v-if="thumbnails.get(project.path)" class="thumbnail" :src="thumbnails.get(project.path)" alt="" />
-            <span v-else class="thumbnail"></span>
             <button
               type="button"
               class="history-open-button"
-              @click="emit('open-discovered-project', project.path)"
-              @focus="selectedIndex = recentResults.length + index"
+              @click="entry.open()"
+              @focus="selectedIndex = indexOf(entry)"
             >
-              <div class="history-item-content">
-                <div class="history-primary">
-                  <div class="history-path">{{ project.path }}</div>
-                  <div class="history-bowman">{{ project.bowmanPath }}</div>
-                </div>
-                <div class="history-time">from {{ project.sourceRoot }}</div>
-              </div>
+              <img v-if="thumbnails.get(entry.thumbnail)" class="thumbnail" :src="thumbnails.get(entry.thumbnail)" alt="" />
+              <span v-else class="thumbnail" :style="{ background: entry.color ?? undefined }"></span>
+              <span class="history-item-content">
+                <span class="history-primary">
+                  <span class="history-path">{{ entry.title }}</span>
+                  <span v-if="entry.sub" class="history-bowman">{{ entry.sub }}</span>
+                </span>
+                <span class="history-time">{{ entry.detail }}</span>
+              </span>
             </button>
             <button
               type="button"
               class="edit-button"
               tabindex="-1"
-              title="Edit path before opening"
-              aria-label="Edit path before opening"
-              @click.stop="loadPathIntoInput(project.path)"
+              title="Into the box, to change before opening (e)"
+              aria-label="Into the box, to change before opening"
+              @click.stop="copyIntoBox(entry)"
             ><Pencil /></button>
+            <button
+              v-if="entry.recent"
+              type="button"
+              class="remove-button"
+              tabindex="-1"
+              title="Forget (d d)"
+              aria-label="Forget"
+              @click.stop="emit('remove-from-history', entry.key.slice('recent:'.length))"
+            ><X /></button>
           </div>
         </div>
-        <p v-else class="empty-state">{{ query ? 'No other matching projects.' : 'No nearby projects found yet.' }}</p>
-      </div>
+        <p v-else class="empty-state">{{ section.empty }}</p>
+      </section>
     </div>
   </div>
 </template>
@@ -455,8 +495,14 @@ onUnmounted(revokeThumbnails)
   white-space: nowrap;
 }
 
-.select-project:hover {
+.select-project:hover:not(:disabled) {
   background: #005a99;
+}
+
+.select-project:disabled {
+  background: #444;
+  color: #888;
+  cursor: default;
 }
 
 .project-history {
@@ -583,7 +629,6 @@ onUnmounted(revokeThumbnails)
   & .thumbnail {
     flex: 0 0 8rem;
     height: 5rem;
-    margin-left: 0.5rem;
     object-fit: cover;
     border-radius: 0.1875rem;
     background: #1a1a1a;
@@ -604,7 +649,9 @@ onUnmounted(revokeThumbnails)
   min-width: 0;
   display: flex;
   align-items: center;
-  padding: 0.75rem 1rem;
+  gap: 1rem;
+  /* The whole row opens the space, screenshot included. */
+  padding: 0.5rem 1rem 0.5rem 0.5rem;
   background: transparent;
   border: none;
   color: inherit;
@@ -626,6 +673,28 @@ onUnmounted(revokeThumbnails)
   min-width: 0;
 }
 
+/* Narrow screens: name over address, a smaller screenshot. */
+@media (max-width: 600px) {
+  .project-selection { padding: 1rem; }
+
+  .history-item .thumbnail {
+    flex-basis: 4.5rem;
+    height: 3rem;
+  }
+
+  .history-item-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.15rem;
+  }
+
+  .history-time {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .history-path {
   color: #e0e0e0;
   overflow: hidden;
@@ -635,6 +704,8 @@ onUnmounted(revokeThumbnails)
 
 .history-primary {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .history-bowman {

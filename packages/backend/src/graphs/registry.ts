@@ -8,8 +8,9 @@
 //             an SSH key for it; then it is committed here and pushed back.
 //   checkout  a repository on this machine that the server admin added
 //
-// The slug is the graph's name in addresses (/g/<slug>, and `graph` in
-// the API). It is made once and stays when the graph is renamed.
+// The slug is the graph's name in addresses (/spaces/<slug>, and `graph` in
+// the API). It stays when the graph is renamed; its owner may change it, and
+// the former slugs keep answering, so links and agents' tokens keep working.
 
 import { execFile } from 'node:child_process';
 import fs from 'fs-extra';
@@ -39,6 +40,8 @@ export type Graph = {
   notes?: 'everyone' | 'selected' | 'nobody';
   /** With notes 'selected': the account ids that may. */
   noteWriters?: string[];
+  /** Slugs the graph had before: they still lead here, and no other graph takes them. */
+  formerSlugs?: string[];
   createdAt: string;
 };
 
@@ -51,8 +54,12 @@ export function listGraphs(): Graph[] {
 }
 
 export function findGraph(slug: string): Graph | null {
-  return listGraphs().find(graph => graph.slug === slug) ?? null;
+  const graphs = listGraphs();
+  return graphs.find(graph => graph.slug === slug) ?? graphs.find(graph => graph.formerSlugs?.includes(slug)) ?? null;
 }
+
+/** Every slug the graph answers to: its own and its former ones. */
+export const slugsOf = (graph: Graph) => [graph.slug, ...(graph.formerSlugs ?? [])];
 
 /** The graph at this directory, given as the repository or its .bowman. */
 export function findGraphByPath(directory: string): Graph | null {
@@ -77,7 +84,7 @@ async function change<T>(update: (graphs: Graph[]) => Promise<{ graphs: Graph[];
 function freeSlug(name: string, graphs: Graph[]): string {
   const base = name.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '')
     .slice(0, MAX_SLUG_LENGTH).replace(/-+$/, '') || 'graph';
-  const taken = new Set(graphs.map(graph => graph.slug));
+  const taken = new Set(graphs.flatMap(slugsOf));
   if (!taken.has(base)) return base;
   for (let number = 2; ; number++) {
     if (!taken.has(`${base}-${number}`)) return `${base}-${number}`;
@@ -87,7 +94,7 @@ function freeSlug(name: string, graphs: Graph[]): string {
 /** A new, empty graph in a repository of its own on this server. */
 export async function createGraph(name: string, owner: string | null): Promise<Graph> {
   const trimmed = name.trim();
-  if (!trimmed) throw new GraphError('A graph needs a name.');
+  if (!trimmed) throw new GraphError('A space needs a name.');
   if (trimmed.length > 100) throw new GraphError('A name has at most 100 characters.');
   return change(async (graphs) => {
     const slug = freeSlug(trimmed, graphs);
@@ -119,7 +126,7 @@ export async function addRemoteGraph(
   const location = gitRepositoryLocation(url, { allowFileUrls });
   if (!location) throw new GraphError(`Not a Git URL Aimparency can open: ${url}`);
   return change(async (graphs) => {
-    if (graphs.some(graph => graph.remote?.url === url.trim())) throw new GraphError('This repository is a graph of this server already.');
+    if (graphs.some(graph => graph.remote?.url === url.trim())) throw new GraphError('This repository is a space of this server already.');
     const slug = freeSlug(location[location.length - 1]!, graphs);
     const directory = path.join(serverDir(), 'remotes', slug);
     await clone(directory);
@@ -134,7 +141,7 @@ export async function addRemoteGraph(
 export async function setRemoteKey(slug: string, key: { account: string; id: string } | null): Promise<Graph> {
   return change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);
-    if (!graph?.remote) throw new GraphError(`"${slug}" is no graph from a remote URL.`);
+    if (!graph?.remote) throw new GraphError(`"${slug}" is no space from a remote URL.`);
     const next: Graph = { ...graph, remote: { url: graph.remote.url, ...(key ? { key } : {}) } };
     return { graphs: graphs.map(candidate => candidate.slug === slug ? next : candidate), result: next };
   });
@@ -148,8 +155,8 @@ export async function addCheckout(directory: string, owner: string | null, slug?
     throw new GraphError('A slug has lower-case letters, digits and hyphens.');
   }
   return change(async (graphs) => {
-    if (graphs.some(graph => graph.path === root)) throw new GraphError(`${root} is a graph of this server already.`);
-    if (slug && graphs.some(graph => graph.slug === slug)) throw new GraphError(`"${slug}" exists already.`);
+    if (graphs.some(graph => graph.path === root)) throw new GraphError(`${root} is a space of this server already.`);
+    if (slug && graphs.some(graph => slugsOf(graph).includes(slug))) throw new GraphError(`"${slug}" exists already.`);
     const graph: Graph = {
       slug: slug ?? freeSlug(path.basename(root), graphs),
       kind: 'checkout', path: root, owner, writers: [], createdAt: new Date().toISOString()
@@ -158,13 +165,34 @@ export async function addCheckout(directory: string, owner: string | null, slug?
   });
 }
 
+/**
+ * Gives the graph a new slug. The old one is kept as a former slug, so it still
+ * leads here; a former slug of the same graph may be taken back.
+ */
+export async function setGraphSlug(slug: string, next: string): Promise<Graph> {
+  if (!isGraphSlug(next) || next.length > MAX_SLUG_LENGTH) {
+    throw new GraphError(`An address has lower-case letters, digits and hyphens, at most ${MAX_SLUG_LENGTH}.`);
+  }
+  return change(async (graphs) => {
+    const graph = graphs.find(candidate => candidate.slug === slug);
+    if (!graph) throw new GraphError(`No space "${slug}" on this server.`);
+    if (next === graph.slug) return { graphs, result: graph };
+    if (graphs.some(other => other !== graph && slugsOf(other).includes(next))) throw new GraphError(`"${next}" is taken.`);
+    const guest = path.join(serverDir(), 'guest');
+    if (await fs.pathExists(path.join(guest, slug))) await fs.move(path.join(guest, slug), path.join(guest, next), { overwrite: true });
+    const formerSlugs = [...new Set([...(graph.formerSlugs ?? []), slug])].filter(former => former !== next);
+    const renamed: Graph = { ...graph, slug: next, formerSlugs };
+    return { graphs: graphs.map(candidate => candidate === graph ? renamed : candidate), result: renamed };
+  });
+}
+
 /** Takes the graph off the list. A repository created or cloned here is deleted; a checkout stays where it is. */
 export async function removeGraph(slug: string): Promise<void> {
   await change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);
-    if (!graph) throw new GraphError(`No graph "${slug}" on this server.`);
+    if (!graph) throw new GraphError(`No space "${slug}" on this server.`);
     if (graph.kind !== 'checkout') await fs.remove(graph.path);
-    await fs.remove(path.join(serverDir(), 'guest', slug));
+    await fs.remove(path.join(serverDir(), 'guest', graph.slug));
     return { graphs: graphs.filter(candidate => candidate.slug !== slug), result: undefined };
   });
 }
@@ -175,7 +203,7 @@ export async function setGraphAccess(
 ): Promise<Graph> {
   return change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);
-    if (!graph) throw new GraphError(`No graph "${slug}" on this server.`);
+    if (!graph) throw new GraphError(`No space "${slug}" on this server.`);
     const next = { ...graph, ...access };
     return { graphs: graphs.map(candidate => candidate.slug === slug ? next : candidate), result: next };
   });

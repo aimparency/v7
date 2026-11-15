@@ -6,7 +6,7 @@
 import { TRPCError } from '@trpc/server';
 import { hasAccounts, serverConfig } from 'shared/server-config';
 import { resolveGraphAddress } from '../graphs/address.js';
-import type { Graph } from '../graphs/registry.js';
+import { slugsOf, type Graph } from '../graphs/registry.js';
 import { resolveToken } from './accounts.js';
 
 // What a viewer is on one graph.
@@ -55,7 +55,7 @@ const WRITE_MUTATIONS = new Set([
   'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
   'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost'
 ]);
-const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.remove']);
+const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).
 const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens']);
 // Every other mutation needs a server admin, so a new one is closed until listed.
@@ -86,7 +86,7 @@ export function viewerFor(token: string | undefined, graph: Graph | null = null)
   if (!account) return ANONYMOUS;
   const { scope, ...viewer } = account;
   if (scope === null) return viewer;
-  if (!graph || !scope.includes(graph.slug)) return ANONYMOUS;
+  if (!graph || !slugsOf(graph).some(slug => scope.includes(slug))) return ANONYMOUS;
   return { ...viewer, serverAdmin: false, canCreateGraphs: false };
 }
 
@@ -114,8 +114,8 @@ export function rightOn(graph: Graph | null, viewer: Viewer): GraphRight {
 export function readOnlyReason(graph: Graph | null, viewer: Viewer): string | null {
   if (rightOn(graph, viewer) !== 'read') return null;
   return viewer.name
-    ? `This graph is open read-only for ${viewer.name}: ask its owner for write access.`
-    : 'This graph is open read-only here: log in to edit.';
+    ? `This space is open read-only for ${viewer.name}: ask its owner for write access.`
+    : 'This space is open read-only here: log in to edit.';
 }
 
 // The message of a refused write keeps "open read-only", which the UI already
@@ -138,6 +138,6 @@ export function assertAllowed(path: string, type: string, viewer: Viewer, graph:
   if (RIGHTS.indexOf(right) >= RIGHTS.indexOf(need)) return;
   throw new TRPCError({
     code: 'FORBIDDEN',
-    message: readOnlyReason(graph, viewer) ?? 'Only the owner of this graph may do this.'
+    message: readOnlyReason(graph, viewer) ?? 'Only the owner of this space may do this.'
   });
 }

@@ -46,7 +46,7 @@ onUnmounted(() => window.removeEventListener('keydown', takeKeydown, { capture: 
       <p class="error">{{ projectLoad.error }}</p>
       <div class="actions">
         <button @click="projectLoad.retry()">Retry</button>
-        <button @click="projectLoad.cancel()">Back to projects</button>
+        <button @click="projectLoad.cancel()">Back to spaces</button>
       </div>
     </template>
   </div>

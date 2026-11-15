@@ -34,6 +34,8 @@ type Invitation = {
   hash: string;
   kind: 'once' | 'permanent';
   expiresAt?: string;
+  // The rights the account made with it gets, as set for an existing account.
+  serverAdmin?: boolean;
   canCreateGraphs?: boolean;
   redeemedBy?: string;
   createdAt: string;
@@ -177,14 +179,19 @@ function validInvitation(accounts: Accounts, code: string): Invitation {
 
 /** The code to hand out (in a link); only its hash is stored. */
 export async function createInvitation(
-  options: { kind: 'once' | 'permanent'; expiresAt?: string; canCreateGraphs?: boolean }
+  options: { kind: 'once' | 'permanent'; expiresAt?: string; serverAdmin?: boolean; canCreateGraphs?: boolean }
 ): Promise<string> {
+  // Server admin is a shell on the server: never for whoever holds a shared link.
+  if (options.serverAdmin && options.kind !== 'once') {
+    throw new AccountError('An invitation that makes a server admin is for one person only.');
+  }
   const code = crypto.randomBytes(18).toString('base64url');
   const invitation: Invitation = {
     id: crypto.randomUUID(),
     hash: sha256(code),
     kind: options.kind,
     ...(options.expiresAt ? { expiresAt: options.expiresAt } : {}),
+    ...(options.serverAdmin ? { serverAdmin: true } : {}),
     ...(options.canCreateGraphs ? { canCreateGraphs: true } : {}),
     createdAt: new Date().toISOString()
   };
@@ -195,9 +202,10 @@ export async function createInvitation(
 export function listInvitations() {
   const accounts = load();
   const names = new Map(accounts.accounts.map(account => [account.id, account.name]));
-  return accounts.invitations.map(({ id, kind, expiresAt, canCreateGraphs, redeemedBy, createdAt }) => ({
+  return accounts.invitations.map(({ id, kind, expiresAt, serverAdmin, canCreateGraphs, redeemedBy, createdAt }) => ({
     id, kind, createdAt,
     expiresAt: expiresAt ?? null,
+    serverAdmin: serverAdmin === true,
     canCreateGraphs: canCreateGraphs === true,
     // A redeemed one-time invitation stays listed, so the admin sees who came through it.
     redeemedBy: redeemedBy ? names.get(redeemedBy) ?? '(removed account)' : null
@@ -218,7 +226,11 @@ export async function signUp(name: string, password: string, { open, invitation 
     const invited = invitation ? validInvitation(accounts, invitation) : null;
     if (!invited && !open) throw new AccountError('Creating an account on this server needs an invitation.');
     assertFreeName(accounts, trimmed);
-    account = newAccount(trimmed, { passwordHash, ...(invited?.canCreateGraphs ? { canCreateGraphs: true } : {}) });
+    account = newAccount(trimmed, {
+      passwordHash,
+      ...(invited?.serverAdmin ? { serverAdmin: true } : {}),
+      ...(invited?.canCreateGraphs ? { canCreateGraphs: true } : {})
+    });
     return {
       ...accounts,
       accounts: [...accounts.accounts, account],

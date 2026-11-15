@@ -65,7 +65,7 @@ const remove = async (id: string) => {
     </div>
     <p v-if="notes.length === 0" class="by">None yet.</p>
     <form v-if="mayAdd" @submit.prevent="add('note')">
-      <textarea v-model="text" rows="2" placeholder="An idea or a question for the people who write this graph" @keydown.stop></textarea>
+      <textarea v-model="text" rows="2" placeholder="An idea or a question for the people who write this space" @keydown.stop></textarea>
       <div class="actions">
         <button class="btn-secondary" type="submit" :disabled="!text.trim()">Add note</button>
         <button class="btn-secondary" type="button" @click="add('interest')">I'd like to work on this</button>

@@ -1,0 +1,24 @@
+{
+  "id": "1f6f2c46-2913-40e5-880f-77e02a59854e",
+  "text": "One identity across Aimparency servers: the page signs in to another server with the same key, and may write there with a token issued to it",
+  "description": "Felix 2026-11-15: writes across servers should be supported; the UI can deliver an account for that server, which means using the same key on various Aimparency servers.\n\nPlan (Claude, from the discussion):\n- The browser key (automatic accounts, 383e8949) is the identity across servers. When you act on a space of another server (a linked space opened in place, an offer to it), the page signs in there with the same key (keyChallenge/keyLogin): same public key = same person on every server; names stay per server.\n- Writes from other sites, bound to where the token was issued: today a server refuses every write from another origin, even with a valid token (32ba03c0). Instead a server remembers the origin a token was issued to and accepts that token's writes only from that origin; any other origin stays read-only.\n- Rights stay with each server: signing in elsewhere gives an account, not rights. There you are a guest until the space's owner grants write access; notes and offers (b7e0b972) work as for any guest.\n- The UI shows on which servers you are signed in.\n\nTrust: a browser key lives in one site's storage, so whoever runs that server could serve code that signs as you elsewhere. Acceptable for an automatic guest identity. For an identity independent of any server, the wallet login (abadab76) already exists: the key sits in the wallet, each signature is approved.\n\nAlso answers \"reading needs an account\" (a possible server setting, discussed 2026-11-15, would be an exception to \"no private graphs\" on 8faf6a70): such a server can still be opened in place from another server, because the page signs in there with the same key.",
+  "archived": false,
+  "color": "#2e6430",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794782198066
+  },
+  "intrinsicValue": 0,
+  "cost": 5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

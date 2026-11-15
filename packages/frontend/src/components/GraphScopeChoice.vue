@@ -17,13 +17,13 @@ const toggle = (slug: string, chosen: boolean) => {
 
 <template>
   <div class="graph-scope">
-    <label><input type="radio" :checked="scope === null" @change="scope = null" /> all my graphs, also future ones</label>
-    <label><input type="radio" :checked="scope !== null" @change="scope = []" /> only these graphs</label>
+    <label><input type="radio" :checked="scope === null" @change="scope = null" /> all my spaces, also future ones</label>
+    <label><input type="radio" :checked="scope !== null" @change="scope = []" /> only these spaces</label>
     <div v-if="scope !== null" class="graphs">
       <label v-for="graph in mine" :key="graph.slug">
         <input type="checkbox" :checked="scope.includes(graph.slug)" @change="toggle(graph.slug, ($event.target as HTMLInputElement).checked)" /> {{ graph.name }}
       </label>
-      <p v-if="mine.length === 0">You write no graph on this server yet.</p>
+      <p v-if="mine.length === 0">You write no space on this server yet.</p>
     </div>
   </div>
 </template>

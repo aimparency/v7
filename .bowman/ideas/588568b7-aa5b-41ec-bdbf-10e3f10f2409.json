@@ -41,9 +41,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "8b945c1f: clicking a linked graph's node loads its ideas in the browser from the server hosting it and hangs them below the node (read-only, click on one opens the graph on its server, click on the node closes it). Value: the inflow takes the place of the linked graph's whole intrinsic value and flows along its own connections; priority stays in the host graph. An unreachable graph keeps its node, labelled '(not available)'. Tests: shared graph-host.test.ts, frontend data-linked-graph-view.spec.ts, pnpm check 25/25. Open: editing in place where the viewer has rights on the other server (always read-only now); expanding graphs linked inside an opened graph; not tried live between two running servers (cross-origin read).",
-    "date": 1794647219824
+    "state": "implemented",
+    "comment": "Built in 8b945c1f and 063f0b42 (server side in 32ba03c0). The browser reads a linked space's ideas from the server hosting it (fetchIdeasAtHost); a click on its node expands them in place, read-only, inside an outline in the space's color; a click on one opens that space on its server. The value flowing into the node replaces the linked space's whole intrinsic value and spreads along its own connections (spreadInflow); priority stays in the host space. An unreachable server keeps the node, marked \"(not available)\". Drops across the outline are blocked, drops inside it link the space. Evidence: frontend data-linked-graph-view.spec.ts, graph-outline.spec.ts, connect-drop specs; shared graph-host.test.ts.",
+    "date": 1794781531872
   },
   "intrinsicValue": 0,
   "cost": 6,

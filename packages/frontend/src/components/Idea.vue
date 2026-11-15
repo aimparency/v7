@@ -298,7 +298,7 @@ watch(isExpanded, (newVal) => {
               v-for="parent in otherParentIdeas"
               :key="parent.id"
               class="parent-idea"
-              @click.stop="modalStore.openPathsModal(parent.id)"
+              @click.stop="uiStore.navigateOrChoose(parent.id)"
               :title="`Navigate to: ${parent.text}`"
             >
               {{ parent.text || '(untitled)' }}

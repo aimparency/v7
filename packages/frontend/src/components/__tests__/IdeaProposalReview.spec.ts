@@ -49,7 +49,7 @@ describe('IdeaProposalReview', () => {
     expect(trpc.idea.approveIdeaSubtree.mutate).not.toHaveBeenCalled()
 
     await wrapper.get('button.primary').trigger('click')
-    expect(wrapper.text()).toContain('Nothing has been added to the graph yet.')
+    expect(wrapper.text()).toContain('Nothing has been added to the space yet.')
     expect(wrapper.text()).toContain('Add 2 ideas and 2 connections')
     expect(trpc.idea.approveIdeaSubtree.mutate).not.toHaveBeenCalled()
   })

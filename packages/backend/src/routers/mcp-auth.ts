@@ -59,7 +59,7 @@ export const mcpAuthRouter = t.router({
       const account = ctx.viewer?.name;
       if (!account) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
       for (const slug of input.graphs ?? []) {
-        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No graph "${slug}" on this server.` });
+        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
       }
       return { redirectTo: clients.approveRequest(input.requestId, account, input.graphs) };
     })),

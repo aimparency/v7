@@ -128,7 +128,9 @@ pnpm start
 `pnpm start` asks:
 
 1. whether other people use this server: answer yes;
-2. the port (default 4000) and the address to listen on (`127.0.0.1` behind nginx);
+2. the port (default 4000), the address to listen on (`127.0.0.1` behind nginx)
+   and the public address people open (`https://<host>`, for MCP clients that
+   log in by themselves and for wallet login; also set later under Server settings);
 3. whether visitors get an account without asking, and whether anyone may sign up;
 4. whether server admins may run wrapped agents (a shell on the server);
 5. the first server admin's name and password;
@@ -136,7 +138,7 @@ pnpm start
 
 From then on `pnpm start` (for example from a systemd unit) serves everything on
 that one port: the UI, the API under `/trpc`, and an MCP server under
-`/mcp/sse`. A graph has the address `https://<host>/g/<slug>`.
+`/mcp/sse`. A graph has the address `https://<host>/spaces/<slug>`.
 
 - **The server directory.** What the server owns lives in one directory
   (`~/.local/share/aimparency-local`, or `AIMPARENCY_SERVER_DIR`), never in a
@@ -162,7 +164,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   `pnpm dev --server hub` runs that server from source with hot reload.
 - **Graphs.** An account creates a graph in the browser in one step and owns
   it; it gets a git repository of its own on the server. The owner gives other
-  accounts write access in the graph's settings. `pnpm graphs add <path>` lists
+  accounts write access in the graph's settings. `pnpm graphs add <path>` (or, as server admin, "Add a repository on this server" in the browser) lists
   a repository that is already on the machine, `pnpm graphs list|owner|writers|remove`
   manage the list from the terminal.
 - **Graphs from a Git URL.** Any account adds a repository that has a
@@ -208,7 +210,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   held by a key in their browser, and the UI recommends a name and password
   ("Keep account"), since clearing the browser loses it. Invitations work
   either way: links for one person or for anyone, optionally with an end date,
-  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>]`.
+  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-graphs]`.
 - **Accounts.** Server admins add people in the UI (Accounts), or on the
   server with `pnpm accounts add <name> [--admin] [--creates-graphs]`,
   `pnpm accounts admin|creates-graphs <name> on|off`,
@@ -242,7 +244,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   client limited to graphs is nobody elsewhere: it reads other graphs like any
   visitor and cannot manage accounts or create graphs. Tools take the graph's
   slug as `graph`; a link for one graph is that graph's own address
-  (`https://<host>/g/<slug>/mcp/sse`), where tools need no `graph`.
+  (`https://<host>/spaces/<slug>/mcp/sse`), where tools need no `graph`.
   Without a token the MCP can only read. With `"publicUrl"` set in
   `server.json`, a client can also log in by itself (OAuth, as the MCP
   specification describes it) at `https://<host>/mcp/login/sse`: it opens the
