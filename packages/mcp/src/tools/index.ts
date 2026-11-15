@@ -17,7 +17,7 @@ export function availableTools(withAccounts: boolean) {
   return withAccounts ? TOOLS.filter((tool) => !LOCAL_ONLY_TOOLS.has(tool.name)) : TOOLS;
 }
 
-// A session connected through a graph's own address (<host>/g/<slug>/mcp/sse)
+// A session connected through a graph's own address (<host>/spaces/<slug>/mcp/sse)
 // works on that graph: its tools take `graph` as optional.
 export function toolForGraph(tool: ToolDefinition, graph: string | undefined): Pick<ToolDefinition, "name" | "description" | "inputSchema"> {
   const { name, description, inputSchema } = tool;

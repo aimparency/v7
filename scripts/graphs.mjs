@@ -51,7 +51,7 @@ async function main() {
       // pnpm keeps the caller's directory in INIT_CWD.
       const directory = path.resolve(process.env.INIT_CWD ?? process.cwd(), target ?? '');
       const graph = await graphs.addCheckout(directory, owner ? accountId(owner) : null, slug);
-      console.log(`Added ${graph.path} as /g/${graph.slug}.`);
+      console.log(`Added ${graph.path} as /spaces/${graph.slug}.`);
       return;
     }
     case 'owner':

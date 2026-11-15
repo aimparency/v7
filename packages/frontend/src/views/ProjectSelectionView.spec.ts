@@ -200,7 +200,7 @@ describe('ProjectSelectionView on a server with accounts', () => {
     await flushPromises()
     expect(wrapper.text()).not.toContain('/work/entour')
     expect(titles(wrapper)).toEqual(['Hack the Hub', 'Garden'])
-    expect(wrapper.text()).toContain('ana · /g/hack-the-hub')
+    expect(wrapper.text()).toContain('ana · /spaces/hack-the-hub')
     await wrapper.find('.history-open-button').trigger('click')
     expect(wrapper.emitted('open-graph')).toEqual([['hack-the-hub']])
   })

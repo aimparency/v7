@@ -87,7 +87,7 @@ export const linkedRepoRouter = t.router({
   linkHost: delayedProcedure
     .input(z.object({
       graph: graphAddress,
-      host: z.string().refine((address) => parseGraphHost(address) !== null, 'Not the address of a graph: https://<server>/g/<graph>'),
+      host: z.string().refine((address) => parseGraphHost(address) !== null, 'Not the address of a graph: https://<server>/spaces/<space>'),
       repoId: z.string().uuid(),
       name: z.string().min(1),
     }))

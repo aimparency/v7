@@ -151,7 +151,7 @@ type Space = (typeof spaces.value)[number]
 const spaceEntry = (space: Space): Entry => ({
   key: `space:${space.slug}`,
   title: space.name,
-  detail: `${space.owner ?? 'server'} · /g/${space.slug}`,
+  detail: `${space.owner ?? 'server'} · /spaces/${space.slug}`,
   searchable: [space.name.toLowerCase(), space.slug],
   thumbnail: space.slug,
   color: space.color,

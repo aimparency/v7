@@ -135,7 +135,7 @@ export const graphsRouter = t.router({
       return { success: true };
     }),
 
-  // The graph's address (/g/<slug>). The old one keeps leading here.
+  // The graph's address (/spaces/<slug>). The old one keeps leading here.
   setSlug: delayedProcedure
     .input(z.object({ graph: z.string(), slug: z.string().trim().max(100) }))
     .mutation(async ({ input }) => {

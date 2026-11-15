@@ -22,9 +22,9 @@ export function setRepoUrlParam(repoUrl: string) {
   window.history.replaceState({}, '', url)
 }
 
-// /g/<slug>: a graph of this server.
+// /spaces/<slug>: a graph of this server.
 function graphSlugFromLocation(): string {
-  const slug = /^\/g\/([^/]+)\/?$/.exec(window.location.pathname)?.[1] ?? ''
+  const slug = /^\/spaces\/([^/]+)\/?$/.exec(window.location.pathname)?.[1] ?? ''
   return isGraphSlug(slug) ? slug : ''
 }
 
@@ -66,13 +66,13 @@ export const useProjectStore = defineStore('project', {
   },
 
   actions: {
-    // The address bar names the open project: /g/<slug> for a graph of this
+    // The address bar names the open project: /spaces/<slug> for a graph of this
     // server, ?project=<path> for a directory of this machine.
     setProjectPath(path: string) {
       const cleanPath = normalizeProjectPath(path)
       this.projectPath = cleanPath
       const url = new URL(window.location.href)
-      url.pathname = isGraphSlug(cleanPath) ? `/g/${cleanPath}` : '/'
+      url.pathname = isGraphSlug(cleanPath) ? `/spaces/${cleanPath}` : '/'
       url.searchParams.delete('path')
       if (cleanPath && !isGraphSlug(cleanPath)) url.searchParams.set('project', cleanPath)
       else url.searchParams.delete('project')

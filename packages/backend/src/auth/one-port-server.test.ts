@@ -64,7 +64,7 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
   const mcp = await fetch(`${base}/mcp/sse`);
   assert.equal(mcp.status, 502);
   // A graph's own MCP address goes to the same MCP server, not to the UI.
-  assert.equal((await fetch(`${base}/g/hack-the-hub/mcp/sse?token=x`)).status, 502);
+  assert.equal((await fetch(`${base}/spaces/hack-the-hub/mcp/sse?token=x`)).status, 502);
   // So does what an MCP client's own login needs at the server's root; other paths stay the UI's.
   for (const path of ['/authorize?client_id=x', '/token', '/register', '/.well-known/oauth-authorization-server']) {
     assert.equal((await fetch(`${base}${path}`)).status, 502, path);

@@ -8,7 +8,7 @@
 //             an SSH key for it; then it is committed here and pushed back.
 //   checkout  a repository on this machine that the server admin added
 //
-// The slug is the graph's name in addresses (/g/<slug>, and `graph` in
+// The slug is the graph's name in addresses (/spaces/<slug>, and `graph` in
 // the API). It stays when the graph is renamed; its owner may change it, and
 // the former slugs keep answering, so links and agents' tokens keep working.
 

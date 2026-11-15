@@ -77,12 +77,12 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "register_linked_repo",
-    description: "Make another Aimparency graph linkable from this one. Give host, the graph's address on the server hosting it (https://<server>/g/<graph>), or targetPath for a project checked out on this machine. Needed once per graph, before the first link_repo to it.",
+    description: "Make another Aimparency graph linkable from this one. Give host, the graph's address on the server hosting it (https://<server>/spaces/<space>), or targetPath for a project checked out on this machine. Needed once per graph, before the first link_repo to it.",
     inputSchema: {
       type: "object",
       properties: {
         graph: GRAPH_TOOL_PROPERTY,
-        host: { type: "string", description: "The graph's address on its Aimparency server, as opened in the browser: https://<server>/g/<graph>" },
+        host: { type: "string", description: "The graph's address on its Aimparency server, as opened in the browser: https://<server>/spaces/<space>" },
         targetPath: { type: "string", description: "Absolute path to the other project's .bowman dir (or its repo root), for a local checkout" },
         url: { type: "string", description: "Optional relocation hint, e.g. the git remote, so collaborators can find the repo" },
         access: { type: "string", enum: ["read", "write"], description: "Machine-local access intent for the linked checkout. Default read." },
@@ -97,7 +97,7 @@ export const repoTools: ToolDefinition[] = [
           content: [{ type: "text", text: `Linked graph "${link.name}" at ${link.host} (${link.repoId}). Use link_repo with that repoId to attach it to an idea.` }],
         };
       }
-      if (typeof args.targetPath !== "string") throw new Error("Give host (https://<server>/g/<graph>) or targetPath.");
+      if (typeof args.targetPath !== "string") throw new Error("Give host (https://<server>/spaces/<space>) or targetPath.");
       const repo = await trpcClient.linkedRepo.register.mutate({
         graph: args.graph as string,
         targetPath: args.targetPath as string,

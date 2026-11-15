@@ -45,7 +45,7 @@ const create = () => run(async () => {
   const graphs = scope.value ?? undefined
   const { token } = await trpc.auth.issueToken.mutate({ label: label.value.trim() || 'mcp', graphs })
   // One graph: its own address, where the client's tools need no graph name.
-  const base = graphs?.length === 1 ? `${window.location.origin}/g/${graphs[0]}` : window.location.origin
+  const base = graphs?.length === 1 ? `${window.location.origin}/spaces/${graphs[0]}` : window.location.origin
   link.value = `${base}/mcp/sse?token=${token}`
   await load()
 })

@@ -39,7 +39,7 @@ export function toBowmanPath(input: string): string {
 }
 
 // A graph of a server is addressed by its slug (lower-case letters, digits and
-// hyphens) wherever a project path can stand: /g/<slug> in the browser,
+// hyphens) wherever a project path can stand: /spaces/<slug> in the browser,
 // `graph` in the API. A path always has a separator, so the two never mix.
 const GRAPH_SLUG = /^[a-z0-9][a-z0-9-]*$/;
 

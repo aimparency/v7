@@ -535,7 +535,7 @@ onUnmounted(() => {
   <div class="app">
     <!-- Header -->
     <header v-if="!projectStore.isInProjectSelection" v-show="!projectStore.terminalFullscreen" class="header" :class="{ open: headerOpen }">
-      <div v-if="projectStore.projectPath" class="project-location" :title="accounts ? `/g/${normalizedProjectRoot}` : `${normalizedProjectRoot}\n${activeBowmanRoot}`">
+      <div v-if="projectStore.projectPath" class="project-location" :title="accounts ? `/spaces/${normalizedProjectRoot}` : `${normalizedProjectRoot}\n${activeBowmanRoot}`">
         <span
           class="connection-dot"
           :class="projectStore.connectionStatus"

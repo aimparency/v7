@@ -121,7 +121,7 @@ async function createKey() {
   }
 }
 
-// The space's address on this server (/g/<slug>); the old one keeps leading here.
+// The space's address on this server (/spaces/<slug>); the old one keeps leading here.
 const slug = ref('')
 const slugBusy = ref(false)
 async function changeSlug() {
@@ -531,7 +531,7 @@ const save = async () => {
           <p v-else class="hint-text">No linked repos yet.</p>
 
           <div class="add-repo-row">
-            <input v-model="hostAddress" placeholder="https://server/g/graph" :disabled="repoBusy" @keydown.enter="linkByHost" />
+            <input v-model="hostAddress" placeholder="https://server/spaces/space" :disabled="repoBusy" @keydown.enter="linkByHost" />
             <button @click="linkByHost" class="action-btn add-repo-btn" :disabled="!hostAddress.trim() || repoBusy">Link</button>
           </div>
           <p v-if="hostError" class="hint-text">{{ hostError }}</p>
@@ -550,7 +550,7 @@ const save = async () => {
           <label>Access</label>
           <div v-if="mayManageAccess" class="add-repo-row">
             <span class="linked-repo-name">Address</span>
-            <span class="address-prefix">/g/</span>
+            <span class="address-prefix">/spaces/</span>
             <input v-model="slug" type="text" spellcheck="false" placeholder="address" @keydown.enter="changeSlug" />
             <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
           </div>

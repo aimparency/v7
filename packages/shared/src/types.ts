@@ -90,7 +90,7 @@ export const IdeaStateSchema = z.object({
 export const LinkedRepoSchema = z.object({
   repoId: z.string().uuid(),  // stable identity of the linked repo
   name: z.string(),           // display name (snapshot of the target's name)
-  host: z.string().optional(), // <origin>/g/<slug> of the graph on its server (data model 7); absent on links to a local checkout
+  host: z.string().optional(), // <origin>/spaces/<slug> of the graph on its server (data model 7); absent on links to a local checkout
   url: z.string().optional()  // optional relocation hint (e.g. git remote)
 });
 

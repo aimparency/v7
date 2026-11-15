@@ -54,7 +54,7 @@ describe('McpConnectModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(issueToken).toHaveBeenCalledWith({ label: 'mcp', graphs: ['mine'] })
-    expect(wrapper.find('pre').text()).toContain(`"${window.location.origin}/g/mine/mcp/sse?token=the-token"`)
+    expect(wrapper.find('pre').text()).toContain(`"${window.location.origin}/spaces/mine/mcp/sse?token=the-token"`)
   })
 
   it('lists the connected clients, not the browsers, and revokes one', async () => {
