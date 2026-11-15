@@ -1,16 +1,16 @@
 <script setup lang="ts">
-import { onMounted, ref } from 'vue'
+import { computed, onMounted, reactive, ref } from 'vue'
 import { ADMIN_SHELL_WARNING } from 'shared'
 import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
+import AccountRights, { type Rights } from './AccountRights.vue'
 
 // The server admin manages the accounts of this server. What an account may do
 // on a graph is set on that graph, by its owner.
 defineProps<{ me: string | null }>()
 const emit = defineEmits<{ close: [] }>()
 
-type Account = { name: string, serverAdmin: boolean, canCreateGraphs: boolean }
-type Right = 'serverAdmin' | 'canCreateGraphs'
+type Account = { name: string } & Rights
 
 const accounts = ref<Account[]>([])
 const name = ref('')
@@ -33,15 +33,8 @@ const add = () => run(async () => {
   name.value = password.value = ''
 })
 
-// Making someone server admin hands out a shell on the server: ask every time.
-// Afterwards the box shows what the server holds, also when declined or refused.
-const setRight = async (account: Account, right: Right, box: HTMLInputElement) => {
-  const value = box.checked
-  const confirmed = right !== 'serverAdmin' || !value
-    || window.confirm(`Make ${account.name} server admin?\n\n${ADMIN_SHELL_WARNING}`)
-  if (confirmed) await run(() => trpc.auth.setRights.mutate({ name: account.name, [right]: value }))
-  box.checked = accounts.value.find(candidate => candidate.name === account.name)?.[right] ?? false
-}
+const setRights = (account: Account) => (change: Partial<Rights>) =>
+  run(() => trpc.auth.setRights.mutate({ name: account.name, ...change }))
 
 const remove = (account: string) => run(() => trpc.auth.removeAccount.mutate({ name: account }))
 
@@ -51,13 +44,20 @@ const invitations = ref<Awaited<ReturnType<typeof trpc.auth.listInvitations.quer
 const invitationOnce = ref(true)
 const invitationDays = ref<number | null>(null)
 const invitationLink = ref('')
+// The rights of the accounts made with the next invitation, as for an existing account.
+const invitationRights = reactive<Rights>({ serverAdmin: false, canCreateGraphs: false })
+const setInvitationRights = (change: Partial<Rights>) => Object.assign(invitationRights, change)
+const invitationAdminUnavailable = computed(() =>
+  invitationOnce.value ? undefined : 'Only an invitation for one person can make a server admin.')
 const loadInvitations = async () => {
   invitations.value = await trpc.auth.listInvitations.query().catch(() => invitations.value)
 }
 const invite = () => run(async () => {
   const { code } = await trpc.auth.createInvitation.mutate({
     kind: invitationOnce.value ? 'once' : 'permanent',
-    days: invitationDays.value || undefined
+    days: invitationDays.value || undefined,
+    ...(invitationRights.serverAdmin && invitationOnce.value ? { serverAdmin: true } : {}),
+    ...(invitationRights.canCreateGraphs ? { canCreateGraphs: true } : {})
   })
   invitationLink.value = `${window.location.origin}/?invitation=${code}`
   await loadInvitations()
@@ -66,9 +66,13 @@ const uninvite = (id: string) => run(async () => {
   await trpc.auth.removeInvitation.mutate({ id })
   await loadInvitations()
 })
-const describeInvitation = (invitation: (typeof invitations.value)[number]) =>
+const describeInvitation = (invitation: (typeof invitations.value)[number]) => [
+  invitation.kind === 'once' ? 'for one person' : 'for anyone with the link',
   invitation.redeemedBy ? `used by ${invitation.redeemedBy}`
-    : invitation.expiresAt ? `until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'no end'
+    : invitation.expiresAt ? `until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'no end',
+  ...(invitation.serverAdmin ? ['server admin'] : []),
+  ...(invitation.canCreateGraphs ? ['creates graphs'] : [])
+].join(' · ')
 
 const resetPassword = (account: string) => {
   const next = window.prompt(`New password for ${account} (8+ characters)`)
@@ -83,8 +87,7 @@ onMounted(() => run(loadInvitations))
     <div class="accounts">
       <div v-for="account in accounts" :key="account.name" class="row">
         <span class="name">{{ account.name }}{{ account.name === me ? ' (you)' : '' }}</span>
-        <label><input type="checkbox" :checked="account.canCreateGraphs" @change="setRight(account, 'canCreateGraphs', $event.target as HTMLInputElement)" /> creates graphs</label>
-        <label><input type="checkbox" :checked="account.serverAdmin" @change="setRight(account, 'serverAdmin', $event.target as HTMLInputElement)" /> server admin</label>
+        <AccountRights :rights="account" :who="account.name" :apply="setRights(account)" />
         <button class="btn-secondary" @click="resetPassword(account.name)">Password</button>
         <button class="btn-secondary" :disabled="account.name === me" @click="remove(account.name)">Remove</button>
       </div>
@@ -98,13 +101,24 @@ onMounted(() => run(loadInvitations))
 
       <h4>Invitations</h4>
       <div v-for="invitation in invitations" :key="invitation.id" class="row">
-        <span class="name">{{ invitation.kind === 'once' ? 'for one person' : 'for anyone with the link' }} · {{ describeInvitation(invitation) }}</span>
+        <span class="name">{{ describeInvitation(invitation) }}</span>
         <button class="btn-secondary" @click="uninvite(invitation.id)">Remove</button>
       </div>
-      <form class="row" @submit.prevent="invite">
-        <label><input v-model="invitationOnce" type="checkbox" /> for one person only</label>
-        <input v-model.number="invitationDays" class="name" type="number" min="1" placeholder="Valid for days (empty: no end)" />
-        <button class="btn-primary" type="submit">Invite</button>
+      <form class="invite" @submit.prevent="invite">
+        <div class="row">
+          <label><input v-model="invitationOnce" type="checkbox" /> for one person only</label>
+          <input v-model.number="invitationDays" type="number" min="1" placeholder="Valid for days (empty: no end)" />
+        </div>
+        <div class="row">
+          <AccountRights
+            :rights="invitationRights"
+            who="whoever uses this invitation"
+            :apply="setInvitationRights"
+            :admin-unavailable="invitationAdminUnavailable"
+          />
+          <span class="name"></span>
+          <button class="btn-primary" type="submit">Invite</button>
+        </div>
       </form>
       <p v-if="invitationLink" class="hint">Send this link; it is shown only now: <code>{{ invitationLink }}</code></p>
 
@@ -128,6 +142,29 @@ onMounted(() => run(loadInvitations))
     .name {
       flex: 1;
     }
+
+    /* Text fields share the row evenly (the global inputs are width: 100%). */
+    input:not([type=checkbox]) {
+      flex: 1 1 0;
+      min-width: 0;
+    }
+
+    label {
+      display: flex;
+      gap: 0.25rem;
+      align-items: center;
+      white-space: nowrap;
+    }
+
+    input[type=checkbox] {
+      width: auto;
+    }
+  }
+
+  .invite {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
   }
 
   .error {

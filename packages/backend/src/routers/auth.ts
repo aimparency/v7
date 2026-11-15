@@ -251,11 +251,12 @@ export const authRouter = t.router({
     .input(z.object({
       kind: z.enum(['once', 'permanent']),
       days: z.number().positive().max(3650).optional(),
-      canCreateGraphs: z.boolean().optional()
+      ...rights
     }))
     .mutation(async ({ input }) => ({
       code: await run(() => accounts.createInvitation({
         kind: input.kind,
+        serverAdmin: input.serverAdmin,
         canCreateGraphs: input.canCreateGraphs,
         expiresAt: input.days ? new Date(Date.now() + input.days * 24 * 60 * 60_000).toISOString() : undefined
       }))

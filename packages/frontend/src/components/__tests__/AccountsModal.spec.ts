@@ -86,4 +86,27 @@ describe('AccountsModal', () => {
     expect(createInvitation).toHaveBeenCalledWith({ kind: 'permanent', days: 7 })
     expect(wrapper.find('code').text()).toBe(`${window.location.origin}/?invitation=the-code`)
   })
+
+  it('gives an invitation the rights of an account: server admin only for one person, after confirming', async () => {
+    listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, serverAdmin: true, canCreateGraphs: true, redeemedBy: null, createdAt: '' }])
+    const wrapper = await mountModal()
+    expect(wrapper.text()).toContain('for one person · no end · server admin · creates graphs')
+
+    const form = wrapper.find('form.invite')
+    const [once, createsGraphs, serverAdmin] = form.findAll('input[type=checkbox]')
+    vi.spyOn(window, 'confirm').mockReturnValue(true)
+    await createsGraphs!.setValue(true)
+    await serverAdmin!.setValue(true)
+    await form.trigger('submit')
+    await flushPromises()
+    expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining(ADMIN_SHELL_WARNING))
+    expect(createInvitation).toHaveBeenCalledWith({ kind: 'once', serverAdmin: true, canCreateGraphs: true })
+
+    // A link for anyone never makes a server admin.
+    await once!.setValue(false)
+    expect((serverAdmin!.element as HTMLInputElement).disabled).toBe(true)
+    await form.trigger('submit')
+    await flushPromises()
+    expect(createInvitation).toHaveBeenLastCalledWith({ kind: 'permanent', canCreateGraphs: true })
+  })
 })

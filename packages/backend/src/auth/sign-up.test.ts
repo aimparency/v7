@@ -96,6 +96,20 @@ test('an invitation lets its holder in: once, or until it ends', async () => {
   await assert.rejects(connection().auth.signUp({ name: 'eve', password: 'eve password', invitation: expired }), /not valid any more/);
 });
 
+test('an invitation gives the rights of an account: server admin only for one person', async () => {
+  await accounts.createAccount('admin', 'admin password', { serverAdmin: true });
+  const admin = connection();
+  await admin.auth.login({ name: 'admin', password: 'admin password' });
+  await assert.rejects(admin.auth.createInvitation({ kind: 'permanent', serverAdmin: true }), /for one person only/);
+
+  const { code } = await admin.auth.createInvitation({ kind: 'once', serverAdmin: true });
+  const [listed] = await admin.auth.listInvitations();
+  assert.equal(listed!.serverAdmin, true);
+  await connection().auth.signUp({ name: 'fay', password: 'fay password', invitation: code });
+  assert.equal(accounts.findAccount('fay')?.serverAdmin, true);
+  assert.notEqual(accounts.findAccount('fay')?.canCreateGraphs, true);
+});
+
 test('a visitor gets an account from the key in their browser, and later makes it permanent', async () => {
   updateServerConfig({ signUp: { browserKey: true } });
   const key = await browserKey();

@@ -208,7 +208,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   held by a key in their browser, and the UI recommends a name and password
   ("Keep account"), since clearing the browser loses it. Invitations work
   either way: links for one person or for anyone, optionally with an end date,
-  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>]`.
+  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-graphs]`.
 - **Accounts.** Server admins add people in the UI (Accounts), or on the
   server with `pnpm accounts add <name> [--admin] [--creates-graphs]`,
   `pnpm accounts admin|creates-graphs <name> on|off`,
