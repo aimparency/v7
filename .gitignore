@@ -40,3 +40,5 @@ next
 # layout lab: machine-specific project list and results
 scripts/layout-lab/projects.local.json
 scripts/layout-lab/results/
+
+performance-recordings
