@@ -12,8 +12,11 @@ import { useMapStore } from './map'
 import { useProjectStore } from './project-store'
 import { useHistoryStore } from './history'
 import { useToastStore } from './toast'
+import { useViewerStore } from './viewer'
 import { setProjectAccess } from '../utils/read-only'
 import { hasAccounts } from '../utils/runtime-config'
+import { clearIdeaSpaces, setIdeaSpace } from '../utils/idea-spaces'
+import { parseGraphHost } from 'shared'
 import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
 
@@ -48,10 +51,26 @@ const REPO_NODE_COLOR = '#9e9e9e'
 
 // A linked graph opened in place: its ideas, loaded by the browser from the
 // server hosting it, with the values that graph gives them itself.
+// A space on this server that the viewer may write opens editable: its ideas
+// join the store's ideas (ideaSpaces says whose they are), and the UI treats
+// them like the open space's own; `graph` is its address here.
 type LinkedGraphView =
   | { state: 'loading' }
-  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string }
+  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string; editable?: { graph: string } }
   | { state: 'unavailable' }
+
+// The subscriptions of the editable spaces opened in place, by repoId.
+const spaceSubscriptions = new Map<string, { unsubscribe: () => void }>()
+
+// The address of a space on this very server, from its host address; null for another server.
+function graphHere(host: string): string | null {
+  const parsed = parseGraphHost(host)
+  if (!parsed) return null
+  const here = new Set([window.location.origin, useViewerStore().publicUrl].flatMap(url => {
+    try { return url ? [new URL(url).origin] : [] } catch { return [] }
+  }))
+  return here.has(parsed.origin) ? parsed.slug : null
+}
 
 // A space offered to an idea and not yet accepted (notes.offers): shown to its
 // proposer and to those who write this space, as an unconfirmed supporter.
@@ -243,6 +262,8 @@ export const useDataStore = defineStore('data', {
     // Linked graphs opened in place, by repoId.
     linkedGraphViews: {} as Record<string, LinkedGraphView>,
     offers: [] as SpaceOffer[],
+    // Ideas of editable spaces opened in place: their space's repoId.
+    ideaSpaces: {} as Record<string, string>,
     
     // Calculated values
     calculatedValues: new Map<string, number>(),
@@ -340,8 +361,13 @@ export const useDataStore = defineStore('data', {
     costUnit: (state): string => (state.meta?.costUnit ?? '').trim(),
     defaultCost: (state): number => defaultIdeaCost(state.meta),
 
+    // The open space's own ideas, without those of spaces opened in place.
+    ownIdeas(state): Idea[] {
+      return Object.values(state.ideas).filter(idea => !state.ideaSpaces[idea.id]) as Idea[]
+    },
+
     graphData(state) {
-      const ideas = Object.values(state.ideas)
+      const ideas = Object.values(state.ideas).filter(idea => !state.ideaSpaces[idea.id])
       const depthMap = new Map<string, number>()
       
       // Calculate depths (BFS)
@@ -396,7 +422,8 @@ export const useDataStore = defineStore('data', {
         linked: false, // an idea of a linked graph opened in place (read-only, below)
         spawnNear: undefined as string | undefined, // node a new node first appears next to
         unreadable: undefined as string | undefined, // load error of a warning node (below)
-        pending: false // a space offered and not accepted yet (below)
+        pending: false, // a space offered and not accepted yet (below)
+        space: undefined as string | undefined // the space opened in place an idea belongs to (below)
       }))
 
       const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number, attributionShare: number }[] = []
@@ -447,7 +474,8 @@ export const useDataStore = defineStore('data', {
           linked: false,
           spawnNear: undefined,
           unreadable: entry.error,
-          pending: false
+          pending: false,
+          space: undefined
         })
         entry.supportingIdeaIds.forEach(childId => {
           if (!state.ideas[childId] && !unreadableIds.has(childId)) return
@@ -502,7 +530,8 @@ export const useDataStore = defineStore('data', {
               linked: false,
               spawnNear: undefined,
               unreadable: undefined,
-              pending
+              pending,
+              space: undefined
             })
           }
           const share = state.flowShares.get(`${idea.id}->${repoId}`) || 0
@@ -530,14 +559,20 @@ export const useDataStore = defineStore('data', {
       })
 
       // Linked graphs opened in place: their ideas hang below the graph's
-      // node and share out the value flowing into it. Read-only here.
+      // node and share out the value flowing into it. Read-only here, unless
+      // the space is editable: then its ideas are the store's own, by their
+      // ids, connected as they are in their space.
       for (const [repoId, view] of Object.entries(state.linkedGraphViews)) {
         if (view.state !== 'shown' || !repoNodeIds.has(repoId)) continue
-        const values = spreadInflow(state.calculatedValues.get(repoId) || 0, view.ownValues)
-        const ids = new Set(view.ideas.map(idea => idea.id))
+        const editable = !!view.editable
+        const viewIdeas = editable ? Object.values(state.ideas).filter(idea => state.ideaSpaces[idea.id] === repoId) : view.ideas
+        const ownValues = editable ? calculateIdeaValues(viewIdeas as Idea[]).values : view.ownValues
+        const values = spreadInflow(state.calculatedValues.get(repoId) || 0, ownValues)
+        const ids = new Set(viewIdeas.map(idea => idea.id))
+        const nodeId = (id: string) => editable ? id : linkedIdeaNodeId(repoId, id)
         const host = linkedRepoById.get(repoId)?.host
-        for (const idea of view.ideas) {
-          const id = linkedIdeaNodeId(repoId, idea.id)
+        for (const idea of viewIdeas) {
+          const id = nodeId(idea.id)
           nodes.push({
             id,
             text: idea.text,
@@ -552,15 +587,32 @@ export const useDataStore = defineStore('data', {
             fy: null as number | null,
             value: values.get(idea.id) || 0,
             isRepo: false,
-            host,
-            linked: true,
+            host: editable ? undefined : host,
+            linked: !editable,
+            space: repoId,
             spawnNear: repoId,
             unreadable: undefined,
             pending: false
           })
           const parents = idea.supportedIdeas.filter(parent => ids.has(parent))
-          for (const parent of parents.length ? parents.map(p => linkedIdeaNodeId(repoId, p)) : [repoId]) {
-            links.push({ source: id, target: parent, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0, attributionShare: 0 })
+          if (parents.length === 0) {
+            links.push({ source: id, target: repoId, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0, attributionShare: 0 })
+          }
+        }
+        // Between the space's ideas: their connections, placed and weighted as stored.
+        for (const idea of viewIdeas) {
+          for (const connection of idea.supportingConnections ?? []) {
+            if (!ids.has(connection.ideaId)) continue
+            links.push({
+              source: nodeId(connection.ideaId),
+              target: nodeId(idea.id),
+              type: 'hierarchy',
+              relativePosition: editable ? [connection.relativePosition[0], connection.relativePosition[1]] : [0, 0],
+              weight: editable ? connection.weight : 1,
+              share: 0,
+              flowValue: 0,
+              attributionShare: 0
+            })
           }
         }
       }
@@ -574,6 +626,7 @@ export const useDataStore = defineStore('data', {
     // from the server hosting it; that server may be down.
     async toggleLinkedGraph(repoId: string) {
       if (this.linkedGraphViews[repoId]?.state === 'shown') {
+        this.closeEditableSpace(repoId)
         delete this.linkedGraphViews[repoId]
         return
       }
@@ -582,6 +635,7 @@ export const useDataStore = defineStore('data', {
       if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
       this.linkedGraphViews[repoId] = { state: 'loading' }
       try {
+        if (await this.openEditableSpace(repoId, host)) return
         // Its color only tints the outline, so the graph opens without it.
         const [ideas, graph] = await Promise.all([fetchIdeasAtHost(host), fetchGraphAtHost(host).catch(() => undefined)])
         this.linkedGraphViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values, color: graph?.color }
@@ -589,6 +643,64 @@ export const useDataStore = defineStore('data', {
         this.linkedGraphViews[repoId] = { state: 'unavailable' }
         useToastStore().warning(`Not available: ${error instanceof Error ? error.message : String(error)}`)
       }
+    },
+
+    // A space on this server that the viewer may write opens like the open
+    // space itself: its ideas in the store, its changes followed live, every
+    // request about them sent to it. False when it is read-only here or
+    // elsewhere: it opens read-only from its host instead.
+    async openEditableSpace(repoId: string, host: string): Promise<boolean> {
+      const graph = graphHere(host)
+      if (!graph) return false
+      const access = await trpc.project.getAccess.query({ graph }).catch(() => null)
+      if (!access?.writable) return false
+      const [scan, meta] = await Promise.all([trpc.project.loadIdeas.query({ graph }), trpc.project.getMeta.query({ graph })])
+      if (meta.repoId && meta.repoId !== repoId) throw new Error(`${host} is another space now.`)
+      for (const idea of scan.ideas) {
+        this.ideaSpaces[idea.id] = repoId
+        setIdeaSpace(idea.id, graph)
+        this.ideas[idea.id] = idea
+      }
+      this.linkedGraphViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, editable: { graph } }
+      spaceSubscriptions.get(repoId)?.unsubscribe()
+      spaceSubscriptions.set(repoId, trpc.project.onUpdate.subscribe({ graph }, {
+        onData: async (data: ProjectUpdate) => {
+          if (data.type !== 'idea' || this.linkedGraphViews[repoId]?.state !== 'shown') return
+          if (data.deleted) {
+            this.removeIdeaLocally(data.id)
+            return
+          }
+          const idea = (data.entity as BaseIdea | undefined) ?? await trpc.idea.get.query({ graph, ideaId: data.id })
+          this.ideaSpaces[idea.id] = repoId
+          setIdeaSpace(idea.id, graph)
+          this.replaceIdea(idea.id, idea)
+        },
+        onError: (error: unknown) => console.warn(`Live updates of ${graph} stopped`, error)
+      }))
+      return true
+    },
+
+    // Closing a space opened in place takes its ideas out of the store.
+    closeEditableSpace(repoId: string) {
+      spaceSubscriptions.get(repoId)?.unsubscribe()
+      spaceSubscriptions.delete(repoId)
+      for (const [ideaId, space] of Object.entries(this.ideaSpaces)) {
+        if (space !== repoId) continue
+        delete this.ideas[ideaId]
+        delete this.ideaSpaces[ideaId]
+        setIdeaSpace(ideaId, null)
+      }
+    },
+
+    closeEditableSpaces() {
+      for (const repoId of new Set([...spaceSubscriptions.keys(), ...Object.values(this.ideaSpaces)])) this.closeEditableSpace(repoId)
+      this.ideaSpaces = {}
+      clearIdeaSpaces()
+    },
+
+    /** Whether the viewer may change this idea: in its own space opened in place, or in the open space. */
+    mayEditIdea(ideaId: string): boolean {
+      return this.ideaSpaces[ideaId] !== undefined || this.access.writable
     },
 
     async ensureProjectMeta(projectPath: string, options: { force?: boolean } = {}) {
@@ -648,7 +760,7 @@ export const useDataStore = defineStore('data', {
     recalculateValuesNow() {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         this.recalculateTimeout = null;
-        const allIdeas = Object.values(this.ideas) as Idea[];
+        const allIdeas = this.ownIdeas;
         const result = calculateIdeaValues(allIdeas, this.defaultCost);
         this.calculatedValues = result.values;
         this.calculatedCosts = result.costs;
@@ -767,7 +879,14 @@ export const useDataStore = defineStore('data', {
         })
 
         this.ideas[newIdea.id] = newIdea
-        
+        // Created from an idea of a space opened in place: it is that space's.
+        const space = inheritColorFrom ? this.ideaSpaces[inheritColorFrom] : undefined
+        if (space) {
+          this.ideaSpaces[newIdea.id] = space
+          setIdeaSpace(newIdea.id, (this.linkedGraphViews[space] as { editable?: { graph: string } } | undefined)?.editable?.graph ?? null)
+          return newIdea
+        }
+
         // Add to floating list if it matches criteria (it should)
         // Add to START of list (if sorted by date desc?) or END? 
         // list-ideas default sort is probably filesystem order or date? 
@@ -971,8 +1090,16 @@ export const useDataStore = defineStore('data', {
 
     async saveConnectionPositions(projectPath: string, changes: ConnectionPositionChange[]) {
       if (changes.length === 0) return
+      // Each space saves its own: the open one, and those opened in place.
+      const bySpace = new Map<string, ConnectionPositionChange[]>()
+      for (const change of changes) {
+        const space = this.ideaSpaces[change.parentId]
+        const view = space ? this.linkedGraphViews[space] : undefined
+        const graph = (view?.state === 'shown' && view.editable?.graph) || projectPath
+        bySpace.set(graph, [...(bySpace.get(graph) ?? []), change])
+      }
       try {
-        await trpc.idea.setConnectionPositions.mutate({ graph: projectPath, changes })
+        await Promise.all([...bySpace].map(([graph, part]) => trpc.idea.setConnectionPositions.mutate({ graph, changes: part })))
       } catch (e) {
         useToastStore().error('Failed to save positions', e)
       }
@@ -1014,6 +1141,8 @@ export const useDataStore = defineStore('data', {
     
     removeIdeaLocally(ideaId: string) {
       delete this.ideas[ideaId]
+      delete this.ideaSpaces[ideaId]
+      setIdeaSpace(ideaId, null)
       this.floatingIdeasIds = this.floatingIdeasIds.filter((id) => id !== ideaId)
       this.recalculateValues()
     },
@@ -1163,6 +1292,7 @@ export const useDataStore = defineStore('data', {
       this.calculatedValues = new Map();
       this.linkedGraphViews = {};
       this.offers = [];
+      this.closeEditableSpaces();
       this.calculatedCosts = new Map();
       this.calculatedDoneCosts = new Map();
       this.calculatedPriorities = new Map();

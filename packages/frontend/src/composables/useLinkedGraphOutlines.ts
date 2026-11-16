@@ -39,7 +39,7 @@ export function useLinkedGraphOutlines(nodes: Ref<GraphNode[]>, trigger: Ref<num
     const pending = new Set<string>()
     for (const node of nodes.value) {
       if (node.isRepo && node.pending) pending.add(node.id)
-      const repoId = node.linked ? node.id.slice(0, node.id.indexOf(':')) : node.isRepo ? node.id : undefined
+      const repoId = node.space ?? (node.isRepo ? node.id : undefined)
       members.get(repoId ?? '')?.push({ x: node.renderPos[0], y: node.renderPos[1], r: node.r })
     }
     return [...members].flatMap(([repoId, circles]) => {

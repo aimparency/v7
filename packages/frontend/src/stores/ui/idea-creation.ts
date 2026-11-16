@@ -173,7 +173,9 @@ export async function placeIdea(
     const shouldPromptForPhaseCommitment =
       !isExistingIdea &&
       modalStore.ideaModalSource === 'graph' &&
-      projectStore.currentView === 'graph'
+      projectStore.currentView === 'graph' &&
+      // The phases are the open space's; an idea of a space opened in place has none here.
+      !dataStore.ideaSpaces[newIdeaId]
 
     if (modalStore.ideaCreationCallback) {
       if (shouldPromptForPhaseCommitment) {
@@ -221,7 +223,8 @@ export async function placeIdea(
     !!newIdeaId &&
     modalStore.ideaModalSource === 'graph' &&
     projectStore.currentView === 'graph' &&
-    !connectionCallbackPromptsPhase
+    !connectionCallbackPromptsPhase &&
+    !dataStore.ideaSpaces[newIdeaId!]
 
   modalStore.closeIdeaModal()
 

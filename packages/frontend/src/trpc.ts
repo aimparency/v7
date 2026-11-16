@@ -5,6 +5,7 @@ import { backendWsUrl } from './utils/runtime-config';
 import { loginToken } from './utils/login';
 import { clientId, mutationActivity } from './utils/mutation-activity';
 import { readOnlyGuardLink } from './utils/read-only';
+import { ideaSpaceLink } from './utils/idea-spaces';
 import { connectionCallbacks, reconnectDelayMs } from './utils/backend-connection';
 
 const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
@@ -41,6 +42,8 @@ const wsClient = createWSClient({
 // Create tRPC client with WebSocket
 export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
+    // First: a request about an idea of a space opened in place goes to that space.
+    ideaSpaceLink,
     readOnlyGuardLink,
     mutationTrackingLink,
     wsLink({

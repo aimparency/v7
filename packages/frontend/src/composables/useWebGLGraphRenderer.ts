@@ -97,7 +97,7 @@ export function useWebGLGraphRenderer(
       if (colorMode !== 'spin-off') return null
       const roots = graphUIStore.spinOffPreviewRootIds
       if (!roots.length) return null
-      const plan = planSpinOff(Object.values(dataStore.ideas), roots)
+      const plan = planSpinOff(dataStore.ownIdeas, roots)
       const m = new Map<string, 'red' | 'orange'>()
       for (const id of plan.spinOffIds) m.set(id, 'red')
       for (const id of plan.overlapIds) m.set(id, 'orange')

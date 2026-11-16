@@ -37,8 +37,8 @@ export function useGraphInteraction(
 
     // Creating and connecting ideas needs write access; without it the
     // reason shows. (Dragging out into empty space proposes a space instead.)
-    const mayEdit = () => {
-        if (dataStore.access.writable) return true
+    const mayEdit = (ideaId?: string) => {
+        if (ideaId ? dataStore.mayEditIdea(ideaId) : dataStore.access.writable) return true
         toastStore.info(dataStore.access.reason ?? 'This space is open read-only here.')
         return false
     }
@@ -233,7 +233,7 @@ export function useGraphInteraction(
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
             const drop = mapStore.connectDrop
-            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && !dataStore.access.writable) {
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && !dataStore.mayEditIdea(mapStore.connectFrom.id)) {
                 // A visitor proposes: a space of their own that supports the idea.
                 const from = mapStore.connectFrom as GraphNode
                 if (drop.kind === 'new' && isIdeaNode(from)) {
@@ -356,6 +356,18 @@ export function useGraphInteraction(
             node.id !== mapStore.connectFrom?.id &&
             (node.renderPos[0] - at[0]) ** 2 + (node.renderPos[1] - at[1]) ** 2 <= node.r * node.r
         )
+        const fromSpace = (mapStore.connectFrom as GraphNode | undefined)?.space
+        if (over && !over.isRepo && over.space !== fromSpace) {
+            // Ideas of two spaces are not connected one by one: an idea of
+            // the open space may take the other space as a whole.
+            mapStore.connectDrop = !fromSpace && over.space ? { kind: 'graph', repoId: over.space } : { kind: 'blocked' }
+            return
+        }
+        if (fromSpace) {
+            // From an idea of a space opened in place: inside that space only.
+            mapStore.connectDrop = over ? (over.isRepo ? { kind: 'blocked' } : connectDrop(over, undefined)) : { kind: 'new' }
+            return
+        }
         mapStore.connectDrop = connectDrop(over, over ? undefined : graphAt(at))
     }
 
@@ -566,13 +578,20 @@ export function useGraphInteraction(
                 return
             }
             connectionHandled = true
-            if (!mayEdit()) return
             const parent = mapStore.connectFrom as GraphNode
             const child = node
+            if (!mayEdit(parent.id)) return
+            // Across spaces: the drop decided it while dragging (a whole space, or nothing).
+            if (child.space !== parent.space && !child.isRepo) {
+                if (mapStore.connectDrop.kind === 'graph' && isIdeaNode(parent)) await contributeGraph(parent, mapStore.connectDrop.repoId)
+                return
+            }
 
             if (!isIdeaNode(parent)) return
-            // Dropped on a linked graph's node: that graph supports the idea.
+            // Dropped on a linked graph's node: that graph supports the idea
+            // (an idea of the open space only: the link is the open space's).
             if (child.isRepo) {
+                if (parent.space) return
                 await contributeGraph(parent, child.id)
                 return
             }

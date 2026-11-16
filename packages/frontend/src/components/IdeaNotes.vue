@@ -76,7 +76,8 @@ const remove = async (id: string) => {
 </script>
 
 <template>
-  <div v-if="accounts" class="idea-notes">
+  <!-- On an idea of the viewer's own space opened in place: only notes already there -->
+  <div v-if="accounts && (notes.length > 0 || !dataStore.ideaSpaces[props.ideaId])" class="idea-notes">
     <h4>Notes from visitors</h4>
     <div v-for="note in notes" :key="note.id" class="note">
       <span class="by">{{ note.author }} · {{ formatRelativeTime(Date.parse(note.createdAt)) }}</span>
@@ -85,7 +86,7 @@ const remove = async (id: string) => {
         <em>offers the space</em> <a :href="note.space.host" target="_blank" rel="noopener">{{ note.space.name }}</a><template v-if="note.text">: {{ note.text }}</template>
       </p>
       <p v-else><em v-if="note.kind === 'interest'">would like to work on this</em> {{ note.text }}</p>
-      <div v-if="note.kind === 'offer' && dataStore.access.writable" class="actions">
+      <div v-if="note.kind === 'offer' && dataStore.mayEditIdea(props.ideaId)" class="actions">
         <button class="btn-secondary" :disabled="accepting === note.id" @click="accept(note.id)">Accept: it supports this idea</button>
       </div>
     </div>
@@ -95,7 +96,7 @@ const remove = async (id: string) => {
       <div class="actions">
         <button class="btn-secondary" type="submit" :disabled="!text.trim()">Add note</button>
         <button class="btn-secondary" type="button" @click="add('interest')">I'd like to work on this</button>
-        <button v-if="!dataStore.access.writable" class="btn-secondary" type="button" title="Offer a space of yours that supports this idea" @click="useUIModalStore().openProposeModal(props.ideaId)">Offer a space</button>
+        <button v-if="!dataStore.mayEditIdea(props.ideaId)" class="btn-secondary" type="button" title="Offer a space of yours that supports this idea" @click="useUIModalStore().openProposeModal(props.ideaId)">Offer a space</button>
       </div>
     </form>
   </div>
