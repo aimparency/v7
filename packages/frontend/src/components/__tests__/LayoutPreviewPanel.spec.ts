@@ -10,17 +10,19 @@ const base = { count: 0, settings: DEFAULT_LAYOUT_SETTINGS, saved: DEFAULT_LAYOU
 describe('LayoutPreviewPanel', () => {
   beforeEach(() => setActivePinia(createPinia()))
 
-  it('shows connection and file counts for the fader position', () => {
-    const wrapper = mount(LayoutPreviewPanel, {
-      props: { ...base, changes: [change('p1', 'a'), change('p1', 'b'), change('p2', 'c')], count: 2 }
-    })
-    expect(wrapper.text()).toContain('Connections changed: 2 of 3 (1 idea files)')
+  it('counts ideas (files) on the fader, each with all its changed connections', () => {
+    const changes = [change('p1', 'a'), change('p2', 'c'), change('p1', 'b')]
+    const one = mount(LayoutPreviewPanel, { props: { ...base, changes, count: 1 } })
+    expect(one.text()).toContain('Ideas changed: 1 of 2 (2 connections)')
+    expect(one.find('.fader input').attributes('max')).toBe('2')
+    const both = mount(LayoutPreviewPanel, { props: { ...base, changes, count: 2 } })
+    expect(both.text()).toContain('Ideas changed: 2 of 2 (3 connections)')
   })
 
   it('locks the fader when no connection would change', () => {
     const wrapper = mount(LayoutPreviewPanel, { props: { ...base, changes: [] } })
     expect(wrapper.find('.fader input').attributes('disabled')).toBeDefined()
-    expect(wrapper.text()).toContain('Connections changed: 0 of 0 (0 idea files)')
+    expect(wrapper.text()).toContain('Ideas changed: 0 of 0 (0 connections)')
   })
 
   it('puts similarity first, apart from the connection solver', () => {

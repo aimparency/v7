@@ -1,13 +1,14 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from 'vue'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, type LayoutChange } from '../utils/autolayout'
+import { DEFAULT_LAYOUT_SETTINGS, changedIdeas, changesOfIdeas, sameLayoutSettings, type LayoutChange } from '../utils/autolayout'
 import SidePanel from './SidePanel.vue'
 
 // Live autolayout, two parts. Similarity moves ideas in the graph while the
 // panel is open, without any file change: left open, it simply runs. The
-// connection solver runs headless; the graph shows the first `count` of its
-// offset changes (most relevant first), and it re-solves whenever the
+// connection solver runs headless; the graph shows its offset changes for the
+// first `count` ideas (most relevant first; an idea's connections live in its
+// file, so this counts the files changed), and it re-solves whenever the
 // settings change. Nothing is saved until Apply; at 0 no idea file changes.
 const props = defineProps<{ changes: LayoutChange[]; saved: Required<LayoutSettings>; solving: boolean }>()
 const count = defineModel<number>('count', { required: true })
@@ -59,7 +60,8 @@ const setSetting = (slider: Slider, position: number) => {
 
 const noChanges = computed(() => props.changes.length === 0)
 const shown = computed(() => noChanges.value ? 0 : count.value)
-const files = computed(() => new Set(props.changes.slice(0, shown.value).map(change => change.parentId)).size)
+const ideas = computed(() => changedIdeas(props.changes).length)
+const connections = computed(() => changesOfIdeas(props.changes, shown.value).length)
 const unsaved = computed(() => !sameLayoutSettings(settings.value, props.saved))
 const isDefault = computed(() => sameLayoutSettings(settings.value, DEFAULT_LAYOUT_SETTINGS))
 
@@ -110,8 +112,8 @@ onUnmounted(() => window.removeEventListener('keydown', onKeydown, true))
       </div>
 
       <label class="fader" :class="{ disabled: noChanges }">
-        <span>Connections changed: {{ shown }} of {{ changes.length }} ({{ files }} idea files)</span>
-        <input v-model.number="count" type="range" min="0" :max="changes.length" step="1" :disabled="noChanges" />
+        <span>Ideas changed: {{ shown }} of {{ ideas }} ({{ connections }} connections)</span>
+        <input v-model.number="count" type="range" min="0" :max="ideas" step="1" :disabled="noChanges" />
       </label>
       <div class="row">
         <button class="btn-secondary" @click="emit('cancel')">Cancel</button>

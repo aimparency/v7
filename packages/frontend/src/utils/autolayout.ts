@@ -437,3 +437,18 @@ function forEachOverlap(
     }
   }
 }
+
+/**
+ * The ideas whose files the changes touch (a connection's offset is stored
+ * in its parent idea), most relevant first: in the order of their most
+ * relevant change, as `changes` comes sorted.
+ */
+export function changedIdeas(changes: LayoutChange[]): string[] {
+  return [...new Set(changes.map(change => change.parentId))]
+}
+
+/** The changes to the first `count` of those ideas: all of each idea's connections, so each changed file is changed once. */
+export function changesOfIdeas(changes: LayoutChange[], count: number): LayoutChange[] {
+  const chosen = new Set(changedIdeas(changes).slice(0, count))
+  return changes.filter(change => chosen.has(change.parentId))
+}

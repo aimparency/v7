@@ -24,7 +24,7 @@ import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { connectionArrowWidth, narrowestHitLink } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange } from '../utils/autolayout'
+import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange, changedIdeas, changesOfIdeas } from '../utils/autolayout'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 import { hubSpreads } from '../utils/layout-metrics'
@@ -398,10 +398,13 @@ const LAYOUT_PREVIEW_SHARE = 0.2
 // factor, so small setting changes don't swap connections in and out.
 const LAYOUT_HYSTERESIS = 1.25
 // A share, so the fader keeps its place when the solver finds more or fewer changes.
+// It counts ideas, not connections: a connection's offset lives in its parent
+// idea's file, so the number of ideas is the number of files a layout changes.
 const layoutShare = ref(LAYOUT_PREVIEW_SHARE)
+const layoutIdeaCount = computed(() => changedIdeas(layoutPreview.value?.changes ?? []).length)
 const layoutPreviewCount = computed({
-  get: () => Math.round((layoutPreview.value?.changes.length ?? 0) * layoutShare.value),
-  set: count => { layoutShare.value = count / Math.max(layoutPreview.value?.changes.length ?? 0, 1) }
+  get: () => Math.round(layoutIdeaCount.value * layoutShare.value),
+  set: count => { layoutShare.value = count / Math.max(layoutIdeaCount.value, 1) }
 })
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 let layoutWorker: Worker | null = null
@@ -485,7 +488,7 @@ watch(layoutSettings, settings => {
   layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })
 
-const appliedLayoutChanges = computed(() => layoutPreview.value?.changes.slice(0, layoutPreviewCount.value) ?? [])
+const appliedLayoutChanges = computed(() => changesOfIdeas(layoutPreview.value?.changes ?? [], layoutPreviewCount.value))
 
 // Shows the current share: each link gets its proposed or its stored offset
 // (new arrays: the stored ones are shared with the data store and must stay
@@ -535,8 +538,8 @@ async function applyLayoutPreview() {
   if (!sameLayoutSettings(settings, preview.saved)) {
     dataStore.meta = await trpc.project.setLayoutSettings.mutate({ graph: projectStore.projectPath, layout: settings })
   }
-  const files = new Set(applied.map(change => change.parentId)).size
-  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files.`)
+  const ideas = changedIdeas(applied).length
+  useToastStore().info(`Layout changed ${ideas} ideas (${applied.length} connections).`)
 }
 
 // Helper: split node text into lines for label rendering
