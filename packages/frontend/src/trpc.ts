@@ -1,31 +1,12 @@
-import { createTRPCProxyClient, createWSClient, wsLink, type TRPCLink } from '@trpc/client';
-import { observable } from '@trpc/server/observable';
+import { createTRPCProxyClient, createWSClient, wsLink } from '@trpc/client';
 import type { AppRouter } from 'backend';
 import { backendWsUrl } from './utils/runtime-config';
 import { loginToken } from './utils/login';
-import { clientId, mutationActivity } from './utils/mutation-activity';
+import { clientId } from './utils/mutation-activity';
+import { mutationTrackingLink } from './utils/mutation-tracking-link';
 import { readOnlyGuardLink } from './utils/read-only';
 import { ideaSpaceLink } from './utils/idea-spaces';
 import { connectionCallbacks, reconnectDelayMs } from './utils/backend-connection';
-
-const mutationTrackingLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
-  if (op.type !== 'mutation') return next(op);
-  return observable((observer) => {
-    mutationActivity.onStart(op.path);
-    let ended = false;
-    const end = () => {
-      if (ended) return;
-      ended = true;
-      mutationActivity.onEnd(op.path);
-    };
-    const subscription = next(op).subscribe({
-      next: (value) => observer.next(value),
-      error: (error) => { end(); observer.error(error); },
-      complete: () => { end(); observer.complete(); }
-    });
-    return () => { end(); subscription.unsubscribe(); };
-  });
-};
 
 // Create WebSocket client
 const wsClient = createWSClient({
@@ -42,7 +23,8 @@ const wsClient = createWSClient({
 // Create tRPC client with WebSocket
 export const trpc = createTRPCProxyClient<AppRouter>({
   links: [
-    // First: a request about an idea of a space opened in place goes to that space.
+    // First: a request about an idea of a space opened in place goes to that
+    // space, on this server or on its own.
     ideaSpaceLink,
     readOnlyGuardLink,
     mutationTrackingLink,

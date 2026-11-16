@@ -16,7 +16,9 @@ import { useViewerStore } from './viewer'
 import { setProjectAccess } from '../utils/read-only'
 import { hasAccounts } from '../utils/runtime-config'
 import { clearIdeaSpaces, setIdeaSpace } from '../utils/idea-spaces'
-import { parseGraphHost } from 'shared'
+import { graphHostUrl, parseGraphHost } from 'shared'
+import { remoteSpace, remoteTrpc } from '../utils/remote-trpc'
+import { serverLogin } from '../utils/server-logins'
 import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
 
@@ -62,14 +64,18 @@ type LinkedGraphView =
 // The subscriptions of the editable spaces opened in place, by repoId.
 const spaceSubscriptions = new Map<string, { unsubscribe: () => void }>()
 
-// The address of a space on this very server, from its host address; null for another server.
-function graphHere(host: string): string | null {
+// Where requests about a space go, from its host address: this server (by its
+// slug), or its own server where this page holds a login there; null when
+// this page can only read it from its host.
+function spaceAt(host: string): { client: typeof trpc; graph: string; address: string } | null {
   const parsed = parseGraphHost(host)
   if (!parsed) return null
   const here = new Set([window.location.origin, useViewerStore().publicUrl].flatMap(url => {
     try { return url ? [new URL(url).origin] : [] } catch { return [] }
   }))
-  return here.has(parsed.origin) ? parsed.slug : null
+  if (here.has(parsed.origin)) return { client: trpc, graph: parsed.slug, address: parsed.slug }
+  if (!serverLogin(parsed.origin)) return null
+  return { client: remoteTrpc(parsed.origin) as unknown as typeof trpc, graph: parsed.slug, address: graphHostUrl(parsed) }
 }
 
 // A space offered to an idea and not yet accepted (notes.offers): shown to its
@@ -636,8 +642,7 @@ export const useDataStore = defineStore('data', {
         delete this.linkedGraphViews[repoId]
         return
       }
-      const host = this.meta?.linkedRepos?.find((link: { repoId: string; host?: string }) => link.repoId === repoId)?.host
-        ?? this.offers.find(offer => offer.space?.repoId === repoId)?.space?.host
+      const host = this.hostOfSpace(repoId)
       if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
       this.linkedGraphViews[repoId] = { state: 'loading' }
       try {
@@ -651,39 +656,60 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    // A space on this server that the viewer may write opens like the open
-    // space itself: its ideas in the store, its changes followed live, every
-    // request about them sent to it. False when it is read-only here or
-    // elsewhere: it opens read-only from its host instead.
+    // A space the viewer may write opens like the open space itself: its
+    // ideas in the store, its changes followed live, every request about them
+    // sent to it. That is a space on this server, or one on another server
+    // where this page holds a login (utils/server-logins.ts). False when it is
+    // read-only for the viewer: it opens read-only from its host instead.
     async openEditableSpace(repoId: string, host: string): Promise<boolean> {
-      const graph = graphHere(host)
-      if (!graph) return false
-      const access = await trpc.project.getAccess.query({ graph }).catch(() => null)
+      const space = spaceAt(host)
+      if (!space) return false
+      const { client, graph, address } = space
+      const access = await client.project.getAccess.query({ graph }).catch(() => null)
       if (!access?.writable) return false
-      const [scan, meta] = await Promise.all([trpc.project.loadIdeas.query({ graph }), trpc.project.getMeta.query({ graph })])
+      const [scan, meta] = await Promise.all([client.project.loadIdeas.query({ graph }), client.project.getMeta.query({ graph })])
       if (meta.repoId && meta.repoId !== repoId) throw new Error(`${host} is another space now.`)
       for (const idea of scan.ideas) {
         this.ideaSpaces[idea.id] = repoId
-        setIdeaSpace(idea.id, graph)
+        setIdeaSpace(idea.id, address)
         this.ideas[idea.id] = idea
       }
-      this.linkedGraphViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, editable: { graph } }
+      this.linkedGraphViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, editable: { graph: address } }
       spaceSubscriptions.get(repoId)?.unsubscribe()
-      spaceSubscriptions.set(repoId, trpc.project.onUpdate.subscribe({ graph }, {
+      spaceSubscriptions.set(repoId, client.project.onUpdate.subscribe({ graph }, {
         onData: async (data: ProjectUpdate) => {
           if (data.type !== 'idea' || this.linkedGraphViews[repoId]?.state !== 'shown') return
           if (data.deleted) {
             this.removeIdeaLocally(data.id)
             return
           }
-          const idea = (data.entity as BaseIdea | undefined) ?? await trpc.idea.get.query({ graph, ideaId: data.id })
+          const idea = (data.entity as BaseIdea | undefined) ?? await client.idea.get.query({ graph, ideaId: data.id })
           this.ideaSpaces[idea.id] = repoId
-          setIdeaSpace(idea.id, graph)
+          setIdeaSpace(idea.id, address)
           this.replaceIdea(idea.id, idea)
         },
-        onError: (error: unknown) => console.warn(`Live updates of ${graph} stopped`, error)
+        onError: (error: unknown) => console.warn(`Live updates of ${host} stopped`, error)
       }))
       return true
+    },
+
+    // A login at a space's server came or went: opened in place, the space
+    // opens again, editable or read-only as that login may.
+    async reopenSpacesAt(origin: string) {
+      for (const [repoId, view] of Object.entries(this.linkedGraphViews)) {
+        if (view.state !== 'shown') continue
+        const host = this.hostOfSpace(repoId)
+        if (!host || parseGraphHost(host)?.origin !== origin) continue
+        this.closeEditableSpace(repoId)
+        delete this.linkedGraphViews[repoId]
+        await this.toggleLinkedGraph(repoId)
+      }
+    },
+
+    /** The address of a linked or offered space at its host. */
+    hostOfSpace(repoId: string): string | undefined {
+      return this.meta?.linkedRepos?.find((link: { repoId: string; host?: string }) => link.repoId === repoId)?.host
+        ?? this.offers.find(offer => offer.space?.repoId === repoId)?.space?.host
     },
 
     // Closing a space opened in place takes its ideas out of the store.
@@ -1105,7 +1131,12 @@ export const useDataStore = defineStore('data', {
         bySpace.set(graph, [...(bySpace.get(graph) ?? []), change])
       }
       try {
-        await Promise.all([...bySpace].map(([graph, part]) => trpc.idea.setConnectionPositions.mutate({ graph, changes: part })))
+        await Promise.all([...bySpace].map(([address, part]) => {
+          const remote = remoteSpace(address)
+          return remote
+            ? remoteTrpc(remote.origin).idea.setConnectionPositions.mutate({ graph: remote.graph, changes: part })
+            : trpc.idea.setConnectionPositions.mutate({ graph: address, changes: part })
+        }))
       } catch (e) {
         useToastStore().error('Failed to save positions', e)
       }

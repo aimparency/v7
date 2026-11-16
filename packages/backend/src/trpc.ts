@@ -14,6 +14,8 @@ export type Context = {
   session?: { token?: string };
   /** The request comes from a page of another website (see foreignOrigin). */
   foreignOrigin?: boolean;
+  /** The Origin of the page the request comes from, if any. */
+  origin?: string;
   viewer?: Viewer;
 };
 
@@ -47,6 +49,15 @@ function foreignOrigin(req: IncomingMessage | undefined): boolean {
   }
 }
 
+function requestOrigin(req: IncomingMessage | undefined): string | undefined {
+  const origin = req?.headers.origin;
+  try {
+    return origin ? new URL(origin).origin : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 // The login token comes with the WebSocket's connection params, or as a bearer
 // header over HTTP (the MCP server, scripts).
 export const createContext = (opts?: ContextOptions): Context => {
@@ -55,21 +66,31 @@ export const createContext = (opts?: ContextOptions): Context => {
     clientId: opts?.info?.connectionParams?.clientId,
     address: clientAddress(opts?.req),
     foreignOrigin: foreignOrigin(opts?.req),
+    origin: requestOrigin(opts?.req),
     session: { token: opts?.info?.connectionParams?.token ?? (header?.startsWith('Bearer ') ? header.slice(7) : undefined) }
   };
 };
+
+// A granted website logs in nowhere else (no further logins, no MCP approvals);
+// it may give its own login back.
+function mayWriteFromAfar(viewer: Viewer, path: string): boolean {
+  if (viewer.site === undefined) return false;
+  return path === 'auth.logout' || !/^(auth|mcpAuth)\./.test(path);
+}
 
 export const t = initTRPC.context<Context>().create({
   // With accounts, errors go to strangers: no server stack traces in them.
   errorFormatter: ({ shape }) => hasAccounts() ? { ...shape, data: { ...shape.data, stack: undefined } } : shape
 });
 
+// Pages of other websites read; they write only as an account that granted
+// that very website a login here (auth.grantSite).
 const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, next }) => {
-  if (ctx.foreignOrigin && type === 'mutation' && hasAccounts()) {
-    throw new TRPCError({ code: 'FORBIDDEN', message: 'Other websites may read this server; they do not write to it.' });
-  }
   const graph = graphOf(await getRawInput());
-  const viewer = viewerFor(ctx.session?.token, graph);
+  const viewer = viewerFor(ctx.session?.token, graph, ctx.origin);
+  if (ctx.foreignOrigin && type === 'mutation' && hasAccounts() && !mayWriteFromAfar(viewer, path)) {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Other websites may read this server; they write only with a login you give them here.' });
+  }
   assertAllowed(path, type, viewer, graph);
   // When it was last used decides when an automatic account is discarded (auth/discard.ts).
   if (viewer.id !== null) void touchAccount(viewer.id).catch(() => {});

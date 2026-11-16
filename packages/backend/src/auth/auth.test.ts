@@ -43,7 +43,7 @@ test('passwords and tokens round-trip, and a revoked token is gone', async () =>
   assert.equal(await accounts.login('ada', 'wrong password'), null);
   const token = await accounts.login('ada', 'correct horse');
   assert.ok(token);
-  assert.deepEqual(accounts.resolveToken(token), { id: ada.id, name: 'ada', serverAdmin: false, canCreateGraphs: false, permanentLogin: true, scope: null });
+  assert.deepEqual(accounts.resolveToken(token), { id: ada.id, name: 'ada', serverAdmin: false, canCreateGraphs: false, permanentLogin: true, scope: null, site: null });
   await accounts.revokeToken(token);
   assert.equal(accounts.resolveToken(token), null);
   const stored = await fs.readFile(accounts.accountsFile(), 'utf8');
@@ -268,4 +268,43 @@ test('wrong passwords for one name pause its logins', async () => {
     assert.rejects(as().auth.login({ name: 'target', password: `guess ${index}` }), /Wrong name or password/));
   await Promise.all(guesses);
   await assert.rejects(as().auth.login({ name: 'target', password: 'the right password' }), /Too many wrong passwords/);
+});
+
+test('a website the account grants writes as it from its own pages only, and does no more of its business', async () => {
+  updateServerConfig({ login: 'accounts' });
+  await accounts.createAccount('ada', 'ada password', { serverAdmin: true });
+  const ada = await loggedIn('ada', 'ada password');
+  const space = (await ada.graphs.create({ name: 'Space' })).slug;
+  const site = 'https://other.example';
+  const from = (origin: string, token?: string) => appRouter.createCaller({ session: { token }, foreignOrigin: true, origin });
+
+  // Only on this server's own page, and only for a website.
+  await assert.rejects(from(site, (await accounts.login('ada', 'ada password'))!).auth.grantSite({ site }), /website/i);
+  await assert.rejects(ada.auth.grantSite({ site: 'javascript:alert(1)' }), /not a website/);
+  await assert.rejects(as().auth.grantSite({ site }), /Log in first/);
+  const { token, account } = await ada.auth.grantSite({ site: `${site}/spaces/x?y` });
+  assert.equal(account, 'ada');
+
+  // From that website: ada, writing her space, leaving notes; no server admin, no account business.
+  const page = from(site, token);
+  await page.idea.createFloatingIdea({ graph: space, idea: { text: 'From afar' } });
+  assert.deepEqual(await page.project.getAccess({ graph: space }).then(({ user, serverAdmin }) => ({ user, serverAdmin })), { user: 'ada', serverAdmin: false });
+  await assert.rejects(page.graphs.create({ name: 'More' }), /may not do this/);
+  await assert.rejects(page.auth.grantSite({ site: 'https://third.example' }), /login you give them here/);
+  await assert.rejects(page.auth.login({ name: 'ada', password: 'ada password' }), /login you give them here/);
+  await assert.rejects(page.graphs.setAccess({ graph: space, writers: [] }), /own page/);
+  await assert.rejects(page.auth.listAccounts(), /server admins/);
+
+  // From any other website, or without one, the token is nobody; other websites without it only read.
+  await assert.rejects(from('https://evil.example', token).idea.createFloatingIdea({ graph: space, idea: { text: 'Stolen' } }), /login you give them here/);
+  await assert.rejects(as(token).idea.createFloatingIdea({ graph: space, idea: { text: 'Stolen' } }), /log in to edit/);
+  await assert.rejects(from(site).idea.createFloatingIdea({ graph: space, idea: { text: 'Anonymous' } }), /login you give them here/);
+
+  // Granting again replaces it; the account sees it and takes it back.
+  const again = (await ada.auth.grantSite({ site })).token;
+  await assert.rejects(from(site, token).idea.createFloatingIdea({ graph: space, idea: { text: 'Old' } }), /login you give them here/);
+  const granted = (await ada.auth.listTokens()).filter(entry => entry.site === site);
+  assert.equal(granted.length, 1);
+  await ada.auth.revokeOwnToken({ id: granted[0]!.id });
+  await assert.rejects(from(site, again).idea.createFloatingIdea({ graph: space, idea: { text: 'Revoked' } }), /login you give them here/);
 });

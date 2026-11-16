@@ -17,7 +17,11 @@ export type GraphRight = typeof RIGHTS[number];
 // server admin, or 'local' (only on a server without login).
 type Need = GraphRight | 'account' | 'serverAdmin' | 'local';
 
-export type Viewer = { id: string | null; name: string | null; serverAdmin: boolean; canCreateGraphs: boolean; permanentLogin: boolean };
+export type Viewer = {
+  id: string | null; name: string | null; serverAdmin: boolean; canCreateGraphs: boolean; permanentLogin: boolean;
+  /** Logged in by a website the account granted (auth.grantSite): that website's origin. */
+  site?: string;
+};
 
 const LOCAL_VIEWER: Viewer = { id: null, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true };
 const ANONYMOUS: Viewer = { id: null, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: false };
@@ -43,7 +47,7 @@ const OPEN_MUTATIONS = new Set([
   'mcpAuth.registerClient', 'mcpAuth.begin', 'mcpAuth.deny', 'mcpAuth.exchange'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
+  'auth.issueToken', 'auth.grantSite', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
   'notes.add', 'notes.remove',
   'mcpAuth.approve'
@@ -58,6 +62,9 @@ const WRITE_MUTATIONS = new Set([
   'notes.acceptOffer'
 ]);
 const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
+// What a website the account granted may do beyond writing its graphs; its
+// account (password, tokens, further websites) stays on this server's own pages.
+const SITE_ACCOUNT_MUTATIONS = new Set(['notes.add', 'notes.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).
 const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens', 'auth.ownFootprint']);
 // Every other mutation needs a server admin, so a new one is closed until listed.
@@ -82,11 +89,18 @@ export function seesServerPaths(viewer: Viewer | undefined): boolean {
 // A token limited to some graphs (an MCP client's) is the account on those
 // graphs and nobody anywhere else: not on other graphs, not for the server's
 // own business (accounts, creating graphs, further tokens).
-export function viewerFor(token: string | undefined, graph: Graph | null = null): Viewer {
+// A token granted to another website is the account only on that website's
+// pages (`origin`, the request's Origin); there it writes what the account
+// writes, and leaves notes, but does no more of the server's own business.
+export function viewerFor(token: string | undefined, graph: Graph | null = null, origin?: string): Viewer {
   if (!hasAccounts()) return LOCAL_VIEWER;
   const account = resolveToken(token);
   if (!account) return ANONYMOUS;
-  const { scope, ...viewer } = account;
+  const { scope, site, ...viewer } = account;
+  if (site !== null) {
+    if (origin !== site) return ANONYMOUS;
+    return { ...viewer, serverAdmin: false, canCreateGraphs: false, site };
+  }
   if (scope === null) return viewer;
   if (!graph || !slugsOf(graph).some(slug => scope.includes(slug))) return ANONYMOUS;
   return { ...viewer, serverAdmin: false, canCreateGraphs: false };
@@ -134,7 +148,13 @@ export function assertAllowed(path: string, type: string, viewer: Viewer, graph:
   }
   if (need === 'account') {
     if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
+    if (viewer.site !== undefined && !SITE_ACCOUNT_MUTATIONS.has(path)) {
+      throw new TRPCError({ code: 'FORBIDDEN', message: `${viewer.site} may not do this for your account: do it on this server's own page.` });
+    }
     return;
+  }
+  if (viewer.site !== undefined && need === 'owner') {
+    throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space may do this, on this server\'s own page.' });
   }
   const right = rightOn(graph, viewer);
   if (RIGHTS.indexOf(right) >= RIGHTS.indexOf(need)) return;

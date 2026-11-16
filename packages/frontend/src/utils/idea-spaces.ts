@@ -1,12 +1,14 @@
 import { observable } from '@trpc/server/observable'
 import type { TRPCLink } from '@trpc/client'
 import type { AppRouter } from 'backend'
+import { remoteSpace, remoteUntyped } from './remote-trpc'
 
 // Spaces opened in place that the viewer may write keep their ideas in the
 // same store as the open space: the UI treats them alike. What a request does
 // to such an idea goes to that idea's space. This map says which space an
-// idea belongs to (by its address on this server); the open space's own
-// ideas are not in it.
+// idea belongs to: its slug on this server, or its whole address
+// (https://<server>/spaces/<slug>) on another one, which gets the request
+// itself; the open space's own ideas are not in it.
 const spaces = new Map<string, string>()
 
 export function setIdeaSpace(ideaId: string, graph: string | null) {
@@ -51,5 +53,17 @@ export const ideaSpaceLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
       observer.error(new CrossSpaceError() as never)
     })
   }
-  return next(target === null ? op : { ...op, input: { ...input, graph: target } })
+  if (target === null) return next(op)
+  const remote = remoteSpace(target)
+  if (!remote) return next({ ...op, input: { ...input, graph: target } })
+  return observable((observer) => {
+    const client = remoteUntyped(remote.origin)
+    const request = op.type === 'mutation'
+      ? client.mutation(op.path, { ...input, graph: remote.graph })
+      : client.query(op.path, { ...input, graph: remote.graph })
+    request.then(
+      (data) => { observer.next({ result: { type: 'data', data } } as never); observer.complete() },
+      (error) => observer.error(error)
+    )
+  })
 }

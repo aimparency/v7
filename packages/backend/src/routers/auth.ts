@@ -16,6 +16,15 @@ function assertAccounts() {
   if (!hasAccounts()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'This server has no accounts.' });
 }
 
+// The website as an origin (https://host[:port]); its pages are what a login is given to.
+function siteOrigin(address: string): string {
+  try {
+    const url = new URL(address);
+    if (url.protocol === 'https:' || url.protocol === 'http:') return url.origin;
+  } catch { /* below */ }
+  throw new TRPCError({ code: 'BAD_REQUEST', message: `"${address}" is not a website.` });
+}
+
 function signedIn(name: string | null | undefined): string {
   if (!name) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
   return name;
@@ -228,6 +237,21 @@ export const authRouter = t.router({
         if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
       }
       return { token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), input.label, input.graphs)) };
+    }),
+
+  // Another Aimparency website's page (a space there shows a space of this
+  // server in place) acts as this account here: the person allows it on this
+  // server's own page, which hands the login to that website's page in the
+  // browser (postMessage to exactly that origin). That website's server never
+  // sees it. It works from that website's pages only, and does no more than
+  // write what the account writes and leave notes (auth/access.ts).
+  grantSite: delayedProcedure
+    .input(z.object({ site: z.string().max(500) }))
+    .mutation(async ({ ctx, input }) => {
+      assertAccounts();
+      if (ctx.foreignOrigin) throw new TRPCError({ code: 'FORBIDDEN', message: 'Websites are allowed on this server\'s own page.' });
+      const site = siteOrigin(input.site);
+      return { token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), `Website ${site}`, undefined, site)), account: ctx.viewer!.name! };
     }),
 
   // The logins this account handed out: its browsers and MCP clients.

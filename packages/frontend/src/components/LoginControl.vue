@@ -5,6 +5,9 @@ import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
 import { browserWallets, signWithWallet, type Wallet } from '../utils/wallets'
 import { forgetBrowserKey } from '../utils/browser-key'
+import { serverLogins, storeServerLogin } from '../utils/server-logins'
+import { remoteTrpc } from '../utils/remote-trpc'
+import { useDataStore } from '../stores/data'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 import McpConnectModal from './McpConnectModal.vue'
@@ -113,6 +116,19 @@ const logout = async () => {
   await viewer.loginChanged(null)
 }
 
+// Logins this page holds at other servers, for their spaces opened in place
+// (utils/server-logins.ts). Logging out there gives the login back to that server.
+const elsewhere = ref(serverLogins())
+const refreshElsewhere = () => { elsewhere.value = serverLogins() }
+const hostOf = (origin: string) => new URL(origin).host
+const logoutElsewhere = async (origin: string) => {
+  menuOpen.value = false
+  await remoteTrpc(origin).auth.logout.mutate().catch(() => undefined)
+  storeServerLogin(origin, null)
+  refreshElsewhere()
+  await useDataStore().reopenSpacesAt(origin)
+}
+
 // An account held only by this browser's key cannot be logged into again
 // after logging out: it is discarded, with what it made.
 type Footprint = Awaited<ReturnType<typeof trpc.auth.ownFootprint.query>>
@@ -143,7 +159,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
         :aria-expanded="menuOpen"
         aria-haspopup="menu"
         :title="viewer.permanentLogin ? 'Your account' : 'This account lives only in this browser'"
-        @click="menuOpen = !menuOpen"
+        @click="menuOpen = !menuOpen; refreshElsewhere()"
       >
         <CircleAlert v-if="!viewer.permanentLogin" /><CircleUser v-else />
         <span class="account-name">{{ viewer.name }}</span>
@@ -160,6 +176,18 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
         ><CircleAlert /> Keep account</button>
         <button class="menu-item" role="menuitem" title="Let an MCP client, such as a coding agent, act as you" @click="open('mcp')"><Plug /> Connect an agent (MCP)</button>
         <button v-if="viewer.permanentLogin" class="menu-item" role="menuitem" @click="open('password')"><KeyRound /> Password</button>
+        <template v-if="elsewhere.length > 0">
+          <div class="menu-separator"></div>
+          <div class="menu-label">Logged in elsewhere, for spaces shown here</div>
+          <button
+            v-for="login in elsewhere"
+            :key="login.origin"
+            class="menu-item"
+            role="menuitem"
+            :title="`Log out of ${hostOf(login.origin)}: its spaces become read-only here`"
+            @click="logoutElsewhere(login.origin)"
+          ><LogOut /> {{ login.account }} at {{ hostOf(login.origin) }}</button>
+        </template>
         <template v-if="viewer.serverAdmin">
           <div class="menu-separator"></div>
           <button class="menu-item" role="menuitem" @click="open('accounts')"><Users /> Accounts</button>

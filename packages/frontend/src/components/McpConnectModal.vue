@@ -84,9 +84,9 @@ const revoke = (id: string) => run(async () => {
       <p v-if="error" class="error">{{ error }}</p>
 
       <template v-if="clients.length > 0">
-        <h4 class="section-title">Connected agents</h4>
+        <h4 class="section-title">Connected agents and websites</h4>
         <div v-for="token in clients" :key="token.id" class="row">
-          <span class="grow">{{ token.label }} · {{ token.graphs ? token.graphs.join(', ') : 'all graphs' }} · {{ formatRelativeTime(Date.parse(token.createdAt)) }}</span>
+          <span class="grow">{{ token.label }} · {{ token.site ? 'writes what you write, from there only' : token.graphs ? token.graphs.join(', ') : 'all graphs' }} · {{ formatRelativeTime(Date.parse(token.createdAt)) }}</span>
           <button class="btn-secondary" @click="revoke(token.id)">Revoke</button>
         </div>
       </template>

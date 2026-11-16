@@ -29,7 +29,9 @@ type Account = {
 };
 // `graphs`: the slugs this token is limited to (an MCP client the account gave
 // only some graphs); absent, the token is the account everywhere.
-type Token = { hash: string; account: string; label: string; createdAt: string; graphs?: string[] };
+// `site`: the origin of another website whose pages the account let act as it
+// here (auth.grantSite); such a token works from that website's pages only.
+type Token = { hash: string; account: string; label: string; createdAt: string; graphs?: string[]; site?: string };
 // A link that lets its holder create an account; `once` is used up by the first.
 type Invitation = {
   id: string;
@@ -412,16 +414,19 @@ export async function login(name: string, password: string): Promise<string | nu
   return await checkPassword(name, password) ? issueToken(name, 'browser') : null;
 }
 
-export async function issueToken(name: string, label: string, graphs?: string[]): Promise<string> {
+export async function issueToken(name: string, label: string, graphs?: string[], site?: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('base64url');
   await change((accounts) => {
     const entry: Token = {
       hash: sha256(token), account: byName(accounts, name).id, label, createdAt: new Date().toISOString(),
-      ...(graphs ? { graphs } : {})
+      ...(graphs ? { graphs } : {}),
+      ...(site ? { site } : {})
     };
     // A login is activity.
     const active = accounts.accounts.map(account => account.id === entry.account ? { ...account, lastActiveAt: today() } : account);
-    return { ...accounts, accounts: active, tokens: [...accounts.tokens, entry] };
+    // A website gets one login per account: granting again replaces the old one.
+    const kept = site ? accounts.tokens.filter(other => !(other.account === entry.account && other.site === site)) : accounts.tokens;
+    return { ...accounts, accounts: active, tokens: [...kept, entry] };
   });
   return token;
 }
@@ -431,13 +436,13 @@ export async function revokeToken(token: string) {
   await change(accounts => ({ ...accounts, tokens: accounts.tokens.filter(entry => entry.hash !== hash) }));
 }
 
-/** The account a token logs in, and the graphs it is limited to (null: none, it is the account everywhere). */
-export function resolveToken(token: string | undefined): (AccountView & { scope: string[] | null }) | null {
+/** The account a token logs in, the graphs it is limited to (null: none, it is the account everywhere), and the website it was granted to. */
+export function resolveToken(token: string | undefined): (AccountView & { scope: string[] | null; site: string | null }) | null {
   if (!token) return null;
   const accounts = load();
   const entry = accounts.tokens.find(candidate => candidate.hash === sha256(token));
   const account = entry && accounts.accounts.find(candidate => candidate.id === entry.account);
-  return account ? { ...view(account), scope: entry.graphs ?? null } : null;
+  return account ? { ...view(account), scope: entry.graphs ?? null, site: entry.site ?? null } : null;
 }
 
 // The tokens an account handed out (browsers it is logged in at, MCP clients),
@@ -448,7 +453,7 @@ export function listTokens(name: string) {
   const accounts = load();
   const { id } = byName(accounts, name);
   return accounts.tokens.filter(token => token.account === id)
-    .map(({ hash, label, createdAt, graphs }) => ({ id: hash.slice(0, TOKEN_ID_LENGTH), label, createdAt, graphs: graphs ?? null }));
+    .map(({ hash, label, createdAt, graphs, site }) => ({ id: hash.slice(0, TOKEN_ID_LENGTH), label, createdAt, graphs: graphs ?? null, site: site ?? null }));
 }
 
 export async function revokeTokenById(name: string, tokenId: string) {

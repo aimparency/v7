@@ -1,7 +1,16 @@
-import { afterEach, describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import { createTRPCProxyClient, type TRPCLink } from '@trpc/client'
 import { observable } from '@trpc/server/observable'
 import type { AppRouter } from 'backend'
+// Another server: what this page asks of it, by procedure and space.
+const remoteCalls = vi.hoisted(() => [] as string[])
+vi.mock('./remote-trpc', async (original) => ({
+  ...await original<typeof import('./remote-trpc')>(),
+  remoteUntyped: (origin: string) => ({
+    mutation: async (path: string, input: { graph: string }) => { remoteCalls.push(`${origin} ${path} ${input.graph}`); return { id: 'made-there' } },
+    query: async (path: string, input: { graph: string }) => { remoteCalls.push(`${origin} ${path} ${input.graph}`); return [] }
+  })
+}))
 import { clearIdeaSpaces, ideaSpaceLink, setIdeaSpace } from './idea-spaces'
 import { readOnlyGuardLink, setProjectAccess } from './read-only'
 
@@ -55,5 +64,19 @@ describe('ideaSpaceLink', () => {
     await trpc.idea.update.mutate({ graph: 'host', ideaId: 'theirs', idea: {} } as never)
     await trpc.phase.list.query({ graph: 'host' } as never)
     expect(sent).toEqual(['idea.update host', 'phase.list host'])
+  })
+
+  it('sends what concerns an idea of a space on another server to that server, by its slug there', async () => {
+    const { sent, trpc } = client()
+    remoteCalls.length = 0
+    setProjectAccess('host', 'This space is open read-only here.')
+    setIdeaSpace('far-1', 'https://other.example/spaces/garden')
+
+    const made = await trpc.idea.createFloatingIdea.mutate({ graph: 'host', idea: { text: 'Plant' }, inheritColorFrom: 'far-1' } as never)
+    await trpc.idea.getMany.query({ graph: 'host', ideaIds: ['far-1'] } as never)
+
+    expect(made).toEqual({ id: 'made-there' })
+    expect(remoteCalls).toEqual(['https://other.example idea.createFloatingIdea garden', 'https://other.example idea.getMany garden'])
+    expect(sent).toEqual([])
   })
 })

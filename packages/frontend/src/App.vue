@@ -20,6 +20,8 @@ import PhaseCreationModal from './components/PhaseCreationModal.vue'
 import IdeaCreationModal from './components/IdeaCreationModal.vue'
 import ConnectionDetailsModal from './components/ConnectionDetailsModal.vue'
 import ProposeSpaceModal from './components/ProposeSpaceModal.vue'
+import ConnectServerModal from './components/ConnectServerModal.vue'
+import ConnectSiteModal from './components/ConnectSiteModal.vue'
 import IdeaRemovalDialog from './components/IdeaRemovalDialog.vue'
 import IdeaEditModal from './components/IdeaEditModal.vue'
 import IdeaSearchModal from './components/IdeaSearchModal.vue'
@@ -281,6 +283,22 @@ const closeMcpRequest = () => {
   mcpRequest.value = ''
   const url = new URL(window.location.href)
   url.searchParams.delete('mcp-authorize')
+  window.history.replaceState({}, '', url)
+}
+
+// ?connect-site=<origin>&connect-state=<nonce>: a page of another Aimparency
+// website asks to act as the person here, for a space of this server open there.
+const connectRequest = ref((() => {
+  const params = new URLSearchParams(window.location.search)
+  const site = params.get('connect-site')
+  const state = params.get('connect-state')
+  return site && state ? { site, state } : null
+})())
+const closeConnectRequest = () => {
+  connectRequest.value = null
+  const url = new URL(window.location.href)
+  url.searchParams.delete('connect-site')
+  url.searchParams.delete('connect-state')
   window.history.replaceState({}, '', url)
 }
 
@@ -793,6 +811,13 @@ onUnmounted(() => {
     <IdeaRemovalDialog v-if="modalStore.ideaRemoval" :request="modalStore.ideaRemoval" />
 
     <McpAuthorizeModal v-if="accounts && mcpRequest" :request-id="mcpRequest" @close="closeMcpRequest" />
+    <ConnectSiteModal v-if="accounts && connectRequest" :site="connectRequest.site" :state="connectRequest.state" @close="closeConnectRequest" />
+    <ConnectServerModal
+      v-if="modalStore.connectServer"
+      :host="modalStore.connectServer.host"
+      :space-name="modalStore.connectServer.spaceName"
+      @close="modalStore.connectServer = null"
+    />
     <!-- Before the idea editor, so an idea opened from the inbox stacks on top -->
     <ReviewInboxModal v-if="showReviewInbox" @close="showReviewInbox = false" />
     <CommitModal

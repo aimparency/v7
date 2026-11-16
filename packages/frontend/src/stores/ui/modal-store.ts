@@ -59,6 +59,8 @@ export const useUIModalStore = defineStore('ui-modal', {
     showConnectionDetailsModal: false,
     // Without write access: offer a space that supports this idea (ProposeSpaceModal).
     proposeForIdeaId: null as string | null,
+    // A space of another server to change here: log in there first (ConnectServerModal).
+    connectServer: null as { host: string; spaceName?: string } | null,
     // Where the offered space was dropped, relative to the idea (as a connection's relativePosition).
     proposeRelativePosition: null as [number, number] | null,
     connectionDetailsParentId: null as string | null,
