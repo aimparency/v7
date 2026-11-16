@@ -18,6 +18,32 @@ export function setIdeaSpace(ideaId: string, graph: string | null) {
 
 export function clearIdeaSpaces() {
   spaces.clear()
+  readOnly.clear()
+}
+
+// Spaces opened in place that the viewer may not change (by address): what
+// would change them is refused here, and whoever listens is told, so it can
+// ask for a login at the space's server.
+const readOnly = new Set<string>()
+let readOnlyListener: ((address: string) => void) | null = null
+
+export function setSpaceWritable(address: string, writable: boolean) {
+  if (writable) readOnly.delete(address)
+  else readOnly.add(address)
+}
+
+export function onReadOnlySpaceEdit(listener: (address: string) => void) {
+  readOnlyListener = listener
+}
+
+// Notes are the guests' layer of the open space, never the space opened in place.
+const READING_MUTATIONS = new Set(['phase.setCursor', 'project.buildSearchIndex'])
+
+export class ReadOnlySpaceError extends Error {
+  constructor() {
+    super('This space is open read-only here: changing it needs a login with write access there.')
+    this.name = 'ReadOnlySpaceError'
+  }
 }
 
 export class CrossSpaceError extends Error {
@@ -54,6 +80,12 @@ export const ideaSpaceLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
     })
   }
   if (target === null) return next(op)
+  if (op.type === 'mutation' && readOnly.has(target) && !READING_MUTATIONS.has(op.path)) {
+    readOnlyListener?.(target)
+    return observable((observer) => {
+      observer.error(new ReadOnlySpaceError() as never)
+    })
+  }
   const remote = remoteSpace(target)
   if (!remote) return next({ ...op, input: { ...input, graph: target } })
   return observable((observer) => {

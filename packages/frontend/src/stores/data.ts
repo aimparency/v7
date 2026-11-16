@@ -15,7 +15,8 @@ import { useToastStore } from './toast'
 import { useViewerStore } from './viewer'
 import { setProjectAccess } from '../utils/read-only'
 import { hasAccounts } from '../utils/runtime-config'
-import { clearIdeaSpaces, setIdeaSpace } from '../utils/idea-spaces'
+import { clearIdeaSpaces, onReadOnlySpaceEdit, setIdeaSpace, setSpaceWritable } from '../utils/idea-spaces'
+import { useUIModalStore } from './ui/modal-store'
 import { graphHostUrl, parseGraphHost } from 'shared'
 import { remoteSpace, remoteTrpc } from '../utils/remote-trpc'
 import { serverLogin } from '../utils/server-logins'
@@ -51,31 +52,40 @@ const isMissingFileError = (error: unknown) => {
 // meta color, when checked out, is a later refinement.)
 const REPO_NODE_COLOR = '#9e9e9e'
 
-// A linked graph opened in place: its ideas, loaded by the browser from the
-// server hosting it, with the values that graph gives them itself.
-// A space on this server that the viewer may write opens editable: its ideas
-// join the store's ideas (ideaSpaces says whose they are), and the UI treats
-// them like the open space's own; `graph` is its address here.
+// A linked graph opened in place. Its ideas join the store's ideas (ideaSpaces
+// says whose they are), and the UI treats them like the open space's own:
+// `inPlace.graph` is where requests about them go (its slug here, or its
+// address on its own server), `inPlace.writable` whether the viewer may change
+// them. Only when its server cannot be talked to that way are its ideas just
+// loaded from its host, apart (`ideas`, with the values the graph gives them).
 type LinkedGraphView =
   | { state: 'loading' }
-  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string; editable?: { graph: string } }
+  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string; inPlace?: { graph: string; writable: boolean } }
   | { state: 'unavailable' }
 
 // The subscriptions of the editable spaces opened in place, by repoId.
 const spaceSubscriptions = new Map<string, { unsubscribe: () => void }>()
 
+// Whether an origin is this very server's.
+function isHere(origin: string): boolean {
+  return [window.location.origin, useViewerStore().publicUrl].some(url => {
+    try { return !!url && new URL(url).origin === origin } catch { return false }
+  })
+}
+
 // Where requests about a space go, from its host address: this server (by its
-// slug), or its own server where this page holds a login there; null when
-// this page can only read it from its host.
+// slug), or its own server (by its whole address), with the login this page
+// holds there if any.
 function spaceAt(host: string): { client: typeof trpc; graph: string; address: string } | null {
   const parsed = parseGraphHost(host)
   if (!parsed) return null
-  const here = new Set([window.location.origin, useViewerStore().publicUrl].flatMap(url => {
-    try { return url ? [new URL(url).origin] : [] } catch { return [] }
-  }))
-  if (here.has(parsed.origin)) return { client: trpc, graph: parsed.slug, address: parsed.slug }
-  if (!serverLogin(parsed.origin)) return null
+  if (isHere(parsed.origin)) return { client: trpc, graph: parsed.slug, address: parsed.slug }
   return { client: remoteTrpc(parsed.origin) as unknown as typeof trpc, graph: parsed.slug, address: graphHostUrl(parsed) }
+}
+
+// A server that does not answer soon (down, or not one to talk to this way) is null.
+function answered<T>(request: Promise<T>, ms = 8000): Promise<T | null> {
+  return Promise.race([request.catch(() => null), new Promise<null>(resolve => setTimeout(() => resolve(null), ms))])
 }
 
 // A space offered to an idea and not yet accepted (notes.offers): shown to its
@@ -268,7 +278,7 @@ export const useDataStore = defineStore('data', {
     // Linked graphs opened in place, by repoId.
     linkedGraphViews: {} as Record<string, LinkedGraphView>,
     offers: [] as SpaceOffer[],
-    // Ideas of editable spaces opened in place: their space's repoId.
+    // Ideas of spaces opened in place: their space's repoId.
     ideaSpaces: {} as Record<string, string>,
     
     // Calculated values
@@ -503,9 +513,9 @@ export const useDataStore = defineStore('data', {
       const offeredById = new Map(state.offers.flatMap(offer => offer.space ? [[offer.space.repoId, offer.space] as const] : []))
       for (const [repoId, space] of offeredById) if (!linkedRepoById.has(repoId)) linkedRepoById.set(repoId, space)
       const repoNodeIds = new Set<string>()
-      // The ideas of a space opened in place: the store's own when it is
-      // editable, as loaded from its host otherwise.
-      const ideasInPlace = (repoId: string, view: LinkedGraphView & { state: 'shown' }) => view.editable
+      // The ideas of a space opened in place: the store's own, or as loaded
+      // apart from its host.
+      const ideasInPlace = (repoId: string, view: LinkedGraphView & { state: 'shown' }) => view.inPlace
         ? Object.values(state.ideas).filter(idea => state.ideaSpaces[idea.id] === repoId)
         : view.ideas
       ideas.forEach(idea => {
@@ -561,7 +571,7 @@ export const useDataStore = defineStore('data', {
           const contributors = shown ? intrinsicShares(ideasInPlace(repoId, shown) as Idea[]) : [[repoId, 1] as const]
           for (const [contributor, part] of contributors) {
             links.push({
-              source: contributor === repoId ? repoId : shown?.editable ? contributor : linkedIdeaNodeId(repoId, contributor),
+              source: contributor === repoId ? repoId : shown?.inPlace ? contributor : linkedIdeaNodeId(repoId, contributor),
               target: idea.id,
               type: 'hierarchy',
               relativePosition,
@@ -574,13 +584,13 @@ export const useDataStore = defineStore('data', {
         })
       })
 
-      // Linked graphs opened in place: their ideas hang below the graph's
-      // node and share out the value flowing into it. Read-only here, unless
-      // the space is editable: then its ideas are the store's own, by their
-      // ids, connected as they are in their space.
+      // Linked graphs opened in place: their ideas take the graph's node's
+      // place and share out the value flowing into it. They are the store's
+      // own, by their ids, connected as they are in their space; loaded apart,
+      // they are read-only nodes of their own.
       for (const [repoId, view] of Object.entries(state.linkedGraphViews)) {
         if (view.state !== 'shown' || !repoNodeIds.has(repoId)) continue
-        const editable = !!view.editable
+        const editable = !!view.inPlace
         const viewIdeas = ideasInPlace(repoId, view)
         const ownValues = editable ? calculateIdeaValues(viewIdeas as Idea[]).values : view.ownValues
         const values = spreadInflow(state.calculatedValues.get(repoId) || 0, ownValues)
@@ -638,7 +648,7 @@ export const useDataStore = defineStore('data', {
     // from the server hosting it; that server may be down.
     async toggleLinkedGraph(repoId: string) {
       if (this.linkedGraphViews[repoId]?.state === 'shown') {
-        this.closeEditableSpace(repoId)
+        this.closeSpaceInPlace(repoId)
         delete this.linkedGraphViews[repoId]
         return
       }
@@ -646,8 +656,8 @@ export const useDataStore = defineStore('data', {
       if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
       this.linkedGraphViews[repoId] = { state: 'loading' }
       try {
-        if (await this.openEditableSpace(repoId, host)) return
-        // Its color only tints the outline, so the graph opens without it.
+        if (await this.openSpaceInPlace(repoId, host)) return
+        // Its server cannot be talked to: read once from its host. Its color only tints the outline, so the graph opens without it.
         const [ideas, graph] = await Promise.all([fetchIdeasAtHost(host), fetchGraphAtHost(host).catch(() => undefined)])
         this.linkedGraphViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values, color: graph?.color }
       } catch (error) {
@@ -656,17 +666,19 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    // A space the viewer may write opens like the open space itself: its
-    // ideas in the store, its changes followed live, every request about them
-    // sent to it. That is a space on this server, or one on another server
-    // where this page holds a login (utils/server-logins.ts). False when it is
-    // read-only for the viewer: it opens read-only from its host instead.
-    async openEditableSpace(repoId: string, host: string): Promise<boolean> {
+    // A space opens like the open space itself: its ideas in the store, its
+    // changes followed live, every request about them sent to it, on this
+    // server or its own (with the login this page holds there, if any:
+    // utils/server-logins.ts). Read-only for the viewer, changing it asks
+    // for a login there (askToEditSpace). False when its server does not
+    // answer that way: it is read once from its host instead.
+    async openSpaceInPlace(repoId: string, host: string): Promise<boolean> {
       const space = spaceAt(host)
       if (!space) return false
       const { client, graph, address } = space
-      const access = await client.project.getAccess.query({ graph }).catch(() => null)
-      if (!access?.writable) return false
+      const access = await answered(client.project.getAccess.query({ graph }))
+      if (!access) return false
+      const writable = access.writable
       const [scan, meta] = await Promise.all([client.project.loadIdeas.query({ graph }), client.project.getMeta.query({ graph })])
       if (meta.repoId && meta.repoId !== repoId) throw new Error(`${host} is another space now.`)
       for (const idea of scan.ideas) {
@@ -674,7 +686,8 @@ export const useDataStore = defineStore('data', {
         setIdeaSpace(idea.id, address)
         this.ideas[idea.id] = idea
       }
-      this.linkedGraphViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, editable: { graph: address } }
+      setSpaceWritable(address, writable)
+      this.linkedGraphViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, inPlace: { graph: address, writable } }
       spaceSubscriptions.get(repoId)?.unsubscribe()
       spaceSubscriptions.set(repoId, client.project.onUpdate.subscribe({ graph }, {
         onData: async (data: ProjectUpdate) => {
@@ -700,7 +713,7 @@ export const useDataStore = defineStore('data', {
         if (view.state !== 'shown') continue
         const host = this.hostOfSpace(repoId)
         if (!host || parseGraphHost(host)?.origin !== origin) continue
-        this.closeEditableSpace(repoId)
+        this.closeSpaceInPlace(repoId)
         delete this.linkedGraphViews[repoId]
         await this.toggleLinkedGraph(repoId)
       }
@@ -713,7 +726,7 @@ export const useDataStore = defineStore('data', {
     },
 
     // Closing a space opened in place takes its ideas out of the store.
-    closeEditableSpace(repoId: string) {
+    closeSpaceInPlace(repoId: string) {
       spaceSubscriptions.get(repoId)?.unsubscribe()
       spaceSubscriptions.delete(repoId)
       for (const [ideaId, space] of Object.entries(this.ideaSpaces)) {
@@ -724,15 +737,34 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    closeEditableSpaces() {
-      for (const repoId of new Set([...spaceSubscriptions.keys(), ...Object.values(this.ideaSpaces)])) this.closeEditableSpace(repoId)
+    closeSpacesInPlace() {
+      for (const repoId of new Set([...spaceSubscriptions.keys(), ...Object.values(this.ideaSpaces)])) this.closeSpaceInPlace(repoId)
       this.ideaSpaces = {}
       clearIdeaSpaces()
     },
 
     /** Whether the viewer may change this idea: in its own space opened in place, or in the open space. */
     mayEditIdea(ideaId: string): boolean {
-      return this.ideaSpaces[ideaId] !== undefined || this.access.writable
+      const space = this.ideaSpaces[ideaId]
+      if (space === undefined) return this.access.writable
+      const view = this.linkedGraphViews[space]
+      return view?.state === 'shown' && view.inPlace?.writable === true
+    },
+
+    // Something is about to change in a space opened in place that the viewer
+    // may not change. On another server where this page holds no login, one
+    // is asked for (ConnectServerModal); otherwise the reason shows.
+    askToEditSpace(repoId: string) {
+      const host = this.hostOfSpace(repoId)
+      const origin = host ? parseGraphHost(host)?.origin : undefined
+      const name = this.meta?.linkedRepos?.find((link: { repoId: string; name?: string }) => link.repoId === repoId)?.name
+        ?? this.offers.find(offer => offer.space?.repoId === repoId)?.space?.name
+      const toast = useToastStore()
+      if (!host || !origin) return toast.info('This space is open read-only here.')
+      if (isHere(origin)) return toast.info(`${name ? `“${name}”` : 'This space'} is open read-only for you: ask its owner for write access.`)
+      const login = serverLogin(origin)
+      if (login) return toast.info(`${name ? `“${name}”` : 'This space'} is read-only for ${login.account} at ${new URL(origin).host}: ask its owner there for write access.`)
+      useUIModalStore().connectServer = { host, spaceName: name }
     },
 
     async ensureProjectMeta(projectPath: string, options: { force?: boolean } = {}) {
@@ -915,7 +947,7 @@ export const useDataStore = defineStore('data', {
         const space = inheritColorFrom ? this.ideaSpaces[inheritColorFrom] : undefined
         if (space) {
           this.ideaSpaces[newIdea.id] = space
-          setIdeaSpace(newIdea.id, (this.linkedGraphViews[space] as { editable?: { graph: string } } | undefined)?.editable?.graph ?? null)
+          setIdeaSpace(newIdea.id, (this.linkedGraphViews[space] as { inPlace?: { graph: string } } | undefined)?.inPlace?.graph ?? null)
           return newIdea
         }
 
@@ -1127,7 +1159,9 @@ export const useDataStore = defineStore('data', {
       for (const change of changes) {
         const space = this.ideaSpaces[change.parentId]
         const view = space ? this.linkedGraphViews[space] : undefined
-        const graph = (view?.state === 'shown' && view.editable?.graph) || projectPath
+        // A space the viewer may not change keeps its positions; they move here only.
+        if (space && !(view?.state === 'shown' && view.inPlace?.writable)) continue
+        const graph = (view?.state === 'shown' && view.inPlace?.graph) || projectPath
         bySpace.set(graph, [...(bySpace.get(graph) ?? []), change])
       }
       try {
@@ -1329,7 +1363,7 @@ export const useDataStore = defineStore('data', {
       this.calculatedValues = new Map();
       this.linkedGraphViews = {};
       this.offers = [];
-      this.closeEditableSpaces();
+      this.closeSpacesInPlace();
       this.calculatedCosts = new Map();
       this.calculatedDoneCosts = new Map();
       this.calculatedPriorities = new Map();
@@ -1618,4 +1652,12 @@ export const useDataStore = defineStore('data', {
         }
     }
   }
+})
+
+// A change to an idea of a space the viewer may not change was refused on its
+// way out (utils/idea-spaces.ts): ask for a login there, or say why.
+onReadOnlySpaceEdit((address) => {
+  const store = useDataStore()
+  const repoId = Object.entries(store.linkedGraphViews).find(([, view]) => view.state === 'shown' && view.inPlace?.graph === address)?.[0]
+  if (repoId) store.askToEditSpace(repoId)
 })

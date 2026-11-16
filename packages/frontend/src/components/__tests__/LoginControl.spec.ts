@@ -4,6 +4,8 @@ import { createPinia, setActivePinia } from 'pinia'
 import LoginControl from '../LoginControl.vue'
 import { useViewerStore } from '../../stores/viewer'
 
+const { logOutOfServers } = vi.hoisted(() => ({ logOutOfServers: vi.fn(async () => [] as string[]) }))
+vi.mock('../../utils/remote-trpc', () => ({ logOutOfServers, remoteTrpc: vi.fn() }))
 const { auth, signLoginChallenge, forgetBrowserKey } = vi.hoisted(() => ({
   auth: {
     ownFootprint: { query: vi.fn() },
@@ -15,7 +17,8 @@ const { auth, signLoginChallenge, forgetBrowserKey } = vi.hoisted(() => ({
     walletChallenge: { mutate: vi.fn() },
     walletLogin: { mutate: vi.fn() },
     keyChallenge: { mutate: vi.fn() },
-    keyLogin: { mutate: vi.fn() }
+    keyLogin: { mutate: vi.fn() },
+    logout: { mutate: vi.fn() }
   },
   signLoginChallenge: vi.fn(),
   forgetBrowserKey: vi.fn(async () => {})
@@ -117,6 +120,20 @@ describe('LoginControl', () => {
     await flushPromises()
     expect(auth.discardOwnAccount.mutate).toHaveBeenCalled()
     expect(forgetBrowserKey).toHaveBeenCalled()
+    expect(logOutOfServers).toHaveBeenCalled()
+    expect(useViewerStore().name).toBe(null)
+  })
+
+  it('logs out of the other servers too, for whose spaces this page held a login', async () => {
+    const wrapper = await mountControl({ name: 'Cleo', permanentLogin: true })
+    logOutOfServers.mockClear()
+    auth.logout.mutate.mockResolvedValue({ success: true })
+    auth.me.query.mockResolvedValue(me({ name: null }))
+    await menuItems(wrapper)
+    await wrapper.findAll('.menu-item').find(item => item.text() === 'Log out')!.trigger('click')
+    await flushPromises()
+    expect(auth.logout.mutate).toHaveBeenCalled()
+    expect(logOutOfServers).toHaveBeenCalled()
     expect(useViewerStore().name).toBe(null)
   })
 

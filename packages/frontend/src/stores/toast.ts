@@ -33,6 +33,9 @@ export const useToastStore = defineStore('toast', {
     info(message: string) { this.show('info', message) },
     warning(message: string) { this.show('warning', message) },
     error(context: string, error?: unknown) {
+      // A space opened in place that the viewer may not change: already
+      // answered with a login prompt or its reason (utils/idea-spaces.ts).
+      if (error instanceof Error && error.name === 'ReadOnlySpaceError') return
       // Not a failure: the project cannot be edited here. Say so once, plainly.
       if (isReadOnlyError(error)) return this.warning(errorMessage(error))
       if (error !== undefined) console.error(context, error)

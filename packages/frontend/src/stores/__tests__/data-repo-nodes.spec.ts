@@ -129,7 +129,7 @@ describe('graphData repo-node injection', () => {
       id: 'offer-1', ideaId: 'idea-1', kind: 'offer', text: '', createdAt: '', author: 'ben', removable: true, mine: true,
       space: { repoId: REPO_ID, name: 'Cook every Friday', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
     }]
-    store.linkedGraphViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), editable: { graph: 'cook' } } }
+    store.linkedGraphViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), inPlace: { graph: 'cook', writable: true } } }
 
     const { nodes, links } = store.graphData
     expect(nodes.some(n => n.id === REPO_ID)).toBe(false) // open: no node of its own

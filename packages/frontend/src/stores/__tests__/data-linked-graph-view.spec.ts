@@ -5,6 +5,13 @@ import type { Idea } from 'shared'
 
 vi.mock('../../trpc', () => ({ trpc: {} }))
 vi.mock('../../utils/perf-log', () => ({ perfLog: vi.fn() }))
+// The space's own server, talked to directly: set per test.
+const server = vi.hoisted(() => ({ client: null as unknown }))
+vi.mock('../../utils/remote-trpc', async (original) => ({
+  ...await original<typeof import('../../utils/remote-trpc')>(),
+  remoteTrpc: () => server.client
+}))
+const unreachable = { project: { getAccess: { query: async () => { throw new Error('no socket') } } } }
 
 const REPO_ID = '11111111-1111-4111-8111-111111111111'
 const HOST = 'https://hub.example.org/spaces/commons-hub'
@@ -33,9 +40,37 @@ describe('a linked graph opened in place', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.unstubAllGlobals()
+    server.client = unreachable
   })
 
-  it('loads the graph from its host and hangs its ideas, read-only, below its node with the inflow shared out', async () => {
+  it('takes its ideas in like the open space\'s own, read-only for the viewer, and asks for a login there to change them', async () => {
+    server.client = {
+      project: {
+        getAccess: { query: async () => ({ writable: false }) },
+        loadIdeas: { query: async () => ({ ideas: remote, unreadable: [] }) },
+        getMeta: { query: async () => ({ repoId: REPO_ID, name: 'Commons Hub', color: '#123456' }) },
+        onUpdate: { subscribe: () => ({ unsubscribe: () => {} }) }
+      }
+    }
+    const store = storeWithLink()
+
+    await store.toggleLinkedGraph(REPO_ID)
+
+    const garden = store.graphData.nodes.find(n => n.id === remote[0]!.id)!
+    expect([garden.linked, garden.space]).toEqual([false, REPO_ID])
+    expect(store.ideas[remote[1]!.id]?.text).toBe('Compost')
+    expect(store.mayEditIdea(remote[0]!.id)).toBe(false)
+    expect(store.mayEditIdea('idea-1')).toBe(store.access.writable)
+
+    store.askToEditSpace(REPO_ID)
+    const { useUIModalStore } = await import('../ui/modal-store')
+    expect(useUIModalStore().connectServer).toEqual({ host: HOST, spaceName: 'Commons Hub' })
+
+    await store.toggleLinkedGraph(REPO_ID) // closes it again: its ideas leave the store
+    expect(store.ideas[remote[1]!.id]).toBeUndefined()
+  })
+
+  it('is read apart from its host when its server does not answer: its ideas hang read-only below its node, sharing out the inflow', async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ result: { data: { ideas: remote, unreadable: [] } } })))
     vi.stubGlobal('fetch', fetchMock)
     const store = storeWithLink()

@@ -3,7 +3,7 @@ import type { AppRouter } from 'backend'
 import { parseGraphHost } from 'shared'
 import { clientId } from './mutation-activity'
 import { mutationTrackingLink } from './mutation-tracking-link'
-import { onServerLoginChange, serverLogin } from './server-logins'
+import { onServerLoginChange, serverLogin, serverLogins, storeServerLogin } from './server-logins'
 
 // The API of another Aimparency server, for its spaces opened in place: read
 // by anyone, written with the login this page holds there (server-logins.ts).
@@ -48,4 +48,16 @@ export function remoteSpace(address: string): { origin: string; graph: string } 
 
 export function remoteUntyped(origin: string) {
   return getUntypedClient(remoteTrpc(origin))
+}
+
+/** Gives every login this page holds at other servers back to its server; the origins it was logged in at. */
+export async function logOutOfServers(): Promise<string[]> {
+  const logins = serverLogins()
+  await Promise.all(logins.map(async ({ origin }) => {
+    // Best effort: a server that does not answer keeps the login until it expires there; this page forgets it anyway.
+    const logout = remoteTrpc(origin).auth.logout.mutate().catch(() => undefined)
+    await Promise.race([logout, new Promise(resolve => setTimeout(resolve, 3000))])
+    storeServerLogin(origin, null)
+  }))
+  return logins.map(login => login.origin)
 }

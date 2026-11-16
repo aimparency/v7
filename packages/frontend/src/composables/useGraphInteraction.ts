@@ -10,9 +10,6 @@ import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
 import { type GraphNode, type GraphLink, isIdeaNode, useGraphSimulation } from './useGraphSimulation'
 import { connectDrop } from '../utils/connect-drop'
-import { parseGraphHost } from 'shared'
-import { serverLogin } from '../utils/server-logins'
-import { useViewerStore } from '../stores/viewer'
 
 export function useGraphInteraction(
     elementRef: Ref<HTMLElement | SVGSVGElement | undefined>,
@@ -42,32 +39,15 @@ export function useGraphInteraction(
     // reason shows. (Dragging out into empty space proposes a space instead.)
     const mayEdit = (ideaId?: string) => {
         if (ideaId ? dataStore.mayEditIdea(ideaId) : dataStore.access.writable) return true
+        const space = ideaId ? dataStore.ideaSpaces[ideaId] : undefined
+        if (space) {
+            dataStore.askToEditSpace(space)
+            return false
+        }
         toastStore.info(dataStore.access.reason ?? 'This space is open read-only here.')
         return false
     }
     
-    // Changing a space opened read-only from another server: with no login
-    // there, one is asked for (ConnectServerModal); with one, that account
-    // may not change it.
-    const askForLoginAt = (node: GraphNode) => {
-        if (!node.host) return
-        const origin = parseGraphHost(node.host)?.origin
-        if (!origin) return
-        const publicUrl = useViewerStore().publicUrl
-        if (origin === window.location.origin || (publicUrl && origin === new URL(publicUrl).origin)) {
-            toastStore.info('This space is read-only for you here: ask its owner for write access.')
-            return
-        }
-        const login = serverLogin(origin)
-        if (login) {
-            toastStore.info(`This space is read-only for ${login.account} at ${new URL(origin).host}: ask its owner there for write access.`)
-            return
-        }
-        const name = dataStore.meta?.linkedRepos?.find((link: { repoId: string; name?: string }) => link.repoId === node.space)?.name
-            ?? dataStore.offers.find(offer => offer.space?.repoId === node.space)?.space?.name
-        modalStore.connectServer = { host: node.host, spaceName: name }
-    }
-
     // Zoom state
     const isZooming = ref(false)
     let zoomTimeout: number | undefined
@@ -258,8 +238,10 @@ export function useGraphInteraction(
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
             const drop = mapStore.connectDrop
-            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && (mapStore.connectFrom as GraphNode).linked) {
-                askForLoginAt(mapStore.connectFrom as GraphNode)
+            const fromSpace = mapStore.connectFrom ? dataStore.ideaSpaces[mapStore.connectFrom.id] : undefined
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && fromSpace && !dataStore.mayEditIdea(mapStore.connectFrom.id)) {
+                // An idea of a space opened in place the viewer may not change.
+                dataStore.askToEditSpace(fromSpace)
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && !dataStore.mayEditIdea(mapStore.connectFrom.id)) {
                 // A visitor proposes: a space of their own that supports the idea.
                 const from = mapStore.connectFrom as GraphNode
@@ -579,14 +561,7 @@ export function useGraphInteraction(
             }, 450)
         }
         // Repo and unreadable-idea nodes are read-only: you can reposition them,
-        // but never start a connection FROM them. An idea of a space opened
-        // read-only from another server does start one: changing it asks
-        // for a login there.
-        if (node.linked && node.host && !node.isRepo) {
-            mapStore.startConnecting(node)
-            connectionHandled = false
-            return
-        }
+        // but never start a connection FROM them.
         if (!isIdeaNode(node)) {
             mapStore.startDragging(node)
             return
@@ -677,12 +652,9 @@ export function useGraphInteraction(
         // Repo and unreadable-idea nodes have no idea detail to select or track
         // (the label tooltip shows an unreadable idea's error); never select
         // them as ideas. A linked graph with an address opens in place on
-        // click; an idea inside it opens its graph on its own server.
+        // click, where its ideas are ideas like any other.
         if (!isIdeaNode(node)) {
-            if (node.host && !mapStore.cursorMoved) {
-                if (node.isRepo) void dataStore.toggleLinkedGraph(node.id)
-                else window.open(node.host, '_blank', 'noopener')
-            }
+            if (node.isRepo && node.host && !mapStore.cursorMoved) void dataStore.toggleLinkedGraph(node.id)
             return
         }
 

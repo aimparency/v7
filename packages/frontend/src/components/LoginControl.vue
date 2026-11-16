@@ -6,7 +6,7 @@ import { useViewerStore } from '../stores/viewer'
 import { browserWallets, signWithWallet, type Wallet } from '../utils/wallets'
 import { forgetBrowserKey } from '../utils/browser-key'
 import { serverLogins, storeServerLogin } from '../utils/server-logins'
-import { remoteTrpc } from '../utils/remote-trpc'
+import { logOutOfServers, remoteTrpc } from '../utils/remote-trpc'
 import { useDataStore } from '../stores/data'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
@@ -110,9 +110,17 @@ const makePermanent = () => submit(async () => {
   await viewer.load()
 })
 
+// Logging out here logs out of the other servers too: the browser is left to nobody.
+const logOutElsewhereToo = async () => {
+  const origins = await logOutOfServers()
+  refreshElsewhere()
+  for (const origin of origins) await useDataStore().reopenSpacesAt(origin)
+}
+
 const logout = async () => {
   menuOpen.value = false
   await trpc.auth.logout.mutate().catch(() => undefined)
+  await logOutElsewhereToo()
   await viewer.loginChanged(null)
 }
 
@@ -140,6 +148,7 @@ const openDiscard = async () => {
 const discard = () => submit(async () => {
   await trpc.auth.discardOwnAccount.mutate()
   await forgetBrowserKey().catch(() => undefined)
+  await logOutElsewhereToo()
   await viewer.loginChanged(null)
 })
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`

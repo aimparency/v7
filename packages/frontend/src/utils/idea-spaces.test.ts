@@ -11,7 +11,7 @@ vi.mock('./remote-trpc', async (original) => ({
     query: async (path: string, input: { graph: string }) => { remoteCalls.push(`${origin} ${path} ${input.graph}`); return [] }
   })
 }))
-import { clearIdeaSpaces, ideaSpaceLink, setIdeaSpace } from './idea-spaces'
+import { clearIdeaSpaces, ideaSpaceLink, onReadOnlySpaceEdit, setIdeaSpace, setSpaceWritable } from './idea-spaces'
 import { readOnlyGuardLink, setProjectAccess } from './read-only'
 
 // What reaches the server: each request's procedure and the space it names.
@@ -77,6 +77,22 @@ describe('ideaSpaceLink', () => {
 
     expect(made).toEqual({ id: 'made-there' })
     expect(remoteCalls).toEqual(['https://other.example idea.createFloatingIdea garden', 'https://other.example idea.getMany garden'])
+    expect(sent).toEqual([])
+  })
+
+  it('refuses a change to an idea of a space the viewer may not change, and says which space wants a login', async () => {
+    const { sent, trpc } = client()
+    remoteCalls.length = 0
+    const asked: string[] = []
+    onReadOnlySpaceEdit(address => asked.push(address))
+    setIdeaSpace('far-1', 'https://other.example/spaces/garden')
+    setSpaceWritable('https://other.example/spaces/garden', false)
+
+    await expect(trpc.idea.update.mutate({ graph: 'host', ideaId: 'far-1', idea: {} } as never)).rejects.toThrow(/read-only/)
+    await trpc.idea.get.query({ graph: 'host', ideaId: 'far-1' } as never)
+
+    expect(asked).toEqual(['https://other.example/spaces/garden'])
+    expect(remoteCalls).toEqual(['https://other.example idea.get garden'])
     expect(sent).toEqual([])
   })
 })
