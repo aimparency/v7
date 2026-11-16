@@ -1,0 +1,24 @@
+{
+  "id": "10c6b4a7-f338-4ddb-9794-bb2e1f0c6be7",
+  "text": "Logging out of a browser-key account discards it: say \"Discard account\", tidy up what it made, and discard idle ones after 180 days",
+  "description": "Felix 2026-11-16: an automatic account (held only by a key in this browser, no password or wallet) cannot be got back once logged out. So:\n\n1. For such an account the menu says \"Discard account\" instead of \"Log out\". It names what will go (spaces, notes, offers) and asks to confirm, pointing to \"Keep account\" (a name and password) as the alternative.\n2. Discarding tidies up everything the account made: the spaces it owns (graphs.json entry, the created repository, guest/<slug>), its notes and offers on other spaces, its tokens and MCP clients, and its entries in other spaces' writer and note-writer lists. Then the account is removed from accounts.json.\n3. The same clean-up runs by itself for automatic accounts 180 days after their last activity.\n\nFound while testing propose-a-space (b7e0b972): a guest's test created a space \"test\" that would otherwise stay forever.\n\nOpen points (assumed by Claude, to confirm):\n- Last activity: accounts.json records no activity today (only createdAt). Assumed: a lastActiveAt per account, updated at most once a day on login or on any mutation.\n- Where the 180-day sweep runs: assumed at server start plus once a day in the backend, with the number in server.json (limits.idleAutomaticAccountDays, default 180).\n- Spaces of a discarded account that others have accepted as linked or write in: assumed they still go, and links to them show \"not available\". The alternative is to hand them to the server admins.\n- Accounts that upgraded to a permanent login are never discarded automatically.",
+  "archived": false,
+  "color": "#3b6335",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "383e8949-3888-40de-95e9-a1dbfac0cdb6"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1794812597407
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

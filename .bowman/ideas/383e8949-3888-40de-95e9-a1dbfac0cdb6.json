@@ -5,7 +5,16 @@
   "archived": false,
   "color": "#306331",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "10c6b4a7-f338-4ddb-9794-bb2e1f0c6be7",
+      "relativePosition": [
+        1.45,
+        3.46
+      ],
+      "weight": 1
+    }
+  ],
   "supportedIdeas": [
     "d4203221-939e-44e6-bf3f-b3933c790e6b",
     "96e9fc41-b91f-405c-829c-2e5bf65c175c"
