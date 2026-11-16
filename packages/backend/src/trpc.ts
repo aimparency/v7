@@ -4,6 +4,7 @@ import type { IncomingMessage } from 'node:http';
 import { runWithOrigin } from './change-origin.js';
 import { hasAccounts } from 'shared/server-config';
 import { assertAllowed, graphOf, viewerFor, type Viewer } from './auth/access.js';
+import { touchAccount } from './auth/accounts.js';
 
 // `session` is one object per connection: logging in sets its token, so the
 // same WebSocket goes on as that account without reconnecting.
@@ -70,6 +71,8 @@ const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, nex
   const graph = graphOf(await getRawInput());
   const viewer = viewerFor(ctx.session?.token, graph);
   assertAllowed(path, type, viewer, graph);
+  // When it was last used decides when an automatic account is discarded (auth/discard.ts).
+  if (viewer.id !== null) void touchAccount(viewer.id).catch(() => {});
   return next({ ctx: { ...ctx, viewer } });
 });
 

@@ -82,7 +82,7 @@ textarea {
 }
 
 /* Dialog buttons: one primary action, the others secondary */
-.btn-primary, .btn-secondary {
+.btn-primary, .btn-secondary, .btn-danger {
   padding: 0.5rem 1rem;
   border: none;
   border-radius: var(--radius);
@@ -94,6 +94,13 @@ textarea {
   background: var(--accent);
   color: white;
   &:hover:not(:disabled) { background: var(--accent-hover); }
+  &:disabled { background: var(--line); color: #666; cursor: not-allowed; }
+}
+
+.btn-danger {
+  background: #8b2a2a;
+  color: white;
+  &:hover:not(:disabled) { background: #a83232; }
   &:disabled { background: var(--line); color: #666; cursor: not-allowed; }
 }
 

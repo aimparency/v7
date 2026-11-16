@@ -28,6 +28,7 @@ import { forgetProjectChecks } from './storage/project.js';
 import { graphsRouter } from './routers/graphs.js';
 import { keysRouter } from './routers/keys.js';
 import { notesRouter } from './routers/notes.js';
+import { discardIdleAccounts } from './auth/discard.js';
 import { mcpAuthRouter } from './routers/mcp-auth.js';
 import { agentsEnabled } from './auth/access.js';
 import { followGitRemotes } from './git-follow.js';
@@ -205,7 +206,20 @@ function proxy(req: http.IncomingMessage, res: http.ServerResponse, port: number
   req.pipe(upstream);
 }
 
+// Automatic accounts nobody used for long are discarded: at start, then daily.
+const DAY_MS = 24 * 60 * 60 * 1000;
+function sweepIdleAccounts() {
+  if (!hasAccounts()) return;
+  discardIdleAccounts()
+    .then(count => { if (count > 0) console.log(`[accounts] Discarded ${count} idle automatic account(s).`) })
+    .catch(error => console.error('[accounts] Idle sweep failed', error));
+}
+
 export function startServer() {
+  if (process.env.NODE_ENV !== 'test') {
+    sweepIdleAccounts();
+    setInterval(sweepIdleAccounts, DAY_MS).unref();
+  }
   if (process.env.AIMPARENCY_ONE_PORT === 'true') return startOnePortServer();
 
   const host = resolveBindHost(BIND_HOST);

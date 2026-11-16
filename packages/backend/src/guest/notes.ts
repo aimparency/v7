@@ -85,6 +85,15 @@ export async function findNote(graph: Graph, id: string): Promise<Note> {
   return note;
 }
 
+/** Removes the notes and offers matching `gone`; how many went. */
+export async function removeNotesWhere(graph: Graph, gone: (note: Note) => boolean): Promise<number> {
+  if ((await listNotes(graph)).every(note => !gone(note))) return 0;
+  return change(graph, (notes) => {
+    const kept = notes.filter(note => !gone(note));
+    return { notes: kept, result: notes.length - kept.length };
+  });
+}
+
 /** Removes the note when `allowed` says this note may go (its author's, or the graph's owner and writers). */
 export async function removeNote(graph: Graph, id: string, allowed: (note: Note) => boolean): Promise<void> {
   await change(graph, (notes) => {

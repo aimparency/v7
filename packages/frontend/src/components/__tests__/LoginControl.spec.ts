@@ -4,8 +4,10 @@ import { createPinia, setActivePinia } from 'pinia'
 import LoginControl from '../LoginControl.vue'
 import { useViewerStore } from '../../stores/viewer'
 
-const { auth, signLoginChallenge } = vi.hoisted(() => ({
+const { auth, signLoginChallenge, forgetBrowserKey } = vi.hoisted(() => ({
   auth: {
+    ownFootprint: { query: vi.fn() },
+    discardOwnAccount: { mutate: vi.fn() },
     me: { query: vi.fn() },
     login: { mutate: vi.fn() },
     signUp: { mutate: vi.fn() },
@@ -15,11 +17,12 @@ const { auth, signLoginChallenge } = vi.hoisted(() => ({
     keyChallenge: { mutate: vi.fn() },
     keyLogin: { mutate: vi.fn() }
   },
-  signLoginChallenge: vi.fn()
+  signLoginChallenge: vi.fn(),
+  forgetBrowserKey: vi.fn(async () => {})
 }))
 vi.mock('../../trpc', () => ({ trpc: { auth } }))
 vi.mock('../../utils/runtime-config', () => ({ hasAccounts: () => true }))
-vi.mock('../../utils/browser-key', () => ({ signLoginChallenge }))
+vi.mock('../../utils/browser-key', () => ({ signLoginChallenge, forgetBrowserKey }))
 
 const me = (values: object) => ({
   login: 'accounts', agents: false, signUp: { open: false, browserKey: false, wallet: false },
@@ -85,7 +88,7 @@ describe('LoginControl', () => {
 
   it('recommends a permanent login to an account that lives only in this browser', async () => {
     const wrapper = await mountControl({ name: 'guest-1a2b3c', permanentLogin: false })
-    expect(await menuItems(wrapper)).toEqual(['Keep account', 'Connect an agent (MCP)', 'Log out'])
+    expect(await menuItems(wrapper)).toEqual(['Keep account', 'Connect an agent (MCP)', 'Discard account'])
 
     auth.makePermanent.mutate.mockResolvedValue({ success: true })
     auth.me.query.mockResolvedValue(me({ name: 'Cleo', permanentLogin: true }))
@@ -96,6 +99,25 @@ describe('LoginControl', () => {
     await flushPromises()
     expect(auth.makePermanent.mutate).toHaveBeenCalledWith({ name: 'Cleo', password: 'cleo password' })
     expect(await menuItems(wrapper)).toEqual(['Connect an agent (MCP)', 'Password', 'Log out'])
+  })
+
+  it('discards an account that lives only in this browser instead of logging it out, saying what goes with it', async () => {
+    const wrapper = await mountControl({ name: 'guest-1a2b3c', permanentLogin: false })
+    auth.ownFootprint.query.mockResolvedValue({ spaces: ['Cook every Friday'], notes: 2, offers: 1 })
+    await menuItems(wrapper)
+    await wrapper.findAll('.menu-item').find(item => item.text() === 'Discard account')!.trigger('click')
+    await flushPromises()
+    expect(document.body.textContent).toContain('1 space: Cook every Friday')
+    expect(document.body.textContent).toContain('2 notes and 1 offer on other spaces')
+
+    auth.discardOwnAccount.mutate.mockResolvedValue({ success: true })
+    auth.me.query.mockResolvedValue(me({ name: null }))
+    const discardButton = [...document.querySelectorAll('button.btn-danger')].find(button => button.textContent?.includes('Discard account')) as HTMLButtonElement
+    discardButton.click()
+    await flushPromises()
+    expect(auth.discardOwnAccount.mutate).toHaveBeenCalled()
+    expect(forgetBrowserKey).toHaveBeenCalled()
+    expect(useViewerStore().name).toBe(null)
   })
 
   it('gives a visitor an account with the browser key the moment one is needed', async () => {

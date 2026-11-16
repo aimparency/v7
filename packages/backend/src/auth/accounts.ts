@@ -24,6 +24,8 @@ type Account = {
   serverAdmin?: boolean;
   canCreateGraphs?: boolean;
   createdAt: string;
+  /** The day the account last did anything (a request, a login): kept to the day. */
+  lastActiveAt?: string;
 };
 // `graphs`: the slugs this token is limited to (an MCP client the account gave
 // only some graphs); absent, the token is the account everywhere.
@@ -347,6 +349,46 @@ export async function setRights(name: string, rights: { serverAdmin?: boolean; c
   });
 }
 
+// An account only its browser key logs into: losing the key loses it.
+const isAutomatic = (account: Account) => account.passwordHash === undefined && (account.wallets?.length ?? 0) === 0 && !account.serverAdmin;
+
+export function isAutomaticAccount(id: string): boolean {
+  const account = load().accounts.find(candidate => candidate.id === id);
+  return account !== undefined && isAutomatic(account);
+}
+
+const today = () => new Date().toISOString().slice(0, 10);
+
+/** Notes that the account was active today: written at most once a day. */
+export async function touchAccount(id: string) {
+  const account = load().accounts.find(candidate => candidate.id === id);
+  if (!account || account.lastActiveAt === today()) return;
+  await change(accounts => ({
+    ...accounts,
+    accounts: accounts.accounts.map(candidate => candidate.id === id ? { ...candidate, lastActiveAt: today() } : candidate)
+  }));
+}
+
+/** Automatic accounts unused since before `days` days ago. */
+export function idleAutomaticAccounts(days: number, now = Date.now()): string[] {
+  const before = new Date(now - days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return load().accounts
+    .filter(account => isAutomatic(account) && (account.lastActiveAt ?? account.createdAt.slice(0, 10)) < before)
+    .map(account => account.id);
+}
+
+export async function removeAccountById(id: string) {
+  await change((accounts) => {
+    const next = {
+      ...accounts,
+      accounts: accounts.accounts.filter(account => account.id !== id),
+      tokens: accounts.tokens.filter(token => token.account !== id)
+    };
+    assertKeepsAnAdmin(accounts, next);
+    return next;
+  });
+}
+
 export async function removeAccount(name: string) {
   await change((accounts) => {
     const { id } = byName(accounts, name);
@@ -377,7 +419,9 @@ export async function issueToken(name: string, label: string, graphs?: string[])
       hash: sha256(token), account: byName(accounts, name).id, label, createdAt: new Date().toISOString(),
       ...(graphs ? { graphs } : {})
     };
-    return { ...accounts, tokens: [...accounts.tokens, entry] };
+    // A login is activity.
+    const active = accounts.accounts.map(account => account.id === entry.account ? { ...account, lastActiveAt: today() } : account);
+    return { ...accounts, accounts: active, tokens: [...accounts.tokens, entry] };
   });
   return token;
 }

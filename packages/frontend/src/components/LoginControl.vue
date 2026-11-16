@@ -1,9 +1,10 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { ChevronDown, CircleAlert, CircleUser, KeyRound, LogOut, Plug, Server, Users } from 'lucide-vue-next'
+import { ChevronDown, CircleAlert, CircleUser, KeyRound, LogOut, Plug, Server, Trash2, Users } from 'lucide-vue-next'
 import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
 import { browserWallets, signWithWallet, type Wallet } from '../utils/wallets'
+import { forgetBrowserKey } from '../utils/browser-key'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 import McpConnectModal from './McpConnectModal.vue'
@@ -12,7 +13,7 @@ import ServerSettingsModal from './ServerSettingsModal.vue'
 // The account corner on a server with accounts: anyone reads, accounts write
 // the graphs they own or were given.
 const viewer = useViewerStore()
-type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'server' | 'mcp'
+type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'server' | 'mcp' | 'discard'
 const dialog = ref<Dialog | null>(null)
 const name = ref('')
 const password = ref('')
@@ -112,6 +113,21 @@ const logout = async () => {
   await viewer.loginChanged(null)
 }
 
+// An account held only by this browser's key cannot be logged into again
+// after logging out: it is discarded, with what it made.
+type Footprint = Awaited<ReturnType<typeof trpc.auth.ownFootprint.query>>
+const footprint = ref<Footprint>(null)
+const openDiscard = async () => {
+  open('discard')
+  footprint.value = await trpc.auth.ownFootprint.query().catch(() => null)
+}
+const discard = () => submit(async () => {
+  await trpc.auth.discardOwnAccount.mutate()
+  await forgetBrowserKey().catch(() => undefined)
+  await viewer.loginChanged(null)
+})
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
+
 </script>
 
 <template>
@@ -150,7 +166,14 @@ const logout = async () => {
           <button class="menu-item" role="menuitem" @click="open('server')"><Server /> Server settings</button>
         </template>
         <div class="menu-separator"></div>
-        <button class="menu-item" role="menuitem" @click="logout"><LogOut /> Log out</button>
+        <button v-if="viewer.permanentLogin" class="menu-item" role="menuitem" @click="logout"><LogOut /> Log out</button>
+        <button
+          v-else
+          class="menu-item"
+          role="menuitem"
+          title="This account has no login but this browser's key: once logged out, nobody can get it back"
+          @click="openDiscard"
+        ><Trash2 /> Discard account</button>
       </div>
     </div>
 
@@ -195,6 +218,22 @@ const logout = async () => {
       </template>
     </FormModalShell>
 
+    <FormModalShell :show="dialog === 'discard'" title="Discard this account?" width="min(90vw, 26rem)" @request-close="dialog = null">
+      <div class="stack">
+        <p class="hint">{{ viewer.name }} lives only in this browser: it has no password, so once you leave it nobody can log into it again. Discarding it removes what it made:</p>
+        <ul v-if="footprint" class="footprint">
+          <li v-if="footprint.spaces.length">{{ plural(footprint.spaces.length, 'space', 'spaces') }}: {{ footprint.spaces.join(', ') }}</li>
+          <li>{{ plural(footprint.notes, 'note', 'notes') }} and {{ plural(footprint.offers, 'offer', 'offers') }} on other spaces</li>
+        </ul>
+        <p class="hint">To keep it, choose a name and a password instead.</p>
+        <p v-if="error" class="error">{{ error }}</p>
+      </div>
+      <template #footer>
+        <button class="btn-secondary" type="button" :disabled="busy" @click="open('permanent')">Keep account</button>
+        <button class="btn-danger" type="button" :disabled="busy" @click="discard">Discard account</button>
+      </template>
+    </FormModalShell>
+
     <FormModalShell :show="dialog === 'password'" title="Change password" width="min(90vw, 22rem)" @request-close="dialog = null">
       <form id="password-form" @submit.prevent="changePassword">
         <input v-model="current" type="password" placeholder="Current password" autocomplete="current-password" autofocus />
@@ -213,6 +252,12 @@ const logout = async () => {
 </template>
 
 <style scoped>
+.footprint {
+  margin: 0;
+  padding-left: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
 .login-control {
   display: flex;
   align-items: center;
