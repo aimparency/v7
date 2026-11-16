@@ -6,10 +6,11 @@ import type { GraphNode } from './useGraphSimulation'
 const DEFAULT_COLOR = '#8fa3bf'
 const MARGIN = 40 // logical units between the outermost idea and the string
 
-export type LinkedGraphOutline = { repoId: string; color: string; outline: Outline; path: string }
+export type LinkedGraphOutline = { repoId: string; color: string; outline: Outline; path: string; pending: boolean; collapsed: boolean }
 
-// One wobbly string around each linked graph opened in place: around its node
-// and its ideas. The string moves slowly for as long as one is shown.
+// One wobbly string per linked space: around its ideas while it is open in
+// place, and as its node while it is closed, so opening reads as the node
+// growing to show what is inside. The strings move slowly.
 export function useLinkedGraphOutlines(nodes: Ref<GraphNode[]>, trigger: Ref<number>) {
   const dataStore = useDataStore()
   const time = ref(0)
@@ -17,13 +18,17 @@ export function useLinkedGraphOutlines(nodes: Ref<GraphNode[]>, trigger: Ref<num
   const shownIds = computed(() =>
     Object.entries(dataStore.linkedGraphViews).filter(([, view]) => view.state === 'shown').map(([repoId]) => repoId)
   )
+  const anySpace = computed(() => {
+    trigger.value
+    return shownIds.value.length > 0 || nodes.value.some(node => node.isRepo)
+  })
 
   let frame: number | undefined
   const tick = (now: number) => {
     time.value = now / 1600
     frame = requestAnimationFrame(tick)
   }
-  watch(() => shownIds.value.length > 0, (any) => {
+  watch(anySpace, (any) => {
     if (any && frame === undefined) frame = requestAnimationFrame(tick)
     if (!any && frame !== undefined) {
       cancelAnimationFrame(frame)
@@ -34,19 +39,24 @@ export function useLinkedGraphOutlines(nodes: Ref<GraphNode[]>, trigger: Ref<num
 
   const outlines = computed<LinkedGraphOutline[]>(() => {
     trigger.value // positions move with the simulation
-    if (shownIds.value.length === 0) return []
     const members = new Map<string, Circle[]>(shownIds.value.map(id => [id, []]))
+    const pending = new Set(dataStore.offers.flatMap(offer => offer.space && !dataStore.meta?.linkedRepos?.some((link: { repoId: string }) => link.repoId === offer.space!.repoId) ? [offer.space.repoId] : []))
+    const closed: LinkedGraphOutline[] = []
     for (const node of nodes.value) {
-      const repoId = node.linked ? node.id.slice(0, node.id.indexOf(':')) : node.isRepo ? node.id : undefined
-      members.get(repoId ?? '')?.push({ x: node.renderPos[0], y: node.renderPos[1], r: node.r })
+      if (node.space) members.get(node.space)?.push({ x: node.renderPos[0], y: node.renderPos[1], r: node.r })
+      if (!node.isRepo) continue
+      // Closed: the ring is the node, its wobble moving around the node's edge.
+      const outline = graphOutline([{ x: node.renderPos[0], y: node.renderPos[1], r: node.r * 0.82 }], node.r * 0.18, time.value + node.id.charCodeAt(0))
+      if (outline) closed.push({ repoId: node.id, color: DEFAULT_COLOR, outline, path: outlinePath(outline), pending: node.pending ?? false, collapsed: true })
     }
-    return [...members].flatMap(([repoId, circles]) => {
+    const open = [...members].flatMap(([repoId, circles]) => {
       const outline = graphOutline(circles, MARGIN, time.value + repoId.charCodeAt(0))
       if (!outline) return []
       const view = dataStore.linkedGraphViews[repoId]
       const color = (view?.state === 'shown' && view.color) || DEFAULT_COLOR
-      return [{ repoId, color, outline, path: outlinePath(outline) }]
+      return [{ repoId, color, outline, path: outlinePath(outline), pending: pending.has(repoId), collapsed: false }]
     })
+    return [...closed, ...open]
   })
 
   /** The linked graph whose string the logical point lies inside. */

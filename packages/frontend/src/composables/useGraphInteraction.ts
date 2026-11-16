@@ -34,6 +34,14 @@ export function useGraphInteraction(
     // State for layouting handle
     const layoutingHandlePos = vec2.create()
     let connectionHandled = false
+
+    // Creating and connecting ideas needs write access; without it the
+    // reason shows. (Dragging out into empty space proposes a space instead.)
+    const mayEdit = (ideaId?: string) => {
+        if (ideaId ? dataStore.mayEditIdea(ideaId) : dataStore.access.writable) return true
+        toastStore.info(dataStore.access.reason ?? 'This space is open read-only here.')
+        return false
+    }
     
     // Zoom state
     const isZooming = ref(false)
@@ -225,7 +233,16 @@ export function useGraphInteraction(
             mapStore.layoutCandidate = undefined
         } else if (mapStore.connecting) {
             const drop = mapStore.connectDrop
-            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
+            if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && !dataStore.mayEditIdea(mapStore.connectFrom.id)) {
+                // A visitor proposes: a space of their own that supports the idea.
+                const from = mapStore.connectFrom as GraphNode
+                if (drop.kind === 'new' && isIdeaNode(from)) {
+                    // Kept like a connection's position: relative to the idea, in sums of radii.
+                    const at = mapStore.mouse.logical
+                    const rSum = (from.r ?? 25) * 2
+                    modalStore.openProposeModal(from.id, [((at[0] ?? 0) - from.pos[0]) / rSum, ((at[1] ?? 0) - from.pos[1]) / rSum])
+                } else mayEdit()
+            } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
                 void contributeGraph(mapStore.connectFrom as GraphNode, drop.repoId)
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'new') {
                 const parentNode = mapStore.connectFrom
@@ -339,6 +356,18 @@ export function useGraphInteraction(
             node.id !== mapStore.connectFrom?.id &&
             (node.renderPos[0] - at[0]) ** 2 + (node.renderPos[1] - at[1]) ** 2 <= node.r * node.r
         )
+        const fromSpace = (mapStore.connectFrom as GraphNode | undefined)?.space
+        if (over && !over.isRepo && over.space !== fromSpace) {
+            // Ideas of two spaces are not connected one by one: an idea of
+            // the open space may take the other space as a whole.
+            mapStore.connectDrop = !fromSpace && over.space ? { kind: 'graph', repoId: over.space } : { kind: 'blocked' }
+            return
+        }
+        if (fromSpace) {
+            // From an idea of a space opened in place: inside that space only.
+            mapStore.connectDrop = over ? (over.isRepo ? { kind: 'blocked' } : connectDrop(over, undefined)) : { kind: 'new' }
+            return
+        }
         mapStore.connectDrop = connectDrop(over, over ? undefined : graphAt(at))
     }
 
@@ -551,10 +580,18 @@ export function useGraphInteraction(
             connectionHandled = true
             const parent = mapStore.connectFrom as GraphNode
             const child = node
+            if (!mayEdit(parent.id)) return
+            // Across spaces: the drop decided it while dragging (a whole space, or nothing).
+            if (child.space !== parent.space && !child.isRepo) {
+                if (mapStore.connectDrop.kind === 'graph' && isIdeaNode(parent)) await contributeGraph(parent, mapStore.connectDrop.repoId)
+                return
+            }
 
             if (!isIdeaNode(parent)) return
-            // Dropped on a linked graph's node: that graph supports the idea.
+            // Dropped on a linked graph's node: that graph supports the idea
+            // (an idea of the open space only: the link is the open space's).
             if (child.isRepo) {
+                if (parent.space) return
                 await contributeGraph(parent, child.id)
                 return
             }
@@ -705,7 +742,7 @@ export function useGraphInteraction(
             }
         }
         
-        if (!hitNode) {
+        if (!hitNode && mayEdit()) {
             // Deselect to ensure creating floating idea
             graphUIStore.setGraphSelection(null)
             uiStore.deselectIdea()

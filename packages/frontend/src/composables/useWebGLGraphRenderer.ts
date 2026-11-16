@@ -97,7 +97,7 @@ export function useWebGLGraphRenderer(
       if (colorMode !== 'spin-off') return null
       const roots = graphUIStore.spinOffPreviewRootIds
       if (!roots.length) return null
-      const plan = planSpinOff(Object.values(dataStore.ideas), roots)
+      const plan = planSpinOff(dataStore.ownIdeas, roots)
       const m = new Map<string, 'red' | 'orange'>()
       for (const id of plan.spinOffIds) m.set(id, 'red')
       for (const id of plan.overlapIds) m.set(id, 'orange')
@@ -106,7 +106,9 @@ export function useWebGLGraphRenderer(
 
     const now = Date.now()
 
-    return graphNodes.map(node => {
+    // A space's node is drawn as a wobbly ring in the SVG overlay, like the
+    // outline of a space opened in place (useLinkedGraphOutlines).
+    return graphNodes.filter(node => !node.isRepo).map(node => {
       const x = node.renderPos[0]
       const y = node.renderPos[1]
 

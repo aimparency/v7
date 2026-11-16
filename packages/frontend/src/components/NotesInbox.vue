@@ -66,7 +66,11 @@ onUnmounted(() => {
       <button v-for="note in notes" :key="note.id" class="entry" @click="openNote(note.slug, note.ideaId)">
         <span class="where">{{ note.slug }} · {{ note.ideaText }}</span>
         <span class="by">{{ note.author }} · {{ formatRelativeTime(Date.parse(note.createdAt)) }}</span>
-        <span class="text"><em v-if="note.kind === 'interest'">would like to work on this</em> {{ note.text }}</span>
+        <span class="text">
+          <em v-if="note.kind === 'interest'">would like to work on this</em>
+          <em v-else-if="note.kind === 'offer'">offers the space {{ note.space?.name }}{{ note.text ? ':' : '' }}</em>
+          {{ note.text }}
+        </span>
       </button>
     </div>
   </FormModalShell>

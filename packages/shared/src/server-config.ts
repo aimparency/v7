@@ -64,6 +64,9 @@ const ServerConfigSchema = z.object({
     notesPerAccountPerHour: z.number().int().positive().default(30),
     // The .bowman of a graph added from a remote URL.
     graphMegabytes: z.number().positive().default(50),
+    // An account held only by a browser key, unused this many days, is
+    // discarded with what it made: nobody can log into it any more anyway.
+    idleAutomaticAccountDays: z.number().positive().default(180),
   }).prefault({}),
   // Who commits on this server when git has no identity configured.
   gitAuthor: z.object({ name: z.string().min(1), email: z.string().min(1) })

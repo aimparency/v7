@@ -43,7 +43,7 @@ const OPEN_MUTATIONS = new Set([
   'mcpAuth.registerClient', 'mcpAuth.begin', 'mcpAuth.deny', 'mcpAuth.exchange'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
+  'auth.issueToken', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'graphs.create', 'graphs.addRemote', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
   'notes.add', 'notes.remove',
   'mcpAuth.approve'
@@ -53,11 +53,13 @@ const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // viewer (activity): not for visitors.
 const WRITE_MUTATIONS = new Set([
   'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
-  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost'
+  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost',
+  // Accepting an offer links the offered space into the graph (routers/notes.ts).
+  'notes.acceptOffer'
 ]);
 const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).
-const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens']);
+const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens', 'auth.ownFootprint']);
 // Every other mutation needs a server admin, so a new one is closed until listed.
 
 export function neededRole(path: string, type: string): Need {

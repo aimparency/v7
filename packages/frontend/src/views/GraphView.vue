@@ -11,6 +11,7 @@ import { useProjectLoadStore } from '../stores/project-load'
 import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
+import OfferCard from '../components/OfferCard.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
 import PhaseSearchModal from '../components/PhaseSearchModal.vue'
 import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
@@ -23,7 +24,7 @@ import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { connectionArrowWidth, narrowestHitLink } from '../webgl/utils/arrow-geometry'
 import type { LayoutSettings } from 'shared'
-import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange } from '../utils/autolayout'
+import { DEFAULT_LAYOUT_SETTINGS, sameLayoutSettings, withLayoutDefaults, type LayoutChange, changedIdeas, changesOfIdeas } from '../utils/autolayout'
 import type { LayoutMessage, LayoutRequest, LayoutResult } from '../utils/autolayout.worker'
 import LayoutPreviewPanel from '../components/LayoutPreviewPanel.vue'
 import { hubSpreads } from '../utils/layout-metrics'
@@ -282,6 +283,16 @@ const unreadableIdeasSummary = computed(() =>
   dataStore.unreadableIdeas.map((entry) => `${entry.file}: ${entry.error}`).join('\n')
 )
 
+// Beside each offered space, open or closed: who offers it, and accepting or declining it.
+const offerCards = computed(() => {
+    if (dataStore.offers.length === 0) return []
+    return linkedGraphOutlines.value.flatMap(({ repoId, pending, outline }) => {
+        if (!pending) return []
+        const offers = dataStore.offers.filter(offer => offer.space?.repoId === repoId)
+        return offers.length ? [{ repoId, x: outline.cx, y: outline.cy, r: Math.max(...outline.radii), offers }] : []
+    })
+})
+
 const renderNodes = computed(() => {
     trigger.value;
     const currentIdeaId = graphUIStore.graphSelectedIdeaId
@@ -387,10 +398,13 @@ const LAYOUT_PREVIEW_SHARE = 0.2
 // factor, so small setting changes don't swap connections in and out.
 const LAYOUT_HYSTERESIS = 1.25
 // A share, so the fader keeps its place when the solver finds more or fewer changes.
+// It counts ideas, not connections: a connection's offset lives in its parent
+// idea's file, so the number of ideas is the number of files a layout changes.
 const layoutShare = ref(LAYOUT_PREVIEW_SHARE)
+const layoutIdeaCount = computed(() => changedIdeas(layoutPreview.value?.changes ?? []).length)
 const layoutPreviewCount = computed({
-  get: () => Math.round((layoutPreview.value?.changes.length ?? 0) * layoutShare.value),
-  set: count => { layoutShare.value = count / Math.max(layoutPreview.value?.changes.length ?? 0, 1) }
+  get: () => Math.round(layoutIdeaCount.value * layoutShare.value),
+  set: count => { layoutShare.value = count / Math.max(layoutIdeaCount.value, 1) }
 })
 const linkKey = (parentId: string, childId: string) => `${parentId}>${childId}`
 let layoutWorker: Worker | null = null
@@ -474,7 +488,7 @@ watch(layoutSettings, settings => {
   layoutWorker.postMessage({ settings: { ...settings } } satisfies LayoutMessage)
 }, { deep: true })
 
-const appliedLayoutChanges = computed(() => layoutPreview.value?.changes.slice(0, layoutPreviewCount.value) ?? [])
+const appliedLayoutChanges = computed(() => changesOfIdeas(layoutPreview.value?.changes ?? [], layoutPreviewCount.value))
 
 // Shows the current share: each link gets its proposed or its stored offset
 // (new arrays: the stored ones are shared with the data store and must stay
@@ -524,8 +538,8 @@ async function applyLayoutPreview() {
   if (!sameLayoutSettings(settings, preview.saved)) {
     dataStore.meta = await trpc.project.setLayoutSettings.mutate({ graph: projectStore.projectPath, layout: settings })
   }
-  const files = new Set(applied.map(change => change.parentId)).size
-  useToastStore().info(`Layout saved ${applied.length} connections in ${files} idea files.`)
+  const ideas = changedIdeas(applied).length
+  useToastStore().info(`Layout changed ${ideas} ideas (${applied.length} connections).`)
 }
 
 // Helper: split node text into lines for label rendering
@@ -591,15 +605,29 @@ function toggleSpinOffPreview() {
         @mouseup="onMouseUp"
     >
       <g :transform="transform">
-        <path
-          v-for="outline in linkedGraphOutlines"
-          :key="outline.repoId"
-          class="linked-graph-outline"
-          :class="{ 'drop-target': dropGraphId === outline.repoId }"
-          :d="outline.path"
-          :stroke="outline.color"
-          :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
-        />
+        <template v-for="outline in linkedGraphOutlines" :key="outline.repoId">
+          <path
+            class="linked-graph-outline"
+            :class="{ 'drop-target': dropGraphId === outline.repoId, collapsed: outline.collapsed }"
+            :d="outline.path"
+            :stroke="outline.color"
+            :fill="outline.color"
+            :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
+            :stroke-dasharray="outline.pending ? `${2 / visualScale} ${9 / visualScale}` : undefined"
+            stroke-linecap="round"
+          />
+          <!-- An open space closes again by its string: a wide band to click -->
+          <path
+            v-if="!outline.collapsed"
+            class="linked-graph-outline-hit"
+            :d="outline.path"
+            :stroke-width="16 / visualScale"
+            @mousedown.stop
+            @click.stop="dataStore.toggleLinkedGraph(outline.repoId)"
+          >
+            <title>Close this space</title>
+          </path>
+        </template>
         <!-- Labels rendered as SVG text on top of WebGL -->
         <g class="labels" v-if="graphUIStore.graphShowLabels">
           <g
@@ -634,6 +662,15 @@ function toggleSpinOffPreview() {
             </g>
           </g>
         </g>
+        <foreignObject
+          v-for="card in offerCards"
+          :key="`offer-${card.repoId}`"
+          class="offer-card-anchor"
+          x="0" y="0" width="320" height="400"
+          :transform="`translate(${card.x},${card.y}) scale(${1 / visualScale}) translate(${card.r * visualScale + 10},-20)`"
+        >
+          <OfferCard :offers="card.offers" />
+        </foreignObject>
         <GraphFlowHandle
           v-if="selectedLinkData && selectedLinkVisuals"
           :link="selectedLinkData"
@@ -818,13 +855,28 @@ function toggleSpinOffPreview() {
   pointer-events: auto;
 }
 
-.linked-graph-outline {
-  fill: none;
-  opacity: 0.55;
+.offer-card-anchor {
+  overflow: visible;
   pointer-events: none;
-  &.drop-target {
-    opacity: 1;
+}
+
+.linked-graph-outline {
+  fill-opacity: 0.05;
+  stroke-opacity: 0.7;
+  pointer-events: none;
+  &.collapsed {
+    fill-opacity: 0.16;
   }
+  &.drop-target {
+    stroke-opacity: 1;
+  }
+}
+
+.linked-graph-outline-hit {
+  fill: none;
+  stroke: transparent;
+  pointer-events: stroke;
+  cursor: pointer;
 }
 
 .node-label-group {

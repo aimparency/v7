@@ -42,3 +42,8 @@ export async function signLoginChallenge(nonce: string): Promise<{ publicKey: st
   const signature = await crypto.subtle.sign({ name: 'ECDSA', hash: 'SHA-256' }, pair.privateKey, new TextEncoder().encode(loginChallengeMessage(nonce)))
   return { publicKey: base64(await crypto.subtle.exportKey('spki', pair.publicKey)), signature: base64(signature) }
 }
+
+/** Forgets this browser's key: the next automatic account gets a new one. */
+export async function forgetBrowserKey(): Promise<void> {
+  await request(store => store.delete(KEY_ID), 'readwrite')
+}

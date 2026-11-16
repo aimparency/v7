@@ -7,6 +7,7 @@ import * as accounts from '../auth/accounts.js';
 import { newChallenge, verifyKeyLogin } from '../auth/browser-key.js';
 import { verifyWalletLogin, walletChallenge } from '../auth/wallet.js';
 import { findGraph } from '../graphs/registry.js';
+import { accountFootprint, discardAccount } from '../auth/discard.js';
 import { withinLimit } from '../rate-limit.js';
 
 const rights = { serverAdmin: z.boolean().optional(), canCreateGraphs: z.boolean().optional() };
@@ -122,6 +123,25 @@ export const authRouter = t.router({
   logout: delayedProcedure.mutation(async ({ ctx }) => {
     const token = ctx.session?.token;
     if (token && hasAccounts()) await accounts.revokeToken(token);
+    if (ctx.session) ctx.session.token = undefined;
+    return { success: true };
+  }),
+
+  // An account held only by this browser's key cannot be logged into again
+  // once logged out: logging out discards it. What would go with it.
+  ownFootprint: delayedProcedure.query(async ({ ctx }) => {
+    const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+    if (!hasAccounts() || viewer.id === null || !accounts.isAutomaticAccount(viewer.id)) return null;
+    return accountFootprint(viewer.id);
+  }),
+
+  discardOwnAccount: delayedProcedure.mutation(async ({ ctx }) => {
+    const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+    if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
+    if (!accounts.isAutomaticAccount(viewer.id)) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'This account has a permanent login: log out instead.' });
+    }
+    await run(() => discardAccount(viewer.id!));
     if (ctx.session) ctx.session.token = undefined;
     return { success: true };
   }),

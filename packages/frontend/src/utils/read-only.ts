@@ -6,8 +6,10 @@ import type { AppRouter } from 'backend'
 // are refused here, before any optimistic local change reaches the server.
 const reasons = new Map<string, string>()
 
-// Viewer state, not graph content: allowed on read-only projects.
-const ALLOWED_MUTATIONS = new Set(['phase.setCursor', 'project.buildSearchIndex'])
+// Viewer state, not graph content: allowed on read-only projects. So are
+// notes and offers: they are the guests' layer, kept beside the space, and
+// the server decides who may leave one.
+const ALLOWED_MUTATIONS = new Set(['phase.setCursor', 'project.buildSearchIndex', 'notes.add', 'notes.remove'])
 
 const projectKey = (projectPath: string) => projectPath.replace(/\/+$/, '').replace(/\/\.bowman$/, '')
 

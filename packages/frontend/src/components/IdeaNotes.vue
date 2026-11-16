@@ -3,6 +3,8 @@ import { ref, watch } from 'vue'
 import { X } from 'lucide-vue-next'
 import { trpc } from '../trpc'
 import { useProjectStore } from '../stores/project-store'
+import { useDataStore } from '../stores/data'
+import { useUIModalStore } from '../stores/ui/modal-store'
 import { useToastStore } from '../stores/toast'
 import { useViewerStore } from '../stores/viewer'
 import { formatRelativeTime } from '../utils/relative-time'
@@ -10,7 +12,9 @@ import { hasAccounts } from '../utils/runtime-config'
 
 // What visitors leave on an idea of a graph they cannot change: a note (an
 // idea, a question) or "I'd like to work on this". Kept on the server, not in
-// the graph; its owner and writers read them and may remove them.
+// the graph; its owner and writers read them and may remove them. An offer
+// proposes a whole space as support: those who write accept it (linking that
+// space) or decline it (removing the offer).
 const props = defineProps<{ ideaId: string }>()
 
 const accounts = hasAccounts()
@@ -34,6 +38,22 @@ const load = async () => {
 // Also when the viewer logs in or out: what they may do changes.
 watch(() => [props.ideaId, viewer.name], () => { void load() }, { immediate: true })
 
+const dataStore = useDataStore()
+const accepting = ref<string | null>(null)
+const accept = async (id: string) => {
+  accepting.value = id
+  try {
+    await trpc.notes.acceptOffer.mutate({ graph: projectStore.projectPath, id })
+    notes.value = notes.value.filter(note => note.id !== id)
+    await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
+    await dataStore.loadIdeas(projectStore.projectPath, [props.ideaId])
+  } catch (error) {
+    useToastStore().error('Could not accept the offer', error)
+  } finally {
+    accepting.value = null
+  }
+}
+
 const add = async (kind: 'note' | 'interest') => {
   // Where the server gives accounts automatically, the visitor gets theirs now.
   if (!await viewer.ensureAccount()) return
@@ -56,12 +76,19 @@ const remove = async (id: string) => {
 </script>
 
 <template>
-  <div v-if="accounts" class="idea-notes">
+  <!-- On an idea of the viewer's own space opened in place: only notes already there -->
+  <div v-if="accounts && (notes.length > 0 || !dataStore.ideaSpaces[props.ideaId])" class="idea-notes">
     <h4>Notes from visitors</h4>
     <div v-for="note in notes" :key="note.id" class="note">
       <span class="by">{{ note.author }} · {{ formatRelativeTime(Date.parse(note.createdAt)) }}</span>
-      <button v-if="note.removable" class="remove" title="Remove this note" @click="remove(note.id)"><X /></button>
-      <p><em v-if="note.kind === 'interest'">would like to work on this</em> {{ note.text }}</p>
+      <button v-if="note.removable" class="remove" :title="note.kind === 'offer' ? 'Decline this offer' : 'Remove this note'" @click="remove(note.id)"><X /></button>
+      <p v-if="note.kind === 'offer' && note.space">
+        <em>offers the space</em> <a :href="note.space.host" target="_blank" rel="noopener">{{ note.space.name }}</a><template v-if="note.text">: {{ note.text }}</template>
+      </p>
+      <p v-else><em v-if="note.kind === 'interest'">would like to work on this</em> {{ note.text }}</p>
+      <div v-if="note.kind === 'offer' && dataStore.mayEditIdea(props.ideaId)" class="actions">
+        <button class="btn-secondary" :disabled="accepting === note.id" @click="accept(note.id)">Accept: it supports this idea</button>
+      </div>
     </div>
     <p v-if="notes.length === 0" class="by">None yet.</p>
     <form v-if="mayAdd" @submit.prevent="add('note')">
@@ -69,6 +96,7 @@ const remove = async (id: string) => {
       <div class="actions">
         <button class="btn-secondary" type="submit" :disabled="!text.trim()">Add note</button>
         <button class="btn-secondary" type="button" @click="add('interest')">I'd like to work on this</button>
+        <button v-if="!dataStore.mayEditIdea(props.ideaId)" class="btn-secondary" type="button" title="Offer a space of yours that supports this idea" @click="useUIModalStore().openProposeModal(props.ideaId)">Offer a space</button>
       </div>
     </form>
   </div>
@@ -86,6 +114,11 @@ const remove = async (id: string) => {
 
   .note {
     display: grid;
+
+    .actions {
+      grid-column: 1 / -1;
+    }
+
     grid-template-columns: 1fr auto;
     gap: 0 0.5rem;
 
@@ -110,6 +143,7 @@ const remove = async (id: string) => {
 
   form, .actions {
     display: flex;
+    flex-wrap: wrap;
     gap: 0.5rem;
   }
 

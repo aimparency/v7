@@ -28,9 +28,10 @@ describe('readOnlyGuardLink', () => {
     await expect(trpc.idea.update.mutate({ graph: '/repo/.bowman', ideaId: 'a', idea: {} } as never)).rejects.toThrow(REASON)
     await trpc.idea.list.query({ graph: '/repo' } as never) // reading is fine
     await trpc.phase.setCursor.mutate({ graph: '/repo', cursors: {}, activeLevel: 0 }) // viewer position
+    await trpc.notes.add.mutate({ graph: '/repo', ideaId: 'a', kind: 'note', text: 'x' } as never) // the guests' layer: the server decides
     await trpc.idea.update.mutate({ graph: '/other', ideaId: 'a', idea: {} } as never) // other projects untouched
 
-    expect(sent).toEqual(['idea.list', 'phase.setCursor', 'idea.update'])
+    expect(sent).toEqual(['idea.list', 'phase.setCursor', 'notes.add', 'idea.update'])
   })
 
   it('lets everything through once the project is writable again', async () => {

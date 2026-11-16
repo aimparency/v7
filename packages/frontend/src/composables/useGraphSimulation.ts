@@ -38,6 +38,8 @@ export interface GraphNode {
   isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
   host?: string // a linked graph's address on its server
   linked?: boolean // an idea of a linked graph opened in place: read-only here
+  pending?: boolean // a space offered and not accepted yet
+  space?: string // the space opened in place this node's idea belongs to (its repoId)
   unreadable?: string // load error of an idea file the backend cannot read (read-only warning node)
 }
 
@@ -159,8 +161,8 @@ export function useGraphSimulation() {
       // Repo, unreadable and opened linked-graph nodes belong to no phase, so
       // they'd be filtered out by id. Keep their links to visible ideas, and
       // let them ride along; a linked graph's ideas hang on its node.
-      const unphasedIds = new Set(allRawNodes.filter(n => n.isRepo || n.unreadable || n.linked).map(n => n.id))
-      const linkedGraphIds = new Set(allRawNodes.filter(n => n.linked).map(n => n.id))
+      const unphasedIds = new Set(allRawNodes.filter(n => n.isRepo || n.unreadable || n.linked || n.space).map(n => n.id))
+      const linkedGraphIds = new Set(allRawNodes.filter(n => n.linked || n.space).map(n => n.id))
       const kept = (id: string) => allowedIds.has(id) || unphasedIds.has(id)
       rawLinks = allRawLinks.filter(l =>
         kept(l.source) && kept(l.target) && (allowedIds.has(l.source) || allowedIds.has(l.target) || linkedGraphIds.has(l.source))
@@ -184,6 +186,14 @@ export function useGraphSimulation() {
     
     const SPACING_FACTOR = 64
     const newNodes: GraphNode[] = []
+    // A space that closes: its node appears where its ideas were (they are
+    // still in nodeMap during this pass). One that opens: its ideas appear
+    // where its node was (spawnNear).
+    const ideasCentreOf = (spaceId: string): vec2.T | undefined => {
+      const members = [...nodeMap.values()].filter(node => node.space === spaceId)
+      if (members.length === 0) return undefined
+      return [members.reduce((sum, m) => sum + m.renderPos[0], 0) / members.length, members.reduce((sum, m) => sum + m.renderPos[1], 0) / members.length]
+    }
 
     rawNodes.forEach(raw => {
       let existing = nodeMap.get(raw.id)
@@ -200,7 +210,7 @@ export function useGraphSimulation() {
 
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
-        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : undefined
+        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : raw.isRepo ? ideasCentreOf(raw.id) : undefined
         const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [(near?.[0] ?? 0) + Math.random() * 100 - 50, (near?.[1] ?? 0) + Math.random() * 100 - 50]
         existing = {
           id: raw.id,
@@ -219,6 +229,8 @@ export function useGraphSimulation() {
           isRepo: raw.isRepo ?? false,
           host: raw.host,
           linked: raw.linked,
+          pending: raw.pending,
+          space: raw.space,
           unreadable: raw.unreadable
         }
         nodeMap.set(raw.id, existing)
@@ -233,6 +245,8 @@ export function useGraphSimulation() {
         existing.isRepo = raw.isRepo ?? false
         existing.host = raw.host
         existing.linked = raw.linked
+        existing.pending = raw.pending
+        existing.space = raw.space
         existing.unreadable = raw.unreadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }
@@ -719,7 +733,7 @@ export function useGraphSimulation() {
       if (disposed) return
       // The graph's mass point sits at (0, 0): the physics keeps it where it
       // is (see the drift correction), so put it there once on load.
-      const centroid = positionCentroid(positions, Object.keys(dataStore.ideas))
+      const centroid = positionCentroid(positions, dataStore.ownIdeas.map(idea => idea.id))
       for (const [id, pos] of positions) {
         if (dataStore.ideas[id]) positions.set(id, { x: pos.x - centroid.x, y: pos.y - centroid.y })
       }
