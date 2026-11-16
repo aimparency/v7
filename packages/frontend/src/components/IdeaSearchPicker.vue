@@ -93,10 +93,13 @@ const items = computed(() => {
     ...props.additionalOptions
       .filter(option => !option.createFromQuery && (!option.showWhenQueryEmptyOnly || query.length === 0))
       .map(option => ({ type: 'option' as const, data: option })),
-    ...searchResults.value.map(toIdeaItem),
-    ...createOptions
+    // Above the results: a long result list would push it out of view.
+    ...createOptions,
+    ...searchResults.value.map(toIdeaItem)
   ]
 })
+
+const firstIdeaIndex = computed(() => Math.max(0, items.value.findIndex(item => item.type === 'idea')))
 
 const selectedItem = computed<IdeaSearchSelection>(() => items.value[selectedIndex.value] ?? null)
 
@@ -157,13 +160,16 @@ const applySelectionBehavior = () => {
     })
 
     if (exactMatches.length === 1) {
-      selectedIndex.value = props.additionalOptions.length + exactMatches[0]!
+      selectedIndex.value = firstIdeaIndex.value + exactMatches[0]!
       emitSelectionChange()
       return
     }
   }
 
-  selectedIndex.value = 0
+  // Enter keeps picking an existing idea; "Create new" is one step up.
+  const first = items.value[0]
+  const startsWithCreate = first?.type === 'option' && !!first.data.createFromQuery
+  selectedIndex.value = startsWithCreate ? firstIdeaIndex.value : 0
   emitSelectionChange()
 }
 
@@ -246,7 +252,6 @@ const navigateToParents = async (idea: SearchIdeaResult, wasFocused = false) => 
     searchResults.value = parents.map(p => ({ ...p, score: 1 }))
     localNavigationTitle.value = `Parents of: ${idea.text}`
     navigationMode.value = true
-    selectedIndex.value = props.additionalOptions.length
     applySelectionBehavior()
     if (wasFocused) nextTick(() => focusSelectedResult())
   } finally {
@@ -263,7 +268,6 @@ const navigateToChildren = async (idea: SearchIdeaResult, wasFocused = false) =>
     searchResults.value = children.map(c => ({ ...c, score: 1 }))
     localNavigationTitle.value = `Children of: ${idea.text}`
     navigationMode.value = true
-    selectedIndex.value = props.additionalOptions.length
     applySelectionBehavior()
     if (wasFocused) nextTick(() => focusSelectedResult())
   } finally {

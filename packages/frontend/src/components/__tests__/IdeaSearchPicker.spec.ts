@@ -228,7 +228,7 @@ describe('IdeaSearchPicker create-from-query option', () => {
     vi.useRealTimers()
   })
 
-  it('lists "Create new" after the results only while a query is typed, carrying the query', async () => {
+  it('lists "Create new" above the results only while a query is typed, carrying the query', async () => {
     const wrapper = mount(IdeaSearchPicker, {
       props: { showInput: true, additionalOptions: [{ id: 'create-parent', label: 'Create new', createFromQuery: true }] },
       global: { plugins: [pluginConfig()] }
@@ -240,9 +240,10 @@ describe('IdeaSearchPicker create-from-query option', () => {
     await flushPromises()
 
     const items = wrapper.findAll('.result-item')
-    expect(items.map((item) => item.text())).toEqual([expect.stringContaining('Parent idea'), 'Create new: "new aim"'])
+    expect(items.map((item) => item.text())).toEqual(['Create new: "new aim"', expect.stringContaining('Parent idea')])
+    expect(items[1]!.classes()).toContain('selected')
 
-    await items[1]!.trigger('click')
+    await items[0]!.trigger('click')
     expect(wrapper.emitted('activate')?.[0]?.[0]).toMatchObject({ type: 'option', data: { id: 'create-parent', query: 'new aim' } })
   })
 })
