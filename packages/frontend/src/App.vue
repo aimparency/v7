@@ -819,6 +819,7 @@ onUnmounted(() => {
     <ProposeSpaceModal
       v-if="modalStore.proposeForIdeaId"
       :idea-id="modalStore.proposeForIdeaId"
+      :relative-position="modalStore.proposeRelativePosition"
       @close="modalStore.proposeForIdeaId = null"
     />
 

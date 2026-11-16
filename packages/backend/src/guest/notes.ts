@@ -23,6 +23,8 @@ export type Note = {
   text: string;
   /** Only on an offer. */
   space?: OfferedSpace;
+  /** Only on an offer: where the proposer dropped it, relative to the idea (as a connection's relativePosition). */
+  relativePosition?: [number, number];
   /** Account id. */
   author: string;
   createdAt: string;
@@ -57,7 +59,7 @@ export function mayAddNotes(graph: Graph, accountId: string, hasWriteAccess: boo
   return setting === 'everyone' || (setting === 'selected' && (graph.noteWriters ?? []).includes(accountId));
 }
 
-export async function addNote(graph: Graph, note: Pick<Note, 'ideaId' | 'kind' | 'text' | 'author' | 'space'>): Promise<Note> {
+export async function addNote(graph: Graph, note: Pick<Note, 'ideaId' | 'kind' | 'text' | 'author' | 'space' | 'relativePosition'>): Promise<Note> {
   const text = note.text.trim();
   if (text.length > MAX_NOTE_LENGTH) throw new NoteError(`A note has at most ${MAX_NOTE_LENGTH} characters.`);
   if (!text && note.kind === 'note') throw new NoteError('Write something first.');
@@ -70,6 +72,7 @@ export async function addNote(graph: Graph, note: Pick<Note, 'ideaId' | 'kind' |
     }
     const added: Note = {
       id: crypto.randomUUID(), ideaId: note.ideaId, kind: note.kind, text, ...(note.space ? { space: note.space } : {}),
+      ...(note.space && note.relativePosition ? { relativePosition: note.relativePosition } : {}),
       author: note.author, createdAt: new Date().toISOString()
     };
     return { notes: [...notes, added], result: added };

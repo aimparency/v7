@@ -57,6 +57,8 @@ export const useUIModalStore = defineStore('ui-modal', {
     showConnectionDetailsModal: false,
     // Without write access: offer a space that supports this idea (ProposeSpaceModal).
     proposeForIdeaId: null as string | null,
+    // Where the offered space was dropped, relative to the idea (as a connection's relativePosition).
+    proposeRelativePosition: null as [number, number] | null,
     connectionDetailsParentId: null as string | null,
     connectionDetailsChildId: null as string | null,
     // Opened to reflect on the connection's hypothesis (the child was settled).
@@ -203,8 +205,9 @@ export const useUIModalStore = defineStore('ui-modal', {
       this.showSpinOffApplyModal = false
     },
 
-    openProposeModal(ideaId: string) {
+    openProposeModal(ideaId: string, relativePosition: [number, number] | null = null) {
       this.proposeForIdeaId = ideaId
+      this.proposeRelativePosition = relativePosition
     },
 
     openConnectionDetailsModal(parentId: string, childId: string, callback?: () => void, { reflect = false } = {}) {

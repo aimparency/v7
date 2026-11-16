@@ -11,6 +11,7 @@ import { useProjectLoadStore } from '../stores/project-load'
 import { useToastStore } from '../stores/toast'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import GraphFlowHandle from '../components/GraphFlowHandle.vue'
+import OfferCard from '../components/OfferCard.vue'
 import GraphSidePanel from '../components/GraphSidePanel.vue'
 import PhaseSearchModal from '../components/PhaseSearchModal.vue'
 import SpinOffApplyModal from '../components/SpinOffApplyModal.vue'
@@ -281,6 +282,17 @@ const visibleLabelIds = ref<Set<string>>(new Set())
 const unreadableIdeasSummary = computed(() =>
   dataStore.unreadableIdeas.map((entry) => `${entry.file}: ${entry.error}`).join('\n')
 )
+
+// Beside each offered space: who offers it, and accepting or declining it.
+const offerCards = computed(() => {
+    trigger.value;
+    if (dataStore.offers.length === 0) return []
+    return nodes.value.flatMap(node => {
+        if (!node.isRepo || !node.pending) return []
+        const offers = dataStore.offers.filter(offer => offer.space?.repoId === node.id)
+        return offers.length ? [{ repoId: node.id, x: node.renderPos[0], y: node.renderPos[1], r: node.r, offers }] : []
+    })
+})
 
 const renderNodes = computed(() => {
     trigger.value;
@@ -599,6 +611,8 @@ function toggleSpinOffPreview() {
           :d="outline.path"
           :stroke="outline.color"
           :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
+          :stroke-dasharray="outline.pending ? `${2 / visualScale} ${9 / visualScale}` : undefined"
+          stroke-linecap="round"
         />
         <!-- Labels rendered as SVG text on top of WebGL -->
         <g class="labels" v-if="graphUIStore.graphShowLabels">
@@ -634,6 +648,15 @@ function toggleSpinOffPreview() {
             </g>
           </g>
         </g>
+        <foreignObject
+          v-for="card in offerCards"
+          :key="`offer-${card.repoId}`"
+          class="offer-card-anchor"
+          x="0" y="0" width="320" height="400"
+          :transform="`translate(${card.x},${card.y}) scale(${1 / visualScale}) translate(${card.r * visualScale + 10},-20)`"
+        >
+          <OfferCard :offers="card.offers" />
+        </foreignObject>
         <GraphFlowHandle
           v-if="selectedLinkData && selectedLinkVisuals"
           :link="selectedLinkData"
@@ -816,6 +839,11 @@ function toggleSpinOffPreview() {
 
 .graph-overlay .labels {
   pointer-events: auto;
+}
+
+.offer-card-anchor {
+  overflow: visible;
+  pointer-events: none;
 }
 
 .linked-graph-outline {

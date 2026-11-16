@@ -12,7 +12,7 @@ import FormModalShell from './FormModalShell.vue'
 // a space of the visitor's own: a new one, one they have, or one on another
 // server. They offer it with a pitch; the space's owner accepts the offer
 // (the offered space then supports the idea) or declines it.
-const props = defineProps<{ ideaId: string }>()
+const props = defineProps<{ ideaId: string; relativePosition?: [number, number] | null }>()
 const emit = defineEmits<{ close: [] }>()
 
 const viewer = useViewerStore()
@@ -48,15 +48,21 @@ const ready = computed(() => ({
 
 const here = (slug: string) => `${viewer.publicUrl ?? window.location.origin}/spaces/${slug}`
 
+// A new space is its central aim: one idea that holds all its intrinsic
+// value, named like the space, and the offer's title at the same time.
+async function createSpace(aim: string): Promise<string> {
+  const { slug } = await trpc.graphs.create.mutate({ name: aim })
+  await trpc.idea.createFloatingIdea.mutate({ graph: slug, idea: { text: aim, intrinsicValue: 1 } })
+  return slug
+}
+
 // The offered space as its own server describes it.
 async function offeredSpace(): Promise<{ host: string; repoId: string; name: string }> {
   if (source.value === 'elsewhere') {
     const { host, repoId, name } = await fetchGraphAtHost(address.value)
     return { host, repoId, name }
   }
-  const slug = source.value === 'new'
-    ? (await trpc.graphs.create.mutate({ name: name.value.trim() })).slug
-    : chosen.value
+  const slug = source.value === 'new' ? await createSpace(name.value.trim()) : chosen.value
   const meta = await trpc.project.getMeta.query({ graph: slug })
   if (!meta.repoId) throw new Error(`Space "${slug}" has no identity yet.`)
   return { host: here(slug), repoId: meta.repoId, name: meta.name ?? slug }
@@ -70,9 +76,14 @@ async function offer() {
     // Where the server gives accounts automatically, the visitor gets theirs now.
     if (!await viewer.ensureAccount()) return
     const space = await offeredSpace()
-    await trpc.notes.add.mutate({ graph: projectStore.projectPath, ideaId: props.ideaId, kind: 'offer', text: pitch.value, space })
+    await trpc.notes.add.mutate({
+      graph: projectStore.projectPath, ideaId: props.ideaId, kind: 'offer', text: pitch.value, space,
+      ...(props.relativePosition ? { relativePosition: props.relativePosition } : {})
+    })
     toast.info(`Offered ${space.name}: the owner of this space decides.`)
     emit('close')
+    // It shows at once, opened in place, where it was dropped.
+    await dataStore.loadOffers(projectStore.projectPath)
   } catch (e) {
     error.value = e instanceof Error ? e.message : String(e)
   } finally {
@@ -93,7 +104,10 @@ async function offer() {
         <input v-model="source" type="radio" value="new" />
         <span>A new space on this server</span>
       </label>
-      <input v-if="source === 'new'" v-model="name" class="indented" placeholder="Its name, e.g. what you will do for this idea" autofocus @keydown.stop />
+      <template v-if="source === 'new'">
+        <input v-model="name" class="indented" placeholder="Its central aim, e.g. what you will do for this idea" autofocus @keydown.stop />
+        <p class="hint indented">The space's name and its first idea, which holds its value. You build it from there, right here in the graph.</p>
+      </template>
 
       <label v-if="mine.length > 0" class="choice">
         <input v-model="source" type="radio" value="mine" />

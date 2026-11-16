@@ -235,8 +235,13 @@ export function useGraphInteraction(
             const drop = mapStore.connectDrop
             if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && !dataStore.access.writable) {
                 // A visitor proposes: a space of their own that supports the idea.
-                if (drop.kind === 'new' && isIdeaNode(mapStore.connectFrom as GraphNode)) modalStore.openProposeModal(mapStore.connectFrom.id)
-                else mayEdit()
+                const from = mapStore.connectFrom as GraphNode
+                if (drop.kind === 'new' && isIdeaNode(from)) {
+                    // Kept like a connection's position: relative to the idea, in sums of radii.
+                    const at = mapStore.mouse.logical
+                    const rSum = (from.r ?? 25) * 2
+                    modalStore.openProposeModal(from.id, [((at[0] ?? 0) - from.pos[0]) / rSum, ((at[1] ?? 0) - from.pos[1]) / rSum])
+                } else mayEdit()
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
                 void contributeGraph(mapStore.connectFrom as GraphNode, drop.repoId)
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'new') {

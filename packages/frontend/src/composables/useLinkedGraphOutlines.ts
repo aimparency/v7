@@ -6,7 +6,7 @@ import type { GraphNode } from './useGraphSimulation'
 const DEFAULT_COLOR = '#8fa3bf'
 const MARGIN = 40 // logical units between the outermost idea and the string
 
-export type LinkedGraphOutline = { repoId: string; color: string; outline: Outline; path: string }
+export type LinkedGraphOutline = { repoId: string; color: string; outline: Outline; path: string; pending: boolean }
 
 // One wobbly string around each linked graph opened in place: around its node
 // and its ideas. The string moves slowly for as long as one is shown.
@@ -36,7 +36,9 @@ export function useLinkedGraphOutlines(nodes: Ref<GraphNode[]>, trigger: Ref<num
     trigger.value // positions move with the simulation
     if (shownIds.value.length === 0) return []
     const members = new Map<string, Circle[]>(shownIds.value.map(id => [id, []]))
+    const pending = new Set<string>()
     for (const node of nodes.value) {
+      if (node.isRepo && node.pending) pending.add(node.id)
       const repoId = node.linked ? node.id.slice(0, node.id.indexOf(':')) : node.isRepo ? node.id : undefined
       members.get(repoId ?? '')?.push({ x: node.renderPos[0], y: node.renderPos[1], r: node.r })
     }
@@ -45,7 +47,7 @@ export function useLinkedGraphOutlines(nodes: Ref<GraphNode[]>, trigger: Ref<num
       if (!outline) return []
       const view = dataStore.linkedGraphViews[repoId]
       const color = (view?.state === 'shown' && view.color) || DEFAULT_COLOR
-      return [{ repoId, color, outline, path: outlinePath(outline) }]
+      return [{ repoId, color, outline, path: outlinePath(outline), pending: pending.has(repoId) }]
     })
   })
 

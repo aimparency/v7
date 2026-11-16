@@ -38,6 +38,7 @@ export interface GraphNode {
   isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
   host?: string // a linked graph's address on its server
   linked?: boolean // an idea of a linked graph opened in place: read-only here
+  pending?: boolean // a space offered and not accepted yet
   unreadable?: string // load error of an idea file the backend cannot read (read-only warning node)
 }
 
@@ -219,6 +220,7 @@ export function useGraphSimulation() {
           isRepo: raw.isRepo ?? false,
           host: raw.host,
           linked: raw.linked,
+          pending: raw.pending,
           unreadable: raw.unreadable
         }
         nodeMap.set(raw.id, existing)
@@ -233,6 +235,7 @@ export function useGraphSimulation() {
         existing.isRepo = raw.isRepo ?? false
         existing.host = raw.host
         existing.linked = raw.linked
+        existing.pending = raw.pending
         existing.unreadable = raw.unreadable
         if (!existing.renderPos) existing.renderPos = vec2.clone(existing.pos)
       }

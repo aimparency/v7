@@ -76,7 +76,8 @@ export const notesRouter = t.router({
         host: z.string().max(500).refine(address => parseGraphHost(address) !== null, 'Not the address of a space: https://<server>/spaces/<space>'),
         repoId: z.string().uuid(),
         name: z.string().trim().min(1).max(200)
-      }).optional()
+      }).optional(),
+      relativePosition: z.tuple([z.number().finite(), z.number().finite()]).optional()
     }))
     .mutation(async ({ ctx, input }) => {
       const graph = requireGraph(input.graph);
@@ -93,7 +94,8 @@ export const notesRouter = t.router({
       if (space && space.repoId === (await readProjectMeta(graphBowmanPath(graph))).repoId) {
         throw new TRPCError({ code: 'BAD_REQUEST', message: 'A space cannot be offered to itself.' });
       }
-      const note = await run(() => addNote(graph, { ideaId: input.ideaId, kind: input.kind, text: input.text, author, ...(space ? { space } : {}) }));
+      const note = await run(() => addNote(graph, { ideaId: input.ideaId, kind: input.kind, text: input.text, author, ...(space ? { space } : {}),
+        ...(space && input.relativePosition ? { relativePosition: input.relativePosition } : {}) }));
       return shown([note], graph, viewer)[0]!;
     }),
 
@@ -106,6 +108,20 @@ export const notesRouter = t.router({
       const writes = rightOn(graph, viewer) !== 'read';
       await run(() => removeNote(graph, input.id, note => writes || note.author === account));
       return { success: true };
+    }),
+
+  // The offers on this space that the viewer is part of: all of them for
+  // those who write it (they decide), a visitor's own otherwise. The graph
+  // shows them as unconfirmed supporters; nobody else sees them there.
+  offers: delayedProcedure
+    .input(z.object({ graph: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const graph = listedGraph(input.graph);
+      const viewer = viewerOf(ctx);
+      if (!graph || viewer.id === null) return [];
+      const writes = rightOn(graph, viewer) !== 'read';
+      const offers = (await listNotes(graph)).filter(note => note.kind === 'offer' && note.space && (writes || note.author === viewer.id));
+      return shown(offers, graph, viewer).map(offer => ({ ...offer, mine: offers.find(own => own.id === offer.id)!.author === viewer.id }));
     }),
 
   // The offered space supports the idea from now on: it is linked by its
@@ -129,7 +145,7 @@ export const notesRouter = t.router({
 
       const edge = {
         repoId,
-        relativePosition: idea.supportingRepos?.find(other => other.repoId === repoId)?.relativePosition ?? getRandomRelativePosition(),
+        relativePosition: idea.supportingRepos?.find(other => other.repoId === repoId)?.relativePosition ?? offer.relativePosition ?? getRandomRelativePosition(),
         weight: input.weight ?? 1,
         ...(offer.text ? { hypothesis: offer.text } : {})
       };

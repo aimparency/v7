@@ -142,3 +142,24 @@ test('a guest offers a space of theirs to an idea; the owner accepts it and the 
   assert.deepEqual(links?.map(({ repoId, name, host }) => ({ repoId, name, host })), [{ repoId: offered.repoId, name: 'Ben cooks', host: `https://hub.example.org/spaces/${kitchen}` }]);
   assert.deepEqual((await texts(ana)).filter(text => text.includes('offer')), [], 'the accepted offer is done');
 });
+
+test('an offer is seen in the graph by its proposer and by those who write the space; accepting keeps where it was dropped', async () => {
+  const offerOf = async (caller: Caller, name: string) => {
+    const slug = (await caller.graphs.create({ name })).slug;
+    return { host: `https://hub.example.org/spaces/${slug}`, repoId: (await caller.project.getMeta({ graph: slug })).repoId!, name };
+  };
+  const bens = await ben.notes.add({ graph: projectPath, ideaId, kind: 'offer', text: '', space: await offerOf(ben, 'Ben cooks'), relativePosition: [1.5, -0.5] });
+  await cleo.notes.add({ graph: projectPath, ideaId, kind: 'offer', text: '', space: await offerOf(cleo, 'Cleo bakes') });
+  await ben.notes.add({ graph: projectPath, ideaId, kind: 'note', text: 'Not an offer' });
+
+  const seen = async (caller: Caller) => (await caller.notes.offers({ graph: projectPath })).map(offer => `${offer.space?.name}${offer.mine ? ' (mine)' : ''}`);
+  assert.deepEqual(await seen(ben), ['Ben cooks (mine)']);
+  assert.deepEqual(await seen(cleo), ['Cleo bakes (mine)']);
+  assert.deepEqual(await seen(ana), ['Ben cooks', 'Cleo bakes'], 'the owner sees every offer');
+  assert.deepEqual(await seen(appRouter.createCaller({ session: {} })), []);
+
+  await ana.notes.acceptOffer({ graph: projectPath, id: bens.id });
+  const idea = await ana.idea.get({ graph: projectPath, ideaId });
+  assert.deepEqual(idea.supportingRepos?.[0]?.relativePosition, [1.5, -0.5]);
+  assert.deepEqual(await seen(ben), [], 'accepted: no longer an offer, a link');
+});

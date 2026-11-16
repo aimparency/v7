@@ -13,6 +13,7 @@ import { useProjectStore } from './project-store'
 import { useHistoryStore } from './history'
 import { useToastStore } from './toast'
 import { setProjectAccess } from '../utils/read-only'
+import { hasAccounts } from '../utils/runtime-config'
 import { roundOffset } from '../utils/autolayout'
 import { keepIdeaSelection } from './ui/selection-anchor'
 
@@ -51,6 +52,10 @@ type LinkedGraphView =
   | { state: 'loading' }
   | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string }
   | { state: 'unavailable' }
+
+// A space offered to an idea and not yet accepted (notes.offers): shown to its
+// proposer and to those who write this space, as an unconfirmed supporter.
+export type SpaceOffer = inferRouterOutputs<AppRouter>['notes']['offers'][number]
 
 // Ideas of an opened linked graph get ids of their own in this graph.
 export const linkedIdeaNodeId = (repoId: string, ideaId: string) => `${repoId}:${ideaId}`
@@ -237,6 +242,7 @@ export const useDataStore = defineStore('data', {
 
     // Linked graphs opened in place, by repoId.
     linkedGraphViews: {} as Record<string, LinkedGraphView>,
+    offers: [] as SpaceOffer[],
     
     // Calculated values
     calculatedValues: new Map<string, number>(),
@@ -389,7 +395,8 @@ export const useDataStore = defineStore('data', {
         host: undefined as string | undefined, // a linked graph's address on its server (repo nodes, below)
         linked: false, // an idea of a linked graph opened in place (read-only, below)
         spawnNear: undefined as string | undefined, // node a new node first appears next to
-        unreadable: undefined as string | undefined // load error of a warning node (below)
+        unreadable: undefined as string | undefined, // load error of a warning node (below)
+        pending: false // a space offered and not accepted yet (below)
       }))
 
       const links: { source: string, target: string, type: 'hierarchy', relativePosition: [number, number], weight: number, share: number, flowValue: number, attributionShare: number }[] = []
@@ -439,7 +446,8 @@ export const useDataStore = defineStore('data', {
           host: undefined,
           linked: false,
           spawnNear: undefined,
-          unreadable: entry.error
+          unreadable: entry.error,
+          pending: false
         })
         entry.supportingIdeaIds.forEach(childId => {
           if (!state.ideas[childId] && !unreadableIds.has(childId)) return
@@ -456,10 +464,17 @@ export const useDataStore = defineStore('data', {
       // flowValues/flowShares keyed `${ideaId}->${repoId}` here.
       const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string; host?: string }>
       const linkedRepoById = new Map(linkedRepos.map(repo => [repo.repoId, repo]))
+      // Offered spaces join as unconfirmed supporters: drawn like a linked
+      // space, with no value flowing until the offer is accepted.
+      const offeredById = new Map(state.offers.flatMap(offer => offer.space ? [[offer.space.repoId, offer.space] as const] : []))
+      for (const [repoId, space] of offeredById) if (!linkedRepoById.has(repoId)) linkedRepoById.set(repoId, space)
       const repoNodeIds = new Set<string>()
       ideas.forEach(idea => {
-        if (!idea.supportingRepos) return
-        idea.supportingRepos.forEach(edge => {
+        const offered = state.offers
+          .filter(offer => offer.ideaId === idea.id && offer.space && !idea.supportingRepos?.some(edge => edge.repoId === offer.space!.repoId))
+          .map(offer => ({ repoId: offer.space!.repoId, relativePosition: offer.relativePosition ?? [0, 1.5], weight: 1, pending: true }))
+        const edges = [...(idea.supportingRepos ?? []).map(edge => ({ ...edge, pending: false })), ...offered]
+        edges.forEach(edge => {
           const repoId = edge.repoId
           // One node per distinct linked repo, however many ideas lean on it.
           if (!repoNodeIds.has(repoId)) {
@@ -467,9 +482,10 @@ export const useDataStore = defineStore('data', {
             const linked = linkedRepoById.get(repoId)
             const view = state.linkedGraphViews[repoId]
             const name = linked?.name ?? `repo:${repoId.slice(0, 8)}`
+            const pending = offeredById.has(repoId) && !linkedRepos.some(repo => repo.repoId === repoId)
             nodes.push({
               id: repoId,
-              text: view?.state === 'unavailable' ? `${name} (not available)` : name,
+              text: (view?.state === 'unavailable' ? `${name} (not available)` : name) + (pending ? ' · offered' : ''),
               status: 'open',
               // Neutral grey: a black box, not tinted by an internal idea's status.
               color: REPO_NODE_COLOR,
@@ -485,7 +501,8 @@ export const useDataStore = defineStore('data', {
               host: linked?.host,
               linked: false,
               spawnNear: undefined,
-              unreadable: undefined
+              unreadable: undefined,
+              pending
             })
           }
           const share = state.flowShares.get(`${idea.id}->${repoId}`) || 0
@@ -538,7 +555,8 @@ export const useDataStore = defineStore('data', {
             host,
             linked: true,
             spawnNear: repoId,
-            unreadable: undefined
+            unreadable: undefined,
+            pending: false
           })
           const parents = idea.supportedIdeas.filter(parent => ids.has(parent))
           for (const parent of parents.length ? parents.map(p => linkedIdeaNodeId(repoId, p)) : [repoId]) {
@@ -560,6 +578,7 @@ export const useDataStore = defineStore('data', {
         return
       }
       const host = this.meta?.linkedRepos?.find((link: { repoId: string; host?: string }) => link.repoId === repoId)?.host
+        ?? this.offers.find(offer => offer.space?.repoId === repoId)?.space?.host
       if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
       this.linkedGraphViews[repoId] = { state: 'loading' }
       try {
@@ -1103,6 +1122,23 @@ export const useDataStore = defineStore('data', {
     // After logging in or out: what this viewer may do on the open graph.
     async refreshAccess(projectPath: string) {
       this.applyAccess(projectPath, await trpc.project.getAccess.query({ graph: projectPath }))
+      await this.loadOffers(projectPath)
+    },
+
+    // The offers the viewer is part of. Their own open in place at once:
+    // that is where they build the space they offered.
+    async loadOffers(projectPath: string) {
+      if (!hasAccounts()) return
+      try {
+        this.offers = await trpc.notes.offers.query({ graph: projectPath })
+      } catch (error) {
+        console.warn('Could not load the offers', error)
+        return
+      }
+      for (const offer of this.offers) {
+        const repoId = offer.space?.repoId
+        if (offer.mine && repoId && !this.linkedGraphViews[repoId]) void this.toggleLinkedGraph(repoId)
+      }
     },
 
     applyAccess(projectPath: string, access: ProjectAccess) {
@@ -1126,6 +1162,7 @@ export const useDataStore = defineStore('data', {
       this.floatingIdeasIds = [];
       this.calculatedValues = new Map();
       this.linkedGraphViews = {};
+      this.offers = [];
       this.calculatedCosts = new Map();
       this.calculatedDoneCosts = new Map();
       this.calculatedPriorities = new Map();
@@ -1178,6 +1215,7 @@ export const useDataStore = defineStore('data', {
       if (!isCurrent()) return false;
       this.meta = meta;
       this.applyAccess(projectPath, access);
+      void this.loadOffers(projectPath);
       this.applyPhaseList(phases, Object.keys(this.phases));
       this.applyIdeaScan(ideaScan);
       await releaseUpdates();
