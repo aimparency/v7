@@ -186,6 +186,14 @@ export function useGraphSimulation() {
     
     const SPACING_FACTOR = 64
     const newNodes: GraphNode[] = []
+    // A space that closes: its node appears where its ideas were (they are
+    // still in nodeMap during this pass). One that opens: its ideas appear
+    // where its node was (spawnNear).
+    const ideasCentreOf = (spaceId: string): vec2.T | undefined => {
+      const members = [...nodeMap.values()].filter(node => node.space === spaceId)
+      if (members.length === 0) return undefined
+      return [members.reduce((sum, m) => sum + m.renderPos[0], 0) / members.length, members.reduce((sum, m) => sum + m.renderPos[1], 0) / members.length]
+    }
 
     rawNodes.forEach(raw => {
       let existing = nodeMap.get(raw.id)
@@ -202,7 +210,7 @@ export function useGraphSimulation() {
 
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
-        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : undefined
+        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : raw.isRepo ? ideasCentreOf(raw.id) : undefined
         const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [(near?.[0] ?? 0) + Math.random() * 100 - 50, (near?.[1] ?? 0) + Math.random() * 100 - 50]
         existing = {
           id: raw.id,

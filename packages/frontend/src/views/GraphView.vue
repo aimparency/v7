@@ -283,14 +283,13 @@ const unreadableIdeasSummary = computed(() =>
   dataStore.unreadableIdeas.map((entry) => `${entry.file}: ${entry.error}`).join('\n')
 )
 
-// Beside each offered space: who offers it, and accepting or declining it.
+// Beside each offered space, open or closed: who offers it, and accepting or declining it.
 const offerCards = computed(() => {
-    trigger.value;
     if (dataStore.offers.length === 0) return []
-    return nodes.value.flatMap(node => {
-        if (!node.isRepo || !node.pending) return []
-        const offers = dataStore.offers.filter(offer => offer.space?.repoId === node.id)
-        return offers.length ? [{ repoId: node.id, x: node.renderPos[0], y: node.renderPos[1], r: node.r, offers }] : []
+    return linkedGraphOutlines.value.flatMap(({ repoId, pending, outline }) => {
+        if (!pending) return []
+        const offers = dataStore.offers.filter(offer => offer.space?.repoId === repoId)
+        return offers.length ? [{ repoId, x: outline.cx, y: outline.cy, r: Math.max(...outline.radii), offers }] : []
     })
 })
 
@@ -603,17 +602,29 @@ function toggleSpinOffPreview() {
         @mouseup="onMouseUp"
     >
       <g :transform="transform">
-        <path
-          v-for="outline in linkedGraphOutlines"
-          :key="outline.repoId"
-          class="linked-graph-outline"
-          :class="{ 'drop-target': dropGraphId === outline.repoId }"
-          :d="outline.path"
-          :stroke="outline.color"
-          :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
-          :stroke-dasharray="outline.pending ? `${2 / visualScale} ${9 / visualScale}` : undefined"
-          stroke-linecap="round"
-        />
+        <template v-for="outline in linkedGraphOutlines" :key="outline.repoId">
+          <path
+            class="linked-graph-outline"
+            :class="{ 'drop-target': dropGraphId === outline.repoId, collapsed: outline.collapsed }"
+            :d="outline.path"
+            :stroke="outline.color"
+            :fill="outline.color"
+            :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
+            :stroke-dasharray="outline.pending ? `${2 / visualScale} ${9 / visualScale}` : undefined"
+            stroke-linecap="round"
+          />
+          <!-- An open space closes again by its string: a wide band to click -->
+          <path
+            v-if="!outline.collapsed"
+            class="linked-graph-outline-hit"
+            :d="outline.path"
+            :stroke-width="16 / visualScale"
+            @mousedown.stop
+            @click.stop="dataStore.toggleLinkedGraph(outline.repoId)"
+          >
+            <title>Close this space</title>
+          </path>
+        </template>
         <!-- Labels rendered as SVG text on top of WebGL -->
         <g class="labels" v-if="graphUIStore.graphShowLabels">
           <g
@@ -847,12 +858,22 @@ function toggleSpinOffPreview() {
 }
 
 .linked-graph-outline {
-  fill: none;
-  opacity: 0.55;
+  fill-opacity: 0.05;
+  stroke-opacity: 0.7;
   pointer-events: none;
-  &.drop-target {
-    opacity: 1;
+  &.collapsed {
+    fill-opacity: 0.16;
   }
+  &.drop-target {
+    stroke-opacity: 1;
+  }
+}
+
+.linked-graph-outline-hit {
+  fill: none;
+  stroke: transparent;
+  pointer-events: stroke;
+  cursor: pointer;
 }
 
 .node-label-group {

@@ -497,6 +497,11 @@ export const useDataStore = defineStore('data', {
       const offeredById = new Map(state.offers.flatMap(offer => offer.space ? [[offer.space.repoId, offer.space] as const] : []))
       for (const [repoId, space] of offeredById) if (!linkedRepoById.has(repoId)) linkedRepoById.set(repoId, space)
       const repoNodeIds = new Set<string>()
+      // The ideas of a space opened in place: the store's own when it is
+      // editable, as loaded from its host otherwise.
+      const ideasInPlace = (repoId: string, view: LinkedGraphView & { state: 'shown' }) => view.editable
+        ? Object.values(state.ideas).filter(idea => state.ideaSpaces[idea.id] === repoId)
+        : view.ideas
       ideas.forEach(idea => {
         const offered = state.offers
           .filter(offer => offer.ideaId === idea.id && offer.space && !idea.supportingRepos?.some(edge => edge.repoId === offer.space!.repoId))
@@ -504,35 +509,38 @@ export const useDataStore = defineStore('data', {
         const edges = [...(idea.supportingRepos ?? []).map(edge => ({ ...edge, pending: false })), ...offered]
         edges.forEach(edge => {
           const repoId = edge.repoId
-          // One node per distinct linked repo, however many ideas lean on it.
+          // One node per distinct linked repo, however many ideas lean on it;
+          // none while it is open in place: its outline and ideas take its place.
           if (!repoNodeIds.has(repoId)) {
             repoNodeIds.add(repoId)
             const linked = linkedRepoById.get(repoId)
             const view = state.linkedGraphViews[repoId]
-            const name = linked?.name ?? `repo:${repoId.slice(0, 8)}`
-            const pending = offeredById.has(repoId) && !linkedRepos.some(repo => repo.repoId === repoId)
-            nodes.push({
-              id: repoId,
-              text: (view?.state === 'unavailable' ? `${name} (not available)` : name) + (pending ? ' · offered' : ''),
-              status: 'open',
-              // Neutral grey: a black box, not tinted by an internal idea's status.
-              color: REPO_NODE_COLOR,
-              depth: 0,
-              x: 0,
-              y: 0,
-              vx: 0,
-              vy: 0,
-              fx: null as number | null,
-              fy: null as number | null,
-              value: state.calculatedValues.get(repoId) || 0,
-              isRepo: true,
-              host: linked?.host,
-              linked: false,
-              spawnNear: undefined,
-              unreadable: undefined,
-              pending,
-              space: undefined
-            })
+            if (view?.state !== 'shown') {
+              const name = linked?.name ?? `repo:${repoId.slice(0, 8)}`
+              const pending = offeredById.has(repoId) && !linkedRepos.some(repo => repo.repoId === repoId)
+              nodes.push({
+                id: repoId,
+                text: (view?.state === 'unavailable' ? `${name} (not available)` : name) + (pending ? ' · offered' : ''),
+                status: 'open',
+                // Neutral grey: a black box, not tinted by an internal idea's status.
+                color: REPO_NODE_COLOR,
+                depth: 0,
+                x: 0,
+                y: 0,
+                vx: 0,
+                vy: 0,
+                fx: null as number | null,
+                fy: null as number | null,
+                value: state.calculatedValues.get(repoId) || 0,
+                isRepo: true,
+                host: linked?.host,
+                linked: false,
+                spawnNear: undefined,
+                unreadable: undefined,
+                pending,
+                space: undefined
+              })
+            }
           }
           const share = state.flowShares.get(`${idea.id}->${repoId}`) || 0
           const flowValue = state.flowValues.get(`${idea.id}->${repoId}`) || 0
@@ -541,11 +549,13 @@ export const useDataStore = defineStore('data', {
           // One connection in the data. While the graph is open in place it
           // is drawn from each of its ideas with intrinsic value, each with
           // its part of the flow.
+          // An offered space is attached the same way as an accepted one.
           const view = state.linkedGraphViews[repoId]
-          const contributors = view?.state === 'shown' ? intrinsicShares(view.ideas) : [[repoId, 1] as const]
+          const shown = view?.state === 'shown' ? view : undefined
+          const contributors = shown ? intrinsicShares(ideasInPlace(repoId, shown) as Idea[]) : [[repoId, 1] as const]
           for (const [contributor, part] of contributors) {
             links.push({
-              source: contributor === repoId ? repoId : linkedIdeaNodeId(repoId, contributor),
+              source: contributor === repoId ? repoId : shown?.editable ? contributor : linkedIdeaNodeId(repoId, contributor),
               target: idea.id,
               type: 'hierarchy',
               relativePosition,
@@ -565,7 +575,7 @@ export const useDataStore = defineStore('data', {
       for (const [repoId, view] of Object.entries(state.linkedGraphViews)) {
         if (view.state !== 'shown' || !repoNodeIds.has(repoId)) continue
         const editable = !!view.editable
-        const viewIdeas = editable ? Object.values(state.ideas).filter(idea => state.ideaSpaces[idea.id] === repoId) : view.ideas
+        const viewIdeas = ideasInPlace(repoId, view)
         const ownValues = editable ? calculateIdeaValues(viewIdeas as Idea[]).values : view.ownValues
         const values = spreadInflow(state.calculatedValues.get(repoId) || 0, ownValues)
         const ids = new Set(viewIdeas.map(idea => idea.id))
@@ -594,10 +604,6 @@ export const useDataStore = defineStore('data', {
             unreadable: undefined,
             pending: false
           })
-          const parents = idea.supportedIdeas.filter(parent => ids.has(parent))
-          if (parents.length === 0) {
-            links.push({ source: id, target: repoId, type: 'hierarchy', relativePosition: [0, 0], weight: 1, share: 0, flowValue: 0, attributionShare: 0 })
-          }
         }
         // Between the space's ideas: their connections, placed and weighted as stored.
         for (const idea of viewIdeas) {

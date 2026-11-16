@@ -115,4 +115,28 @@ describe('graphData repo-node injection', () => {
     expect(store.graphData.nodes.find(n => n.id === REPO_ID)).toMatchObject({ pending: false, text: 'Ben cooks' })
     expect(store.graphData.links.filter(l => l.source === REPO_ID)).toHaveLength(1)
   })
+
+  it('attaches an offered space opened in place to its idea through its central aim, as if accepted', () => {
+    const store = useDataStore()
+    store.ideas = {
+      'idea-1': mkIdea({ id: 'idea-1' }),
+      aim: mkIdea({ id: 'aim', text: 'Cook every Friday', intrinsicValue: 1, supportingConnections: [{ ideaId: 'pot', weight: 1, relativePosition: [1, 0] }] }),
+      pot: mkIdea({ id: 'pot', text: 'Buy a big pot', supportedIdeas: ['aim'] })
+    }
+    store.ideaSpaces = { aim: REPO_ID, pot: REPO_ID }
+    store.meta = { name: 'p', color: '#ffffff', linkedRepos: [] } as any
+    store.offers = [{
+      id: 'offer-1', ideaId: 'idea-1', kind: 'offer', text: '', createdAt: '', author: 'ben', removable: true, mine: true,
+      space: { repoId: REPO_ID, name: 'Cook every Friday', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
+    }]
+    store.linkedGraphViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), editable: { graph: 'cook' } } }
+
+    const { nodes, links } = store.graphData
+    expect(nodes.some(n => n.id === REPO_ID)).toBe(false) // open: no node of its own
+    expect(nodes.filter(n => n.space === REPO_ID).map(n => n.id).sort()).toEqual(['aim', 'pot'])
+    expect(links).toContainEqual(expect.objectContaining({ source: 'aim', target: 'idea-1', relativePosition: [1.5, 0] }))
+    expect(links).toContainEqual(expect.objectContaining({ source: 'pot', target: 'aim', relativePosition: [1, 0] }))
+    // The open space's values leave the space's ideas out.
+    expect(store.ownIdeas.map(idea => idea.id)).toEqual(['idea-1'])
+  })
 })
