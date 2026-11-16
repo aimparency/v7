@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794812597407
+    "state": "implemented",
+    "date": 1794862139003,
+    "comment": "e5522a00: \"Discard account\" in the menu for browser-key accounts, with what goes (spaces, notes, offers); discardAccount removes owned spaces, notes/offers, offers of its spaces, writer/note-writer entries, tokens and the account; idle automatic accounts swept at start and daily after limits.idleAutomaticAccountDays (180). Verified: backend auth/discard.test.ts, frontend LoginControl.spec. Not yet tried in a browser."
   },
   "intrinsicValue": 0,
   "cost": 3,

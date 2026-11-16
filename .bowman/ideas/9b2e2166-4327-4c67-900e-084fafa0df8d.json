@@ -1,7 +1,7 @@
 {
   "id": "9b2e2166-4327-4c67-900e-084fafa0df8d",
   "text": "Instead of limiting connection resets, limit updated aims",
-  "description": "",
+  "description": "Felix 2026-11-16: the auto-layout slider limits the number of connection updates, to keep the git changes small. Connections are stored in the idea files, so count and limit the updated ideas instead.",
   "archived": false,
   "color": "#725530",
   "tags": [],
@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1794576012744
+    "state": "implemented",
+    "date": 1794862139003,
+    "comment": "16104569: the slider counts and limits changed ideas (changedIdeas/changesOfIdeas in utils/autolayout.ts); the preview reads \"Ideas changed: n of m (k connections)\", the toast \"Layout changed N ideas (M connections)\". Verified: LayoutPreviewPanel.spec and autolayout tests."
   },
   "intrinsicValue": 0,
   "selfWeight": 1,
