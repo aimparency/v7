@@ -11,7 +11,7 @@ import IdeaSearchPicker from './IdeaSearchPicker.vue'
 import NumericTextInput from './NumericTextInput.vue'
 import type { IdeaSearchAdditionalOption } from '../stores/ui/idea-search-types'
 import { insertsAsFirstChild } from '../stores/ui/idea-ui-state'
-import { pickSupportedIdea } from '../stores/ui/idea-creation'
+import { pickSupportedIdea, toCreationParams } from '../stores/ui/idea-creation'
 import { X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
@@ -30,6 +30,9 @@ const supportedIdeasList = ref<{ id: string, text: string, weight: number }[]>([
 const supportingConnectionsList = ref<{ id: string, text: string, weight: number }[]>([])
 const searchSelection = ref<{ type: 'idea'; data: SearchIdeaResult } | { type: 'option'; data: IdeaSearchAdditionalOption } | null>(null)
 const ideaSearchPicker = ref<InstanceType<typeof IdeaSearchPicker>>()
+// Set when editing a not-yet-created supported idea (see pickSupportedIdea):
+// Save hands the attributes back, the next question decides its parent.
+const draft = modalStore.ideaDraft
 
 const statuses = computed(() => dataStore.getStatuses)
 const selectedStatus = ref('open')
@@ -104,7 +107,7 @@ const selectedSearchResult = computed(() => {
   return searchSelection.value?.type === 'idea' ? searchSelection.value.data : null
 })
 
-const hasSearchText = computed(() => ideaText.value.trim().length > 0)
+const hasSearchText = computed(() => !draft && ideaText.value.trim().length > 0)
 const createNewOption = computed<IdeaSearchAdditionalOption[]>(() => {
   if (!hasSearchText.value) return []
   return [{ id: 'create-new', label: `Create new: "${ideaText.value}"` }]
@@ -127,26 +130,34 @@ const createIdea = async () => {
 
   const weight = supportedIdeasList.value.length > 0 ? (supportedIdeasList.value[0]?.weight ?? 1) : 1
 
+  const newIdea = {
+    text: ideaText.value.trim(),
+    description: ideaDescription.value.trim(),
+    tags: ideaTags.value,
+    intrinsicValue: ideaIntrinsicValue.value,
+    selfWeight: ideaSelfWeight.value,
+    cost: ideaCost.value === '' ? undefined : ideaCost.value,
+    supportedIdeas: supportedIdeasList.value.map(a => a.id),
+    supportingConnections: supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
+    color: ideaColor.value || null,
+    statusState: selectedStatus.value as IdeaStatusState,
+    statusComment: statusComment.value.trim(),
+    duration: ideaDuration.value,
+    valueRationale: ideaValueRationale.value
+  }
+
+  if (draft) {
+    modalStore.closeIdeaModal()
+    draft.save(toCreationParams(newIdea))
+    return
+  }
+
   isSubmitting.value = true
   try {
     if (selectedSearchResult.value) {
       await uiStore.linkExistingIdea(selectedSearchResult.value.id, weight)
     } else {
-      await uiStore.createIdea({
-        text: ideaText.value.trim(),
-        description: ideaDescription.value.trim(),
-        tags: ideaTags.value,
-        intrinsicValue: ideaIntrinsicValue.value,
-        selfWeight: ideaSelfWeight.value,
-        cost: ideaCost.value === '' ? undefined : ideaCost.value,
-        supportedIdeas: supportedIdeasList.value.map(a => a.id),
-        supportingConnections: supportingConnectionsList.value.map(a => ({ ideaId: a.id, weight: a.weight })),
-        color: ideaColor.value || null,
-        statusState: selectedStatus.value as IdeaStatusState,
-        statusComment: statusComment.value.trim(),
-        duration: ideaDuration.value,
-        valueRationale: ideaValueRationale.value
-      }, weight)
+      await uiStore.createIdea(newIdea, weight)
     }
   } catch (error) {
     console.error('Failed to create/link idea:', error)
@@ -154,6 +165,11 @@ const createIdea = async () => {
   } finally {
     isSubmitting.value = false
   }
+}
+
+const close = () => {
+  modalStore.closeIdeaModal()
+  draft?.cancel()
 }
 
 const handleSubmit = () => {
@@ -219,7 +235,7 @@ onMounted(async () => {
   // modals connect via their own creation callback, so prefilling here would
   // attach the new idea to an unrelated columns-view idea as well.
   const path = uiStore.getSelectionPath()
-  if (modalStore.ideaModalSource === 'columns' && path.ideas.length > 0) {
+  if (!draft && modalStore.ideaModalSource === 'columns' && path.ideas.length > 0) {
     let parentIdea: Idea | undefined
     const currentIdea = path.ideas[path.ideas.length - 1]
     const currentIdeaState = path.ideaStates[path.ideaStates.length - 1]
@@ -239,7 +255,7 @@ onMounted(async () => {
     }
   }
 
-  ideaText.value = IDEA_DEFAULTS.text
+  ideaText.value = draft?.text ?? IDEA_DEFAULTS.text
   ideaDescription.value = IDEA_DEFAULTS.description
   ideaTags.value = [...IDEA_DEFAULTS.tags]
   ideaIntrinsicValue.value = IDEA_DEFAULTS.intrinsicValue
@@ -261,9 +277,9 @@ onMounted(async () => {
 <template>
   <FormModalShell
     :show="true"
-    title="Add Idea"
+    :title="draft ? 'Add Supported Idea' : 'Add Idea'"
     :header-style="headerStyle"
-    @request-close="modalStore.closeIdeaModal()"
+    @request-close="close"
     @confirm="handleSubmit"
   >
     <template #header-right>
@@ -377,7 +393,7 @@ onMounted(async () => {
       />
     </div>
 
-    <div class="form-group">
+    <div v-if="!draft" class="form-group">
         <div class="label-row">
             <label>Supports (Parents)</label>
             <button ref="addParentBtn" data-picker @click="openParentSearch" class="btn-small" title="Add Parent">+</button>

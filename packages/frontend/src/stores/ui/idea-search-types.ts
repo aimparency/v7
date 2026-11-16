@@ -6,7 +6,7 @@ export type IdeaSearchAdditionalOption = {
   description?: string
   showWhenQueryEmptyOnly?: boolean
   actsAsEscape?: boolean
-  // Listed after the results while a query is typed, as `Create new: "<query>"`;
+  // Listed above the results while a query is typed, as `Create new: "<query>"`;
   // the picked option carries the query.
   createFromQuery?: boolean
   query?: string
@@ -21,4 +21,6 @@ export type IdeaSearchModalOptions = {
   placeholder: string
   showFilters: boolean
   additionalOptions: IdeaSearchAdditionalOption[]
+  // Called when the search is closed without picking anything.
+  onDismiss?: (() => void) | null
 }

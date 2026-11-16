@@ -1,6 +1,5 @@
 import { defineStore } from 'pinia'
-import { useDataStore, type Idea, type Phase, type IdeaCreationParams, type PhaseLevelPhaseEntry, type PhaseLevelPlaceholderEntry } from '../data'
-import { IDEA_DEFAULTS } from '../../constants/ideaDefaults'
+import { useDataStore, type Idea, type Phase, type PhaseLevelPhaseEntry, type PhaseLevelPlaceholderEntry } from '../data'
 import type { IdeaStatusState } from 'shared'
 import {
   setWindowSize as setWindowSizeHelper,
@@ -31,7 +30,7 @@ import { deleteIdeasAsking } from './idea-removal'
 import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
-import { placeIdea } from './idea-creation'
+import { placeIdea, toCreationParams } from './idea-creation'
 import {
   PHASE_KEY_PREFIX,
   listViewStateSnapshot,
@@ -361,24 +360,7 @@ export const useUIStore = defineStore('ui', {
 
     // Create a new idea where the idea modal was opened (see placeIdea).
     async createIdea(idea: NewIdea, weight: number = 1): Promise<void> {
-      const attributes: IdeaCreationParams = {
-        text: idea.text,
-        description: idea.description,
-        tags: idea.tags || [],
-        status: { state: idea.statusState ?? 'open', comment: idea.statusComment ?? '', date: Date.now() },
-        supportingConnections: idea.supportingConnections ?? [],
-        supportedIdeas: idea.supportedIdeas ?? [],
-        intrinsicValue: idea.intrinsicValue ?? IDEA_DEFAULTS.intrinsicValue,
-        valueRationale: (idea.valueRationale ?? IDEA_DEFAULTS.valueRationale).trim() || undefined,
-        selfWeight: idea.selfWeight ?? IDEA_DEFAULTS.selfWeight,
-        cost: idea.cost,
-        duration: idea.duration ?? IDEA_DEFAULTS.duration,
-        costVariance: 0,
-        valueVariance: 0,
-        archived: false,
-        color: idea.color || undefined
-      }
-      await placeIdea(this, undefined, attributes, weight)
+      await placeIdea(this, undefined, toCreationParams(idea), weight)
     },
 
     // Link an existing idea where the idea modal was opened (see placeIdea).

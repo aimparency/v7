@@ -1,6 +1,15 @@
+import type { IdeaCreationParams } from '../data'
 import type { IdeaSearchAdditionalOption, IdeaSearchModalOptions, IdeaSearchPickPayload } from './idea-search-types'
 
 type RelativePosition = 'before' | 'after'
+
+// The idea modal opened to edit an idea that is not created yet: Save hands
+// its attributes to `save`, closing it calls `cancel`.
+export type IdeaDraft = {
+  text: string
+  save: (attributes: IdeaCreationParams) => void
+  cancel: () => void
+}
 
 const DEFAULT_IDEA_SEARCH_OPTIONS: IdeaSearchModalOptions = {
   title: 'Search Ideas',
@@ -17,6 +26,7 @@ export type UIModalState = {
   newPhaseName: string
   phaseModalInsertPosition: RelativePosition
   showIdeaModal: boolean
+  ideaDraft: IdeaDraft | null
   ideaModalInsertPosition: RelativePosition
   ideaModalSource: 'columns' | 'graph'
   showIdeaSearch: boolean
@@ -27,6 +37,7 @@ export type UIModalState = {
   ideaSearchPlaceholder: string
   ideaSearchShowFilters: boolean
   ideaSearchAdditionalOptions: IdeaSearchAdditionalOption[]
+  ideaSearchDismissCallback: (() => void) | null
   showSettingsModal: boolean
   teleportCutIdeaId: string | null
   teleportSource: { parentIdeaId?: string; phaseId?: string } | null
@@ -75,6 +86,7 @@ export function openIdeaCreateModal(state: UIModalState, source: 'columns' | 'gr
 export function closeIdeaModal(state: UIModalState): void {
   state.showIdeaModal = false
   state.ideaModalSource = 'columns'
+  state.ideaDraft = null
 }
 
 export function openIdeaSearchModal(
@@ -98,6 +110,7 @@ export function openIdeaSearchModal(
   state.ideaSearchPlaceholder = resolvedOptions.placeholder
   state.ideaSearchShowFilters = resolvedOptions.showFilters
   state.ideaSearchAdditionalOptions = resolvedOptions.additionalOptions
+  state.ideaSearchDismissCallback = resolvedOptions.onDismiss ?? null
 }
 
 export function closeIdeaSearchModal(state: UIModalState): void {
@@ -109,6 +122,7 @@ export function closeIdeaSearchModal(state: UIModalState): void {
   state.ideaSearchPlaceholder = DEFAULT_IDEA_SEARCH_OPTIONS.placeholder
   state.ideaSearchShowFilters = DEFAULT_IDEA_SEARCH_OPTIONS.showFilters
   state.ideaSearchAdditionalOptions = []
+  state.ideaSearchDismissCallback = null
 }
 
 export function openSettingsModal(state: UIModalState): void {

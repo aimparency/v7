@@ -782,9 +782,6 @@ onUnmounted(() => {
     <!-- Phase Creation Modal -->
     <PhaseCreationModal />
     
-    <!-- Idea Creation Modal -->
-    <IdeaCreationModal v-if="modalStore.showIdeaModal" />
-
     <!-- Connection Details Modal (contribution %, hypothesis, reflection) -->
     <!-- Keyed by connection so a chain of reflection prompts remounts (and refocuses) per connection. -->
     <ConnectionDetailsModal
@@ -814,11 +811,14 @@ onUnmounted(() => {
       @close="modalStore.closeIdeaEditModal()"
     />
 
+    <!-- Idea Creation Modal: after the editor, so a supported idea drafted from it stacks on top -->
+    <IdeaCreationModal v-if="modalStore.showIdeaModal" />
+
     <!-- Idea Search Modal -->
     <IdeaSearchModal
       v-if="modalStore.showIdeaSearch"
       @select="handleIdeaSearchSelect"
-      @close="modalStore.closeIdeaSearch()"
+      @close="modalStore.dismissIdeaSearch()"
     />
     <PhaseSearchModal
       v-if="modalStore.showPhaseSearchPrompt"

@@ -9,7 +9,8 @@ import {
   openIdeaSearchModal as openIdeaSearchModalHelper,
   openPhaseCreateModal as openPhaseCreateModalHelper,
   openPhaseEditModal as openPhaseEditModalHelper,
-  openSettingsModal as openSettingsModalHelper
+  openSettingsModal as openSettingsModalHelper,
+  type IdeaDraft
 } from './modal-helpers'
 import type { IdeaSearchModalOptions, IdeaSearchPickPayload } from './idea-search-types'
 import type { PhaseSearchAdditionalOption, PhaseSearchModalOptions, PhaseSearchSelection } from './phase-search-types'
@@ -47,6 +48,7 @@ export const useUIModalStore = defineStore('ui-modal', {
     showIdeaModal: false,
     ideaModalInsertPosition: 'before' as RelativePosition,
     ideaModalSource: 'columns' as 'columns' | 'graph',
+    ideaDraft: null as IdeaDraft | null,
 
     showIdeaEditModal: false,
     ideaEditModalIdeaId: null as string | null,
@@ -73,6 +75,7 @@ export const useUIModalStore = defineStore('ui-modal', {
     ideaSearchPlaceholder: 'Go to idea...',
     ideaSearchShowFilters: true,
     ideaSearchAdditionalOptions: [],
+    ideaSearchDismissCallback: null as (() => void) | null,
     showPhaseSearchPrompt: false,
     phaseSearchPromptCallback: null as ((payload: PhaseSearchSelection) => void) | null,
     phaseSearchPromptTitle: 'Search Phases',
@@ -117,6 +120,11 @@ export const useUIModalStore = defineStore('ui-modal', {
       closeIdeaModalHelper(this)
     },
 
+    openIdeaDraft(draft: IdeaDraft) {
+      openIdeaCreateModalHelper(this, this.ideaModalSource)
+      this.ideaDraft = draft
+    },
+
     openIdeaSearch(
       mode: 'navigate' | 'pick' = 'navigate',
       callback?: (payload: IdeaSearchPickPayload) => void,
@@ -124,6 +132,13 @@ export const useUIModalStore = defineStore('ui-modal', {
       options?: Partial<IdeaSearchModalOptions>
     ) {
       openIdeaSearchModalHelper(this, mode, callback, initialIdeaId, options)
+    },
+
+    // Closed without a pick (Escape, overlay click).
+    dismissIdeaSearch() {
+      const onDismiss = this.ideaSearchDismissCallback
+      this.closeIdeaSearch()
+      onDismiss?.()
     },
 
     closeIdeaSearch() {

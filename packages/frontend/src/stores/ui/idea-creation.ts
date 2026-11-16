@@ -3,7 +3,7 @@ import { useUIModalStore } from './modal-store'
 import { useProjectStore } from '../project-store'
 import { trpc } from '../../trpc'
 import { insertsAsFirstChild } from './idea-ui-state'
-import type { useUIStore } from './list-store'
+import type { NewIdea, useUIStore } from './list-store'
 import { IDEA_DEFAULTS } from '../../constants/ideaDefaults'
 
 type UIStore = ReturnType<typeof useUIStore>
@@ -262,42 +262,65 @@ const connectToParent = async (parentId: string, childId: string) => {
   await useDataStore().loadIdeas(projectPath, [parentId, childId])
 }
 
+export function toCreationParams(idea: NewIdea): IdeaCreationParams {
+  return {
+    text: idea.text,
+    description: idea.description,
+    tags: idea.tags || [],
+    status: { state: idea.statusState ?? 'open', comment: idea.statusComment ?? '', date: Date.now() },
+    supportingConnections: idea.supportingConnections ?? [],
+    supportedIdeas: idea.supportedIdeas ?? [],
+    intrinsicValue: idea.intrinsicValue ?? IDEA_DEFAULTS.intrinsicValue,
+    valueRationale: (idea.valueRationale ?? IDEA_DEFAULTS.valueRationale).trim() || undefined,
+    selfWeight: idea.selfWeight ?? IDEA_DEFAULTS.selfWeight,
+    cost: idea.cost,
+    duration: idea.duration ?? IDEA_DEFAULTS.duration,
+    costVariance: 0,
+    valueVariance: 0,
+    archived: false,
+    color: idea.color || undefined
+  }
+}
+
+type SupportedIdeaPrompt = { title: string; placeholder: string; skippable?: boolean }
+type LinkSupportedIdea = (parent: { id: string; text: string }) => Promise<void> | void
+
 // Asks which idea something supports. The right parent often does not exist
-// yet: "Create new" makes it from the query, links it, and asks the same for
-// it, so a chain of aims grows until an existing idea is picked or skipped.
-export function pickSupportedIdea(
-  { skippable = false, ...prompt }: { title: string; placeholder: string; skippable?: boolean },
-  link: (parent: { id: string; text: string }) => Promise<void> | void
+// yet: "Create new" opens the idea modal for it and, on Save, puts it on a
+// stack of drafts and asks what that one supports. Picking an existing idea,
+// skipping or closing the search creates the whole stack as a chain:
+// link(first draft), each draft supports the next, the last one the pick.
+export function pickSupportedIdea(prompt: SupportedIdeaPrompt, link: LinkSupportedIdea): void {
+  askForSupportedIdea(prompt, link, [])
+}
+
+function askForSupportedIdea(
+  prompt: SupportedIdeaPrompt,
+  link: LinkSupportedIdea,
+  drafts: IdeaCreationParams[]
 ): void {
+  const createChain = (top?: { id: string; text: string }) => createDraftChain(drafts, link, top)
   useUIModalStore().openIdeaSearch('pick', async (payload) => {
-    if (payload.type === 'idea') {
-      await link(payload.data)
-      return
-    }
-    const text = payload.data.createFromQuery ? payload.data.query?.trim() : undefined
-    if (!text) return
-    const parent = await useDataStore().createFloatingIdea(useProjectStore().projectPath, {
-      text,
-      description: '',
-      tags: [],
-      supportedIdeas: [],
-      status: { state: 'open', comment: '', date: Date.now() },
-      intrinsicValue: IDEA_DEFAULTS.intrinsicValue,
-      selfWeight: IDEA_DEFAULTS.selfWeight,
-      duration: IDEA_DEFAULTS.duration,
-      costVariance: 0,
-      valueVariance: 0,
-      archived: false
+    if (payload.type === 'idea') return createChain(payload.data)
+    if (!payload.data.createFromQuery) return createChain()
+    const text = payload.data.query?.trim()
+    if (!text) return createChain()
+    // The search closes right after this callback returns; reopen after that.
+    await Promise.resolve()
+    draftSupportedIdea(text, {
+      save: (draft) => askForSupportedIdea(
+        { title: `What does "${draft.text}" support?`, placeholder: 'Optional: search for a parent idea...', skippable: true },
+        link,
+        [...drafts, draft]
+      ),
+      cancel: () => askForSupportedIdea(prompt, link, drafts)
     })
-    await link({ id: parent.id, text })
-    pickSupportedIdea(
-      { title: `What does "${text}" support?`, placeholder: 'Optional: search for a parent idea...', skippable: true },
-      (grandparent) => connectToParent(grandparent.id, parent.id)
-    )
   }, undefined, {
-    ...prompt,
+    title: prompt.title,
+    placeholder: prompt.placeholder,
+    onDismiss: () => { void createChain() },
     additionalOptions: [
-      ...(skippable ? [{
+      ...(prompt.skippable ? [{
         id: 'skip-parent',
         label: 'Skip (no supported idea)',
         description: 'Leave this idea without a supported idea connection.',
@@ -307,4 +330,33 @@ export function pickSupportedIdea(
       { id: 'create-parent', label: 'Create new', createFromQuery: true }
     ]
   })
+}
+
+// Opens the idea modal for a draft. When it is already open (the picker was
+// started from it), the draft is taken as typed instead.
+function draftSupportedIdea(text: string, handlers: { save: (draft: IdeaCreationParams) => void; cancel: () => void }): void {
+  const modalStore = useUIModalStore()
+  if (modalStore.showIdeaModal) {
+    handlers.save(toCreationParams({ text }))
+    return
+  }
+  modalStore.openIdeaDraft({ text, ...handlers })
+}
+
+async function createDraftChain(
+  drafts: IdeaCreationParams[],
+  link: LinkSupportedIdea,
+  top?: { id: string; text: string }
+): Promise<void> {
+  const projectPath = useProjectStore().projectPath
+  let child: string | undefined
+  for (const draft of drafts) {
+    const { id } = await useDataStore().createFloatingIdea(projectPath, draft)
+    if (child) await connectToParent(id, child)
+    else await link({ id, text: draft.text })
+    child = id
+  }
+  if (!top) return
+  if (child) await connectToParent(top.id, child)
+  else await link(top)
 }
