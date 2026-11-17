@@ -2,10 +2,11 @@
   "id": "c14dd70b-40cc-4d21-bc51-9b57ef460e38",
   "text": "currently deleting sub ideas does not work. fix that",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "b6b62cc1-a053-401b-93fe-caffd5af675c"
   ],
   "committedIn": [],
   "status": {
@@ -15,5 +16,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

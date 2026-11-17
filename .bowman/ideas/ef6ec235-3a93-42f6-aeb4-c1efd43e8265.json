@@ -1,0 +1,93 @@
+{
+  "id": "ef6ec235-3a93-42f6-aeb4-c1efd43e8265",
+  "text": "Reach people: users, advisors and research partners",
+  "archived": false,
+  "color": "#66472d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
+      "relativePosition": [
+        -1.41,
+        -3.47
+      ],
+      "weight": 12.5
+    },
+    {
+      "ideaId": "07178308-5d5c-4340-9697-3c68105602d5",
+      "relativePosition": [
+        0.93,
+        3.63
+      ],
+      "weight": 12.5,
+      "hypothesis": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
+    },
+    {
+      "ideaId": "99134ce5-3c20-4c7d-ad1d-c462a5db4b41",
+      "relativePosition": [
+        -2.84,
+        2.45
+      ],
+      "weight": 12.5
+    },
+    {
+      "ideaId": "8f002aaf-7628-4b04-a814-8c52db56b6f7",
+      "relativePosition": [
+        -3.75,
+        0.17
+      ],
+      "weight": 12.5
+    },
+    {
+      "ideaId": "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
+      "relativePosition": [
+        -1.62,
+        3.38
+      ],
+      "weight": 12.5,
+      "hypothesis": "A shared ideation graph for a real group of people is the cooperation engine in its simplest live form."
+    },
+    {
+      "ideaId": "11ebbcfb-3a82-46e0-9ccc-5cc9a4172266",
+      "relativePosition": [
+        -0.16,
+        -3.75
+      ],
+      "weight": 12.5,
+      "hypothesis": "Researchers working on human oversight of agents value pre-registered runs with negative results kept; a public note gets at least one substantive outside response (comment, citation, contact) within 6 weeks of publishing. Refuted if it gets none."
+    },
+    {
+      "ideaId": "303558d5-1d91-4396-868e-ab4b1a6c5d54",
+      "relativePosition": [
+        1.52,
+        -3.43
+      ],
+      "weight": 12.5,
+      "hypothesis": "Two outside people who think about explicit claims and human judgment can tell within one conversation whether the idea graph's hypotheses/reflections are a format others can use, which no internal test can show."
+    },
+    {
+      "ideaId": "1754d0d8-ea03-4eea-be82-5925dbbb6b6d",
+      "relativePosition": [
+        3.72,
+        -0.48
+      ],
+      "weight": 12.5,
+      "hypothesis": "ARIA names 'requirement capture' and 'users' preferences' as missing agent infrastructure, which is the cooperation engine's core claim stated by an outside funder; a reviewer's response tests whether outsiders see the idea graph that way."
+    }
+  ],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Groups related children; work is in the children.",
+    "date": 1794846418245
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

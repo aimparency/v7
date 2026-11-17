@@ -1,0 +1,99 @@
+{
+  "id": "8155f956-92b5-4add-8aa7-e84c798807ab",
+  "text": "Editing and selecting in the graph view",
+  "archived": false,
+  "color": "#662d39",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "ee3d7aa6-04f0-46a3-b5f0-0259c59e9935",
+      "relativePosition": [
+        3.72,
+        0.45
+      ],
+      "weight": 11.1860103143806
+    },
+    {
+      "ideaId": "c84f5fa1-ff38-45ae-8559-fcc8dc5849e2",
+      "relativePosition": [
+        3.72,
+        -0.51
+      ],
+      "weight": 11.774747699347998
+    },
+    {
+      "ideaId": "da74d69e-b275-4412-b186-0ccc7a0d0440",
+      "relativePosition": [
+        3.74,
+        -0.22
+      ],
+      "weight": 10.32872605205965
+    },
+    {
+      "ideaId": "892b30ca-b7da-49c2-afd7-b3d18109811f",
+      "relativePosition": [
+        3.18,
+        -1.98
+      ],
+      "weight": 10.759089637562136
+    },
+    {
+      "ideaId": "b74bf814-ae8f-4330-98a3-2315ac89d66d",
+      "relativePosition": [
+        -2.03,
+        3.15
+      ],
+      "weight": 11.207385039127223
+    },
+    {
+      "ideaId": "9ce4c6ab-e213-434f-8bb7-eeabddf1f94c",
+      "relativePosition": [
+        0.25,
+        -3.74
+      ],
+      "weight": 11.1860103143806,
+      "hypothesis": "Grouped under the structural graph-view area."
+    },
+    {
+      "ideaId": "93468569-ef71-4e88-9232-de48d1a3f585",
+      "relativePosition": [
+        0.88,
+        -3.65
+      ],
+      "weight": 11.1860103143806,
+      "hypothesis": "Picking the closest rendered connection makes overlapping graph connections easier to select."
+    },
+    {
+      "ideaId": "9b5862b9-857d-4127-85b5-0b7997ac2b1e",
+      "relativePosition": [
+        -3.61,
+        -1
+      ],
+      "weight": 11.1860103143806
+    },
+    {
+      "ideaId": "d7ba6b8b-5150-4ab2-b6a4-79a556f10ab1",
+      "relativePosition": [
+        0.44,
+        3.72
+      ],
+      "weight": 11.1860103143806,
+      "hypothesis": "The side panel in this decision is specifically the graph inspection surface."
+    }
+  ],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846417719
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

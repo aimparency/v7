@@ -1,0 +1,50 @@
+{
+  "id": "5f5d6950-44a3-4f81-934a-0b26d327e7b6",
+  "text": "Keep humans in authority over agents",
+  "archived": false,
+  "color": "#2d665b",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "986410a0-24a7-40c2-9623-af27bf084651",
+      "relativePosition": [
+        -1.77,
+        -3.31
+      ],
+      "weight": 33.333333333333336,
+      "hypothesis": "Tests whether human authority survives adversarial and ambiguous operating conditions."
+    },
+    {
+      "ideaId": "101cc131-b51e-45d9-ad8e-63d138338dc4",
+      "relativePosition": [
+        0.71,
+        -3.68
+      ],
+      "weight": 33.333333333333336,
+      "hypothesis": "Humans stay final authority only if no one but the operator can make the machine run code; one exposed port undoes every model-side safeguard."
+    },
+    {
+      "ideaId": "b5348ae2-62d6-42ac-8191-b877e0570c61",
+      "relativePosition": [
+        -2.51,
+        2.79
+      ],
+      "weight": 33.333333333333336
+    }
+  ],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846418439
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

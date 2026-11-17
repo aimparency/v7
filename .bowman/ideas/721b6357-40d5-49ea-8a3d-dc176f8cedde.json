@@ -1,0 +1,48 @@
+{
+  "id": "721b6357-40d5-49ea-8a3d-dc176f8cedde",
+  "text": "Idea rows",
+  "archived": false,
+  "color": "#5d2d66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "2cb56abb-df7d-41cc-92be-3569015ba667",
+      "relativePosition": [
+        3.39,
+        -1.6
+      ],
+      "weight": 33.333333333333336
+    },
+    {
+      "ideaId": "ad34dc5b-054e-4765-b251-edbc971af27e",
+      "relativePosition": [
+        2.13,
+        3.09
+      ],
+      "weight": 33.333333333333336
+    },
+    {
+      "ideaId": "4c7e75f1-1421-4909-9116-0ad831d95033",
+      "relativePosition": [
+        2.86,
+        2.43
+      ],
+      "weight": 33.333333333333336
+    }
+  ],
+  "supportedIdeas": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846421955
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,72 @@
+{
+  "id": "d85fb1a0-b800-4aff-8483-787de8d2bf91",
+  "text": "Keyboard and focus handling",
+  "archived": false,
+  "color": "#662d40",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "2de0871d-2538-49b2-96fc-9ef58ef847df",
+      "relativePosition": [
+        1.24,
+        3.54
+      ],
+      "weight": 16.666666666666668
+    },
+    {
+      "ideaId": "cb27ceaf-e220-4926-b5db-b2b21dbf26a3",
+      "relativePosition": [
+        2.43,
+        -2.85
+      ],
+      "weight": 16.666666666666668
+    },
+    {
+      "ideaId": "b9863b21-a641-4efa-93dd-b1e3ef4a09f4",
+      "relativePosition": [
+        1.15,
+        -3.57
+      ],
+      "weight": 16.666666666666668
+    },
+    {
+      "ideaId": "4ed092a1-0fc2-4794-937d-d76866e87b14",
+      "relativePosition": [
+        0.05,
+        -3.75
+      ],
+      "weight": 16.666666666666668
+    },
+    {
+      "ideaId": "0e692a61-23f0-4543-a8a2-7ea621b0dc45",
+      "relativePosition": [
+        3.62,
+        0.96
+      ],
+      "weight": 16.666666666666668
+    },
+    {
+      "ideaId": "06119986-08c5-4283-a0ab-c6af2478e327",
+      "relativePosition": [
+        3.74,
+        -0.32
+      ],
+      "weight": 16.666666666666668
+    }
+  ],
+  "supportedIdeas": [
+    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846421680
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

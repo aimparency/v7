@@ -2,15 +2,21 @@
   "id": "2cb56abb-df7d-41cc-92be-3569015ba667",
   "text": "the subaim count circle should always be aligned right.",
   "description": "",
-  "incoming": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "721b6357-40d5-49ea-8a3d-dc176f8cedde"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Updated Idea.vue to use flex:1 for idea text, ensuring the count bubble is pushed to the right.",
     "date": 1765015750519
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  "intrinsicValue": 0,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

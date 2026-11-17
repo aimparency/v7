@@ -1,0 +1,92 @@
+{
+  "id": "c8de13a3-af2e-4d86-884d-aab91a2f6a1f",
+  "text": "Graph layout: forces, sizes and positions",
+  "archived": false,
+  "color": "#2d3a66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "420e94fd-2447-4a58-98ac-e506780adbf0",
+      "relativePosition": [
+        -3.43,
+        -1.51
+      ],
+      "weight": 12.5
+    },
+    {
+      "ideaId": "22851f87-e223-4a9d-94ed-3b542350e1ae",
+      "relativePosition": [
+        -3.69,
+        0.66
+      ],
+      "weight": 12.5
+    },
+    {
+      "ideaId": "7815eb52-72fc-410c-9e4a-935d6abb745e",
+      "relativePosition": [
+        -2.61,
+        2.7
+      ],
+      "weight": 12.5
+    },
+    {
+      "ideaId": "e1671225-7707-4383-a7ba-0c81909f9311",
+      "relativePosition": [
+        -0.94,
+        3.63
+      ],
+      "weight": 12.5,
+      "hypothesis": "Grouped under the structural graph-view area."
+    },
+    {
+      "ideaId": "40a2db34-aa80-48bf-ac13-dfe17004e351",
+      "relativePosition": [
+        3.73,
+        0.42
+      ],
+      "weight": 12.5,
+      "hypothesis": "Grouped under the structural graph-view area."
+    },
+    {
+      "ideaId": "60e39167-f69d-47ee-9c8c-6cd3bb525dc0",
+      "relativePosition": [
+        2.85,
+        2.44
+      ],
+      "weight": 12.5,
+      "hypothesis": "Keeps value-proportional sizes while small ideas stay easy to hit."
+    },
+    {
+      "ideaId": "3f299b1d-845f-4f24-8729-11a70c2a636b",
+      "relativePosition": [
+        0.92,
+        3.64
+      ],
+      "weight": 12.5,
+      "hypothesis": "A readable graph without overlaps, achieved with small reviewable git diffs, keeps the graph usable as it grows."
+    },
+    {
+      "ideaId": "4cf3aad9-b371-4264-b26a-61261c73ed43",
+      "relativePosition": [
+        2.23,
+        -3.02
+      ],
+      "weight": 12.5
+    }
+  ],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846417524
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

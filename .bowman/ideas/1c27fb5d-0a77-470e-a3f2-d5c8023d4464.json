@@ -20,11 +20,55 @@
         -1.177122679581602
       ],
       "weight": 0.9850746268656718
+    },
+    {
+      "ideaId": "8fe1aa4e-d89d-4bc0-b9ab-8fd412d24d3b",
+      "relativePosition": [
+        2.02,
+        -3.16
+      ],
+      "weight": 3
+    },
+    {
+      "ideaId": "c63419f1-5d5f-4320-93fb-f12d01940037",
+      "relativePosition": [
+        -3.55,
+        -1.22
+      ],
+      "weight": 1,
+      "hypothesis": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "ideaId": "23bec250-ecae-458d-addb-e764e96a1dcb",
+      "relativePosition": [
+        3.71,
+        -0.52
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "abe82e32-65d3-4d08-b78d-2942431b2105",
+      "relativePosition": [
+        -3.75,
+        0.05
+      ],
+      "weight": 1,
+      "hypothesis": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "ideaId": "2181d80e-795a-4160-8377-77ddafb47fc4",
+      "relativePosition": [
+        2.25,
+        -3
+      ],
+      "weight": 1,
+      "hypothesis": "Grouped under the structural list/modal interaction area."
     }
   ],
   "supportedIdeas": [
     "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
-    "c4df7232-a3b7-4081-879c-096c2b8488e8"
+    "c4df7232-a3b7-4081-879c-096c2b8488e8",
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
@@ -36,8 +80,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

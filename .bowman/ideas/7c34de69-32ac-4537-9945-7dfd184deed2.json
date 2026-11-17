@@ -1,0 +1,73 @@
+{
+  "id": "7c34de69-32ac-4537-9945-7dfd184deed2",
+  "text": "Learn across loop cycles",
+  "archived": false,
+  "color": "#662d4b",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
+      "relativePosition": [
+        -0.05,
+        3.75
+      ],
+      "weight": 16.54943596549436
+    },
+    {
+      "ideaId": "8c0f71ff-0397-44fb-9e4e-b450a45ba646",
+      "relativePosition": [
+        -2.15,
+        -3.07
+      ],
+      "weight": 16.54943596549436
+    },
+    {
+      "ideaId": "50067a98-bc63-4e8e-89a7-0e5d12842053",
+      "relativePosition": [
+        -3.23,
+        1.9
+      ],
+      "weight": 17.252820172528207
+    },
+    {
+      "ideaId": "1fba416f-73c9-4fbe-8bde-0cc0a29ddabd",
+      "relativePosition": [
+        3,
+        -2.25
+      ],
+      "weight": 16.54943596549436
+    },
+    {
+      "ideaId": "d4939a29-a43f-4f9e-b6d8-8f6596b29fc5",
+      "relativePosition": [
+        1.91,
+        -3.23
+      ],
+      "weight": 16.54943596549436,
+      "hypothesis": "When the priority list runs thin, an outward-looking loop (AI trends, money flows) yields sub ideas under major ideas that the inward-looking loop would not find; it fails if the created sub ideas are mostly cancelled or duplicates within a few loops."
+    },
+    {
+      "ideaId": "51a4e657-b427-4f29-9378-3878c9fdb185",
+      "relativePosition": [
+        -2.93,
+        2.33
+      ],
+      "weight": 16.54943596549436
+    }
+  ],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846419513
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

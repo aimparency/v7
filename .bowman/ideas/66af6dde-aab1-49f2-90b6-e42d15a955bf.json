@@ -2,10 +2,11 @@
   "id": "66af6dde-aab1-49f2-90b6-e42d15a955bf",
   "text": "remove border left or that vertical bar from idea description text container. It's useless and confusing",
   "description": "only the subaim list should have that indent bar",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "ec6d7dec-d080-48ec-a87d-4f804c788e1f"
   ],
   "committedIn": [],
   "status": {
@@ -15,5 +16,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

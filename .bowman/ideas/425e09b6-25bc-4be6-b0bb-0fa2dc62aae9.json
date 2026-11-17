@@ -1,0 +1,50 @@
+{
+  "id": "425e09b6-25bc-4be6-b0bb-0fa2dc62aae9",
+  "text": "Phase search",
+  "archived": false,
+  "color": "#662d45",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
+      "relativePosition": [
+        -0.07,
+        3.75
+      ],
+      "weight": 33.333333333333336
+    },
+    {
+      "ideaId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
+      "relativePosition": [
+        -0.52,
+        -3.71
+      ],
+      "weight": 33.333333333333336,
+      "hypothesis": "Reusable parent-phase selection supports editing the hierarchical phase structure."
+    },
+    {
+      "ideaId": "75d48504-226a-4316-a395-e3f0a1aa87d4",
+      "relativePosition": [
+        -2.06,
+        -3.13
+      ],
+      "weight": 33.333333333333336,
+      "hypothesis": "Fuzzy phase lookup supports selecting nodes in the hierarchical phase structure."
+    }
+  ],
+  "supportedIdeas": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846421415
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

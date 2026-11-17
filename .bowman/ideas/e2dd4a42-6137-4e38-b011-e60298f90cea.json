@@ -6,7 +6,7 @@
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "0622adb1-e79d-483c-b894-199d92ca199d"
+    "e50223cd-7eb2-4604-9731-1f78b351e200"
   ],
   "committedIn": [],
   "status": {
@@ -16,8 +16,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

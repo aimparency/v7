@@ -2,6 +2,7 @@
   "id": "c4ab85c2-0497-48de-ae93-3dc7b4c2aa60",
   "text": "Multi-parent idea support: Show all paths to an idea in list view",
   "description": "Ideas can support multiple parents (synergies). Graph view already shows this well.\n\nList view needs enhancement:\n- When viewing an idea with multiple supportedIdeas, show all paths\n- \"This idea supports: [Idea A] [Idea B] [Idea C]\"\n- Click to navigate to each parent path\n- Visual indicator for multi-parent ideas (badge/icon)\n\nAlready implemented in data model, just needs UI support.",
+  "archived": false,
   "tags": [
     "ui",
     "multi-parent",
@@ -9,7 +10,7 @@
   ],
   "supportingConnections": [],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "ec6d7dec-d080-48ec-a87d-4f804c788e1f"
   ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -21,5 +22,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

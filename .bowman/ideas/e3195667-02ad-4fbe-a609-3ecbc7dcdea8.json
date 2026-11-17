@@ -1,0 +1,83 @@
+{
+  "id": "e3195667-02ad-4fbe-a609-3ecbc7dcdea8",
+  "text": "Graph performance, camera and live updates",
+  "archived": false,
+  "color": "#362d66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "28134f24-5279-465d-bf6a-38795df36b8c",
+      "relativePosition": [
+        3.64,
+        0.92
+      ],
+      "weight": 14.06858924395947
+    },
+    {
+      "ideaId": "812f2008-2ce4-4b66-bf87-53be001b712a",
+      "relativePosition": [
+        0.28,
+        3.74
+      ],
+      "weight": 14.06858924395947
+    },
+    {
+      "ideaId": "b5da0d8d-b089-4eb4-b14d-05f772867446",
+      "relativePosition": [
+        -3.23,
+        -1.9
+      ],
+      "weight": 14.06858924395947
+    },
+    {
+      "ideaId": "b0f6a19a-7d09-4454-97e5-8da581f14bb1",
+      "relativePosition": [
+        -3.68,
+        -0.74
+      ],
+      "weight": 15.588464536243185,
+      "hypothesis": "it makes the experience more smooth - currently, it behaves just weird (e.g. still doing a slight pan after zooming has mostly completed)"
+    },
+    {
+      "ideaId": "d3b97d82-dfc0-4db6-841b-b90e678e6546",
+      "relativePosition": [
+        -3.71,
+        -0.57
+      ],
+      "weight": 14.06858924395947,
+      "hypothesis": "Grouped under the structural graph-view area."
+    },
+    {
+      "ideaId": "4f71c8f8-29ff-444d-9d1b-00ae84fc1abe",
+      "relativePosition": [
+        -3.74,
+        -0.25
+      ],
+      "weight": 14.06858924395947
+    },
+    {
+      "ideaId": "92a20e32-d4b8-464d-a7b0-60fe3d4d7291",
+      "relativePosition": [
+        0.3,
+        3.74
+      ],
+      "weight": 14.06858924395947,
+      "hypothesis": "Watching ideas light up as agents read and change them shows in the graph where the work happens, so the human can follow and steer it."
+    }
+  ],
+  "supportedIdeas": [
+    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846417909
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

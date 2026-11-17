@@ -1,0 +1,69 @@
+{
+  "id": "a4a45492-e422-426d-8d5a-76b54b409fb4",
+  "text": "Deterministic authority-policy boundary",
+  "archived": false,
+  "color": "#66372d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "1733c488-68b0-47cc-8439-c8c5c0476a87",
+      "relativePosition": [
+        -3.74,
+        -0.27
+      ],
+      "weight": 20,
+      "hypothesis": "Addresses its remaining stochastic correction and authority-classification limitation."
+    },
+    {
+      "ideaId": "9adb54ea-2fff-48ab-ae7d-7b99e37b0002",
+      "relativePosition": [
+        -0.67,
+        -3.69
+      ],
+      "weight": 20,
+      "hypothesis": "Creates the architectural mechanism needed before repeating corrigibility evidence."
+    },
+    {
+      "ideaId": "f3231c4c-0d4b-45d4-a651-d849189c7398",
+      "relativePosition": [
+        -0.59,
+        3.7
+      ],
+      "weight": 20,
+      "hypothesis": "Tests the unchanged corrigibility v3 safety and utility thresholds."
+    },
+    {
+      "ideaId": "0f27a55e-50a6-4e8f-bd3f-781fc53bee89",
+      "relativePosition": [
+        -1.19,
+        3.55
+      ],
+      "weight": 20,
+      "hypothesis": "Provides reliable bounded actuation needed for correction recovery."
+    },
+    {
+      "ideaId": "d89548b2-5403-424a-8192-dc67934de145",
+      "relativePosition": [
+        -3.66,
+        0.84
+      ],
+      "weight": 20,
+      "hypothesis": "Tests every unchanged v3 scorer threshold at the composite system boundary."
+    }
+  ],
+  "supportedIdeas": [
+    "986410a0-24a7-40c2-9623-af27bf084651"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846420299
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

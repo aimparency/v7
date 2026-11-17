@@ -1,0 +1,69 @@
+{
+  "id": "2a0e5c77-7189-4182-a3be-636f5c086164",
+  "text": "Move and navigate across phase boundaries",
+  "archived": false,
+  "color": "#2d4566",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "b3f8518f-9c37-4392-bd64-81a55c6da74c",
+      "relativePosition": [
+        1.41,
+        -3.48
+      ],
+      "weight": 20,
+      "hypothesis": "Phase reordering across parent boundaries is part of the ordered hierarchical phase navigation refactor."
+    },
+    {
+      "ideaId": "4e50493a-94ca-4bb7-aefb-c78ed3107f62",
+      "relativePosition": [
+        -1.41,
+        -3.47
+      ],
+      "weight": 20,
+      "hypothesis": "Idea movement across parent-owned phase ranges depends on the ordered hierarchical phase model."
+    },
+    {
+      "ideaId": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
+      "relativePosition": [
+        -3.58,
+        -1.12
+      ],
+      "weight": 20,
+      "hypothesis": "Empty-phase traversal implements navigation across the ordered phase sequence."
+    },
+    {
+      "ideaId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
+      "relativePosition": [
+        0.73,
+        3.68
+      ],
+      "weight": 20,
+      "hypothesis": "Moving focus into the next phase implements traversal across the ordered phase sequence."
+    },
+    {
+      "ideaId": "1ec81038-54e4-406e-8851-d47c8a4799f1",
+      "relativePosition": [
+        -0.15,
+        -3.75
+      ],
+      "weight": 20,
+      "hypothesis": "Moving ideas across phases implements cross-boundary behavior in the ordered phase hierarchy."
+    }
+  ],
+  "supportedIdeas": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846421239
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

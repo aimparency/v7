@@ -1,0 +1,50 @@
+{
+  "id": "65a6c8b2-1ac6-48e5-80ad-90e409742cc7",
+  "text": "Share graphs between people",
+  "archived": false,
+  "color": "#2d4066",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "d4203221-939e-44e6-bf3f-b3933c790e6b",
+      "relativePosition": [
+        0.39,
+        -3.73
+      ],
+      "weight": 33.333333333333336,
+      "hypothesis": "When anyone can get their own graph in one click and link it to others, people take part without setting up a repo, and the graphs grow into one global graph of ideas."
+    },
+    {
+      "ideaId": "fcb38df6-fd32-4721-ac81-3b37be9fa03a",
+      "relativePosition": [
+        1.6,
+        -3.39
+      ],
+      "weight": 33.333333333333336,
+      "hypothesis": "When every idea has an owner and connections need acceptance, anyone can be allowed to propose, so a group can share one graph without a ladder of access roles."
+    },
+    {
+      "ideaId": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
+      "relativePosition": [
+        0.79,
+        3.67
+      ],
+      "weight": 33.333333333333336
+    }
+  ],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846418094
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

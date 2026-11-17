@@ -1,0 +1,51 @@
+{
+  "id": "555962b7-cd3e-445b-ba8b-49f71171b1e6",
+  "text": "Grants and investor applications",
+  "archived": false,
+  "color": "#2f662d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "cabe6e06-8988-4145-b884-9ef5bc68f660",
+      "relativePosition": [
+        0.97,
+        -3.62
+      ],
+      "weight": 50,
+      "hypothesis": "The near-term funding milestone materially extends runway but combines revenue and grants rather than proving durable autonomy alone."
+    },
+    {
+      "ideaId": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
+      "relativePosition": [
+        -2.26,
+        2.99
+      ],
+      "weight": 25,
+      "hypothesis": "The SPC application is a dilutive funding and company-building attempt that could extend runway, external validation, and the path to sustainable economic autonomy; it is not non-dilutive funding."
+    },
+    {
+      "ideaId": "1754d0d8-ea03-4eea-be82-5925dbbb6b6d",
+      "relativePosition": [
+        3.49,
+        1.37
+      ],
+      "weight": 25,
+      "hypothesis": "A public research funder paying for open-source agent requirement-capture tooling can carry Aimparency's operating costs for 1-2 years without a commercial product; refuted if ARIA's call excludes non-UK individuals or rejects the fit at concept stage."
+    }
+  ],
+  "supportedIdeas": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "cancelled",
+    "comment": "Grouped cancelled and failed routes, kept for their history; not the platform's current focus.",
+    "date": 1794846420461
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

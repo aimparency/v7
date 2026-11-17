@@ -1,15 +1,15 @@
 {
   "id": "50188560-6c74-4005-8061-7e1090f28895",
   "text": "Integrate Watchdog into Aimparency v7 Web UI",
+  "description": "",
   "archived": false,
   "tags": [
     "watchdog",
     "ui"
   ],
   "supportingConnections": [],
-  "incoming": [],
   "supportedIdeas": [
-    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+    "06a83c56-4daf-4ec6-a72e-f07487a15b35"
   ],
   "committedIn": [
     "ab939925-1be6-43fc-b7a9-958b49b2c66a"
@@ -21,9 +21,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 0,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "description": "",
-  "selfWeight": 0
+  "valueVariance": 0
 }

@@ -24,42 +24,6 @@
       "hypothesis": "Real economic participation is a major autonomy constraint and feedback channel."
     },
     {
-      "ideaId": "facbacb5-1589-4b73-8ecb-97d7bb32bd99",
-      "relativePosition": [
-        -1.5916894469828695,
-        -0.9420857653467262
-      ],
-      "weight": 1,
-      "hypothesis": "The completed runtime mapping supplies architectural evidence for the autonomy program."
-    },
-    {
-      "ideaId": "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
-      "relativePosition": [
-        1.468650285436083,
-        -2.0231328031269995
-      ],
-      "weight": 2,
-      "hypothesis": "Durable project-local state is foundational for autonomy that survives browser and session boundaries."
-    },
-    {
-      "ideaId": "74b079de-667c-47f6-8017-fb202e2affd9",
-      "relativePosition": [
-        2.4699432845894744,
-        0.38649731035462564
-      ],
-      "weight": 0.5,
-      "hypothesis": "External runtime comparison is exploratory and should not dominate delivery of the native loop."
-    },
-    {
-      "ideaId": "2ff1fd7a-7e02-4197-a558-174622db7cbe",
-      "relativePosition": [
-        0.2813711773672627,
-        -2.4841155892081512
-      ],
-      "weight": 1.5,
-      "hypothesis": "A bounded local policy is important infrastructure for safe autonomous action."
-    },
-    {
       "ideaId": "dec5c82b-c2cc-4d56-a2b4-8c0fa981a7cc",
       "relativePosition": [
         -3.154239628506225,
@@ -76,15 +40,6 @@
       ],
       "weight": 4,
       "hypothesis": "The verified discover→plan→execute→verify→submit loop is the central technical autonomy capability."
-    },
-    {
-      "ideaId": "50188560-6c74-4005-8061-7e1090f28895",
-      "relativePosition": [
-        -2.464762689053946,
-        0.4182641350242238
-      ],
-      "weight": 0.5,
-      "hypothesis": "The completed watchdog UI is supporting observability rather than autonomy itself."
     },
     {
       "ideaId": "3253bc9e-14fe-4c9b-9849-588620518517",
@@ -105,98 +60,24 @@
       "hypothesis": "This cancelled hackathon route is retained as weak historical evidence, not a present strategy."
     },
     {
-      "ideaId": "5af61b3e-5b5e-43ba-af2c-23977d55b910",
+      "ideaId": "06a83c56-4daf-4ec6-a72e-f07487a15b35",
       "relativePosition": [
-        1.1241535381443817,
-        -2.2329977211536667
+        2.14,
+        -3.08
       ],
-      "weight": 1.5,
-      "hypothesis": "Self-rebuilding workers improve continuity, while remaining subordinate to the end-to-end loop."
+      "weight": 5.5
     },
     {
-      "ideaId": "27d63681-1973-4243-883f-d91f3cc4e532",
+      "ideaId": "17e519b8-07eb-4e96-a7b1-56830fd68dd6",
       "relativePosition": [
-        -1.760755060579601,
-        1.7747511421727062
+        3.73,
+        0.38
       ],
-      "weight": 0.75,
-      "hypothesis": "Idle-agent guidance is a completed enabling mechanism with limited independent mission value."
-    },
-    {
-      "ideaId": "f02454a1-f8bf-4ce8-997b-fd52b2094a2f",
-      "relativePosition": [
-        -2.4619083681756306,
-        0.43474956780519525
-      ],
-      "weight": 0.75,
-      "hypothesis": "Reliable supervisor communication supports continuity but is not the primary autonomy outcome."
-    },
-    {
-      "ideaId": "051ae7cd-9509-4451-a686-2041d9b38a98",
-      "relativePosition": [
-        0.3772041092225206,
-        -2.471379586381996
-      ],
-      "weight": 0.75,
-      "hypothesis": "Mission-path context is enabling infrastructure for coherent autonomous decisions."
-    },
-    {
-      "ideaId": "12da17c9-7c18-479c-8dc3-e78bc0a35805",
-      "relativePosition": [
-        14.57,
-        3.67
-      ],
-      "weight": 0.5,
-      "hypothesis": "Accurate concise tool descriptions reduce execution errors but have indirect autonomy impact."
-    },
-    {
-      "ideaId": "cca28c6c-f3fa-4b13-9078-62fcb80a5f5e",
-      "relativePosition": [
-        2.3071775454641705,
-        -0.9627729606225582
-      ],
-      "weight": 0.75,
-      "hypothesis": "Timeout reliability supports the loop without defining its capability."
-    },
-    {
-      "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
-      "relativePosition": [
-        2.45,
-        -9.25
-      ],
-      "weight": 3,
-      "hypothesis": "Real-world effectors are essential for moving from internal reasoning to bounded external action."
-    },
-    {
-      "ideaId": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
-      "relativePosition": [
-        -1.1700661175852607,
-        2.2092861472609098
-      ],
-      "weight": 0.8,
-      "hypothesis": "The application process is also a live demonstration that the idea graph can preserve human intent and direct replaceable autonomous AI executors across a long-running task."
-    },
-    {
-      "ideaId": "5949b781-3f96-4028-a7bc-7d04f9226f9d",
-      "relativePosition": [
-        -3.17,
-        -2
-      ],
-      "weight": 2,
-      "hypothesis": "Autonomy becomes measurable and improvable once the loop is our own versioned code rather than prompt text inside third-party agents."
-    },
-    {
-      "ideaId": "2531df25-0426-47ad-ab89-5e3e28458504",
-      "relativePosition": [
-        -2.22,
-        -3.02
-      ],
-      "weight": 1,
-      "hypothesis": "Running the harness on the project's own graph, with a verifier of another model family and human-gated strategy, is the smallest real instance of aim B; refuted if it cannot complete one verified leaf in 10 cycles."
+      "weight": 5
     }
   ],
   "supportedIdeas": [
-    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+    "27fde285-c130-46f4-93de-1b85d00e2da5"
   ],
   "committedIn": [
     "5c2f9450-0feb-4755-b59a-081e9ab43037"

@@ -1,6 +1,7 @@
 {
   "id": "ad34dc5b-054e-4765-b251-edbc971af27e",
   "text": "show idea description between title and status when idea is expanded.",
+  "archived": false,
   "tags": [],
   "supportingConnections": [
     {
@@ -13,7 +14,7 @@
     }
   ],
   "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
+    "721b6357-40d5-49ea-8a3d-dc176f8cedde"
   ],
   "committedIn": [],
   "status": {
@@ -23,5 +24,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

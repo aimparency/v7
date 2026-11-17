@@ -23,14 +23,6 @@
       "weight": 1
     },
     {
-      "ideaId": "8025ab20-c497-43c0-b365-fbfa60b7428c",
-      "relativePosition": [
-        -3.04,
-        -7.21
-      ],
-      "weight": 1
-    },
-    {
       "ideaId": "2b1ef4a8-0276-4159-aa0b-91035a3ae2c0",
       "relativePosition": [
         -0.5772926415355183,
@@ -43,22 +35,6 @@
       "relativePosition": [
         -0.16,
         -10.16
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "25c7b4e9-d1d3-476c-beb3-599fffcaa95b",
-      "relativePosition": [
-        2.195728184767559,
-        1.1953149119028679
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "073ea968-fc31-45ef-b90e-15bb9237c38d",
-      "relativePosition": [
-        -0.7526541183234547,
-        -2.3840116984131483
       ],
       "weight": 1
     },
@@ -81,33 +57,6 @@
       "hypothesis": "Turns self-improvement from a feature claim into repeated measured capability gains."
     },
     {
-      "ideaId": "7e134102-fe71-4558-b8fd-d2fb6d8953ae",
-      "relativePosition": [
-        -0.01178160416534698,
-        2.499972238606519
-      ],
-      "weight": 1,
-      "hypothesis": "Produces stricter evidence about graph-grounded autonomous software delivery."
-    },
-    {
-      "ideaId": "8c81ecdf-a2d5-4ada-97ab-8d28595a8400",
-      "relativePosition": [
-        -2.484236852094969,
-        -0.28029852424384893
-      ],
-      "weight": 1,
-      "hypothesis": "Produces controlled capability and efficiency evidence for autonomous software delivery."
-    },
-    {
-      "ideaId": "d629e231-065c-4d02-a8a9-ef05b464f123",
-      "relativePosition": [
-        2.497979660899011,
-        -0.10048688339709384
-      ],
-      "weight": 1,
-      "hypothesis": "Provides controlled evidence about graph-grounded autonomous execution."
-    },
-    {
       "ideaId": "926212fd-e642-472f-bb7c-53bd6cb53af4",
       "relativePosition": [
         2.2,
@@ -126,15 +75,6 @@
       "hypothesis": "Tells whether the hypothesis/reflection record is real learning or just storage; if it does not change decisions, memory work should stop."
     },
     {
-      "ideaId": "433a829c-0e1b-474d-8126-7079284b5bb0",
-      "relativePosition": [
-        3.46,
-        1.43
-      ],
-      "weight": 2,
-      "hypothesis": "An outside long-horizon benchmark gives evidence others accept; dependent multi-step chains are where decomposition and verification should beat a plain agent."
-    },
-    {
       "ideaId": "5e7df03b-5591-4dca-bb75-1eb58db52b79",
       "relativePosition": [
         -0.8,
@@ -145,7 +85,7 @@
     }
   ],
   "supportedIdeas": [
-    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+    "27fde285-c130-46f4-93de-1b85d00e2da5"
   ],
   "committedIn": [
     "93180fe9-3a1f-4778-9343-1b1de0f2bca6"

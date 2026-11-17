@@ -2,16 +2,21 @@
   "id": "5ad6c3f8-a7ed-4e18-9bf0-321d033515bf",
   "text": "adding a free floating idea to a phase leaves it in free floating colum, but it should disappear if its not freefloating (no parent idea, no phase) anymore",
   "description": "",
+  "archived": false,
   "tags": [],
-  "incoming": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "15c30b9d-5ddc-4470-ad07-9455cc9bc3b5"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Fixed in data store: commitIdeaToPhase now removes from floating list, and removeIdeaFromPhase adds to floating list if applicable.",
     "date": 1765401353980
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  "intrinsicValue": 0,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

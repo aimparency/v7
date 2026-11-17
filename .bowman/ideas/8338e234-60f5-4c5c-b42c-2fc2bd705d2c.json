@@ -1,0 +1,76 @@
+{
+  "id": "8338e234-60f5-4c5c-b42c-2fc2bd705d2c",
+  "text": "Phase columns in the list view",
+  "archived": false,
+  "color": "#2d6646",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5508ce83-89b2-42c9-90f9-9a6c15f04f54",
+      "relativePosition": [
+        -3.46,
+        -1.44
+      ],
+      "weight": 16.666666666666668
+    },
+    {
+      "ideaId": "54a82679-d41c-4878-99b6-4135d3ee834e",
+      "relativePosition": [
+        3.11,
+        -2.09
+      ],
+      "weight": 16.666666666666668,
+      "hypothesis": "graph maintenance: reparented floating idea by semantic similarity"
+    },
+    {
+      "ideaId": "171748db-95ff-4dba-b32a-1c72c25fd48f",
+      "relativePosition": [
+        0.38,
+        3.73
+      ],
+      "weight": 16.666666666666668,
+      "hypothesis": "Fixes a loading correctness bug in the concatenated child-phase columns introduced by the phase-system refactor."
+    },
+    {
+      "ideaId": "10b68653-57be-4cdd-a41b-1a4bf405a6da",
+      "relativePosition": [
+        0.42,
+        -3.73
+      ],
+      "weight": 16.666666666666668,
+      "hypothesis": "Simplifies the phase-column navigation model built by the phase-system refactor."
+    },
+    {
+      "ideaId": "37b6bda0-d721-4bc4-9822-2b8ada68eed9",
+      "relativePosition": [
+        -3.75,
+        0.18
+      ],
+      "weight": 16.666666666666668,
+      "hypothesis": "Phase creation is a core list-view phase-navigation interaction and this report describes a failure during that workflow."
+    },
+    {
+      "ideaId": "fe0e0aaf-1507-4b9f-8699-0d29e213c8e9",
+      "relativePosition": [
+        -3.66,
+        -0.83
+      ],
+      "weight": 16.666666666666668
+    }
+  ],
+  "supportedIdeas": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846421070
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

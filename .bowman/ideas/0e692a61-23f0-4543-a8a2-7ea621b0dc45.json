@@ -2,16 +2,21 @@
   "id": "0e692a61-23f0-4543-a8a2-7ea621b0dc45",
   "text": "when pressing i to enter idea navigation in a phase, we also have to bring into view the selected idea. reuse the existing function.",
   "description": "",
+  "archived": false,
   "tags": [],
-  "incoming": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d85fb1a0-b800-4aff-8483-787de8d2bf91"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Implemented in packages/frontend/src/components/Idea.vue by watching isActive prop.",
     "date": 1765211601379
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  "intrinsicValue": 0,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

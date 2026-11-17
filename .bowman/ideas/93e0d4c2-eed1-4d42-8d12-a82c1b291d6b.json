@@ -30,8 +30,7 @@
     }
   ],
   "supportedIdeas": [
-    "7f2bae54-03a6-481f-8de7-114fba05c112",
-    "3253bc9e-14fe-4c9b-9849-588620518517"
+    "7f2bae54-03a6-481f-8de7-114fba05c112"
   ],
   "committedIn": [
     "111d2965-0ca2-4b07-ab5c-eef1571a820a"
@@ -44,8 +43,8 @@
   "intrinsicValue": 0,
   "valueRationale": "A small but closed real payment-to-compute loop is stronger evidence of economic autonomy than larger unaccepted or simulated work.",
   "cost": 3,
+  "selfWeight": 1,
   "duration": 14,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

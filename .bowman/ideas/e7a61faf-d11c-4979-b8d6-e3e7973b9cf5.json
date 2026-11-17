@@ -1,0 +1,57 @@
+{
+  "id": "e7a61faf-d11c-4979-b8d6-e3e7973b9cf5",
+  "text": "What an idea records",
+  "archived": false,
+  "color": "#2d6166",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
+      "relativePosition": [
+        -3.15,
+        -2.03
+      ],
+      "weight": 28.571428571428573
+    },
+    {
+      "ideaId": "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46",
+      "relativePosition": [
+        -2.63,
+        -2.67
+      ],
+      "weight": 28.571428571428573
+    },
+    {
+      "ideaId": "2480f3a2-f15f-4259-ae5c-7aac128a8475",
+      "relativePosition": [
+        -1.58,
+        3.4
+      ],
+      "weight": 28.571428571428573
+    },
+    {
+      "ideaId": "d383d28f-1a99-4239-a27d-1d4d2521fa96",
+      "relativePosition": [
+        -0.21,
+        -3.74
+      ],
+      "weight": 14.285714285714286,
+      "hypothesis": "A clear rule for recurring vs one-time items makes personal graphs (life, not just code) stay readable, which is where human needs are expressed."
+    }
+  ],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846418730
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

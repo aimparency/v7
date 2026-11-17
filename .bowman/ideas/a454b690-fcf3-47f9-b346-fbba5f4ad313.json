@@ -1,0 +1,60 @@
+{
+  "id": "a454b690-fcf3-47f9-b346-fbba5f4ad313",
+  "text": "Financial integration and real-world signals",
+  "archived": false,
+  "color": "#2d6652",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
+      "relativePosition": [
+        -2.53,
+        -2.77
+      ],
+      "weight": 18.75,
+      "hypothesis": "Authoritative financial visibility is necessary to tell whether autonomy is economically sustainable."
+    },
+    {
+      "ideaId": "365e78d0-ed64-47d7-9902-b575d493c6e4",
+      "relativePosition": [
+        -3.47,
+        1.42
+      ],
+      "weight": 18.75,
+      "hypothesis": "Real payment access matters once revenue exists, but should not outrank creating value people choose to pay for."
+    },
+    {
+      "ideaId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
+      "relativePosition": [
+        -3.63,
+        0.96
+      ],
+      "weight": 25,
+      "hypothesis": "Authoritative external signals keep economic decisions grounded without duplicating source systems."
+    },
+    {
+      "ideaId": "c0a45822-0106-46fd-8819-244d3611488b",
+      "relativePosition": [
+        3.52,
+        1.3
+      ],
+      "weight": 37.5,
+      "hypothesis": "Closing the reality-to-priority loop is essential for adapting from actual economic outcomes."
+    }
+  ],
+  "supportedIdeas": [
+    "3253bc9e-14fe-4c9b-9849-588620518517"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Groups related children; work is in the children.",
+    "date": 1794846420606
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

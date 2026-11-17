@@ -2,10 +2,11 @@
   "id": "58648df0-e137-418f-a0c9-7fd6f0871452",
   "text": "when moving ideas the free floating idea list flickers - maybe adding the idea there for a split second. Fix without destorying anything else",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "b6b62cc1-a053-401b-93fe-caffd5af675c"
   ],
   "committedIn": [],
   "status": {
@@ -14,5 +15,8 @@
     "date": 1765911185504
   },
   "intrinsicValue": 0,
-  "selfWeight": 1
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

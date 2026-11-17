@@ -18,33 +18,6 @@
       "hypothesis": "Forecasting tournaments may sharpen judgment, but their path to operating revenue is indirect."
     },
     {
-      "ideaId": "297ad708-41ef-409e-a045-ff8dff0209ff",
-      "relativePosition": [
-        -1.1716741944137075,
-        2.208433739586721
-      ],
-      "weight": 2,
-      "hypothesis": "Human cooperation is a major route from autonomous capability to trusted real-economy work."
-    },
-    {
-      "ideaId": "7dfd41bf-3244-4a39-87d8-89fe285671d6",
-      "relativePosition": [
-        -2.249848715034869,
-        -1.0900370449924843
-      ],
-      "weight": 1.5,
-      "hypothesis": "Authoritative financial visibility is necessary to tell whether autonomy is economically sustainable."
-    },
-    {
-      "ideaId": "365e78d0-ed64-47d7-9902-b575d493c6e4",
-      "relativePosition": [
-        -1.6275264632334234,
-        1.766726295323816
-      ],
-      "weight": 1.5,
-      "hypothesis": "Real payment access matters once revenue exists, but should not outrank creating value people choose to pay for."
-    },
-    {
       "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
       "relativePosition": [
         2.75,
@@ -63,76 +36,12 @@
       "hypothesis": "Automatic prioritization is useful enabling infrastructure, but the completed feature is not itself market validation."
     },
     {
-      "ideaId": "5ebd58db-d352-4fe2-bd73-15ad620a2978",
-      "relativePosition": [
-        0.6958809868830791,
-        2.40119754541242
-      ],
-      "weight": 3,
-      "hypothesis": "Creating substantial user benefit is a primary route to durable willingness to collaborate and pay."
-    },
-    {
-      "ideaId": "8d174cd3-7259-409f-8dd1-2e901bf3dbd7",
-      "relativePosition": [
-        -0.08911608104545472,
-        4.527351567322584
-      ],
-      "weight": 1.5,
-      "hypothesis": "Non-dilutive funding extends runway, while remaining secondary to recurring externally valued work.",
-      "reflection": "Did not hold in practice: no grant was won (NLnet ineligible for LLM-written work, others never submitted), and on 2026-11-09 Felix dropped grant targeting altogether."
-    },
-    {
       "ideaId": "0622adb1-e79d-483c-b894-199d92ca199d",
       "relativePosition": [
         -0.956676014939872,
         -3.6834442973609054
       ],
       "weight": 0.9890109890109888
-    },
-    {
-      "ideaId": "cabe6e06-8988-4145-b884-9ef5bc68f660",
-      "relativePosition": [
-        -0.6159164165759955,
-        2.4229418003311975
-      ],
-      "weight": 2,
-      "hypothesis": "The near-term funding milestone materially extends runway but combines revenue and grants rather than proving durable autonomy alone."
-    },
-    {
-      "ideaId": "9548e95a-a911-41a5-b404-0cc289633acd",
-      "relativePosition": [
-        0.14766557791481175,
-        -2.4956351650630113
-      ],
-      "weight": 4,
-      "hypothesis": "A real AI-transformation business is the strongest current path to repeatable revenue and grounded autonomy."
-    },
-    {
-      "ideaId": "1a401004-2c03-45e7-96a9-a2c15e7c0b2d",
-      "relativePosition": [
-        0.08937054090362995,
-        -2.49840207060805
-      ],
-      "weight": 1.5,
-      "hypothesis": "Reducing single-client dependence protects continuity once the first market foothold exists."
-    },
-    {
-      "ideaId": "c0a45822-0106-46fd-8819-244d3611488b",
-      "relativePosition": [
-        1.6381342479213292,
-        1.8885222227411624
-      ],
-      "weight": 3,
-      "hypothesis": "Closing the reality-to-priority loop is essential for adapting from actual economic outcomes."
-    },
-    {
-      "ideaId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
-      "relativePosition": [
-        -1.2746976051103918,
-        -2.150615264412915
-      ],
-      "weight": 2,
-      "hypothesis": "Authoritative external signals keep economic decisions grounded without duplicating source systems."
     },
     {
       "ideaId": "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
@@ -144,45 +53,31 @@
       "hypothesis": "A calibrated priority model turns real evidence into coherent allocation decisions."
     },
     {
-      "ideaId": "7f2bae54-03a6-481f-8de7-114fba05c112",
+      "ideaId": "555962b7-cd3e-445b-ba8b-49f71171b1e6",
       "relativePosition": [
-        0.9321784990755588,
-        2.3197075776617275
+        0.96,
+        -3.62
       ],
-      "weight": 4,
-      "hypothesis": "Accepted value for a real beneficiary is the most direct falsifiable proof that autonomous work matters."
+      "weight": 4
     },
     {
-      "ideaId": "b52d435e-72b5-4839-b0cd-fbc916b46a03",
+      "ideaId": "a454b690-fcf3-47f9-b346-fbba5f4ad313",
       "relativePosition": [
-        -1.2190095195571486,
-        -2.1826625463477054
+        1.5,
+        -3.44
       ],
-      "weight": 1,
-      "hypothesis": "The SPC application is a dilutive funding and company-building attempt that could extend runway, external validation, and the path to sustainable economic autonomy; it is not non-dilutive funding."
+      "weight": 8
     },
     {
-      "ideaId": "93e0d4c2-eed1-4d42-8d12-a82c1b291d6b",
+      "ideaId": "8934d789-3ce2-4e92-ae41-5d0e70b0050c",
       "relativePosition": [
-        0.8350248293188777,
-        -2.35642388682957
+        2.88,
+        2.4
       ],
-      "weight": 1,
-      "hypothesis": "Closes the first real revenue-to-compute reinvestment loop."
-    },
-    {
-      "ideaId": "1754d0d8-ea03-4eea-be82-5925dbbb6b6d",
-      "relativePosition": [
-        3.73,
-        -0.41
-      ],
-      "weight": 1,
-      "hypothesis": "A public research funder paying for open-source agent requirement-capture tooling can carry Aimparency's operating costs for 1-2 years without a commercial product; refuted if ARIA's call excludes non-UK individuals or rejects the fit at concept stage.",
-      "reflection": "Not tested: dropped by Felix's decision to go fully open source without grant targeting (2026-11-09), before any application."
+      "weight": 13
     }
   ],
   "supportedIdeas": [
-    "895ec1c1-c8b3-4258-b7be-62831819bf86",
     "cffdcd91-fd9c-45e4-98fd-e265650be143"
   ],
   "committedIn": [],

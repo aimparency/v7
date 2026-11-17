@@ -2,18 +2,21 @@
   "id": "8775c198-3dc3-4d90-a3e9-55b2067e8ab3",
   "text": "show status comment only when idea expanded",
   "description": "",
+  "archived": false,
   "tags": [],
-  "incoming": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ec6d7dec-d080-48ec-a87d-4f804c788e1f"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Verified that status comment is only displayed within the .idea-details block in Idea.vue, which is conditional on v-if='isExpanded'. Behavior matches requirement.",
     "date": 1765909080799
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
-  ],
   "intrinsicValue": 0,
-  "selfWeight": 1
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

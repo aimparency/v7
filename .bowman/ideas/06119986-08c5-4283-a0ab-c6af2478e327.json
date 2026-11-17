@@ -1,15 +1,21 @@
 {
   "id": "06119986-08c5-4283-a0ab-c6af2478e327",
   "text": "after creating an idea, it should be selected in the subaimlist or phase idea list.",
-  "incoming": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d85fb1a0-b800-4aff-8483-787de8d2bf91"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Fixed selection logic after idea creation/linking by updating selection on the fresh store object reference.",
     "date": 1764800723244
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  "intrinsicValue": 0,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

@@ -1,0 +1,75 @@
+{
+  "id": "e50223cd-7eb2-4604-9731-1f78b351e200",
+  "text": "Loop-worker architecture and tests",
+  "archived": false,
+  "color": "#2d6654",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "dc35aef6-bcf1-4f56-9350-2f349b16aa6c",
+      "relativePosition": [
+        -3.23,
+        -1.91
+      ],
+      "weight": 16.756349515501242,
+      "hypothesis": "One graph API for every agent removes write races and drift between how the loop-worker and MCP agents see and change the graph."
+    },
+    {
+      "ideaId": "bab6689f-ff16-45d5-841c-21b80c3a15ec",
+      "relativePosition": [
+        3.46,
+        1.45
+      ],
+      "weight": 16.756349515501242,
+      "hypothesis": "Every agent seeing the same tools with the same semantics removes a whole class of drift bugs."
+    },
+    {
+      "ideaId": "d8bc9a95-68ab-4d38-8184-a16e6e5830d0",
+      "relativePosition": [
+        3.05,
+        -2.19
+      ],
+      "weight": 16.756349515501242,
+      "hypothesis": "The autonomous loop is only trustworthy if its behavior is regression-tested without paid model calls."
+    },
+    {
+      "ideaId": "af654959-e59b-4ec1-bcbf-e6d999eb6ebe",
+      "relativePosition": [
+        -3.61,
+        1.03
+      ],
+      "weight": 16.607934969365907
+    },
+    {
+      "ideaId": "e2dd4a42-6137-4e38-b011-e60298f90cea",
+      "relativePosition": [
+        3.71,
+        -0.51
+      ],
+      "weight": 16.756349515501242
+    },
+    {
+      "ideaId": "d64bef31-9091-409f-9a34-cf7a3f7941da",
+      "relativePosition": [
+        -3.13,
+        -2.07
+      ],
+      "weight": 16.366666968629122
+    }
+  ],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846419173
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

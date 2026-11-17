@@ -9,30 +9,6 @@
   ],
   "supportingConnections": [
     {
-      "ideaId": "b45149aa-c0f5-49de-8aec-f589dd3c7453",
-      "relativePosition": [
-        -0.5883423473575428,
-        -2.153556177428377
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "22a8c239-ac3d-40d6-8668-ec443a456977",
-      "relativePosition": [
-        -3.1577664356882416,
-        2.410360340902444
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "47cccbd6-8fe1-4fae-8530-1f66c489a05a",
-      "relativePosition": [
-        6.36,
-        0.39
-      ],
-      "weight": 1
-    },
-    {
       "ideaId": "1c27fb5d-0a77-470e-a3f2-d5c8023d4464",
       "relativePosition": [
         8.68,
@@ -49,22 +25,6 @@
       "weight": 5
     },
     {
-      "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
-      "relativePosition": [
-        -5.14,
-        4.84
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "0697d033-bb95-4433-8a9c-20f2afd06c31",
-      "relativePosition": [
-        5.31,
-        -3.34
-      ],
-      "weight": 1
-    },
-    {
       "ideaId": "2fbd88df-3698-4f48-8e66-a001c37a99ea",
       "relativePosition": [
         -1.843963421655553,
@@ -74,295 +34,64 @@
       "hypothesis": "i sometimes feel the urge to say something like \"work directly on main\" - throughout the project. And need a place to configure this. maybe even a separate file next to the meta.json. something that get's posted when a new worker session starts. Same for the watchdog session maybe? There is already a prompt there, i think"
     },
     {
-      "ideaId": "2d0ab64b-228e-49d2-80fc-2e43e6c5a893",
+      "ideaId": "65a6c8b2-1ac6-48e5-80ad-90e409742cc7",
       "relativePosition": [
-        -0.5877965067346034,
-        2.429916720110094
+        -3.45,
+        1.48
       ],
-      "weight": 1
+      "weight": 3
     },
     {
-      "ideaId": "b5348ae2-62d6-42ac-8191-b877e0570c61",
+      "ideaId": "ef6ec235-3a93-42f6-aeb4-c1efd43e8265",
       "relativePosition": [
-        -3.28,
-        6.21
+        -3.36,
+        1.67
       ],
-      "weight": 1
+      "weight": 8
     },
     {
-      "ideaId": "2480f3a2-f15f-4259-ae5c-7aac128a8475",
+      "ideaId": "5f5d6950-44a3-4f81-934a-0b26d327e7b6",
       "relativePosition": [
-        2.4818783177668644,
-        0.3004663305575495
+        -3.71,
+        -0.55
       ],
-      "weight": 1
+      "weight": 3
     },
     {
-      "ideaId": "07178308-5d5c-4340-9697-3c68105602d5",
+      "ideaId": "d677ae6f-bf39-4362-81a6-4373405a0e85",
       "relativePosition": [
-        -5.89,
-        18.19
+        3.05,
+        -2.19
       ],
-      "weight": 1,
-      "hypothesis": "Moonshot engine makes human intent the strategic layer for increasingly capable AI."
+      "weight": 5
     },
     {
-      "ideaId": "99134ce5-3c20-4c7d-ad1d-c462a5db4b41",
+      "ideaId": "e7a61faf-d11c-4979-b8d6-e3e7973b9cf5",
       "relativePosition": [
-        0.8884265131615066,
-        2.3368137133095757
+        2.48,
+        -2.81
       ],
-      "weight": 1
+      "weight": 3.5
     },
     {
-      "ideaId": "986410a0-24a7-40c2-9623-af27bf084651",
+      "ideaId": "ccd6b576-fc66-4b76-bdf3-dc130d898037",
       "relativePosition": [
-        -8.07,
-        1.05
+        3.5,
+        -1.35
       ],
-      "weight": 1,
-      "hypothesis": "Tests whether human authority survives adversarial and ambiguous operating conditions."
+      "weight": 5.8
     },
     {
-      "ideaId": "1733c488-68b0-47cc-8439-c8c5c0476a87",
+      "ideaId": "486c3934-bd21-4d36-b0cf-08d1f0caed5f",
       "relativePosition": [
-        -6.334546490904315,
-        0.8225346729056211
+        -0.03,
+        3.75
       ],
-      "weight": 1,
-      "hypothesis": "Makes human authority explicit and machine-enforceable in cooperative execution."
-    },
-    {
-      "ideaId": "fc891a0b-8aaa-4cf2-9e8c-fc43dd315910",
-      "relativePosition": [
-        -7.01,
-        3.29
-      ],
-      "weight": 0.8,
-      "hypothesis": "Improves the inspectable human side of the cooperation boundary."
-    },
-    {
-      "ideaId": "0f307c81-d707-43f0-97ed-af7613e03801",
-      "relativePosition": [
-        -2.177421757879564,
-        1.2283462412173005
-      ],
-      "weight": 0.7,
-      "hypothesis": "Keeps human control local or explicitly exposed by the operator."
-    },
-    {
-      "ideaId": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
-      "relativePosition": [
-        1.4946504378124048,
-        2.0040010151562266
-      ],
-      "weight": 0.8,
-      "hypothesis": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
-    },
-    {
-      "ideaId": "90cf0309-023f-486c-b7a0-322ee2910d46",
-      "relativePosition": [
-        0.6912121376846586,
-        2.4025456875400737
-      ],
-      "weight": 1,
-      "hypothesis": "Human decisions are the scarce input; making them cheap and well-ordered raises the throughput of the whole human+AI system."
-    },
-    {
-      "ideaId": "8f002aaf-7628-4b04-a814-8c52db56b6f7",
-      "relativePosition": [
-        -2.3051167431104065,
-        -0.9676966470087991
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "b3b50366-25b2-4efe-9172-1e937a7e752f",
-      "relativePosition": [
-        0.33,
-        -2.48
-      ],
-      "weight": 1,
-      "hypothesis": "Long-term continuity: lessons compound across sessions instead of being lost, so the graph's judgment improves over time."
-    },
-    {
-      "ideaId": "6da9b226-6403-443b-b4bf-3f860e6ba0af",
-      "relativePosition": [
-        -0.44,
-        -2.46
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "47805633-84e2-406f-bd09-6dca45b204f0",
-      "relativePosition": [
-        -1.52,
-        -1.98
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "834bd5e2-cbec-4b91-aeea-05712e52d3f0",
-      "relativePosition": [
-        0.71,
-        2.4
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "c178fbef-d0b4-4884-b4f3-c095ad9ea853",
-      "relativePosition": [
-        2.29,
-        -1.01
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "aacfc1ff-8f7d-46e8-98a4-c60671da998e",
-      "relativePosition": [
-        -0.2,
-        2.49
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "ee332caf-cdc7-4dbf-87f6-2bc1606a6a46",
-      "relativePosition": [
-        10.42,
-        -0.65
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "af701cd6-7c9d-4991-996b-e38d5e1c9dc7",
-      "relativePosition": [
-        2.49,
-        0.21
-      ],
-      "weight": 1,
-      "reflection": "Built and tested but never used by a group. Thinking about its use at Commons Hub showed that one shared graph with roles for the whole server does not fit how people own ideas; it led to people owning graphs (d4203221)."
-    },
-    {
-      "ideaId": "ec95c1ad-82d4-4fd8-842a-38c9cdbb86e3",
-      "relativePosition": [
-        -2.46,
-        -0.45
-      ],
-      "weight": 1,
-      "hypothesis": "A shared ideation graph for a real group of people is the cooperation engine in its simplest live form."
-    },
-    {
-      "ideaId": "11ebbcfb-3a82-46e0-9ccc-5cc9a4172266",
-      "relativePosition": [
-        1.52,
-        -3.43
-      ],
-      "weight": 1,
-      "hypothesis": "Researchers working on human oversight of agents value pre-registered runs with negative results kept; a public note gets at least one substantive outside response (comment, citation, contact) within 6 weeks of publishing. Refuted if it gets none."
-    },
-    {
-      "ideaId": "101cc131-b51e-45d9-ad8e-63d138338dc4",
-      "relativePosition": [
-        -0.91,
-        3.64
-      ],
-      "weight": 1,
-      "hypothesis": "Humans stay final authority only if no one but the operator can make the machine run code; one exposed port undoes every model-side safeguard.",
-      "reflection": "Held as a diagnosis: the exposed ports (all interfaces, any website via localhost WebSockets) were real and would have bypassed every model-side safeguard. Closing them took loopback defaults, one origin rule and one admin gate. Authority now sits with whoever the operator makes admin, so the warning on admin creation carries the rest."
-    },
-    {
-      "ideaId": "5e431a84-a979-4a7e-9a26-71d1951fcdcc",
-      "relativePosition": [
-        3.7,
-        -0.6
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "d383d28f-1a99-4239-a27d-1d4d2521fa96",
-      "relativePosition": [
-        2.62,
-        2.68
-      ],
-      "weight": 0.5,
-      "hypothesis": "A clear rule for recurring vs one-time items makes personal graphs (life, not just code) stay readable, which is where human needs are expressed."
-    },
-    {
-      "ideaId": "f5fc53cb-4b3b-4024-b272-07e02ca75475",
-      "relativePosition": [
-        -3.42,
-        1.53
-      ],
-      "weight": 1,
-      "hypothesis": "Investors fund human approval of agent actions; an approval channel for agent intent, tied to a human's mission graph, is the same demand one level up and makes Aimparency the place where humans keep final authority over many agents, not only its own harness. Refuted if outside builders only want action-level gates."
-    },
-    {
-      "ideaId": "303558d5-1d91-4396-868e-ab4b1a6c5d54",
-      "relativePosition": [
-        0.37,
-        3.73
-      ],
-      "weight": 1,
-      "hypothesis": "Two outside people who think about explicit claims and human judgment can tell within one conversation whether the idea graph's hypotheses/reflections are a format others can use, which no internal test can show."
-    },
-    {
-      "ideaId": "1754d0d8-ea03-4eea-be82-5925dbbb6b6d",
-      "relativePosition": [
-        3.61,
-        1
-      ],
-      "weight": 1,
-      "hypothesis": "ARIA names 'requirement capture' and 'users' preferences' as missing agent infrastructure, which is the cooperation engine's core claim stated by an outside funder; a reviewer's response tests whether outsiders see the idea graph that way.",
-      "reflection": "Not tested by a reviewer. What remains: an outside funder independently named intent/requirement elicitation for agents as missing infrastructure, which supports aim A as a direction; the elicitation idea bcc9755a carries it on without the grant."
-    },
-    {
-      "ideaId": "bcc9755a-6a1f-4a76-8a10-f1402893b037",
-      "relativePosition": [
-        -2.11,
-        3.1
-      ],
-      "weight": 1,
-      "hypothesis": "The cooperation engine's distinctive move is eliciting intent, not only approving actions; information-gain-ranked questions make each human answer worth more, which is the scarce input."
-    },
-    {
-      "ideaId": "0ce0b7ca-dd5d-4380-85af-038ed39fdec7",
-      "relativePosition": [
-        2.45,
-        2.84
-      ],
-      "weight": 1,
-      "hypothesis": "Fisayo thinks about keeping human judgment in assistive AI; working with the idea graph on his own projects tests whether it serves someone else's intentions, not only Felix's."
-    },
-    {
-      "ideaId": "fcb38df6-fd32-4721-ac81-3b37be9fa03a",
-      "relativePosition": [
-        2.42,
-        2.87
-      ],
-      "weight": 1,
-      "hypothesis": "When every idea has an owner and connections need acceptance, anyone can be allowed to propose, so a group can share one graph without a ladder of access roles.",
-      "reflection": "Not tested, never built. Thinking it through showed that owners per idea need rules for who may touch which idea (levels, oversight, enforcement in git), which kept feeling cumbersome. Half of it held: anyone may propose and the benefiting side accepts. The owner moved from the idea to the whole graph (d4203221)."
-    },
-    {
-      "ideaId": "c02e3a48-d9ed-440f-b333-0caf8be3a086",
-      "relativePosition": [
-        -1.85,
-        3.26
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "d4203221-939e-44e6-bf3f-b3933c790e6b",
-      "relativePosition": [
-        2.2,
-        -3.04
-      ],
-      "weight": 1,
-      "hypothesis": "When anyone can get their own graph in one click and link it to others, people take part without setting up a repo, and the graphs grow into one global graph of ideas."
+      "weight": 3
     }
   ],
   "supportedIdeas": [
-    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+    "27fde285-c130-46f4-93de-1b85d00e2da5"
   ],
   "committedIn": [],
   "status": {

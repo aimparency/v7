@@ -1,0 +1,64 @@
+{
+  "id": "c556da21-89c0-4efb-8c4a-9677ebc0a7ea",
+  "text": "Phase data model and APIs",
+  "archived": false,
+  "color": "#5c2d66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
+      "relativePosition": [
+        3.51,
+        1.32
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "7a870c2e-c91f-453b-86e1-130e17a3cfbd",
+      "relativePosition": [
+        2.05,
+        -3.14
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "687a7c08-d9ce-426a-a30d-51d03d1c8fdd",
+      "relativePosition": [
+        2.89,
+        2.39
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "648a2ea8-9692-4945-9232-4451e4df3ff0",
+      "relativePosition": [
+        -2.29,
+        2.97
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "dba842e7-aee0-45c8-8efb-b60e2a4d837e",
+      "relativePosition": [
+        -1.38,
+        -3.49
+      ],
+      "weight": 20
+    }
+  ],
+  "supportedIdeas": [
+    "47cccbd6-8fe1-4fae-8530-1f66c489a05a"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846420942
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,60 @@
+{
+  "id": "17e519b8-07eb-4e96-a7b1-56830fd68dd6",
+  "text": "Project-local autonomy state and policy",
+  "archived": false,
+  "color": "#57662d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "9594aa9b-e7f0-4879-9d9b-52ae20f8a52d",
+      "relativePosition": [
+        3.45,
+        1.47
+      ],
+      "weight": 40,
+      "hypothesis": "Durable project-local state is foundational for autonomy that survives browser and session boundaries."
+    },
+    {
+      "ideaId": "2ff1fd7a-7e02-4197-a558-174622db7cbe",
+      "relativePosition": [
+        3.69,
+        -0.64
+      ],
+      "weight": 30,
+      "hypothesis": "A bounded local policy is important infrastructure for safe autonomous action."
+    },
+    {
+      "ideaId": "facbacb5-1589-4b73-8ecb-97d7bb32bd99",
+      "relativePosition": [
+        3.04,
+        -2.19
+      ],
+      "weight": 20,
+      "hypothesis": "The completed runtime mapping supplies architectural evidence for the autonomy program."
+    },
+    {
+      "ideaId": "74b079de-667c-47f6-8017-fb202e2affd9",
+      "relativePosition": [
+        -3.29,
+        -1.8
+      ],
+      "weight": 10,
+      "hypothesis": "External runtime comparison is exploratory and should not dominate delivery of the native loop."
+    }
+  ],
+  "supportedIdeas": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846419863
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

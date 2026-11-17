@@ -1,15 +1,21 @@
 {
   "id": "ac0ea61a-288f-4659-b9ad-b38b9fa01312",
   "text": "put two buttons in the title line: <div><button> - </button> columns <button> + </button> </div> for changing the amount of columns (min 1, make persistant in the browser somehow)",
-  "incoming": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "15c30b9d-5ddc-4470-ad07-9455cc9bc3b5"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Implemented column control buttons (- / +) in the header. Persistence via localStorage added to UI store.",
     "date": 1764800096302
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  "intrinsicValue": 0,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

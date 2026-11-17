@@ -1,0 +1,87 @@
+{
+  "id": "06a83c56-4daf-4ec6-a72e-f07487a15b35",
+  "text": "Supervisor, workers and the tools they see",
+  "archived": false,
+  "color": "#664a2d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5af61b3e-5b5e-43ba-af2c-23977d55b910",
+      "relativePosition": [
+        -0.03,
+        -3.75
+      ],
+      "weight": 27.272727272727273,
+      "hypothesis": "Self-rebuilding workers improve continuity, while remaining subordinate to the end-to-end loop."
+    },
+    {
+      "ideaId": "27d63681-1973-4243-883f-d91f3cc4e532",
+      "relativePosition": [
+        0.2,
+        -3.74
+      ],
+      "weight": 13.636363636363637,
+      "hypothesis": "Idle-agent guidance is a completed enabling mechanism with limited independent mission value."
+    },
+    {
+      "ideaId": "f02454a1-f8bf-4ce8-997b-fd52b2094a2f",
+      "relativePosition": [
+        -2.72,
+        -2.58
+      ],
+      "weight": 13.636363636363637,
+      "hypothesis": "Reliable supervisor communication supports continuity but is not the primary autonomy outcome."
+    },
+    {
+      "ideaId": "cca28c6c-f3fa-4b13-9078-62fcb80a5f5e",
+      "relativePosition": [
+        -2.89,
+        2.39
+      ],
+      "weight": 13.636363636363637,
+      "hypothesis": "Timeout reliability supports the loop without defining its capability."
+    },
+    {
+      "ideaId": "50188560-6c74-4005-8061-7e1090f28895",
+      "relativePosition": [
+        3.73,
+        0.37
+      ],
+      "weight": 9.090909090909092,
+      "hypothesis": "The completed watchdog UI is supporting observability rather than autonomy itself."
+    },
+    {
+      "ideaId": "051ae7cd-9509-4451-a686-2041d9b38a98",
+      "relativePosition": [
+        3.35,
+        1.69
+      ],
+      "weight": 13.636363636363637,
+      "hypothesis": "Mission-path context is enabling infrastructure for coherent autonomous decisions."
+    },
+    {
+      "ideaId": "12da17c9-7c18-479c-8dc3-e78bc0a35805",
+      "relativePosition": [
+        2.73,
+        2.57
+      ],
+      "weight": 9.090909090909092,
+      "hypothesis": "Accurate concise tool descriptions reduce execution errors but have indirect autonomy impact."
+    }
+  ],
+  "supportedIdeas": [
+    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846419710
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

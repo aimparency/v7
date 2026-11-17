@@ -2,10 +2,11 @@
   "id": "2e7aa327-e5ee-4622-858e-ab6d1877a009",
   "text": "when adding a sub-phase and it's the first subphase of its parent phase, the start time should be the start time of the parent and the length 1/6 of the parent phase",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "81d4caa1-af81-4e07-ba7a-ded15cd3ce45"
   ],
   "committedIn": [],
   "status": {
@@ -15,5 +16,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

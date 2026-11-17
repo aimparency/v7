@@ -1,0 +1,74 @@
+{
+  "id": "ccd6b576-fc66-4b76-bdf3-dc130d898037",
+  "text": "Agent loop tooling: MCP, hooks, memory and effectors",
+  "archived": false,
+  "color": "#2d4166",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "c59fe055-757e-4084-8326-4ad61ffc6d5f",
+      "relativePosition": [
+        0.78,
+        -3.67
+      ],
+      "weight": 13.793103448275865,
+      "hypothesis": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
+    },
+    {
+      "ideaId": "b3b50366-25b2-4efe-9172-1e937a7e752f",
+      "relativePosition": [
+        -1.16,
+        -3.56
+      ],
+      "weight": 17.24137931034483,
+      "hypothesis": "Long-term continuity: lessons compound across sessions instead of being lost, so the graph's judgment improves over time."
+    },
+    {
+      "ideaId": "6da9b226-6403-443b-b4bf-3f860e6ba0af",
+      "relativePosition": [
+        3,
+        -2.24
+      ],
+      "weight": 17.24137931034483
+    },
+    {
+      "ideaId": "47805633-84e2-406f-bd09-6dca45b204f0",
+      "relativePosition": [
+        -1.85,
+        3.26
+      ],
+      "weight": 17.24137931034483
+    },
+    {
+      "ideaId": "834bd5e2-cbec-4b91-aeea-05712e52d3f0",
+      "relativePosition": [
+        2.77,
+        -2.53
+      ],
+      "weight": 17.24137931034483
+    },
+    {
+      "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
+      "relativePosition": [
+        -3.57,
+        -1.14
+      ],
+      "weight": 17.24137931034483
+    }
+  ],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846418864
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

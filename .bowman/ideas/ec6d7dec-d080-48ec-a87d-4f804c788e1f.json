@@ -1,0 +1,107 @@
+{
+  "id": "ec6d7dec-d080-48ec-a87d-4f804c788e1f",
+  "text": "How ideas look in the list view",
+  "archived": false,
+  "color": "#32662d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "8775c198-3dc3-4d90-a3e9-55b2067e8ab3",
+      "relativePosition": [
+        -3.04,
+        -2.2
+      ],
+      "weight": 10
+    },
+    {
+      "ideaId": "66af6dde-aab1-49f2-90b6-e42d15a955bf",
+      "relativePosition": [
+        3.44,
+        -1.5
+      ],
+      "weight": 10
+    },
+    {
+      "ideaId": "c4eba589-3530-4696-901a-5c0aa280ca05",
+      "relativePosition": [
+        -1.84,
+        3.27
+      ],
+      "weight": 10
+    },
+    {
+      "ideaId": "c4ab85c2-0497-48de-ae93-3dc7b4c2aa60",
+      "relativePosition": [
+        2.48,
+        -2.81
+      ],
+      "weight": 10
+    },
+    {
+      "ideaId": "b161d820-38d7-407a-8596-1b0c6c9ef1d3",
+      "relativePosition": [
+        -3.74,
+        0.28
+      ],
+      "weight": 10,
+      "hypothesis": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "ideaId": "3d09a7a1-d337-4595-b9aa-4b2fe5b6e381",
+      "relativePosition": [
+        -0.6,
+        3.7
+      ],
+      "weight": 10
+    },
+    {
+      "ideaId": "a0e80284-510a-45d6-a55c-c40f727118e8",
+      "relativePosition": [
+        -0.08,
+        -3.75
+      ],
+      "weight": 10,
+      "hypothesis": "Ranking a phase's ideas by priority and state shows what to do next without manual sorting."
+    },
+    {
+      "ideaId": "c2b13b69-5cd5-4d27-9704-5360376471ef",
+      "relativePosition": [
+        3.47,
+        1.42
+      ],
+      "weight": 10,
+      "hypothesis": "Opening the active phase path down to its deepest level on startup puts the user right at the current work, with no clicks before the first useful keystroke."
+    },
+    {
+      "ideaId": "9fa43c99-d00c-4b4a-883e-5410cbe689dd",
+      "relativePosition": [
+        3.5,
+        1.34
+      ],
+      "weight": 10
+    },
+    {
+      "ideaId": "e2dc1422-5f19-4841-9f17-d38296886461",
+      "relativePosition": [
+        0.66,
+        3.69
+      ],
+      "weight": 10
+    }
+  ],
+  "supportedIdeas": [
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846416893
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

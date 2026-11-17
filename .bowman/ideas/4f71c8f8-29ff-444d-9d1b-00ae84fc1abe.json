@@ -15,7 +15,7 @@
     }
   ],
   "supportedIdeas": [
-    "6bbb740c-2281-4dbb-83c8-a391e626312a"
+    "e3195667-02ad-4fbe-a609-3ecbc7dcdea8"
   ],
   "committedIn": [
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"
@@ -27,8 +27,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

@@ -6,173 +6,40 @@
   "tags": [],
   "supportingConnections": [
     {
-      "ideaId": "5508ce83-89b2-42c9-90f9-9a6c15f04f54",
+      "ideaId": "c556da21-89c0-4efb-8c4a-9677ebc0a7ea",
       "relativePosition": [
-        2.030711433435536,
-        0.9783175263619054
+        2.51,
+        -2.79
       ],
-      "weight": 1
+      "weight": 5
     },
     {
-      "ideaId": "bb3d85e5-3667-48d4-8d91-9bf73008bb49",
+      "ideaId": "8338e234-60f5-4c5c-b42c-2fc2bd705d2c",
       "relativePosition": [
-        2.0878580143206,
-        1.3750814201483634
+        -2.61,
+        2.69
       ],
-      "weight": 1
+      "weight": 6
     },
     {
-      "ideaId": "7a870c2e-c91f-453b-86e1-130e17a3cfbd",
+      "ideaId": "2a0e5c77-7189-4182-a3be-636f5c086164",
       "relativePosition": [
-        -2.3943740216534577,
-        -0.7190083757725274
+        3.73,
+        0.43
       ],
-      "weight": 1
+      "weight": 5
     },
     {
-      "ideaId": "687a7c08-d9ce-426a-a30d-51d03d1c8fdd",
+      "ideaId": "425e09b6-25bc-4be6-b0bb-0fa2dc62aae9",
       "relativePosition": [
-        -0.9149018290927152,
-        2.3265757333735784
+        1.2,
+        -3.55
       ],
-      "weight": 1
-    },
-    {
-      "ideaId": "fe0e0aaf-1507-4b9f-8699-0d29e213c8e9",
-      "relativePosition": [
-        0.9196106878849792,
-        -2.3247185168806386
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "648a2ea8-9692-4945-9232-4451e4df3ff0",
-      "relativePosition": [
-        2.2482455742891987,
-        1.0933397631518895
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "dba842e7-aee0-45c8-8efb-b60e2a4d837e",
-      "relativePosition": [
-        -12.34,
-        -9.11
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "54a82679-d41c-4878-99b6-4135d3ee834e",
-      "relativePosition": [
-        1.2721410236518151,
-        -2.152128531464167
-      ],
-      "weight": 1,
-      "hypothesis": "graph maintenance: reparented floating idea by semantic similarity"
-    },
-    {
-      "ideaId": "607f6b45-2a65-4702-8b47-d83e967ed4c8",
-      "relativePosition": [
-        -2.2314957302429224,
-        1.1271321155515026
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "b3f8518f-9c37-4392-bd64-81a55c6da74c",
-      "relativePosition": [
-        2.2573357304713833,
-        -1.074446555179562
-      ],
-      "weight": 1,
-      "hypothesis": "Phase reordering across parent boundaries is part of the ordered hierarchical phase navigation refactor."
-    },
-    {
-      "ideaId": "4e50493a-94ca-4bb7-aefb-c78ed3107f62",
-      "relativePosition": [
-        -2.0368246925751556,
-        -1.449601728653813
-      ],
-      "weight": 1,
-      "hypothesis": "Idea movement across parent-owned phase ranges depends on the ordered hierarchical phase model."
-    },
-    {
-      "ideaId": "e33ca34b-b3d4-4b98-bcad-0c0aaf8db644",
-      "relativePosition": [
-        -0.4484356090668713,
-        -2.4594522773416085
-      ],
-      "weight": 1,
-      "hypothesis": "Empty-phase traversal implements navigation across the ordered phase sequence."
-    },
-    {
-      "ideaId": "e266c632-dc74-4c44-8cf6-c184378cdc68",
-      "relativePosition": [
-        -1.0411266226534301,
-        2.2728958083471977
-      ],
-      "weight": 1,
-      "hypothesis": "Moving focus into the next phase implements traversal across the ordered phase sequence."
-    },
-    {
-      "ideaId": "1ec81038-54e4-406e-8851-d47c8a4799f1",
-      "relativePosition": [
-        -2.167334376890542,
-        -1.2460584652208275
-      ],
-      "weight": 1,
-      "hypothesis": "Moving ideas across phases implements cross-boundary behavior in the ordered phase hierarchy."
-    },
-    {
-      "ideaId": "7a1c2e24-4a04-4962-b34d-cab94db1b590",
-      "relativePosition": [
-        2.49999362257371,
-        -0.005646865571339337
-      ],
-      "weight": 1,
-      "hypothesis": "Reusable parent-phase selection supports editing the hierarchical phase structure."
-    },
-    {
-      "ideaId": "75d48504-226a-4316-a395-e3f0a1aa87d4",
-      "relativePosition": [
-        -2.45840135669612,
-        -0.45416161153787116
-      ],
-      "weight": 1,
-      "hypothesis": "Fuzzy phase lookup supports selecting nodes in the hierarchical phase structure."
-    },
-    {
-      "ideaId": "171748db-95ff-4dba-b32a-1c72c25fd48f",
-      "relativePosition": [
-        0.8953144199630414,
-        2.3341833881266147
-      ],
-      "weight": 1,
-      "hypothesis": "Fixes a loading correctness bug in the concatenated child-phase columns introduced by the phase-system refactor."
-    },
-    {
-      "ideaId": "10b68653-57be-4cdd-a41b-1a4bf405a6da",
-      "relativePosition": [
-        2.1775458402883876,
-        1.228126261197415
-      ],
-      "weight": 1,
-      "hypothesis": "Simplifies the phase-column navigation model built by the phase-system refactor."
-    },
-    {
-      "ideaId": "37b6bda0-d721-4bc4-9822-2b8ada68eed9",
-      "relativePosition": [
-        1.83,
-        -3.27
-      ],
-      "weight": 1,
-      "hypothesis": "Phase creation is a core list-view phase-navigation interaction and this report describes a failure during that workflow.",
-      "reflection": "Held only in part: the failure showed up in phase creation, but the cause was not in the phase workflow. It was the frontend's slow reconnect to a restarting dev backend, which affected every mutation."
+      "weight": 3
     }
   ],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210",
-    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
   ],
   "committedIn": [
     "9a4b8d5f-b63a-4704-a74d-4bc82f9c03b5"

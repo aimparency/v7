@@ -10,7 +10,7 @@
   ],
   "supportingConnections": [],
   "supportedIdeas": [
-    "cffdcd91-fd9c-45e4-98fd-e265650be143"
+    "17e519b8-07eb-4e96-a7b1-56830fd68dd6"
   ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -22,8 +22,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "selfWeight": 1
+  "valueVariance": 0
 }

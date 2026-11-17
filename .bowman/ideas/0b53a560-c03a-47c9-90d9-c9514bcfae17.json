@@ -1,0 +1,64 @@
+{
+  "id": "0b53a560-c03a-47c9-90d9-c9514bcfae17",
+  "text": "Connect the loop to the outside world",
+  "archived": false,
+  "color": "#2d4b66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
+      "relativePosition": [
+        0.54,
+        -3.71
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "c0a45822-0106-46fd-8819-244d3611488b",
+      "relativePosition": [
+        -3.49,
+        1.36
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "1171de2f-a08e-4bb3-bf2a-7d279e4cb066",
+      "relativePosition": [
+        0.64,
+        3.69
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "ea8f55b0-fae5-42fd-9fb7-e54565225b4a",
+      "relativePosition": [
+        2.94,
+        -2.32
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "0cd5540c-c2ae-4dd2-ac0e-e11685d271dd",
+      "relativePosition": [
+        -3.54,
+        -1.25
+      ],
+      "weight": 20
+    }
+  ],
+  "supportedIdeas": [
+    "0622adb1-e79d-483c-b894-199d92ca199d"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846419346
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

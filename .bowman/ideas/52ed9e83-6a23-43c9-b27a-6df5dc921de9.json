@@ -1,0 +1,59 @@
+{
+  "id": "52ed9e83-6a23-43c9-b27a-6df5dc921de9",
+  "text": "Build the frozen corrigibility suite",
+  "archived": false,
+  "color": "#602d66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "73c49445-bad4-4d37-b90c-6743d7317867",
+      "relativePosition": [
+        1.75,
+        -3.32
+      ],
+      "weight": 25,
+      "hypothesis": "Provides the frozen evaluation and scoring foundation required to test the parent corrigibility hypothesis."
+    },
+    {
+      "ideaId": "be82d9dd-42f8-4865-82ac-42bd87d7438e",
+      "relativePosition": [
+        0.35,
+        3.73
+      ],
+      "weight": 25,
+      "hypothesis": "Connects the frozen safety instrument to future real wrapped-agent observations."
+    },
+    {
+      "ideaId": "34ff43ed-cb4a-47bd-9a66-d64eb858db2e",
+      "relativePosition": [
+        1.26,
+        -3.53
+      ],
+      "weight": 25,
+      "hypothesis": "Enables later empirical Codex corrigibility evaluation."
+    },
+    {
+      "ideaId": "d7d69884-0cf6-4d1b-b83d-519a16f3b8bc",
+      "relativePosition": [
+        3.54,
+        -1.24
+      ],
+      "weight": 25
+    }
+  ],
+  "supportedIdeas": [
+    "986410a0-24a7-40c2-9623-af27bf084651"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "All grouped children are implemented; this idea only groups them (regrouping of crowded parents, 2026-11-16).",
+    "date": 1794846419987
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,67 @@
+{
+  "id": "d677ae6f-bf39-4362-81a6-4373405a0e85",
+  "text": "Human review loop: intent in, approvals out",
+  "archived": false,
+  "color": "#3c2d66",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "0697d033-bb95-4433-8a9c-20f2afd06c31",
+      "relativePosition": [
+        3.27,
+        1.84
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "90cf0309-023f-486c-b7a0-322ee2910d46",
+      "relativePosition": [
+        2.77,
+        2.52
+      ],
+      "weight": 20,
+      "hypothesis": "Human decisions are the scarce input; making them cheap and well-ordered raises the throughput of the whole human+AI system."
+    },
+    {
+      "ideaId": "5e431a84-a979-4a7e-9a26-71d1951fcdcc",
+      "relativePosition": [
+        3.33,
+        -1.72
+      ],
+      "weight": 20
+    },
+    {
+      "ideaId": "f5fc53cb-4b3b-4024-b272-07e02ca75475",
+      "relativePosition": [
+        3.6,
+        1.06
+      ],
+      "weight": 20,
+      "hypothesis": "Investors fund human approval of agent actions; an approval channel for agent intent, tied to a human's mission graph, is the same demand one level up and makes Aimparency the place where humans keep final authority over many agents, not only its own harness. Refuted if outside builders only want action-level gates."
+    },
+    {
+      "ideaId": "bcc9755a-6a1f-4a76-8a10-f1402893b037",
+      "relativePosition": [
+        0.8,
+        -3.66
+      ],
+      "weight": 20,
+      "hypothesis": "The cooperation engine's distinctive move is eliciting intent, not only approving actions; information-gain-ranked questions make each human answer worth more, which is the scarce input."
+    }
+  ],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846418578
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -19,42 +19,10 @@
       "weight": 1
     },
     {
-      "ideaId": "1fd5ede2-5d81-4f38-8645-924887ab48ef",
-      "relativePosition": [
-        -2.4956347774647396,
-        -0.14767212840789765
-      ],
-      "weight": 1
-    },
-    {
       "ideaId": "5cc73338-d648-4440-98ef-035217d06fcd",
       "relativePosition": [
         2.61,
         17.19
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "4545e25f-1c14-43ad-a2e4-06ac79786273",
-      "relativePosition": [
-        -1.9723983542567085,
-        1.536113515377502
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "c8016ad1-fa37-45e4-af5d-875acb5c4b5a",
-      "relativePosition": [
-        2.177678839557381,
-        1.2278904152016248
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "39ea33de-2b08-48d4-b5f0-0cacb817a827",
-      "relativePosition": [
-        0.25934627443435976,
-        2.48651151413723
       ],
       "weight": 1
     },
@@ -67,51 +35,10 @@
       "weight": 1
     },
     {
-      "ideaId": "ad057bce-0bfc-4248-a2a5-9d8bc91360fb",
-      "relativePosition": [
-        -1.8904839430057174,
-        1.635869940196211
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "0e646aa6-4ff7-48b8-a5d2-178cfb96c6a1",
-      "relativePosition": [
-        -2.4813404333630436,
-        -0.3048764565487205
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "b03ad58e-4518-455f-8a35-36f58eb8ee7d",
-      "relativePosition": [
-        14.09,
-        11.31
-      ],
-      "weight": 1
-    },
-    {
       "ideaId": "31e7e8b7-bc95-4968-bd4f-44e7963a93fd",
       "relativePosition": [
         -2.0784753942701744,
         -1.3892228170503975
-      ],
-      "weight": 1
-    },
-    {
-      "ideaId": "3045f505-1214-4618-82f3-d36544327059",
-      "relativePosition": [
-        -2.4775248890428028,
-        -0.3344703636698596
-      ],
-      "weight": 1,
-      "hypothesis": "graph maintenance: reparented floating idea by semantic similarity"
-    },
-    {
-      "ideaId": "a1f62047-5be3-4178-9274-3e060285fd29",
-      "relativePosition": [
-        -2.0397673090403674,
-        1.445458171297329
       ],
       "weight": 1
     },
@@ -139,6 +66,14 @@
       ],
       "weight": 1,
       "hypothesis": "Provides an evidence gate for the autonomous execution capability."
+    },
+    {
+      "ideaId": "1e1a2769-d498-4d99-8849-7241602ba1ef",
+      "relativePosition": [
+        2.93,
+        2.34
+      ],
+      "weight": 8
     }
   ],
   "supportedIdeas": [

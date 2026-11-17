@@ -1,0 +1,98 @@
+{
+  "id": "27fde285-c130-46f4-93de-1b85d00e2da5",
+  "text": "Grow Aimparency into an open intention network for global open-source software",
+  "description": "The main attempt at ASI: Aimparency as the shared intention network where people and agents express, connect and pursue ideas, starting with open-source software and growing into one global graph linked across servers. Other, very different routes to ASI can sit beside it under 'achieve ASI'.",
+  "archived": false,
+  "color": "#66622d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "3d868d5b-6ec5-4774-9663-dcceb3e30cb2",
+      "relativePosition": [
+        2.25,
+        -3
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "6ad092fc-a69e-475d-8870-30f994a7f6a5",
+      "relativePosition": [
+        3.69,
+        -0.65
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "c254d8bd-d7ba-494e-8a97-8c46636fdb2f",
+      "relativePosition": [
+        1.25,
+        3.54
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "cffdcd91-fd9c-45e4-98fd-e265650be143",
+      "relativePosition": [
+        3.03,
+        -2.21
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
+      "relativePosition": [
+        2.28,
+        2.98
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "629396d0-891d-42c7-b2b2-1be5423de649",
+      "relativePosition": [
+        -3.25,
+        -1.88
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "c561dd26-86c5-45c2-96a3-4b4f90e448a3",
+      "relativePosition": [
+        0.52,
+        -3.71
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "7634e681-d234-48fa-ad82-876ef97460ca",
+      "relativePosition": [
+        -3.63,
+        -0.96
+      ],
+      "weight": 11.11111111111111
+    },
+    {
+      "ideaId": "e1734671-9f93-4e01-9c66-aaa6ce7da4a1",
+      "relativePosition": [
+        -2.47,
+        -2.82
+      ],
+      "weight": 11.11111111111111,
+      "hypothesis": "Consolidated memory across dreams lets the graph notice patterns over time instead of repeating them; weight 0 because it stores memory and carries no value."
+    }
+  ],
+  "supportedIdeas": [
+    "895ec1c1-c8b3-4258-b7be-62831819bf86"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "Groups related children; progress is in the children.",
+    "date": 1794846422258
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

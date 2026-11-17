@@ -2,10 +2,11 @@
   "id": "e2846e8e-29e8-4584-b250-9e0dcfd3c787",
   "text": "in an empty column page, entering idea edit mode and adding ideas should not be possible",
   "description": "",
+  "archived": false,
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "f2337265-ffc6-4ae8-a421-d6e4d5540210"
+    "b6b62cc1-a053-401b-93fe-caffd5af675c"
   ],
   "committedIn": [
     "618b92d0-70cc-434c-b2b5-ee9fcfefc25a"
@@ -17,5 +18,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

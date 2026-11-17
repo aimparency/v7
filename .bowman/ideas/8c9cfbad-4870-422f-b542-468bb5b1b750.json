@@ -1,15 +1,21 @@
 {
   "id": "8c9cfbad-4870-422f-b542-468bb5b1b750",
   "text": "implement client synchronization: if mcp client updates, client web app should sync",
-  "incoming": [],
+  "archived": false,
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7185f825-4c1a-489d-9884-59d1bdffa072"
+  ],
   "committedIn": [],
   "status": {
     "state": "implemented",
     "comment": "Implemented real-time synchronization using tRPC subscriptions (project.onUpdate) and EventEmitter in backend. Frontend subscribes on load.",
     "date": 1764374400000
   },
-  "supportingConnections": [],
-  "supportedIdeas": [
-    "d59d03c1-45dd-48db-98c2-49b61b481f07"
-  ]
+  "intrinsicValue": 0,
+  "selfWeight": 0,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }
