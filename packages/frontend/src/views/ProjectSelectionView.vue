@@ -684,8 +684,9 @@ onUnmounted(revokeThumbnails)
 
   /* Every screenshot centre-cropped to a square. */
   & .thumbnail {
-    flex: 0 0 5rem;
-    aspect-ratio: 1;
+    flex: none;
+    width: 5rem;
+    height: 5rem;
     object-fit: cover;
     object-position: center;
     border-radius: 0.1875rem;
@@ -736,7 +737,8 @@ onUnmounted(revokeThumbnails)
   .project-selection { padding: 1rem; }
 
   .history-item .thumbnail {
-    flex-basis: 3rem;
+    width: 3rem;
+    height: 3rem;
   }
 
   .history-item-content {
