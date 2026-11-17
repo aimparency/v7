@@ -4,6 +4,7 @@ import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
 import { trpc } from '../trpc'
 import { loadProjectThumbnails } from '../utils/db'
 import { formatRelativeTime } from '../utils/relative-time'
+import { keepInMiddle } from '../utils/keep-in-middle'
 import { gitRepositoryLocation } from 'shared'
 import { Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next'
 import LoginControl from '../components/LoginControl.vue'
@@ -289,7 +290,11 @@ const focusResult = (index: number) => {
   if (entries.value.length === 0) return
   selectedIndex.value = Math.max(0, Math.min(index, entries.value.length - 1))
   nextTick(() => {
-    listRef.value?.querySelectorAll<HTMLElement>('.history-open-button')[selectedIndex.value]?.focus()
+    const list = listRef.value
+    const button = list?.querySelectorAll<HTMLElement>('.history-open-button')[selectedIndex.value]
+    if (!list || !button) return
+    button.focus({ preventScroll: true })
+    keepInMiddle(list, button.closest<HTMLElement>('.history-item') ?? button)
   })
 }
 
