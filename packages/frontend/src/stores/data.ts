@@ -21,6 +21,7 @@ import { graphHostUrl, parseGraphHost } from 'shared'
 import { remoteSpace, remoteTrpc } from '../utils/remote-trpc'
 import { serverLogin } from '../utils/server-logins'
 import { roundOffset } from '../utils/autolayout'
+import { withOwnOffers } from '../utils/own-offers'
 import { keepIdeaSelection } from './ui/selection-anchor'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
@@ -509,7 +510,7 @@ export const useDataStore = defineStore('data', {
       const linkedRepos = (state.meta?.linkedRepos ?? []) as Array<{ repoId: string; name?: string; host?: string }>
       const linkedRepoById = new Map(linkedRepos.map(repo => [repo.repoId, repo]))
       // Offered spaces join as unconfirmed supporters: drawn like a linked
-      // space, with no value flowing until the offer is accepted.
+      // space; value flows to them only for their proposer (withOwnOffers).
       const offeredById = new Map(state.offers.flatMap(offer => offer.space ? [[offer.space.repoId, offer.space] as const] : []))
       for (const [repoId, space] of offeredById) if (!linkedRepoById.has(repoId)) linkedRepoById.set(repoId, space)
       const repoNodeIds = new Set<string>()
@@ -824,8 +825,7 @@ export const useDataStore = defineStore('data', {
     recalculateValuesNow() {
         if (this.recalculateTimeout) clearTimeout(this.recalculateTimeout)
         this.recalculateTimeout = null;
-        const allIdeas = this.ownIdeas;
-        const result = calculateIdeaValues(allIdeas, this.defaultCost);
+        const result = calculateIdeaValues(withOwnOffers(this.ownIdeas, this.offers), this.defaultCost);
         this.calculatedValues = result.values;
         this.calculatedCosts = result.costs;
         this.calculatedDoneCosts = result.doneCosts;
@@ -1335,6 +1335,7 @@ export const useDataStore = defineStore('data', {
         console.warn('Could not load the offers', error)
         return
       }
+      this.recalculateValues()
       for (const offer of this.offers) {
         const repoId = offer.space?.repoId
         if (offer.mine && repoId && !this.linkedGraphViews[repoId]) void this.toggleLinkedGraph(repoId)
