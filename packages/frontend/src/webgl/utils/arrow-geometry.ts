@@ -39,13 +39,39 @@ export interface ArrowGeometry {
   triangleV2: Vec2          // Towards tip (target side)
 }
 
+/**
+ * How far the arc center M sits from the midpoint of S→T, as a factor of |S-T|.
+ * 0 gives a semicircle around the midpoint; larger values give flatter arcs.
+ */
+export type CurvatureRule = (source: NodeGeometry, target: NodeGeometry, dist: number) => number
+
+/** Every arc has the same shape (0.5: a 90° arc), only scaled with the distance. */
+export const fixedCurvature = (curvature: number): CurvatureRule => () => curvature
+
+/**
+ * Curvature grows linearly with the gap between the nodes, in units of their
+ * summed radii: touching equal ideas get a semicircle around their touchpoint
+ * (radius = idea radius), a gap of 3·(r1+r2) gives the fixed 0.5 curvature,
+ * and longer connections keep flattening.
+ */
+export const gapCurvature: CurvatureRule = (source, target, dist) => {
+  const radii = source.r + target.r
+  return radii > 0 ? Math.max(0, dist - radii) / radii / 6 : 0.5
+}
+
+/**
+ * The rule every connection uses. gapCurvature was tried and looked worse:
+ * close ideas of different sizes get arcs thicker than their radius.
+ */
+export const ARROW_CURVATURE: CurvatureRule = fixedCurvature(0.5)
+
 export interface ArrowStyle {
-  curvature: number       // How far M is from midpoint (as factor of |S-T|)
+  curvature: CurvatureRule
   roundSourceCap: boolean // Extend and round the source side (used by drag previews)
 }
 
 const DEFAULT_STYLE: ArrowStyle = {
-  curvature: 0.5,         // M is at |S-T| * 0.5 from midpoint
+  curvature: ARROW_CURVATURE,
   roundSourceCap: false
 }
 
@@ -146,9 +172,10 @@ export function calculateArrowGeometry(
   const midY = (S.y + T.y) / 2
 
   // Arc center M: midpoint + perpendicular * dist * curvature
+  const curvature = s.curvature(source, target, dist)
   const M: Vec2 = {
-    x: midX + perpX * dist * s.curvature,
-    y: midY + perpY * dist * s.curvature
+    x: midX + perpX * dist * curvature,
+    y: midY + perpY * dist * curvature
   }
 
   // Distance from M to S (and M to T, which is the same by symmetry)
