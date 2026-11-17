@@ -6,7 +6,7 @@ import { t, delayedProcedure } from '../trpc.js';
 import { mayCreateGraphs, rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
-import { addCheckout, createGraph, graphBowmanPath, GraphError, listGraphs, removeGraph, setGraphAccess, setGraphSlug, type Graph } from '../graphs/registry.js';
+import { addCheckout, createGraph, deleteGraph, graphBowmanPath, GraphError, listDeletedGraphs, listGraphs, purgeDate, purgeDeletedGraphs, restoreGraph, setGraphAccess, setGraphSlug, type Graph } from '../graphs/registry.js';
 import { addRemote, selectRemoteKey } from '../graphs/remote-graph.js';
 import { privateKeyFile } from '../graphs/ssh-keys.js';
 import { clearIndices } from '../search.js';
@@ -42,19 +42,52 @@ function assertBelowGraphLimit(viewer: Viewer) {
   }
 }
 
+// Deleted graphs past their time go for good whenever the spaces are listed.
+async function purge() {
+  for (const graph of await purgeDeletedGraphs()) clearIndices(graphBowmanPath(graph));
+}
+
+const readMeta = async (graph: Graph) =>
+  await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json')) as { name?: string; color?: string } | null;
+
 const ownerName = (graph: Graph) => graph.owner ? accountNames([graph.owner])[0] ?? null : null;
 
 // The graphs of this server: who may read is everyone, so the list is open.
 export const graphsRouter = t.router({
-  list: delayedProcedure.query(async ({ ctx }) => Promise.all(listGraphs().map(async (graph) => {
-    // The name as it is on disk: no migration, no repair, just a label for the list.
-    const meta = await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json')) as { name?: string; color?: string } | null;
-    return {
-      slug: graph.slug, kind: graph.kind, name: meta?.name ?? graph.slug, color: meta?.color ?? null, owner: ownerName(graph),
-      // What the asker is on this graph: the UI offers their own graphs for an MCP client.
-      right: rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token))
-    };
-  }))),
+  list: delayedProcedure.query(async ({ ctx }) => {
+    await purge();
+    return Promise.all(listGraphs().map(async (graph) => {
+      // The name as it is on disk: no migration, no repair, just a label for the list.
+      const meta = await readMeta(graph);
+      return {
+        slug: graph.slug, kind: graph.kind, name: meta?.name ?? graph.slug, color: meta?.color ?? null, owner: ownerName(graph),
+        // What the asker is on this graph: the UI offers their own graphs for an MCP client.
+        right: rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token))
+      };
+    }));
+  }),
+
+  // The asker's deleted spaces, restorable until they go for good.
+  listDeleted: delayedProcedure.query(async ({ ctx }) => {
+    await purge();
+    const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+    return Promise.all(listDeletedGraphs().filter(graph => rightOn(graph, viewer) === 'owner').map(async (graph) => {
+      const meta = await readMeta(graph);
+      return { slug: graph.slug, name: meta?.name ?? graph.slug, color: meta?.color ?? null, deletedAt: graph.deletedAt, purgeAt: purgeDate(graph).toISOString() };
+    }));
+  }),
+
+  // A deleted space back on the list. Not by `graph`: a deleted one resolves to nothing.
+  restore: delayedProcedure
+    .input(z.object({ slug: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      const graph = listDeletedGraphs().find(candidate => candidate.slug === input.slug);
+      if (!graph || rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'owner') {
+        throw new TRPCError({ code: 'NOT_FOUND', message: `No deleted space "${input.slug}" of yours on this server.` });
+      }
+      const restored = await run(() => restoreGraph(graph.slug));
+      return { slug: restored.slug };
+    }),
 
   create: delayedProcedure
     .input(z.object({ name: z.string().max(200) }))
@@ -148,8 +181,8 @@ export const graphsRouter = t.router({
     .input(z.object({ graph: z.string() }))
     .mutation(async ({ input }) => {
       const graph = listed(input.graph);
-      await run(() => removeGraph(graph.slug));
-      clearIndices(graphBowmanPath(graph));
+      // Restorable for DELETED_DAYS (graphs.restore), then removed for good.
+      await run(() => deleteGraph(graph.slug));
       return { success: true };
     })
 });

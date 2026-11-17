@@ -8,6 +8,9 @@
 //             an SSH key for it; then it is committed here and pushed back.
 //   checkout  a repository on this machine that the server admin added
 //
+// A deleted graph stays in the file, out of every lookup, for DELETED_DAYS:
+// its owner may restore it until then; after, it is removed for good.
+//
 // The slug is the graph's name in addresses (/spaces/<slug>, and `graph` in
 // the API). It stays when the graph is renamed; its owner may change it, and
 // the former slugs keep answering, so links and agents' tokens keep working.
@@ -43,15 +46,34 @@ export type Graph = {
   /** Slugs the graph had before: they still lead here, and no other graph takes them. */
   formerSlugs?: string[];
   createdAt: string;
+  /** When its owner deleted it: hidden, restorable until DELETED_DAYS later. */
+  deletedAt?: string;
 };
 
 export class GraphError extends Error {}
 
 const MAX_SLUG_LENGTH = 40;
 
-export function listGraphs(): Graph[] {
+export const DELETED_DAYS = 30;
+const DAY = 24 * 60 * 60 * 1000;
+
+/** Every graph in the file, the deleted ones too. */
+function allGraphs(): Graph[] {
   return readServerFile(FILE, raw => ((raw ?? {}) as { graphs?: Graph[] }).graphs ?? []);
 }
+
+/** The graphs of this server; a deleted one is none any more. */
+export function listGraphs(): Graph[] {
+  return allGraphs().filter(graph => !graph.deletedAt);
+}
+
+/** The deleted graphs that may still be restored. */
+export function listDeletedGraphs(): (Graph & { deletedAt: string })[] {
+  return allGraphs().filter((graph): graph is Graph & { deletedAt: string } => !!graph.deletedAt);
+}
+
+/** When a deleted graph is removed for good. */
+export const purgeDate = (graph: Graph & { deletedAt: string }) => new Date(Date.parse(graph.deletedAt) + DELETED_DAYS * DAY);
 
 export function findGraph(slug: string): Graph | null {
   const graphs = listGraphs();
@@ -73,7 +95,7 @@ async function change<T>(update: (graphs: Graph[]) => Promise<{ graphs: Graph[];
   const file = path.join(serverDir(), FILE);
   return withFileLock(file, async () => {
     forgetServerFile(FILE);
-    const { graphs, result } = await update(listGraphs());
+    const { graphs, result } = await update(allGraphs());
     await fs.ensureDir(path.dirname(file));
     await writeJsonAtomic(file, { graphs });
     forgetServerFile(FILE);
@@ -186,14 +208,50 @@ export async function setGraphSlug(slug: string, next: string): Promise<Graph> {
   });
 }
 
-/** Takes the graph off the list. A repository created or cloned here is deleted; a checkout stays where it is. */
+async function removeFiles(graph: Graph) {
+  if (graph.kind !== 'checkout') await fs.remove(graph.path);
+  await fs.remove(path.join(serverDir(), 'guest', graph.slug));
+}
+
+/**
+ * Takes the graph off the list at once and for good. A repository created or
+ * cloned here is deleted; a checkout stays where it is. Deleted graphs too.
+ */
 export async function removeGraph(slug: string): Promise<void> {
   await change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);
     if (!graph) throw new GraphError(`No space "${slug}" on this server.`);
-    if (graph.kind !== 'checkout') await fs.remove(graph.path);
-    await fs.remove(path.join(serverDir(), 'guest', graph.slug));
-    return { graphs: graphs.filter(candidate => candidate.slug !== slug), result: undefined };
+    await removeFiles(graph);
+    return { graphs: graphs.filter(candidate => candidate !== graph), result: undefined };
+  });
+}
+
+/** Deletes the graph so its owner may still restore it for DELETED_DAYS. */
+export async function deleteGraph(slug: string, now = Date.now()): Promise<void> {
+  await change(async (graphs) => {
+    const graph = graphs.find(candidate => candidate.slug === slug && !candidate.deletedAt);
+    if (!graph) throw new GraphError(`No space "${slug}" on this server.`);
+    const deleted: Graph = { ...graph, deletedAt: new Date(now).toISOString() };
+    return { graphs: graphs.map(candidate => candidate === graph ? deleted : candidate), result: undefined };
+  });
+}
+
+export async function restoreGraph(slug: string): Promise<Graph> {
+  return change(async (graphs) => {
+    const graph = graphs.find(candidate => candidate.slug === slug && candidate.deletedAt);
+    if (!graph) throw new GraphError(`No deleted space "${slug}" on this server.`);
+    const { deletedAt: _deletedAt, ...restored } = graph;
+    return { graphs: graphs.map(candidate => candidate === graph ? restored : candidate), result: restored };
+  });
+}
+
+/** Removes for good the graphs deleted more than DELETED_DAYS ago; which. */
+export async function purgeDeletedGraphs(now = Date.now()): Promise<Graph[]> {
+  if (!listDeletedGraphs().some(graph => purgeDate(graph).getTime() <= now)) return [];
+  return change(async (graphs) => {
+    const expired = graphs.filter(graph => graph.deletedAt && Date.parse(graph.deletedAt) + DELETED_DAYS * DAY <= now);
+    for (const graph of expired) await removeFiles(graph);
+    return { graphs: graphs.filter(graph => !expired.includes(graph)), result: expired };
   });
 }
 

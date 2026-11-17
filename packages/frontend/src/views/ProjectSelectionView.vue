@@ -5,7 +5,7 @@ import { trpc } from '../trpc'
 import { loadProjectThumbnails } from '../utils/db'
 import { formatRelativeTime } from '../utils/relative-time'
 import { gitRepositoryLocation } from 'shared'
-import { Pencil, X } from 'lucide-vue-next'
+import { Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next'
 import LoginControl from '../components/LoginControl.vue'
 import { useToastStore } from '../stores/toast'
 import { useViewerStore } from '../stores/viewer'
@@ -16,6 +16,8 @@ import { hasAccounts } from '../utils/runtime-config'
 // the list holds the recent spaces, the server's spaces and, without accounts,
 // the .bowman folders nearby. Recent: what this browser opened before, first. Keys: Tab or ↓ into the list, j/k (arrows, Tab)
 // to move, Enter to open, e to copy an entry into the box, d d to forget a recent one.
+// Its owner deletes a space (trash) into "Deleted spaces", shown while there are
+// any: restorable there until the server removes it for good.
 
 type DiscoveredProject = {
   path: string
@@ -47,9 +49,22 @@ const accounts = hasAccounts()
 const viewer = useViewerStore()
 const toast = useToastStore()
 const spaces = ref<Awaited<ReturnType<typeof trpc.graphs.list.query>>>([])
+const deletedSpaces = ref<Awaited<ReturnType<typeof trpc.graphs.listDeleted.query>>>([])
 const loadSpaces = async () => {
-  spaces.value = await trpc.graphs.list.query()
+  const [listed, deleted] = await Promise.all([trpc.graphs.list.query(), trpc.graphs.listDeleted.query()])
+  spaces.value = listed
+  deletedSpaces.value = deleted
 }
+const changeSpace = async (failure: string, action: () => Promise<unknown>) => {
+  try {
+    await action()
+    await loadSpaces()
+  } catch (error) {
+    toast.error(failure, error)
+  }
+}
+const deleteSpace = (slug: string) => changeSpace('Could not delete the space', () => trpc.graphs.remove.mutate({ graph: slug }))
+const restoreSpace = (slug: string) => changeSpace('Could not restore the space', () => trpc.graphs.restore.mutate({ slug }))
 onMounted(() => loadSpaces().catch(error => toast.error('Could not list the spaces of this server', error)))
 
 const typed = computed(() => props.modelValue.trim())
@@ -138,6 +153,8 @@ type Entry = {
   failed?: boolean
   /** A recent entry: d d (or ×) forgets it. */
   recent?: boolean
+  /** The owner's space: the trash deletes it (restorable). */
+  remove?: () => void
   /** What e (or the pencil) copies into the box. */
   edit: string
   open: () => void
@@ -156,6 +173,7 @@ const spaceEntry = (space: Space): Entry => ({
   thumbnail: space.slug,
   color: space.color,
   edit: space.slug,
+  remove: space.right === 'owner' ? () => deleteSpace(space.slug) : undefined,
   open: () => emit('open-graph', space.slug)
 })
 const pathSearchable = (path: string) => [path.toLowerCase(), path.toLowerCase().split('/').pop() ?? '']
@@ -165,7 +183,7 @@ const recentEntries = computed<Entry[]>(() => props.projectHistory.flatMap(proje
   const opened = formatRelativeTime(project.lastOpened)
   const space = spaces.value.find(candidate => candidate.slug === project.path)
   if (space) return [{ ...spaceEntry(space), key: `recent:${project.path}`, detail: `${space.owner ?? 'server'} · ${opened}`, recent: true }]
-  if (accounts) return []
+  if (accounts || deletedSpaces.value.some(deleted => deleted.slug === project.path)) return []
   return [{
     key: `recent:${project.path}`,
     title: project.path,
@@ -193,6 +211,18 @@ const nearbyEntries = computed<Entry[]>(() => {
   }))
 })
 
+const DAY = 24 * 60 * 60 * 1000
+const deletedEntries = computed<Entry[]>(() => deletedSpaces.value.map(space => ({
+  key: `deleted:${space.slug}`,
+  title: space.name,
+  detail: `restore · deleted for good in ${Math.max(0, Math.ceil((Date.parse(space.purgeAt) - Date.now()) / DAY))} days`,
+  searchable: [space.name.toLowerCase(), space.slug],
+  thumbnail: space.slug,
+  color: space.color,
+  edit: space.slug,
+  open: () => restoreSpace(space.slug)
+})))
+
 const sections = computed<Section[]>(() => {
   const all: Section[] = []
   const recent = recentEntries.value.filter(matchesQuery)
@@ -207,6 +237,8 @@ const sections = computed<Section[]>(() => {
   if (!accounts) {
     all.push({ id: 'nearby', title: 'Nearby spaces (.bowman folders)', empty: query.value ? 'No other matching spaces.' : 'No nearby spaces found yet.', entries: nearbyEntries.value.filter(matchesQuery) })
   }
+  const deleted = deletedEntries.value.filter(matchesQuery)
+  if (deleted.length > 0) all.push({ id: 'deleted', title: 'Deleted spaces', entries: deleted })
   return all
 })
 const entries = computed(() => sections.value.flatMap(section => section.entries))
@@ -321,7 +353,7 @@ const onListKeydown = (event: KeyboardEvent) => {
 // Screenshots of each space's graph, taken by the graph view (utils/db).
 const thumbnails = ref(new Map<string, string>())
 const revokeThumbnails = () => thumbnails.value.forEach(url => URL.revokeObjectURL(url))
-watch(() => [...spaceEntries.value, ...recentEntries.value, ...nearbyEntries.value].map(entry => entry.thumbnail), async (keys) => {
+watch(() => [...spaceEntries.value, ...recentEntries.value, ...nearbyEntries.value, ...deletedEntries.value].map(entry => entry.thumbnail), async (keys) => {
   const blobs = await loadProjectThumbnails(keys).catch(() => new Map<string, Blob>())
   revokeThumbnails()
   thumbnails.value = new Map([...blobs].map(([key, blob]) => [key, URL.createObjectURL(blob)]))
@@ -377,11 +409,12 @@ onUnmounted(revokeThumbnails)
             v-for="entry in section.entries"
             :key="entry.key"
             class="history-item"
-            :class="{ failed: entry.failed, selected: indexOf(entry) === selectedIndex, removing: entry.key === pendingRemoval, 'discovered-item': section.id === 'nearby' }"
+            :class="{ failed: entry.failed, selected: indexOf(entry) === selectedIndex, removing: entry.key === pendingRemoval, 'discovered-item': section.id === 'nearby', deleted: section.id === 'deleted' }"
           >
             <button
               type="button"
               class="history-open-button"
+              :title="section.id === 'deleted' ? 'Restore' : undefined"
               @click="entry.open()"
               @focus="selectedIndex = indexOf(entry)"
             >
@@ -396,6 +429,16 @@ onUnmounted(revokeThumbnails)
               </span>
             </button>
             <button
+              v-if="section.id === 'deleted'"
+              type="button"
+              class="edit-button"
+              tabindex="-1"
+              title="Restore"
+              aria-label="Restore"
+              @click.stop="entry.open()"
+            ><RotateCcw /></button>
+            <button
+              v-else
               type="button"
               class="edit-button"
               tabindex="-1"
@@ -403,6 +446,15 @@ onUnmounted(revokeThumbnails)
               aria-label="Into the box, to change before opening"
               @click.stop="copyIntoBox(entry)"
             ><Pencil /></button>
+            <button
+              v-if="entry.remove"
+              type="button"
+              class="remove-button"
+              tabindex="-1"
+              title="Delete this space (restorable for 30 days)"
+              aria-label="Delete this space"
+              @click.stop="entry.remove()"
+            ><Trash2 /></button>
             <button
               v-if="entry.recent"
               type="button"
@@ -626,10 +678,16 @@ onUnmounted(revokeThumbnails)
     background: #4a2020;
   }
 
+  &.deleted {
+    opacity: 0.6;
+  }
+
+  /* Every screenshot centre-cropped to a square. */
   & .thumbnail {
-    flex: 0 0 8rem;
-    height: 5rem;
+    flex: 0 0 5rem;
+    aspect-ratio: 1;
     object-fit: cover;
+    object-position: center;
     border-radius: 0.1875rem;
     background: #1a1a1a;
   }
@@ -678,8 +736,7 @@ onUnmounted(revokeThumbnails)
   .project-selection { padding: 1rem; }
 
   .history-item .thumbnail {
-    flex-basis: 4.5rem;
-    height: 3rem;
+    flex-basis: 3rem;
   }
 
   .history-item-content {

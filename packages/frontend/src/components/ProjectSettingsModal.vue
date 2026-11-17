@@ -140,13 +140,13 @@ async function changeSlug() {
 }
 
 async function removeGraph() {
-  if (!window.confirm(`Remove the space "${name.value}" from this server? A space created here is deleted with its history.`)) return
+  if (!window.confirm(`Delete the space "${name.value}"? For 30 days it can be restored from the start page; then a space created here is deleted with its history.`)) return
   try {
     await trpc.graphs.remove.mutate({ graph: projectStore.projectPath })
     modalStore.closeSettingsModal()
     projectStore.setProjectPath('')
   } catch (e) {
-    useToastStore().error('Could not remove the space', e)
+    useToastStore().error('Could not delete the space', e)
   }
 }
 
@@ -603,7 +603,7 @@ const save = async () => {
               <code class="public-key">{{ selectedKey.publicKey }}</code>
             </p>
           </template>
-          <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Remove this space from the server</button>
+          <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Delete this space</button>
         </div>
 
         <div class="form-group">

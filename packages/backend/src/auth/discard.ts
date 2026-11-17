@@ -7,7 +7,7 @@
 import path from 'node:path';
 import { serverConfig } from 'shared/server-config';
 import { readJsonOrNull } from '../storage/json.js';
-import { graphBowmanPath, listGraphs, removeGraph, setGraphAccess } from '../graphs/registry.js';
+import { graphBowmanPath, listDeletedGraphs, listGraphs, removeGraph, setGraphAccess } from '../graphs/registry.js';
 import { listNotes, removeNotesWhere } from '../guest/notes.js';
 import { idleAutomaticAccounts, removeAccountById } from './accounts.js';
 
@@ -21,7 +21,8 @@ export async function accountFootprint(id: string): Promise<{ spaces: string[]; 
 }
 
 export async function discardAccount(id: string): Promise<void> {
-  const owned = listGraphs().filter(graph => graph.owner === id);
+  // Its deleted spaces go for good as well.
+  const owned = [...listGraphs(), ...listDeletedGraphs()].filter(graph => graph.owner === id);
   const repoIds = new Set((await Promise.all(owned.map(async graph =>
     ((await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json'))) as { repoId?: string } | null)?.repoId)))
     .filter((repoId): repoId is string => typeof repoId === 'string'));

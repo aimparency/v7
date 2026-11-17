@@ -11,7 +11,7 @@ import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from '../auth/accounts';
 import { pullFastForward } from '../git-follow';
-import { listGraphs } from './registry';
+import { DELETED_DAYS, listGraphs, purgeDeletedGraphs } from './registry';
 import { addRemote } from './remote-graph';
 import { graphGitEnv, isInternalAddress, remoteGitEnv } from './remote-git';
 
@@ -98,6 +98,7 @@ test('a remote graph is read-only until its owner selects a key, then commits ar
   assert.deepEqual(await caller.keys.list(), []);
 
   await caller.graphs.remove({ graph: 'plans' });
+  await purgeDeletedGraphs(Date.now() + DELETED_DAYS * 86_400_000);
   assert.equal(await fs.pathExists(current.path), false);
 });
 

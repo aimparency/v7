@@ -4,18 +4,21 @@ import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
 import { useViewerStore } from '../stores/viewer'
 
-const { inspectPath, listGraphs, createGraph, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
+const { inspectPath, listGraphs, listDeleted, removeGraph, restoreGraph, createGraph, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
   inspectPath: vi.fn(),
   addRemote: vi.fn(),
   addCheckout: vi.fn(),
   listGraphs: vi.fn().mockResolvedValue([]),
+  listDeleted: vi.fn().mockResolvedValue([]),
+  removeGraph: vi.fn().mockResolvedValue({ success: true }),
+  restoreGraph: vi.fn().mockResolvedValue({ slug: 'x' }),
   createGraph: vi.fn(),
   accounts: { on: false }
 }))
 vi.mock('../trpc', () => ({
   trpc: {
     project: { inspectPath: { query: inspectPath } },
-    graphs: { list: { query: listGraphs }, create: { mutate: createGraph }, addRemote: { mutate: addRemote }, addCheckout: { mutate: addCheckout } }
+    graphs: { list: { query: listGraphs }, listDeleted: { query: listDeleted }, remove: { mutate: removeGraph }, restore: { mutate: restoreGraph }, create: { mutate: createGraph }, addRemote: { mutate: addRemote }, addCheckout: { mutate: addCheckout } }
   },
 }))
 vi.mock('../utils/runtime-config', () => ({ hasAccounts: () => accounts.on }))
@@ -184,8 +187,9 @@ describe('ProjectSelectionView on a server with accounts', () => {
     accounts.on = true
     listGraphs.mockResolvedValue([
       { slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' },
-      { slug: 'garden', kind: 'created', name: 'Garden', color: null, owner: null }
+      { slug: 'garden', kind: 'created', name: 'Garden', color: null, owner: null, right: 'owner' }
     ])
+    listDeleted.mockReset().mockResolvedValue([])
     createGraph.mockReset().mockResolvedValue({ slug: 'my-idea' })
     addRemote.mockReset()
     addCheckout.mockReset()
@@ -226,6 +230,26 @@ describe('ProjectSelectionView on a server with accounts', () => {
     await list.trigger('keydown', { key: 'j' })
     expect(wrapper.find('.history-item.selected .history-path').text()).toBe('Hack the Hub')
     wrapper.unmount()
+  })
+
+  it('lets the owner delete a space, which waits under "Deleted spaces" to be restored', async () => {
+    const wrapper = mountServer('')
+    await flushPromises()
+    expect(wrapper.findAll('h3').map(title => title.text())).toEqual(['Spaces on this server'])
+    // Only the owner's space has the trash.
+    expect(wrapper.findAll('.history-item').map(item => item.find('[aria-label="Delete this space"]').exists())).toEqual([false, true])
+
+    listGraphs.mockResolvedValue([{ slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' }])
+    listDeleted.mockResolvedValue([{ slug: 'garden', name: 'Garden', color: null, deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 30 * 86_400_000).toISOString() }])
+    await wrapper.find('[aria-label="Delete this space"]').trigger('click')
+    await flushPromises()
+    expect(removeGraph).toHaveBeenCalledWith({ graph: 'garden' })
+    expect(wrapper.findAll('h3').map(title => title.text())).toEqual(['Spaces on this server', 'Deleted spaces'])
+    expect(wrapper.find('.history-item.deleted').text()).toContain('deleted for good in 30 days')
+
+    await wrapper.find('.history-item.deleted [aria-label="Restore"]').trigger('click')
+    expect(restoreGraph).toHaveBeenCalledWith({ slug: 'garden' })
+    expect(wrapper.emitted('open-graph')).toBeUndefined()
   })
 
   it('filters by name and opens a perfect match with Enter', async () => {

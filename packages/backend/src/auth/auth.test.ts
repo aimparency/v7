@@ -8,7 +8,7 @@ import path from 'node:path';
 import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
-import { addCheckout, listGraphs } from '../graphs/registry';
+import { addCheckout, DELETED_DAYS, listGraphs, purgeDeletedGraphs } from '../graphs/registry';
 import * as accounts from './accounts';
 
 let root = '';
@@ -171,8 +171,21 @@ test('an account creates a graph in one step and owns it', async () => {
 
   await assert.rejects(bob.graphs.remove({ graph: slug }), /open read-only/);
   await ada.graphs.remove({ graph: slug });
-  assert.equal(await fs.pathExists(directory), false);
   assert.deepEqual(listGraphs().map(graph => graph.slug), ['hack-the-hub-2']);
+  await assert.rejects(ada.idea.list({ graph: slug }), /No space "hack-the-hub"/);
+  // Deleted, it is its owner's to restore for a while, and nobody else's.
+  assert.ok(await fs.pathExists(directory));
+  assert.deepEqual((await ada.graphs.listDeleted()).map(({ slug, name }) => ({ slug, name })), [{ slug, name: 'Hack the Hub!' }]);
+  assert.deepEqual(await bob.graphs.listDeleted(), []);
+  await assert.rejects(bob.graphs.restore({ slug }), /No deleted space/);
+  assert.equal((await ada.graphs.restore({ slug })).slug, slug);
+  assert.equal((await ada.idea.list({ graph: slug })).length, 1);
+  // After DELETED_DAYS it is removed for good.
+  await ada.graphs.remove({ graph: slug });
+  assert.deepEqual(await purgeDeletedGraphs(Date.now() + (DELETED_DAYS - 1) * 86_400_000), []);
+  assert.equal((await purgeDeletedGraphs(Date.now() + DELETED_DAYS * 86_400_000)).length, 1);
+  assert.equal(await fs.pathExists(directory), false);
+  assert.deepEqual(await ada.graphs.listDeleted(), []);
 
   updateServerConfig({ graphCreation: 'selected' });
   await assert.rejects(bob.graphs.create({ name: 'Not selected' }), /accounts the server admin selected/);

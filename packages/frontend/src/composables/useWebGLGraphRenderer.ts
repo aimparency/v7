@@ -19,14 +19,16 @@ import { useUIStore } from '../stores/ui'
 import { useMapStore, LOGICAL_HALF_SIDE } from '../stores/map'
 import type { GraphNode, GraphLink } from './useGraphSimulation'
 
-const THUMBNAIL_WIDTH = 320
+const THUMBNAIL_SIZE = 320
 
+// The canvas's centre, cropped to a square, THUMBNAIL_SIZE on each side.
 function snapshotCanvas(source: HTMLCanvasElement): Promise<Blob | null> {
   if (!source.width || !source.height) return Promise.resolve(null)
+  const side = Math.min(source.width, source.height)
   const thumbnail = document.createElement('canvas')
-  thumbnail.width = THUMBNAIL_WIDTH
-  thumbnail.height = Math.round(THUMBNAIL_WIDTH * source.height / source.width)
-  thumbnail.getContext('2d')?.drawImage(source, 0, 0, thumbnail.width, thumbnail.height)
+  thumbnail.width = THUMBNAIL_SIZE
+  thumbnail.height = THUMBNAIL_SIZE
+  thumbnail.getContext('2d')?.drawImage(source, (source.width - side) / 2, (source.height - side) / 2, side, side, 0, 0, THUMBNAIL_SIZE, THUMBNAIL_SIZE)
   return new Promise(resolve => thumbnail.toBlob(resolve, 'image/webp', 0.8))
 }
 
@@ -335,7 +337,7 @@ export function useWebGLGraphRenderer(
 
   let pendingThumbnail: ((blob: Promise<Blob | null>) => void) | null = null
 
-  // A screenshot of the next frame, THUMBNAIL_WIDTH wide (null if nothing is drawn).
+  // A square screenshot of the next frame's centre (null if nothing is drawn).
   function captureThumbnail(): Promise<Blob | null> {
     if (!renderer) return Promise.resolve(null)
     return new Promise<Blob | null>(resolve => { pendingThumbnail = resolve })

@@ -8,7 +8,7 @@ import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from '../auth/accounts';
-import { listGraphs } from '../graphs/registry';
+import { DELETED_DAYS, listGraphs, purgeDeletedGraphs } from '../graphs/registry';
 
 let root = '';
 const localServerDir = process.env.AIMPARENCY_SERVER_DIR;
@@ -113,6 +113,7 @@ test('the owner sees recent notes of others on their graphs; an account writes o
   assert.deepEqual(await appRouter.createCaller({ session: {} }).notes.recent(), []);
 
   await ana.graphs.remove({ graph: projectPath });
+  await purgeDeletedGraphs(Date.now() + DELETED_DAYS * 86_400_000);
   assert.equal(await fs.pathExists(path.join(root, 'guest', 'hack-the-hub')), false, 'the notes go with the graph');
 });
 
