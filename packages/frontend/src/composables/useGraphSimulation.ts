@@ -8,6 +8,7 @@ import { loadAllPositions, savePositions, loadCamera, saveCamera } from '../util
 import { nodeRadius, normalizedFlowForceWeights, positionCentroid, surfaceMovementShares } from '../utils/graph-forces'
 import { priorityColor, priorityLogMagnitude } from '../utils/priority-color'
 import { minimumGapPush, similarityPairs, type SemanticPair } from '../utils/autolayout'
+import { centreOf, loadSubspaceLayout, placeAround, saveSubspaceLayout } from '../utils/subspace-layout'
 
 // Constants
 const OUTER_MARGIN_FACTOR = 2
@@ -186,13 +187,25 @@ export function useGraphSimulation() {
     
     const SPACING_FACTOR = 64
     const newNodes: GraphNode[] = []
-    // A space that closes: its node appears where its ideas were (they are
-    // still in nodeMap during this pass). One that opens: its ideas appear
-    // where its node was (spawnNear).
-    const ideasCentreOf = (spaceId: string): vec2.T | undefined => {
-      const members = [...nodeMap.values()].filter(node => node.space === spaceId)
+    // A space that closes: its node appears at its ideas' centre of mass (they
+    // are still in nodeMap during this pass), and their layout is kept. One
+    // that opens: its ideas appear in their kept layout, their centre of mass
+    // where its node was.
+    const membersOf = (spaceId: string) => [...nodeMap.values()].filter(node => node.space === spaceId)
+    const closingCentre = (spaceId: string): vec2.T | undefined => {
+      const members = membersOf(spaceId)
       if (members.length === 0) return undefined
-      return [members.reduce((sum, m) => sum + m.renderPos[0], 0) / members.length, members.reduce((sum, m) => sum + m.renderPos[1], 0) / members.length]
+      saveSubspaceLayout(projectStore.projectPath, spaceId, members)
+      return centreOf(members.map(member => member.renderPos))
+    }
+    const opening = new Map<string, Map<string, vec2.T>>()
+    const openingPosition = (spaceId: string, id: string): vec2.T | undefined => {
+      if (!opening.has(spaceId)) {
+        const node = nodeMap.get(spaceId)
+        const ids = node ? rawNodes.filter(raw => raw.space === spaceId && !nodeMap.has(raw.id)).map(raw => raw.id) : []
+        opening.set(spaceId, node ? placeAround(node.renderPos, ids, loadSubspaceLayout(projectStore.projectPath, spaceId)) : new Map())
+      }
+      return opening.get(spaceId)!.get(id)
     }
 
     rawNodes.forEach(raw => {
@@ -210,8 +223,9 @@ export function useGraphSimulation() {
 
       if (!existing) {
         const loaded = loadedPositions.get(raw.id)
-        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : raw.isRepo ? ideasCentreOf(raw.id) : undefined
-        const pos: vec2.T = loaded ? [loaded.x, loaded.y] : [(near?.[0] ?? 0) + Math.random() * 100 - 50, (near?.[1] ?? 0) + Math.random() * 100 - 50]
+        const near = raw.spawnNear ? nodeMap.get(raw.spawnNear)?.pos : undefined
+        const pos: vec2.T = (raw.space ? openingPosition(raw.space, raw.id) : raw.isRepo ? closingCentre(raw.id) : undefined)
+          ?? (loaded ? [loaded.x, loaded.y] : [(near?.[0] ?? 0) + Math.random() * 100 - 50, (near?.[1] ?? 0) + Math.random() * 100 - 50])
         existing = {
           id: raw.id,
           text: raw.text,
@@ -723,6 +737,12 @@ export function useGraphSimulation() {
   watch(() => graphUIStore.graphColorMode, refreshGraphData)
   watch(() => graphUIStore.phaseFilter, refreshGraphData)
 
+  const saveOpenSpaceLayouts = () => {
+    const bySpace = new Map<string, GraphNode[]>()
+    for (const node of nodes.value) if (node.space) bySpace.set(node.space, [...bySpace.get(node.space) ?? [], node])
+    for (const [spaceId, members] of bySpace) saveSubspaceLayout(projectPath, spaceId, members)
+  }
+
   const init = async () => {
     mapStore.setNodeGetter((id) => nodeMap.get(id))
 
@@ -771,6 +791,7 @@ export function useGraphSimulation() {
     saveIntervalId = setInterval(async () => {
         if (nodes.value.length > 0) {
             const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
+            saveOpenSpaceLayouts()
             await savePositions(toSave)
             await saveCamera(projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
         }
@@ -784,6 +805,7 @@ export function useGraphSimulation() {
     // Save state on exit to ensure persistence
     if (nodes.value.length > 0) {
         const toSave = nodes.value.map(n => ({ id: n.id, x: n.pos[0], y: n.pos[1] }))
+        saveOpenSpaceLayouts()
         savePositions(toSave)
         saveCamera(projectPath, { x: mapStore.offset[0], y: mapStore.offset[1] }, mapStore.scale)
     }

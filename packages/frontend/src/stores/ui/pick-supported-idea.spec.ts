@@ -3,7 +3,7 @@ import { createTestingPinia } from '@pinia/testing'
 import { setActivePinia } from 'pinia'
 import { pickSupportedIdea } from './idea-creation'
 import { useUIModalStore } from './modal-store'
-import { useDataStore } from '../data'
+import { useDataStore, type IdeaCreationParams } from '../data'
 import { trpc } from '../../trpc'
 
 vi.mock('../../trpc', () => ({
@@ -34,7 +34,7 @@ describe('pickSupportedIdea', () => {
   })
 
   const createNew = (query: string) => pick({ type: 'option', data: { id: 'create-parent', label: '', createFromQuery: true, query } })
-  const saveDraft = (text: string) => modalStore.openIdeaDraft.mock.lastCall![0].save({ text })
+  const saveDraft = (text: string) => vi.mocked(modalStore.openIdeaDraft).mock.lastCall![0].save({ text } as IdeaCreationParams)
   const lastTitle = () => vi.mocked(modalStore.openIdeaSearch).mock.lastCall![3]!.title
 
   it('edits each new parent in the idea modal and creates nothing until an existing idea is picked', async () => {
@@ -74,7 +74,7 @@ describe('pickSupportedIdea', () => {
   it('cancelling the draft asks the same question again with the stack unchanged', async () => {
     pickSupportedIdea({ title: 'Select Supported Idea', placeholder: '' }, vi.fn())
     await createNew('Aim')
-    modalStore.openIdeaDraft.mock.lastCall![0].cancel()
+    vi.mocked(modalStore.openIdeaDraft).mock.lastCall![0].cancel()
     expect(lastTitle()).toBe('Select Supported Idea')
     await pick({ type: 'option', data: { id: 'skip-parent', label: '' } })
     expect(dataStore.createFloatingIdea).not.toHaveBeenCalled()
