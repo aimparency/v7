@@ -292,6 +292,13 @@ export const killLoopWorker = async (rawProjectPath: string, instanceId: string)
   activeLoopWorkers.delete(key);
 };
 
+/** Stops every loop worker this backend runs on the project: its space is going (graphs/deletion.ts). */
+export const stopLoopWorkersOf = async (rawProjectPath: string) => {
+  const prefix = loopWorkerKey(rawProjectPath, '');
+  const keys = [...activeLoopWorkers.keys()].filter(key => key.startsWith(prefix));
+  for (const key of keys) await killLoopWorker(rawProjectPath, key.slice(prefix.length));
+};
+
 export const refreshLoopProcessStates = async (rawProjectPath: string) => {
   const projectPath = normalizeProjectPath(rawProjectPath);
   // Under the shared lock: a stale snapshot written back would drop what a

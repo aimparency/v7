@@ -11,7 +11,8 @@ import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from '../auth/accounts';
 import { pullFastForward } from '../git-follow';
-import { DELETED_DAYS, listGraphs, purgeDeletedGraphs } from './registry';
+import { DELETED_DAYS, listGraphs } from './registry';
+import { purgeDeletedGraphs } from './deletion';
 import { addRemote } from './remote-graph';
 import { graphGitEnv, isInternalAddress, remoteGitEnv } from './remote-git';
 

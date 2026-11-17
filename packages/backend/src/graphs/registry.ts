@@ -208,8 +208,23 @@ export async function setGraphSlug(slug: string, next: string): Promise<Graph> {
   });
 }
 
+// What removing a graph deletes depends on where it came from: a graph created
+// here is its repository, so the repository goes; of a remote graph only the
+// clone here goes, never the remote; a checkout is the operator's repository
+// and stays where it is: only the server's entry and its guests' notes go.
+const OWN_DIRECTORIES: Record<Graph['kind'], string | null> = { created: 'graphs', remote: 'remotes', checkout: null };
+
 async function removeFiles(graph: Graph) {
-  if (graph.kind !== 'checkout') await fs.remove(graph.path);
+  const own = OWN_DIRECTORIES[graph.kind];
+  if (own) {
+    // Only ever a directory the server made itself, whatever graphs.json says.
+    const parent = path.join(serverDir(), own);
+    const relative = path.relative(parent, path.resolve(graph.path));
+    if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
+      throw new GraphError(`"${graph.slug}" points outside ${parent}: its directory is left alone.`);
+    }
+    await fs.remove(graph.path);
+  }
   await fs.remove(path.join(serverDir(), 'guest', graph.slug));
 }
 
@@ -242,16 +257,6 @@ export async function restoreGraph(slug: string): Promise<Graph> {
     if (!graph) throw new GraphError(`No deleted space "${slug}" on this server.`);
     const { deletedAt: _deletedAt, ...restored } = graph;
     return { graphs: graphs.map(candidate => candidate === graph ? restored : candidate), result: restored };
-  });
-}
-
-/** Removes for good the graphs deleted more than DELETED_DAYS ago; which. */
-export async function purgeDeletedGraphs(now = Date.now()): Promise<Graph[]> {
-  if (!listDeletedGraphs().some(graph => purgeDate(graph).getTime() <= now)) return [];
-  return change(async (graphs) => {
-    const expired = graphs.filter(graph => graph.deletedAt && Date.parse(graph.deletedAt) + DELETED_DAYS * DAY <= now);
-    for (const graph of expired) await removeFiles(graph);
-    return { graphs: graphs.filter(graph => !expired.includes(graph)), result: expired };
   });
 }
 

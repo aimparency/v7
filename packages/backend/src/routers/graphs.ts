@@ -6,10 +6,10 @@ import { t, delayedProcedure } from '../trpc.js';
 import { mayCreateGraphs, rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, findAccount } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
-import { addCheckout, createGraph, deleteGraph, graphBowmanPath, GraphError, listDeletedGraphs, listGraphs, purgeDate, purgeDeletedGraphs, restoreGraph, setGraphAccess, setGraphSlug, type Graph } from '../graphs/registry.js';
+import { addCheckout, createGraph, graphBowmanPath, GraphError, listDeletedGraphs, listGraphs, purgeDate, restoreGraph, setGraphAccess, setGraphSlug, type Graph } from '../graphs/registry.js';
+import { deleteSpace, purgeDeletedGraphs } from '../graphs/deletion.js';
 import { addRemote, selectRemoteKey } from '../graphs/remote-graph.js';
 import { privateKeyFile } from '../graphs/ssh-keys.js';
-import { clearIndices } from '../search.js';
 import { readJsonOrNull } from '../storage/json.js';
 
 // Graph errors are the caller's to read ("needs a name", "exists already").
@@ -42,11 +42,6 @@ function assertBelowGraphLimit(viewer: Viewer) {
   }
 }
 
-// Deleted graphs past their time go for good whenever the spaces are listed.
-async function purge() {
-  for (const graph of await purgeDeletedGraphs()) clearIndices(graphBowmanPath(graph));
-}
-
 const readMeta = async (graph: Graph) =>
   await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json')) as { name?: string; color?: string } | null;
 
@@ -55,7 +50,8 @@ const ownerName = (graph: Graph) => graph.owner ? accountNames([graph.owner])[0]
 // The graphs of this server: who may read is everyone, so the list is open.
 export const graphsRouter = t.router({
   list: delayedProcedure.query(async ({ ctx }) => {
-    await purge();
+    // Deleted graphs past their time go for good whenever the spaces are listed.
+    await purgeDeletedGraphs();
     return Promise.all(listGraphs().map(async (graph) => {
       // The name as it is on disk: no migration, no repair, just a label for the list.
       const meta = await readMeta(graph);
@@ -69,7 +65,8 @@ export const graphsRouter = t.router({
 
   // The asker's deleted spaces, restorable until they go for good.
   listDeleted: delayedProcedure.query(async ({ ctx }) => {
-    await purge();
+    // Deleted graphs past their time go for good whenever the spaces are listed.
+    await purgeDeletedGraphs();
     const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
     return Promise.all(listDeletedGraphs().filter(graph => rightOn(graph, viewer) === 'owner').map(async (graph) => {
       const meta = await readMeta(graph);
@@ -182,7 +179,7 @@ export const graphsRouter = t.router({
     .mutation(async ({ input }) => {
       const graph = listed(input.graph);
       // Restorable for DELETED_DAYS (graphs.restore), then removed for good.
-      await run(() => deleteGraph(graph.slug));
+      await run(() => deleteSpace(graph));
       return { success: true };
     })
 });

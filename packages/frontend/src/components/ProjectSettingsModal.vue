@@ -140,7 +140,13 @@ async function changeSlug() {
 }
 
 async function removeGraph() {
-  if (!window.confirm(`Delete the space "${name.value}"? For 30 days it can be restored from the start page; then a space created here is deleted with its history.`)) return
+  // What goes for good depends on where the space came from (backend graphs/registry.ts removeFiles).
+  const access = graphAccess.value
+  const afterwards = access?.kind === 'checkout' ? 'then it leaves this server\'s list; its repository stays where it is.'
+    : access?.kind === 'remote' ? `then this server's copy is deleted; the repository${access.remote ? ` at ${access.remote.url}` : ''} stays.`
+    : access?.kind === 'created' ? 'then it is deleted with its history.'
+    : 'then a space created on this server is deleted with its history; a repository added to it stays.'
+  if (!window.confirm(`Delete the space "${name.value}"? For 30 days its owner can restore it from the start page; ${afterwards}`)) return
   try {
     await trpc.graphs.remove.mutate({ graph: projectStore.projectPath })
     modalStore.closeSettingsModal()

@@ -8,7 +8,8 @@ import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from '../auth/accounts';
-import { DELETED_DAYS, listGraphs, purgeDeletedGraphs } from '../graphs/registry';
+import { DELETED_DAYS, listGraphs } from '../graphs/registry';
+import { purgeDeletedGraphs } from '../graphs/deletion';
 
 let root = '';
 const localServerDir = process.env.AIMPARENCY_SERVER_DIR;

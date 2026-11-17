@@ -8,7 +8,8 @@ import path from 'node:path';
 import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
-import { addCheckout, DELETED_DAYS, listGraphs, purgeDeletedGraphs } from '../graphs/registry';
+import { addCheckout, DELETED_DAYS, listGraphs } from '../graphs/registry';
+import { purgeDeletedGraphs } from '../graphs/deletion';
 import * as accounts from './accounts';
 
 let root = '';

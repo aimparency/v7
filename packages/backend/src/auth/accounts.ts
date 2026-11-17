@@ -431,6 +431,23 @@ export async function issueToken(name: string, label: string, graphs?: string[],
   return token;
 }
 
+/**
+ * A space that is gone for good: tokens limited to it no longer name it, so a
+ * later space under the same slug is not theirs. A token left with no space is revoked.
+ */
+export async function forgetGraphsInTokens(slugs: readonly string[]) {
+  const gone = new Set(slugs);
+  if (!load().tokens.some(token => token.graphs?.some(slug => gone.has(slug)))) return;
+  await change(accounts => ({
+    ...accounts,
+    tokens: accounts.tokens.flatMap((token) => {
+      if (!token.graphs?.some(slug => gone.has(slug))) return [token];
+      const graphs = token.graphs.filter(slug => !gone.has(slug));
+      return graphs.length ? [{ ...token, graphs }] : [];
+    })
+  }));
+}
+
 export async function revokeToken(token: string) {
   const hash = sha256(token);
   await change(accounts => ({ ...accounts, tokens: accounts.tokens.filter(entry => entry.hash !== hash) }));

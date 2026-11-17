@@ -7,7 +7,8 @@
 import path from 'node:path';
 import { serverConfig } from 'shared/server-config';
 import { readJsonOrNull } from '../storage/json.js';
-import { graphBowmanPath, listDeletedGraphs, listGraphs, removeGraph, setGraphAccess } from '../graphs/registry.js';
+import { graphBowmanPath, listDeletedGraphs, listGraphs, setGraphAccess } from '../graphs/registry.js';
+import { removeSpace } from '../graphs/deletion.js';
 import { listNotes, removeNotesWhere } from '../guest/notes.js';
 import { idleAutomaticAccounts, removeAccountById } from './accounts.js';
 
@@ -26,7 +27,7 @@ export async function discardAccount(id: string): Promise<void> {
   const repoIds = new Set((await Promise.all(owned.map(async graph =>
     ((await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json'))) as { repoId?: string } | null)?.repoId)))
     .filter((repoId): repoId is string => typeof repoId === 'string'));
-  for (const graph of owned) await removeGraph(graph.slug);
+  for (const graph of owned) await removeSpace(graph);
   for (const graph of listGraphs()) {
     await removeNotesWhere(graph, note => note.author === id || (note.space !== undefined && repoIds.has(note.space.repoId)));
     if (graph.writers.includes(id) || graph.noteWriters?.includes(id)) {

@@ -3,9 +3,20 @@ import { onChange } from './change-events.js';
 import { saveIdeaValues } from './db.js';
 import { listIdeas } from './storage/ideas.js';
 import { readProjectMeta } from './storage/project.js';
+import { normalizeProjectPath } from './project-path.js';
 
 // Recalculation Queue
 const recalculateTimers = new Map<string, NodeJS.Timeout>();
+
+/** Drops a queued recalculation: its space is going (graphs/deletion.ts). */
+export function cancelRecalculation(rawProjectPath: string) {
+  const projectPath = normalizeProjectPath(rawProjectPath);
+  for (const [key, timer] of recalculateTimers) {
+    if (normalizeProjectPath(key) !== projectPath) continue;
+    clearTimeout(timer);
+    recalculateTimers.delete(key);
+  }
+}
 
 function triggerRecalculation(projectPath: string) {
   if (recalculateTimers.has(projectPath)) {
