@@ -216,15 +216,15 @@ async function main() {
   // Servers have names: each has its own directory, and its port is in its server.json.
   const dataHome = path.join(scenarioServerDir, 'data');
   const named = createScenarioEnv({ AIMPARENCY_SERVER_DIR: '', XDG_DATA_HOME: dataHome });
-  await fs.mkdir(path.join(dataHome, 'aimparency-hub'), { recursive: true });
-  await fs.writeFile(path.join(dataHome, 'aimparency-hub', 'server.json'), JSON.stringify({ login: 'accounts', port: 4420, host: '127.0.0.2' }));
-  await fs.writeFile(path.join(dataHome, 'aimparency-hub', 'accounts.json'), JSON.stringify({ accounts: [{ id: 'a', name: 'admin', serverAdmin: true }], tokens: [] }));
+  await fs.mkdir(path.join(dataHome, 'aimparency', 'hub'), { recursive: true });
+  await fs.writeFile(path.join(dataHome, 'aimparency', 'hub', 'server.json'), JSON.stringify({ login: 'accounts', port: 4420, host: '127.0.0.2' }));
+  await fs.writeFile(path.join(dataHome, 'aimparency', 'hub', 'accounts.json'), JSON.stringify({ accounts: [{ id: 'a', name: 'admin', serverAdmin: true }], tokens: [] }));
   const hub = await runNodeScript(['scripts/run-local-stack.mjs', 'start', '--server', 'hub', '--no-build', '--dry-run'], named);
-  assert(hub.code === 0 && /server "hub" with accounts .*aimparency-hub\) on http:\/\/127\.0\.0\.2:4420/.test(hub.stdout), `the server "hub" did not use its own directory, port and host:\n${hub.stdout}${hub.stderr}`);
+  assert(hub.code === 0 && /server "hub" with accounts .*aimparency\/hub\) on http:\/\/127\.0\.0\.2:4420/.test(hub.stdout), `the server "hub" did not use its own directory, port and host:\n${hub.stdout}${hub.stderr}`);
 
   // Without a name it is the server "local": the stack of the person at this machine, next to the other.
   const local = await launch('local-next-to-hub', 'dev', named);
-  assert(local.code === 0 && /server "local" .*aimparency-local\)/.test(local.stdout) && /FRNT/.test(local.stdout), 'dev did not start the local server');
+  assert(local.code === 0 && /server "local" .*aimparency\/local\)/.test(local.stdout) && /FRNT/.test(local.stdout), 'dev did not start the local server');
   const badName = await runNodeScript(['scripts/run-local-stack.mjs', 'start', '--server', '../x', '--dry-run'], named);
   assert(badName.code === 1, 'a server name that leaves the data directory was accepted');
 

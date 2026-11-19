@@ -2,7 +2,8 @@
 // git repository with a .bowman; the list says where it is, who owns it and who
 // else may write it. Everyone may read every graph.
 //
-//   created   made on this server by an account: <server dir>/graphs/<slug>
+//   created   made on this server by an account, or spun off into the spaces
+//             directory: <spaces dir>/<slug> (server.json spacesDir)
 //   remote    added from a Git URL by an account: its .bowman cloned into
 //             <server dir>/remotes/<slug>. Read-only until its owner selects
 //             an SSH key for it; then it is committed here and pushed back.
@@ -20,7 +21,7 @@ import fs from 'fs-extra';
 import path from 'node:path';
 import { promisify } from 'node:util';
 import { gitRepositoryLocation, isGraphSlug, toBowmanPath, toProjectRoot } from 'shared';
-import { forgetServerFile, readServerFile, serverDir } from 'shared/server-config';
+import { forgetServerFile, readServerFile, serverDir, spacesDir } from 'shared/server-config';
 import { commitPaths, readWorkingTreeStatus } from '../git-working-tree.js';
 import { withFileLock, writeJsonAtomic } from '../storage/json.js';
 import { updateProjectMeta } from '../storage/project.js';
@@ -113,6 +114,36 @@ function freeSlug(name: string, graphs: Graph[]): string {
   }
 }
 
+// The graph starts as a commit, so its owner's first look shows nothing left to commit.
+async function commitStart(directory: string, name: string) {
+  const status = await readWorkingTreeStatus(directory);
+  if (status.isRepository && status.changes.length) {
+    await commitPaths(directory, status.changes.map(change => change.path), `Start the graph "${name}"`);
+  }
+}
+
+/**
+ * A fresh spin-off at this repository root joins the server's spaces. In the
+ * spaces directory it is a space of the server, in a repository of its own;
+ * elsewhere a checkout, its repository left as it is.
+ */
+export async function addSpinOff(root: string, name: string): Promise<Graph> {
+  const created = path.dirname(root) === spacesDir();
+  if (created && !(await readWorkingTreeStatus(root)).isRepository) {
+    await execFileAsync('git', ['init', '--quiet', root]);
+    await commitStart(root, name);
+  }
+  return change(async (graphs) => {
+    const listed = graphs.find(graph => graph.path === root && !graph.deletedAt);
+    if (listed) return { graphs, result: listed };
+    const graph: Graph = {
+      slug: freeSlug(path.basename(root), graphs), kind: created ? 'created' : 'checkout',
+      path: root, owner: null, writers: [], createdAt: new Date().toISOString()
+    };
+    return { graphs: [...graphs, graph], result: graph };
+  });
+}
+
 /** A new, empty graph in a repository of its own on this server. */
 export async function createGraph(name: string, owner: string | null): Promise<Graph> {
   const trimmed = name.trim();
@@ -120,15 +151,11 @@ export async function createGraph(name: string, owner: string | null): Promise<G
   if (trimmed.length > 100) throw new GraphError('A name has at most 100 characters.');
   return change(async (graphs) => {
     const slug = freeSlug(trimmed, graphs);
-    const directory = path.join(serverDir(), 'graphs', slug);
+    const directory = path.join(spacesDir(), slug);
     await fs.ensureDir(directory);
     await execFileAsync('git', ['init', '--quiet', directory]);
     await updateProjectMeta(directory, meta => ({ ...meta, name: trimmed }));
-    // The graph starts as a commit, so its owner's first look shows nothing left to commit.
-    const status = await readWorkingTreeStatus(directory);
-    if (status.isRepository && status.changes.length) {
-      await commitPaths(directory, status.changes.map(change => change.path), `Start the graph "${trimmed}"`);
-    }
+    await commitStart(directory, trimmed);
     const graph: Graph = { slug, kind: 'created', path: directory, owner, writers: [], createdAt: new Date().toISOString() };
     return { graphs: [...graphs, graph], result: graph };
   });
@@ -212,13 +239,13 @@ export async function setGraphSlug(slug: string, next: string): Promise<Graph> {
 // here is its repository, so the repository goes; of a remote graph only the
 // clone here goes, never the remote; a checkout is the operator's repository
 // and stays where it is: only the server's entry and its guests' notes go.
-const OWN_DIRECTORIES: Record<Graph['kind'], string | null> = { created: 'graphs', remote: 'remotes', checkout: null };
+const ownDirectory = (kind: Graph['kind']): string | null =>
+  kind === 'created' ? spacesDir() : kind === 'remote' ? path.join(serverDir(), 'remotes') : null;
 
 async function removeFiles(graph: Graph) {
-  const own = OWN_DIRECTORIES[graph.kind];
-  if (own) {
-    // Only ever a directory the server made itself, whatever graphs.json says.
-    const parent = path.join(serverDir(), own);
+  // Only ever a directory the server made itself, whatever graphs.json says.
+  const parent = ownDirectory(graph.kind);
+  if (parent) {
     const relative = path.relative(parent, path.resolve(graph.path));
     if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
       throw new GraphError(`"${graph.slug}" points outside ${parent}: its directory is left alone.`);

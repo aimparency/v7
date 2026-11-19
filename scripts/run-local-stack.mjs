@@ -1,12 +1,12 @@
 import fs from 'node:fs/promises';
 import { existsSync, readFileSync } from 'node:fs';
 import net from 'node:net';
-import os from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { execFileSync, spawn } from 'node:child_process';
 import concurrently from 'concurrently';
 import { ask, askNewPassword, askYesNo, closeQuestions } from './ask.mjs';
+import { serverDirectory } from '../packages/shared/src/server-directory.mjs';
 
 // One launcher for the local stack. Dev runs every server from TypeScript source
 // through tsx (no watchers, no build step); start builds bundles and runs those.
@@ -15,7 +15,7 @@ import { ask, askNewPassword, askYesNo, closeQuestions } from './ask.mjs';
 //
 //   <repo ...>  print a link that opens that project (a git URL opens read-only)
 //   --server <name>  which server of this machine (default: local); its
-//               directory is ~/.local/share/aimparency-<name>
+//               directory is ~/.local/share/aimparency/<name>
 //   --full      also the broker client, MCP over SSE and the voice bridge
 //   --host      dev: bind to LAN_BIND_HOST (or the tailscale IP) and serve MCP over SSE
 //   --delay     DEV_DELAY=true: the backend slows responses (frontend e2e tests)
@@ -84,8 +84,7 @@ const positional = args.filter((arg) => !arg.startsWith('--'));
 
 // The server directory (see packages/shared/src/server-config.ts): settings,
 // accounts, the list of graphs. Read here as plain JSON; the backend validates.
-const serverDir = () => path.resolve(process.env.AIMPARENCY_SERVER_DIR
-  || path.join(process.env.XDG_DATA_HOME || path.join(os.homedir(), '.local', 'share'), `aimparency-${serverName}`));
+const serverDir = serverDirectory;
 const serverSettingsFile = () => path.join(serverDir(), 'server.json');
 
 function readJson(file, fallback) {

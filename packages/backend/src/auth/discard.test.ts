@@ -56,7 +56,7 @@ test('discarding a browser-key account removes its spaces, notes, offers, rights
 
   await caller.auth.discardOwnAccount();
   assert.deepEqual(listGraphs().map(graph => graph.slug), [hub]);
-  assert.equal(await fs.pathExists(path.join(root, 'graphs', kitchen)), false);
+  assert.equal(await fs.pathExists(path.join(root, 'spaces', kitchen)), false);
   assert.deepEqual((await ana.notes.list({ graph: hub, ideaId })).notes.map(note => note.text), ['Ana stays']);
   assert.deepEqual(listGraphs()[0]!.writers, []);
   assert.equal(accounts.findAccount(account.name), null);

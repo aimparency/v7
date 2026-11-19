@@ -149,7 +149,7 @@ test('an account creates a graph in one step and owns it', async () => {
   const { slug } = await ada.graphs.create({ name: 'Hack the Hub!' });
   assert.equal(slug, 'hack-the-hub');
   assert.equal((await ada.graphs.create({ name: 'Hack the hub' })).slug, 'hack-the-hub-2');
-  const directory = path.join(root, 'server', 'graphs', slug);
+  const directory = path.join(root, 'server', 'spaces', slug);
   assert.ok(await fs.pathExists(path.join(directory, '.git')), 'a repository of its own');
   assert.deepEqual((await as().graphs.list()).map(({ slug, name, owner, kind }) => ({ slug, name, owner, kind })), [
     { slug: 'hack-the-hub', name: 'Hack the Hub!', owner: 'ada', kind: 'created' },

@@ -31,14 +31,11 @@ const slugify = (text: string): string =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 40) || 'spin-off'
 
-// Suggest a sibling directory next to the current project, named after the first root idea.
-const defaultTargetPath = (): string => {
-  const projectPath = projectStore.projectPath
-  const projectRoot = projectPath.replace(/\/\.bowman\/?$/, '')
-  const parent = projectRoot.replace(/\/[^/]*\/?$/, '') || '~'
+// Suggest a directory in the server's spaces, named after the first root idea.
+const defaultTargetPath = async (): Promise<string> => {
   const firstRoot = rootIds.value[0]
   const slug = firstRoot ? slugify(dataStore.ideas[firstRoot]?.text ?? 'spin-off') : 'spin-off'
-  return `${parent}/${slug}`
+  return `${await trpc.spinOff.spacesDirectory.query()}/${slug}`
 }
 
 let checkTimer: ReturnType<typeof setTimeout> | undefined
@@ -133,7 +130,7 @@ const pickCandidate = (candidatePath: string) => {
 
 watch(() => modalStore.showSpinOffApplyModal, async (show) => {
   if (show) {
-    pathInput.value = defaultTargetPath()
+    pathInput.value = await defaultTargetPath().catch(() => '')
     removeFromSource.value = true
     preserveInflow.value = true
     openInNewTab.value = true

@@ -10,8 +10,14 @@ import { deleteIdeaCompletely, listIdeas, writeIdea } from '../storage/ideas.js'
 import { ensureProjectStructure, readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { cleanupCommitments } from '../storage/commitments.js';
 import { graphAddress } from '../graphs/address.js';
+import { addSpinOff } from '../graphs/registry.js';
+import { spacesDir } from 'shared/server-config';
+import { toProjectRoot } from 'shared';
 
 export const spinOffRouter = t.router({
+  // Where a spin-off goes unless another path is given: the server's spaces.
+  spacesDirectory: delayedProcedure.query(() => spacesDir()),
+
   // Tab-completion for the target path chooser: given a partial path (supporting
   // `~/` and absolute `/`), return matching child directory names and whether the
   // resolved path already holds a .bowman graph (so the UI can warn).
@@ -91,10 +97,11 @@ export const spinOffRouter = t.router({
       // Write the branch. A fresh graph inherits source presentation metadata;
       // an existing graph remains authoritative for its own settings and phases.
       await ensureProjectStructure(target);
+      const name = path.basename(path.dirname(target)) || 'spin-off';
       if (!integrateIntoExisting) {
         const sourceMeta = await readProjectMeta(source);
         await writeProjectMeta(target, {
-          name: path.basename(path.dirname(target)) || 'spin-off',
+          name,
           color: sourceMeta.color,
           statuses: sourceMeta.statuses,
           rootPhaseIds: [],
@@ -104,6 +111,7 @@ export const spinOffRouter = t.router({
         await writeIdea(target, idea);
         addIdeaToIndex(target, idea);
       }
+      if (!integrateIntoExisting) await addSpinOff(toProjectRoot(target), name);
 
       // Prune the source (optional): rewrite kept ideas that lost edges, then
       // delete the exclusive ideas, then clean up dangling phase commitments.

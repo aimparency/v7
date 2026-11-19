@@ -141,10 +141,11 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
 `/mcp/sse`. A graph has the address `https://<host>/spaces/<slug>`.
 
 - **The server directory.** What the server owns lives in one directory
-  (`~/.local/share/aimparency-local`, or `AIMPARENCY_SERVER_DIR`), never in a
+  (`~/.local/share/aimparency/local`, or `AIMPARENCY_SERVER_DIR`), never in a
   graph's `.bowman`: `server.json` (the settings), `accounts.json`, `graphs.json`
-  (the list of graphs with owner and writers), `graphs/<slug>/`, the git
-  repositories of graphs created on the server, `remotes/<slug>/`, the clones
+  (the list of graphs with owner and writers), `spaces/<slug>/`, the git
+  repositories of graphs created on the server (and, by default, of
+  spin-offs; `"spacesDir"` in `server.json` puts them elsewhere), `remotes/<slug>/`, the clones
   of graphs added from a Git URL, and `keys/`, the accounts' SSH keys. `server.json` is edited as a
   file and re-read when it changes:
 
@@ -157,7 +158,7 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   accounts marked "creates graphs" create graphs.
 - **Several servers on one machine.** A server has a name; `local` is the one
   every command works on. `--server <name>` selects another one, in
-  `~/.local/share/aimparency-<name>`: `pnpm start --server hub` runs it,
+  `~/.local/share/aimparency/<name>`: `pnpm start --server hub` runs it,
   `pnpm accounts --server hub list` and `pnpm graphs --server hub add <path>`
   manage it. Give each a different `"port"` and they run side by side, for
   example your own local server and one you prepare for other people.
