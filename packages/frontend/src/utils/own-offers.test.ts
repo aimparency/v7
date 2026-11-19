@@ -18,9 +18,10 @@ const ideas = () => [
 ]
 
 describe('withOwnOffers', () => {
-  it('gives the proposer\'s offered space 1 / (sibling weight + 1) of the idea\'s value', () => {
+  it('gives the proposer\'s offered space the average weight of its siblings', () => {
     const { values } = calculateIdeaValues(withOwnOffers(ideas(), [{ ideaId: 'goal', mine: true, space: { repoId: REPO } }]))
-    expect(values.get(REPO)).toBeCloseTo(1 / 4)
+    // siblings 2 and 1: the offer weighs 1.5 of 4.5
+    expect(values.get(REPO)).toBeCloseTo(1.5 / 4.5)
   })
 
   it('leaves others\' offers and accepted spaces as they are', () => {
