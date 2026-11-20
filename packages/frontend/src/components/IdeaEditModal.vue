@@ -4,6 +4,7 @@ import IdeaNotes from './IdeaNotes.vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
+import { useToastStore } from '../stores/toast'
 import { trpc } from '../trpc'
 import FormModalShell from './FormModalShell.vue'
 import IdeaHistoryModal from './IdeaHistoryModal.vue'
@@ -27,6 +28,7 @@ const emit = defineEmits<{
 const dataStore = useDataStore()
 const projectStore = useProjectStore()
 const modalStore = useUIModalStore()
+const toastStore = useToastStore()
 
 const idea = computed(() => {
   if (!props.ideaId) return null
@@ -133,6 +135,9 @@ const confirmRemoveParentId = ref<string | null>(null)
 const confirmRemovePhaseId = ref<string | null>(null)
 const confirmRemoveRepoId = ref<string | null>(null)
 const originalCommittedPhaseIds = ref<string[]>([])
+// Each connection's weight as it was persisted (it lives on the parent's
+// supportingConnections), to save only the ones the user changed.
+const originalWeights = ref(new Map<string, number>())
 type CommitEvidence = { hash: string, shortHash: string, subject: string, author: string, authoredAt: string }
 const commitEvidence = ref<CommitEvidence[]>([])
 const commitEvidenceLoading = ref(false)
@@ -330,6 +335,7 @@ watch(() => props.show, async (show) => {
     ideaColor.value = isMixed('color') ? '' : (idea.value.color ?? '')
 
     supportedIdeasList.value = []
+    originalWeights.value = new Map()
     committedPhasesList.value = []
     originalCommittedPhaseIds.value = [...(idea.value.committedIn || [])]
 
@@ -347,11 +353,13 @@ watch(() => props.show, async (show) => {
           graph: projectStore.projectPath,
           ids: idea.value.supportedIdeas
         })
+        const ideaId = idea.value.id
         supportedIdeasList.value = parents.map((parent) => ({
           id: parent.id,
           text: parent.text,
-          weight: 1
+          weight: parent.supportingConnections?.find((connection) => connection.ideaId === ideaId)?.weight ?? 1
         }))
+        originalWeights.value = new Map(supportedIdeasList.value.map((entry) => [entry.id, entry.weight]))
       } catch (error) {
         console.error('Failed to load supported ideas', error)
       }
@@ -489,6 +497,21 @@ const handleSave = async () => {
       settledIdeas.push({ ideaId: target.id, parentIds: updates.supportedIdeas ?? target.supportedIdeas ?? [] })
     }
     await dataStore.updateIdea(projectStore.projectPath, target.id, updates)
+  }
+
+  // Weights: updateIdea above only makes or drops the connections (new ones
+  // at weight 1); a weight is saved on the parent's connection.
+  if (!isBulk.value) {
+    const changed = supportedIdeasList.value.filter((entry) => entry.weight !== (originalWeights.value.get(entry.id) ?? 1))
+    const missing = changed.map((entry) => entry.id).filter((id) => !dataStore.ideas[id])
+    if (missing.length > 0) await dataStore.loadIdeas(projectStore.projectPath, missing)
+    for (const entry of changed) {
+      try {
+        await dataStore.updateConnectionDetails(projectStore.projectPath, entry.id, idea.value.id, { weight: entry.weight })
+      } catch (error) {
+        toastStore.error('Saving the weight failed', error)
+      }
+    }
   }
 
   if (isBulk.value) {

@@ -46,7 +46,7 @@ export const useProjectStore = defineStore('project', {
     projectPath: getInitialProjectPath(),
     connectionStatus: 'connecting' as 'connecting' | 'connected' | 'no connection',
     projectHistory: JSON.parse(localStorage.getItem('aimparency-project-history') || '[]') as ProjectHistoryEntry[],
-    currentView: 'columns' as 'columns' | 'graph' | 'voice',
+    currentView: 'graph' as 'columns' | 'graph' | 'voice',
     showWatchdog: localTools() && localStorage.getItem('aimparency-show-watchdog') === 'true',
     watchdogMaximized: false,
     // Never both: the watchdog wins when both were left open.

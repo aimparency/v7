@@ -487,6 +487,7 @@ describe('list store phase selection', () => {
     const uiStore = useUIStore()
     dataStore.ideas['root'] = { id: 'root', text: 'Root', supportingConnections: [{ ideaId: 'child', weight: 1 }] } as any
     dataStore.ideas['child'] = { id: 'child', text: 'Child', supportingConnections: [] } as any
+    useProjectStore().currentView = 'columns'
     dataStore.floatingIdeasIds = ['root']
     uiStore.activeColumn = -1
     uiStore.selectTopIdea(undefined, 'root')

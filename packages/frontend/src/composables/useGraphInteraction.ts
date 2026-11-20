@@ -77,6 +77,11 @@ export function useGraphInteraction(
         }
     }
 
+    // Desktop Firefox (macOS, Linux) has no TouchEvent at all: `instanceof
+    // TouchEvent` throws there, and a press on an idea fell through to panning.
+    const isTouchEvent = (event: Event): event is TouchEvent =>
+        typeof TouchEvent !== 'undefined' && event instanceof TouchEvent
+
     const getLocalPos = (clientX: number, clientY: number) => {
         if (!svgRef.value) return vec2.fromValues(0, 0)
         const rect = svgRef.value.getBoundingClientRect()
@@ -522,7 +527,7 @@ export function useGraphInteraction(
     const onNodeDown = (e: MouseEvent | TouchEvent, nodeCopy: GraphNode) => {
         const node = nodeMap.get(nodeCopy.id)
         if (!node) return
-        if (e instanceof TouchEvent) {
+        if (isTouchEvent(e)) {
             if (nodeLongPressTimer !== undefined) window.clearTimeout(nodeLongPressTimer)
             longPressedNodeId = null
             nodeLongPressTimer = window.setTimeout(() => {
@@ -793,13 +798,13 @@ export function useGraphInteraction(
         if (event instanceof WheelEvent) onWheel(event)
     }
     const onTouchStartListener: EventListener = (event) => {
-        if (event instanceof TouchEvent) onTouchStart(event)
+        if (isTouchEvent(event)) onTouchStart(event)
     }
     const onTouchMoveListener: EventListener = (event) => {
-        if (event instanceof TouchEvent) onTouchMove(event)
+        if (isTouchEvent(event)) onTouchMove(event)
     }
     const onTouchEndListener: EventListener = (event) => {
-        if (event instanceof TouchEvent) onTouchEnd(event)
+        if (isTouchEvent(event)) onTouchEnd(event)
     }
 
     const initListeners = () => {
