@@ -24,6 +24,8 @@ type Account = {
   serverAdmin?: boolean;
   canCreateGraphs?: boolean;
   createdAt: string;
+  /** Its person deleted it: logged out everywhere; logging in again within ACCOUNT_DELETION_DAYS brings it back, then it is discarded. */
+  deletedAt?: string;
   /** The day the account last did anything (a request, a login): kept to the day. */
   lastActiveAt?: string;
 };
@@ -126,8 +128,52 @@ function assertPassword(password: string) {
   if (password.length < 8) throw new AccountError('A password needs at least 8 characters.');
 }
 
-export function listAccounts(): AccountView[] {
-  return load().accounts.map(view);
+export function listAccounts(): (AccountView & { deletedAt?: string })[] {
+  return load().accounts.map(account => ({ ...view(account), ...(account.deletedAt ? { deletedAt: account.deletedAt } : {}) }));
+}
+
+export const ACCOUNT_DELETION_DAYS = 30;
+const DAY_MS = 24 * 60 * 60 * 1000;
+
+/**
+ * Its person deletes the account: every login of it ends (browsers, agents,
+ * websites), and it is discarded ACCOUNT_DELETION_DAYS later unless they log
+ * in again before. Not for server admins: another admin removes them, or demotes them first.
+ */
+export async function scheduleDeletion(id: string, now = Date.now()): Promise<{ purgeAt: string }> {
+  const deletedAt = new Date(now).toISOString();
+  await change((accounts) => {
+    const account = accounts.accounts.find(candidate => candidate.id === id);
+    if (!account) throw new AccountError('No such account.');
+    if (account.serverAdmin) throw new AccountError('A server admin cannot delete their own account: another server admin removes it, or takes the admin right away first.');
+    return {
+      ...accounts,
+      accounts: accounts.accounts.map(candidate => candidate.id === id ? { ...candidate, deletedAt } : candidate),
+      tokens: accounts.tokens.filter(token => token.account !== id)
+    };
+  });
+  return { purgeAt: new Date(now + ACCOUNT_DELETION_DAYS * DAY_MS).toISOString() };
+}
+
+/** Logging in brings a deleted account back; whether it was deleted. */
+export async function cancelDeletion(name: string): Promise<boolean> {
+  if (!load().accounts.find(candidate => candidate.name === name)?.deletedAt) return false;
+  await change(accounts => ({
+    ...accounts,
+    accounts: accounts.accounts.map(candidate => {
+      if (candidate.name !== name) return candidate;
+      const { deletedAt: _restored, ...kept } = candidate;
+      return kept;
+    })
+  }));
+  return true;
+}
+
+/** Accounts deleted longer than ACCOUNT_DELETION_DAYS ago: to be discarded. */
+export function expiredDeletedAccounts(now = Date.now()): string[] {
+  return load().accounts
+    .filter(account => account.deletedAt && Date.parse(account.deletedAt) + ACCOUNT_DELETION_DAYS * DAY_MS <= now)
+    .map(account => account.id);
 }
 
 /** The account of this name, or null. */

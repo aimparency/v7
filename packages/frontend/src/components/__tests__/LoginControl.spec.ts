@@ -10,6 +10,7 @@ const { auth, signLoginChallenge, forgetBrowserKey } = vi.hoisted(() => ({
   auth: {
     ownFootprint: { query: vi.fn() },
     discardOwnAccount: { mutate: vi.fn() },
+    deleteOwnAccount: { mutate: vi.fn() },
     me: { query: vi.fn() },
     login: { mutate: vi.fn() },
     signUp: { mutate: vi.fn() },
@@ -129,7 +130,25 @@ describe('LoginControl', () => {
     await wrapper.find('#permanent-form').trigger('submit')
     await flushPromises()
     expect(auth.makePermanent.mutate).toHaveBeenCalledWith({ name: 'Cleo', password: 'cleo password' })
-    expect(await menuItems(wrapper)).toEqual(['Connect an agent (MCP)', 'Password', 'Log out'])
+    expect(await menuItems(wrapper)).toEqual(['Connect an agent (MCP)', 'Password', 'Log out', 'Delete account'])
+  })
+
+  it('deletes an account with a login of its own once its name is typed; a server admin has no such entry', async () => {
+    const wrapper = await mountControl({ name: 'david', permanentLogin: true })
+    await menuItems(wrapper)
+    await wrapper.find('.menu-item.danger').trigger('click')
+    const submit = wrapper.find('button[form=delete-form]')
+    expect(submit.attributes('disabled')).toBeDefined()
+    await wrapper.find('#delete-form input').setValue('david')
+    auth.deleteOwnAccount.mutate.mockResolvedValue({ purgeAt: '2026-12-20T00:00:00.000Z', days: 30 })
+    auth.me.query.mockResolvedValue(me({ name: null }))
+    await wrapper.find('#delete-form').trigger('submit')
+    await flushPromises()
+    expect(auth.deleteOwnAccount.mutate).toHaveBeenCalled()
+    expect(useViewerStore().name).toBe(null)
+
+    const admin = await mountControl({ name: 'felix', serverAdmin: true, permanentLogin: true })
+    expect(await menuItems(admin)).not.toContain('Delete account')
   })
 
   it('discards an account that lives only in this browser instead of logging it out, saying what goes with it', async () => {

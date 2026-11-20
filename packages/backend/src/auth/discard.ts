@@ -10,7 +10,7 @@ import { readJsonOrNull } from '../storage/json.js';
 import { graphBowmanPath, listDeletedGraphs, listGraphs, setGraphAccess } from '../graphs/registry.js';
 import { removeSpace } from '../graphs/deletion.js';
 import { listNotes, removeNotesWhere } from '../guest/notes.js';
-import { idleAutomaticAccounts, removeAccountById } from './accounts.js';
+import { expiredDeletedAccounts, idleAutomaticAccounts, removeAccountById } from './accounts.js';
 
 /** What discarding the account would remove: the spaces it owns (by name) and its notes and offers. */
 export async function accountFootprint(id: string): Promise<{ spaces: string[]; notes: number; offers: number }> {
@@ -42,9 +42,12 @@ export async function discardAccount(id: string): Promise<void> {
   await removeAccountById(id);
 }
 
-/** Discards the automatic accounts unused for longer than the server allows; how many. */
+/**
+ * Discards the automatic accounts unused for longer than the server allows,
+ * and the accounts deleted by their people longer than ACCOUNT_DELETION_DAYS ago; how many.
+ */
 export async function discardIdleAccounts(now = Date.now()): Promise<number> {
-  const idle = idleAutomaticAccounts(serverConfig().limits.idleAutomaticAccountDays, now);
+  const idle = [...new Set([...idleAutomaticAccounts(serverConfig().limits.idleAutomaticAccountDays, now), ...expiredDeletedAccounts(now)])];
   for (const id of idle) {
     try {
       await discardAccount(id);

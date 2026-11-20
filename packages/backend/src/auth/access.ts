@@ -51,7 +51,7 @@ const OPEN_MUTATIONS = new Set([
   'mcpAuth.registerClient', 'mcpAuth.begin', 'mcpAuth.deny', 'mcpAuth.exchange'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.grantSite', 'auth.acceptInvitation', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'graphs.create', 'graphs.addRemote',
+  'auth.issueToken', 'auth.grantSite', 'auth.acceptInvitation', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'auth.deleteOwnAccount', 'graphs.create', 'graphs.addRemote',
   // Its handler asks for the owner: a deleted space is no `graph` the access check could resolve.
   'graphs.restore', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).

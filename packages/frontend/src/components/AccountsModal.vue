@@ -10,7 +10,7 @@ import AccountRights, { type Rights } from './AccountRights.vue'
 defineProps<{ me: string | null }>()
 const emit = defineEmits<{ close: [] }>()
 
-type Account = { name: string } & Rights
+type Account = { name: string; deletedAt?: string } & Rights
 
 const accounts = ref<Account[]>([])
 const name = ref('')
@@ -87,7 +87,7 @@ onMounted(() => run(loadInvitations))
   <FormModalShell show title="Accounts" width="min(90vw, 40rem)" @request-close="emit('close')">
     <div class="accounts stack">
       <div v-for="account in accounts" :key="account.name" class="row">
-        <span class="name">{{ account.name }}{{ account.name === me ? ' (you)' : '' }}</span>
+        <span class="name">{{ account.name }}{{ account.name === me ? ' (you)' : '' }}<span v-if="account.deletedAt" class="deleted" :title="`Deleted by its person on ${new Date(account.deletedAt).toLocaleDateString()}: logging in brings it back until then`"> · deleted, gone on {{ new Date(Date.parse(account.deletedAt) + 30 * 86_400_000).toLocaleDateString() }}</span></span>
         <AccountRights :rights="account" :who="account.name" :apply="setRights(account)" />
         <button class="btn-secondary" @click="resetPassword(account.name)">Password</button>
         <button class="btn-secondary" :disabled="account.name === me" @click="remove(account.name)">Remove</button>
@@ -130,6 +130,7 @@ onMounted(() => run(loadInvitations))
 </template>
 
 <style scoped>
+.deleted { color: #ff5555; font-size: 0.85em; }
 .accounts {
   .row .name {
     flex: 1 1 10rem;

@@ -18,7 +18,7 @@ import ServerSettingsModal from './ServerSettingsModal.vue'
 // The account corner on a server with accounts: anyone reads, accounts write
 // the graphs they own or were given.
 const viewer = useViewerStore()
-type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'server' | 'mcp' | 'discard'
+type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'server' | 'mcp' | 'discard' | 'delete'
 const dialog = ref<Dialog | null>(null)
 const name = ref('')
 const password = ref('')
@@ -145,7 +145,8 @@ const submit = async (action: () => Promise<void>) => {
 }
 
 const login = () => submit(async () => {
-  const { token } = await trpc.auth.login.mutate({ name: name.value, password: password.value })
+  const { token, restored } = await trpc.auth.login.mutate({ name: name.value, password: password.value })
+  if (restored) useToastStore().info('Welcome back: your account is not deleted any more.')
   await viewer.loginChanged(token)
 })
 
@@ -224,6 +225,16 @@ const discard = () => submit(async () => {
   await logOutElsewhereToo()
   await viewer.loginChanged(null)
 })
+// An account with a login of its own: logged out everywhere now, discarded
+// after some days unless its person logs in again before.
+const deleteAccount = () => submit(async () => {
+  if (name.value.trim() !== viewer.name) throw new Error(`Type "${viewer.name}" to delete it.`)
+  const { days } = await trpc.auth.deleteOwnAccount.mutate()
+  await logOutElsewhereToo()
+  await viewer.loginChanged(null)
+  useToastStore().info(`Your account is deleted. Log in within ${days} days to bring it back; after that it is gone for good.`)
+})
+
 const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`
 
 </script>
@@ -277,6 +288,12 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
         </template>
         <div class="menu-separator"></div>
         <button v-if="viewer.permanentLogin" class="menu-item" role="menuitem" @click="logout"><LogOut /> Log out</button>
+        <button
+          v-if="viewer.permanentLogin && !viewer.serverAdmin"
+          class="menu-item danger"
+          role="menuitem"
+          @click="open('delete')"
+        ><Trash2 /> Delete account</button>
         <button
           v-else
           class="menu-item"
@@ -362,6 +379,18 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
       </template>
     </FormModalShell>
 
+    <FormModalShell :show="dialog === 'delete'" title="Delete your account?" width="min(92vw, 30rem)" @request-close="dialog = null">
+      <form id="delete-form" class="stack" @submit.prevent="deleteAccount">
+        <p class="hint">You are logged out everywhere at once, also your connected assistants. For 30 days, logging in again brings the account back as it was. After that it is gone for good, together with the spaces it owns and its notes.</p>
+        <input v-model="name" :placeholder="`Type ${viewer.name} to confirm`" autocomplete="off" autofocus />
+        <p v-if="error" class="error">{{ error }}</p>
+      </form>
+      <template #footer>
+        <button class="btn-secondary" type="button" @click="dialog = null">Keep it</button>
+        <button class="btn-danger" form="delete-form" type="submit" :disabled="busy || name.trim() !== viewer.name">Delete account</button>
+      </template>
+    </FormModalShell>
+
     <FormModalShell :show="dialog === 'password'" title="Change password" width="min(92vw, 30rem)" @request-close="dialog = null">
       <form id="password-form" @submit.prevent="changePassword">
         <input v-model="current" type="password" placeholder="Current password" autocomplete="current-password" autofocus />
@@ -396,6 +425,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
   }
 
   .restarting { color: var(--text-muted); white-space: nowrap; }
+  .menu-item.danger { color: #ff5555; }
 
   .account-name {
     max-width: 12rem;

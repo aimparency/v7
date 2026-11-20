@@ -46,10 +46,12 @@ async function run<T>(action: () => Promise<T>): Promise<T> {
 
 // A fresh login for this account. Over a WebSocket the connection goes on as
 // that account from here; the browser keeps the token for its next connection.
-async function logIn(ctx: Context, name: string): Promise<{ token: string }> {
+// A deleted account that logs in again is back (restored: the UI says so).
+async function logIn(ctx: Context, name: string): Promise<{ token: string; restored: boolean }> {
+  const restored = await accounts.cancelDeletion(name);
   const token = await accounts.issueToken(name, 'browser');
   if (ctx.session) ctx.session.token = token;
-  return { token };
+  return { token, restored };
 }
 
 // An invitation to a space, taken: the account reads or writes it. Returns its slug.
@@ -172,6 +174,20 @@ export const authRouter = t.router({
     await run(() => discardAccount(viewer.id!));
     if (ctx.session) ctx.session.token = undefined;
     return { success: true };
+  }),
+
+  // A person deletes their account (one with a login of its own; an automatic
+  // one is discarded at once): logged out everywhere, and discarded after
+  // ACCOUNT_DELETION_DAYS unless they log in again before.
+  deleteOwnAccount: delayedProcedure.mutation(async ({ ctx }) => {
+    const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+    if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
+    if (accounts.isAutomaticAccount(viewer.id)) {
+      throw new TRPCError({ code: 'BAD_REQUEST', message: 'This account lives only in this browser: discard it instead.' });
+    }
+    const { purgeAt } = await run(() => accounts.scheduleDeletion(viewer.id!));
+    if (ctx.session) ctx.session.token = undefined;
+    return { purgeAt, days: accounts.ACCOUNT_DELETION_DAYS };
   }),
 
   // A person makes their own account: where sign-up is open, or with an invitation.
