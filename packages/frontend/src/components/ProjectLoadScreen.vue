@@ -1,8 +1,16 @@
 <script setup lang="ts">
-import { onMounted, onUnmounted } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useProjectLoadStore } from '../stores/project-load'
+import { useViewerStore } from '../stores/viewer'
+import { hasAccounts } from '../utils/runtime-config'
+import LoginControl from './LoginControl.vue'
 
 const projectLoad = useProjectLoadStore()
+const viewer = useViewerStore()
+// A space open to accounts only: a visitor logs in right here, and it opens.
+watch(() => viewer.name, (name) => {
+  if (name !== null && projectLoad.status === 'failed') projectLoad.retry()
+})
 
 // Nothing behind the screen reacts to keys. Stopped, not prevented, so Enter
 // still presses a focused button.
@@ -44,6 +52,7 @@ onUnmounted(() => window.removeEventListener('keydown', takeKeydown, { capture: 
     <template v-else>
       <h1>Could not open {{ projectLoad.targetName }}</h1>
       <p class="error">{{ projectLoad.error }}</p>
+      <LoginControl v-if="hasAccounts() && !viewer.name" />
       <div class="actions">
         <button @click="projectLoad.retry()">Retry</button>
         <button @click="projectLoad.cancel()">Back to spaces</button>

@@ -3,10 +3,10 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { serverConfig } from 'shared/server-config';
 import { t, delayedProcedure } from '../trpc.js';
-import { mayCreateGraphs, rightOn, viewerFor, type Viewer } from '../auth/access.js';
-import { accountNames, findAccount } from '../auth/accounts.js';
+import { mayCreateGraphs, mayRead, readSettingOf, rightOn, viewerFor, type Viewer } from '../auth/access.js';
+import { accountNames, createInvitation, findAccount, listInvitations, removeInvitation } from '../auth/accounts.js';
 import { resolveGraphAddress } from '../graphs/address.js';
-import { addCheckout, createGraph, graphBowmanPath, GraphError, listDeletedGraphs, listGraphs, purgeDate, restoreGraph, setGraphAccess, setGraphSlug, type Graph } from '../graphs/registry.js';
+import { addCheckout, createGraph, graphBowmanPath, GraphError, listDeletedGraphs, listGraphs, purgeDate, restoreGraph, setGraphAccess, setGraphSlug, slugsOf, type Graph } from '../graphs/registry.js';
 import { deleteSpace, purgeDeletedGraphs } from '../graphs/deletion.js';
 import { addRemote, selectRemoteKey } from '../graphs/remote-graph.js';
 import { privateKeyFile } from '../graphs/ssh-keys.js';
@@ -47,18 +47,19 @@ const readMeta = async (graph: Graph) =>
 
 const ownerName = (graph: Graph) => graph.owner ? accountNames([graph.owner])[0] ?? null : null;
 
-// The graphs of this server: who may read is everyone, so the list is open.
+// The graphs of this server: the list holds those the asker may read.
 export const graphsRouter = t.router({
   list: delayedProcedure.query(async ({ ctx }) => {
     // Deleted graphs past their time go for good whenever the spaces are listed.
     await purgeDeletedGraphs();
-    return Promise.all(listGraphs().map(async (graph) => {
+    const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+    return Promise.all(listGraphs().filter(graph => mayRead(graph, viewer)).map(async (graph) => {
       // The name as it is on disk: no migration, no repair, just a label for the list.
       const meta = await readMeta(graph);
       return {
         slug: graph.slug, kind: graph.kind, name: meta?.name ?? graph.slug, color: meta?.color ?? null, owner: ownerName(graph),
         // What the asker is on this graph: the UI offers their own graphs for an MCP client.
-        right: rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token))
+        right: rightOn(graph, viewer)
       };
     }));
   }),
@@ -108,14 +109,20 @@ export const graphsRouter = t.router({
     }),
 
   // A graph that lives in a repository elsewhere: its .bowman is cloned here.
-  // Any account may add one. It is read-only until its owner selects a key.
+  // Any account may add one. Without a key it is read-only until its owner
+  // selects one; with one of the caller's keys (a deploy key of the repository)
+  // a private repository is cloned, and one without a .bowman gets a new space.
   addRemote: delayedProcedure
-    .input(z.object({ url: z.string().min(1).max(500) }))
+    .input(z.object({ url: z.string().min(1).max(500), key: z.string().max(50).optional() }))
     .mutation(async ({ ctx, input }) => {
       const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
       assertBelowGraphLimit(viewer);
-      const graph = await run(() => addRemote(input.url, viewer.id));
-      return { slug: graph.slug };
+      if (input.key !== undefined && (viewer.id === null || !await privateKeyFile(viewer.id, input.key))) {
+        throw new TRPCError({ code: 'BAD_REQUEST', message: 'Select one of your own keys.' });
+      }
+      const key = input.key !== undefined ? { account: viewer.id!, id: input.key } : undefined;
+      const graph = await run(() => addRemote(input.url, viewer.id, { key }));
+      return { slug: graph.slug, started: graph.started === true, pushError: graph.pushError ?? null };
     }),
 
   // The key a remote graph is pushed with: one of the caller's own, or none.
@@ -140,6 +147,7 @@ export const graphsRouter = t.router({
       return graph && {
         slug: graph.slug, kind: graph.kind, owner: ownerName(graph), writers: accountNames(graph.writers),
         notes: graph.notes ?? serverConfig().guestDefaults.notes, noteWriters: accountNames(graph.noteWriters ?? []),
+        read: readSettingOf(graph), readers: accountNames(graph.readers ?? []),
         // The address is public; of the key only whose it is, never the key.
         remote: graph.remote ? { url: graph.remote.url, key: graph.remote.key?.id ?? null, keyOwner: graph.remote.key ? accountNames([graph.remote.key.account])[0] ?? null : null } : null
       };
@@ -152,7 +160,10 @@ export const graphsRouter = t.router({
       writers: z.array(z.string()).max(500).optional(),
       // Who may leave notes: null goes back to the server's default.
       notes: z.enum(['everyone', 'selected', 'nobody']).nullable().optional(),
-      noteWriters: z.array(z.string()).max(500).optional()
+      noteWriters: z.array(z.string()).max(500).optional(),
+      // Who may read it besides its owner and writers: null goes back to the server's default.
+      read: z.enum(['everyone', 'accounts', 'selected']).nullable().optional(),
+      readers: z.array(z.string()).max(500).optional()
     }))
     .mutation(async ({ input }) => {
       const graph = listed(input.graph);
@@ -160,8 +171,50 @@ export const graphsRouter = t.router({
         ...(input.owner !== undefined ? { owner: accountId(input.owner) } : {}),
         ...(input.writers !== undefined ? { writers: [...new Set(input.writers.map(accountId))] } : {}),
         ...(input.notes !== undefined ? { notes: input.notes ?? undefined } : {}),
-        ...(input.noteWriters !== undefined ? { noteWriters: [...new Set(input.noteWriters.map(accountId))] } : {})
+        ...(input.noteWriters !== undefined ? { noteWriters: [...new Set(input.noteWriters.map(accountId))] } : {}),
+        ...(input.read !== undefined ? { read: input.read ?? undefined } : {}),
+        ...(input.readers !== undefined ? { readers: [...new Set(input.readers.map(accountId))] } : {})
       }));
+      return { success: true };
+    }),
+
+  // Its owner invites someone to this space: a link for one person, who takes
+  // it with a new account or the one they have. The code is shown this once.
+  invite: delayedProcedure
+    .input(z.object({ graph: z.string(), right: z.enum(['read', 'write']), days: z.number().positive().max(365).default(14) }))
+    .mutation(async ({ ctx, input }) => {
+      const graph = listed(input.graph);
+      const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+      const code = await createInvitation({
+        kind: 'once', grant: { graph: graph.slug, right: input.right },
+        expiresAt: new Date(Date.now() + input.days * 24 * 60 * 60_000).toISOString(),
+        ...(viewer.id ? { invitedBy: viewer.id } : {})
+      });
+      return { code };
+    }),
+
+  // The invitations to this space, for its owner.
+  invitations: delayedProcedure
+    .input(z.object({ graph: z.string() }))
+    .query(({ ctx, input }) => {
+      const graph = listed(input.graph);
+      if (rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'owner') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space sees its invitations.' });
+      }
+      const slugs = slugsOf(graph);
+      return listInvitations().filter(invitation => invitation.grant && slugs.includes(invitation.grant.graph))
+        .map(({ id, grant, expiresAt, redeemedBy, invitedBy, createdAt }) => ({ id, right: grant!.right, expiresAt, redeemedBy, invitedBy, createdAt }));
+    }),
+
+  removeInvitation: delayedProcedure
+    .input(z.object({ graph: z.string(), id: z.string().max(100) }))
+    .mutation(async ({ input }) => {
+      const slugs = slugsOf(listed(input.graph));
+      const invitation = listInvitations().find(candidate => candidate.id === input.id);
+      if (!invitation?.grant || !slugs.includes(invitation.grant.graph)) {
+        throw new TRPCError({ code: 'NOT_FOUND', message: 'No such invitation to this space.' });
+      }
+      await removeInvitation(input.id);
       return { success: true };
     }),
 

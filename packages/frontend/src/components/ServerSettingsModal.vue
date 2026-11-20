@@ -13,7 +13,8 @@ const settings = reactive({
   publicUrl: '',
   graphCreation: 'everyone' as 'everyone' | 'selected',
   signUp: { open: false, browserKey: false, wallet: false },
-  notes: 'everyone' as 'everyone' | 'selected' | 'nobody'
+  notes: 'everyone' as 'everyone' | 'selected' | 'nobody',
+  read: 'everyone' as 'everyone' | 'accounts' | 'selected'
 })
 const loadedUrl = ref('')
 const error = ref('')
@@ -70,6 +71,17 @@ const save = async () => {
           <option value="everyone">every account</option>
           <option value="selected">accounts marked "creates spaces"</option>
         </select>
+      </label>
+
+      <label class="stack field">
+        <span>Who reads spaces (unless a space sets it; owners and writers always do)</span>
+        <select v-model="settings.read">
+          <option value="everyone">everyone, without logging in</option>
+          <option value="accounts">every logged-in account</option>
+          <option value="selected">accounts the space's owner selected</option>
+        </select>
+        <span v-if="settings.read !== 'everyone' && settings.signUp.browserKey" class="hint warning">Visitors who get an account automatically count as logged in, so they read these spaces too.</span>
+        <span v-else-if="settings.read === 'accounts' && settings.signUp.open" class="hint">Anyone who signs up reads these spaces.</span>
       </label>
 
       <label class="stack field">

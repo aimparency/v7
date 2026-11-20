@@ -18,12 +18,16 @@ const { auth, signLoginChallenge, forgetBrowserKey } = vi.hoisted(() => ({
     walletLogin: { mutate: vi.fn() },
     keyChallenge: { mutate: vi.fn() },
     keyLogin: { mutate: vi.fn() },
-    logout: { mutate: vi.fn() }
+    logout: { mutate: vi.fn() },
+    invitationInfo: { query: vi.fn(async (): Promise<{ valid: boolean, space: { slug: string, name: string } | null, right: string | null }> => ({ valid: true, space: null, right: null })) },
+    acceptInvitation: { mutate: vi.fn() }
   },
   signLoginChallenge: vi.fn(),
   forgetBrowserKey: vi.fn(async () => {})
 }))
 vi.mock('../../trpc', () => ({ trpc: { auth } }))
+const { openSpace } = vi.hoisted(() => ({ openSpace: vi.fn() }))
+vi.mock('../../stores/project-load', () => ({ useProjectLoadStore: () => ({ open: openSpace }) }))
 vi.mock('../../utils/runtime-config', () => ({ hasAccounts: () => true }))
 vi.mock('../../utils/browser-key', () => ({ signLoginChallenge, forgetBrowserKey }))
 
@@ -87,6 +91,30 @@ describe('LoginControl', () => {
     expect(auth.signUp.mutate).toHaveBeenCalledWith({ name: 'ben', password: 'ben password', invitation: 'the-code' })
     expect(window.location.search).toBe('')
     expect(wrapper.find('.account-name').text()).toBe('ben')
+  })
+
+  it('an invitation to a space: a new account lands in it, an account that exists takes it once logged in', async () => {
+    const invitedToGame = { valid: true, space: { slug: 'game', name: 'Game' }, right: 'write' }
+    window.history.replaceState({}, '', '/?invitation=space-code')
+    auth.invitationInfo.query.mockResolvedValue(invitedToGame)
+    const wrapper = await mountControl({})
+    expect(wrapper.text()).toContain('You were invited to the space "Game", to work on it.')
+    auth.signUp.mutate.mockResolvedValue({ token: 'new-token', space: 'game' })
+    auth.me.query.mockResolvedValue(me({ name: 'david' }))
+    await wrapper.find('#sign-up-form input').setValue('david')
+    await wrapper.find('#sign-up-form input[type=password]').setValue('david password')
+    await wrapper.find('#sign-up-form').trigger('submit')
+    await flushPromises()
+    expect(openSpace).toHaveBeenCalledWith('game')
+    expect(auth.acceptInvitation.mutate).not.toHaveBeenCalled()
+    wrapper.unmount()
+
+    window.history.replaceState({}, '', '/?invitation=space-code')
+    auth.acceptInvitation.mutate.mockResolvedValue({ space: 'game' })
+    await mountControl({ name: 'cleo' })
+    expect(auth.acceptInvitation.mutate).toHaveBeenCalledWith({ invitation: 'space-code' })
+    expect(openSpace).toHaveBeenCalledTimes(2)
+    expect(window.location.search).toBe('')
   })
 
   it('recommends a permanent login to an account that lives only in this browser', async () => {

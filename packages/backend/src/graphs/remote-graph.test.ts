@@ -151,3 +151,45 @@ test('a graph larger than the server allows is not kept', async () => {
   assert.deepEqual(listGraphs(), []);
   assert.equal(await fs.pathExists(path.join(root, 'server', 'remotes', 'plans')), false);
 });
+
+test('with a deploy key a remote graph is writable from the start, and a repository without a .bowman gets a new space', async () => {
+  await accounts.createAccount('ana', 'ana password');
+  const ana = await loggedIn('ana');
+  const key = await ana.keys.create({ label: 'game deploy key' });
+
+  // A code repository without a .bowman: refused without a key.
+  const game = path.join(root, 'game.git');
+  const gameAuthor = path.join(root, 'game-author');
+  git(root, 'init', '-q', '--bare', '-b', 'main', game);
+  git(root, 'clone', '-q', game, gameAuthor);
+  await fs.outputFile(path.join(gameAuthor, 'src', 'main.ts'), 'export {}');
+  git(gameAuthor, 'add', '-A');
+  git(gameAuthor, 'commit', '-qm', 'game');
+  git(gameAuthor, 'push', '-q', 'origin', 'HEAD:main');
+  const anaAccount = accounts.findAccount('ana')!;
+  await assert.rejects(addRemote(`file://${game}`, anaAccount.id, { allowFileUrls: true }), /no \.bowman/);
+
+  const graph = await addRemote(`file://${game}`, anaAccount.id, { allowFileUrls: true, key: { account: anaAccount.id, id: key.id } });
+  assert.equal(graph.started, true);
+  assert.equal(graph.pushError, undefined);
+  assert.deepEqual(graph.remote, { url: `file://${game}`, key: { account: anaAccount.id, id: key.id } });
+  // Pushed: the repository now holds the space, its code untouched.
+  git(gameAuthor, 'pull', '-q', 'origin', 'main');
+  assert.equal((await fs.readJson(path.join(gameAuthor, '.bowman', 'meta.json'))).name, 'game');
+  assert.ok(await fs.pathExists(path.join(gameAuthor, 'src', 'main.ts')));
+
+  // Writable at once.
+  await ana.idea.createFloatingIdea({ graph: graph.slug, idea: { text: 'Level one' } });
+
+  // Someone else's key is refused.
+  await accounts.createAccount('ben', 'ben password');
+  const ben = await loggedIn('ben');
+  await assert.rejects(ben.graphs.addRemote({ url: 'https://github.com/someone/repo', key: key.id }), /one of your own keys/);
+});
+
+test('an https address becomes its SSH address when a key is used', async () => {
+  const { sshUrlOf } = await import('./remote-graph');
+  assert.equal(sshUrlOf('https://github.com/aimparency/game'), 'git@github.com:aimparency/game.git');
+  assert.equal(sshUrlOf('https://github.com/aimparency/game.git/'), 'git@github.com:aimparency/game.git');
+  assert.equal(sshUrlOf('git@github.com:aimparency/game.git'), 'git@github.com:aimparency/game.git');
+});

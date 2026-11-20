@@ -5,7 +5,8 @@
 //
 // Without server.json the server is the local one: no login, the person at the
 // machine may do everything. `"login": "accounts"` opens it to other people:
-// everyone reads, accounts write the graphs they own or were given.
+// accounts write the graphs they own or were given; who reads is
+// guestDefaults.read (everyone, unless set otherwise) and each graph's own setting.
 //
 // One machine can hold several servers, each with a name: its directory is
 // ~/.local/share/aimparency/<name> (server-directory.mjs). AIMPARENCY_SERVER
@@ -54,7 +55,13 @@ const ServerConfigSchema = z.object({
   // What accounts without rights on a graph (guests) may do there, unless the
   // graph's owner set it otherwise: `everyone` every account, `selected` the
   // accounts the owner named, `nobody`.
-  guestDefaults: z.object({ notes: z.enum(['everyone', 'selected', 'nobody']).default('everyone') }).prefault({}),
+  // Who reads a graph besides its owner and writers: `everyone` (visitors
+  // without a login too), `accounts` every logged-in account, `selected` the
+  // accounts the owner named.
+  guestDefaults: z.object({
+    notes: z.enum(['everyone', 'selected', 'nobody']).default('everyone'),
+    read: z.enum(['everyone', 'accounts', 'selected']).default('everyone'),
+  }).prefault({}),
   limits: z.object({
     // New accounts from one address; a whole room may share one address.
     accountsPerAddressPerHour: z.number().int().positive().default(100),

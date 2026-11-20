@@ -10,6 +10,7 @@ import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost, fetchGraphAtHost } 
 import type { AgentType } from '../stores/watchdog'
 import { Check, X } from 'lucide-vue-next'
 import { hasAccounts } from '../utils/runtime-config'
+import { useViewerStore } from '../stores/viewer'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -69,7 +70,8 @@ async function loadLinkedRepos() {
 // no agents, so the sections about them are left out.
 const accounts = hasAccounts()
 
-// Who may use this graph. Everyone reads; its owner names the accounts that may also change it.
+// Who may use this graph. Its owner names the accounts that may also change it,
+// and who else reads it: everyone, every account, or the accounts named.
 const graphAccess = ref<Awaited<ReturnType<typeof trpc.graphs.getAccess.query>>>(null)
 const newWriter = ref('')
 const mayManageAccess = computed(() => dataStore.access.role === 'owner')
@@ -83,7 +85,7 @@ type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'gr
 async function setAccess(change: AccessChange) {
   try {
     await trpc.graphs.setAccess.mutate({ graph: projectStore.projectPath, ...change })
-    newWriter.value = newNoteWriter.value = ''
+    newWriter.value = newNoteWriter.value = newReader.value = ''
     await loadGraphAccess()
   } catch (e) {
     useToastStore().error('Could not change who may use this space', e)
@@ -91,6 +93,47 @@ async function setAccess(change: AccessChange) {
 }
 const setWriters = (writers: string[]) => setAccess({ writers })
 const newNoteWriter = ref('')
+const newReader = ref('')
+
+// Inviting someone to this space: a link for one person, who takes it with a
+// new account or the one they have.
+const spaceInvitations = ref<Awaited<ReturnType<typeof trpc.graphs.invitations.query>>>([])
+const inviteRight = ref<'write' | 'read'>('write')
+const inviteLink = ref('')
+const inviteCopied = ref(false)
+async function loadSpaceInvitations() {
+  if (!accounts || !mayManageAccess.value) return
+  spaceInvitations.value = await trpc.graphs.invitations.query({ graph: projectStore.projectPath }).catch(() => [])
+}
+async function inviteSomeone() {
+  try {
+    const { code } = await trpc.graphs.invite.mutate({ graph: projectStore.projectPath, right: inviteRight.value })
+    inviteLink.value = `${useViewerStore().publicUrl ?? window.location.origin}/?invitation=${code}`
+    inviteCopied.value = await navigator.clipboard.writeText(inviteLink.value).then(() => true, () => false)
+    await loadSpaceInvitations()
+  } catch (e) {
+    useToastStore().error('Could not make an invitation', e)
+  }
+}
+async function removeSpaceInvitation(id: string) {
+  try {
+    await trpc.graphs.removeInvitation.mutate({ graph: projectStore.projectPath, id })
+    await loadSpaceInvitations()
+  } catch (e) {
+    useToastStore().error('Could not take the invitation back', e)
+  }
+}
+const describeSpaceInvitation = (invitation: (typeof spaceInvitations.value)[number]) => [
+  invitation.right === 'write' ? 'to work on it' : 'to read it',
+  invitation.redeemedBy ? `taken by ${invitation.redeemedBy}`
+    : invitation.expiresAt && Date.parse(invitation.expiresAt) < Date.now() ? 'expired'
+    : invitation.expiresAt ? `open until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'open'
+].join(' · ')
+const READ_SENTENCES = {
+  everyone: 'Everyone may read this space, also without logging in.',
+  accounts: 'Every logged-in account may read this space.',
+  selected: 'Only the accounts named here (and those who may change it) read this space.'
+} as const
 
 // A graph from a remote URL is pushed back with one of its owner's SSH keys.
 // The server makes the key and shows only its public half, to add on the remote.
@@ -326,6 +369,7 @@ onMounted(async () => {
     await loadDiscoveredProjects()
     await loadGraphAccess()
     await loadKeys()
+    await loadSpaceInvitations()
   } catch (e) {
     console.error(e)
   } finally {
@@ -561,7 +605,7 @@ const save = async () => {
             <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
           </div>
           <p v-if="mayManageAccess" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
-          <p class="hint-text">Everyone may read this space. {{ graphAccess.owner ?? 'The server admin' }} owns it; the accounts below may also change it.</p>
+          <p class="hint-text">{{ READ_SENTENCES[graphAccess.read] }} {{ graphAccess.owner ?? 'The server admin' }} owns it; the accounts below may also change it.</p>
           <div v-if="graphAccess.writers.length > 0" class="status-list">
             <div v-for="writer in graphAccess.writers" :key="writer" class="linked-repo-row">
               <span class="linked-repo-name">{{ writer }}</span>
@@ -577,6 +621,38 @@ const save = async () => {
           <div v-if="mayManageAccess" class="add-repo-row">
             <input v-model="newWriter" type="text" placeholder="Account name" @keydown.enter="setWriters([...graphAccess.writers, newWriter.trim()])" />
             <button class="action-btn add-repo-btn" :disabled="!newWriter.trim()" @click="setWriters([...graphAccess.writers, newWriter.trim()])">Give write access</button>
+          </div>
+          <div v-if="mayManageAccess" class="add-repo-row">
+            <span class="linked-repo-name">Invite someone</span>
+            <select v-model="inviteRight">
+              <option value="write">to work on it</option>
+              <option value="read">to read it</option>
+            </select>
+            <button class="action-btn add-repo-btn" @click="inviteSomeone">Make invitation link</button>
+          </div>
+          <div v-if="mayManageAccess && inviteLink" class="add-repo-row">
+            <input :value="inviteLink" type="text" readonly @focus="($event.target as HTMLInputElement).select()" />
+          </div>
+          <p v-if="mayManageAccess && inviteLink" class="hint-text">{{ inviteCopied ? 'Copied. ' : '' }}For one person, valid 14 days: they open it, create an account (or log in with theirs) and land in this space.</p>
+          <div v-if="mayManageAccess && spaceInvitations.length > 0" class="status-list">
+            <div v-for="invitation in spaceInvitations" :key="invitation.id" class="linked-repo-row">
+              <span class="linked-repo-name">{{ describeSpaceInvitation(invitation) }}</span>
+              <button v-if="!invitation.redeemedBy" class="delete-btn" title="Take the invitation back" @click="removeSpaceInvitation(invitation.id)"><X /></button>
+            </div>
+          </div>
+          <div v-if="mayManageAccess" class="add-repo-row">
+            <span class="linked-repo-name">Who reads it</span>
+            <select :value="graphAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof graphAccess.read })">
+              <option value="everyone">everyone, without logging in</option>
+              <option value="accounts">every logged-in account</option>
+              <option value="selected">only the accounts named here</option>
+            </select>
+          </div>
+          <div v-if="mayManageAccess && graphAccess.read === 'selected'" class="add-repo-row">
+            <span class="linked-repo-name">{{ graphAccess.readers.join(', ') || 'Nobody named yet' }}</span>
+            <input v-model="newReader" type="text" placeholder="Account name" @keydown.enter="setAccess({ readers: [...graphAccess.readers, newReader.trim()] })" />
+            <button class="action-btn add-repo-btn" :disabled="!newReader.trim()" @click="setAccess({ readers: [...graphAccess.readers, newReader.trim()] })">Add</button>
+            <button class="action-btn add-repo-btn" :disabled="graphAccess.readers.length === 0" @click="setAccess({ readers: [] })">Clear</button>
           </div>
           <div v-if="mayManageAccess" class="add-repo-row">
             <span class="linked-repo-name">Notes from visitors</span>

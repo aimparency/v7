@@ -5,6 +5,7 @@ import { storeLoginToken } from '../utils/login'
 import { hasAccounts } from '../utils/runtime-config'
 import { useDataStore } from './data'
 import { useProjectStore } from './project-store'
+import { useProjectLoadStore } from './project-load'
 import { useToastStore } from './toast'
 
 // Who is using this server (auth.me). Without login it is the person at the
@@ -21,19 +22,23 @@ export const useViewerStore = defineStore('viewer', {
     signUp: { open: false, browserKey: false, wallet: false },
     // The address people open this server at, when the server admin named it.
     publicUrl: null as string | null,
+    // Who reads a space unless its owner set otherwise (server.json guestDefaults.read).
+    read: 'everyone' as 'everyone' | 'accounts' | 'selected',
   }),
 
   getters: {
     // A visitor who would get an account the moment they need one.
     getsAccountAutomatically: (state) => hasAccounts() && state.name === null && state.signUp.browserKey,
+    // A visitor who sees only the spaces open to everyone: logging in shows more.
+    seesPublicSpacesOnly: (state) => hasAccounts() && state.name === null && state.read !== 'everyone',
   },
 
   actions: {
     // Never rejects: until the server answers, the defaults above hold.
     async load() {
       try {
-        const { name, serverAdmin, canCreateGraphs, permanentLogin, signUp, publicUrl } = await trpc.auth.me.query()
-        Object.assign(this, { name, serverAdmin, canCreateGraphs, permanentLogin, signUp, publicUrl })
+        const { name, serverAdmin, canCreateGraphs, permanentLogin, signUp, publicUrl, read } = await trpc.auth.me.query()
+        Object.assign(this, { name, serverAdmin, canCreateGraphs, permanentLogin, signUp, publicUrl, read })
       } catch (error) {
         useToastStore().error('Could not ask the server who you are', error)
       }
@@ -45,7 +50,13 @@ export const useViewerStore = defineStore('viewer', {
       storeLoginToken(token)
       await this.load()
       const projectPath = useProjectStore().projectPath
-      if (projectPath) await useDataStore().refreshAccess(projectPath)
+      if (!projectPath) return
+      try {
+        await useDataStore().refreshAccess(projectPath)
+      } catch {
+        // Logged out of a space open to accounts only: opening it again shows why, and the login.
+        void useProjectLoadStore().open(projectPath)
+      }
     },
 
     // Before something that needs an account. Where the server gives accounts

@@ -1,7 +1,8 @@
 // Who may do what. On a server without login the one person at the machine may
-// do everything. With accounts: everyone reads every graph; a graph's owner and
-// the accounts it gave write access change it; agents, loops and server paths
-// are for nobody (the server admins' agents are a separate switch).
+// do everything. With accounts: a graph is read by whom its setting names
+// (everyone, every account, or selected accounts; mayRead); its owner and the
+// accounts it gave write access change it; agents, loops and server paths are
+// for nobody (the server admins' agents are a separate switch).
 
 import { TRPCError } from '@trpc/server';
 import { hasAccounts, serverConfig } from 'shared/server-config';
@@ -47,7 +48,7 @@ const OPEN_MUTATIONS = new Set([
   'mcpAuth.registerClient', 'mcpAuth.begin', 'mcpAuth.deny', 'mcpAuth.exchange'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.grantSite', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'graphs.create', 'graphs.addRemote',
+  'auth.issueToken', 'auth.grantSite', 'auth.acceptInvitation', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'graphs.create', 'graphs.addRemote',
   // Its handler asks for the owner: a deleted space is no `graph` the access check could resolve.
   'graphs.restore', 'keys.create', 'keys.remove',
   // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
@@ -63,12 +64,12 @@ const WRITE_MUTATIONS = new Set([
   // Accepting an offer links the offered space into the graph (routers/notes.ts).
   'notes.acceptOffer'
 ]);
-const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
+const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove', 'graphs.invite', 'graphs.removeInvitation']);
 // What a website the account granted may do beyond writing its graphs; its
 // account (password, tokens, further websites) stays on this server's own pages.
 const SITE_ACCOUNT_MUTATIONS = new Set(['notes.add', 'notes.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).
-const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens', 'auth.ownFootprint']);
+const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens', 'auth.ownFootprint', 'auth.invitationInfo']);
 // Every other mutation needs a server admin, so a new one is closed until listed.
 
 export function neededRole(path: string, type: string): Need {
@@ -128,6 +129,29 @@ export function rightOn(graph: Graph | null, viewer: Viewer): GraphRight {
   return graph.writers.includes(viewer.id) ? 'write' : 'read';
 }
 
+/** Who reads the graph besides its owner and writers: its own setting, else the server's default. */
+export const readSettingOf = (graph: Graph) => graph.read ?? serverConfig().guestDefaults.read;
+
+/**
+ * Whether the viewer may see the graph at all. Its owner, writers and the
+ * server admins always; others by the graph's read setting. Asked of every
+ * request that names a graph, whatever else it needs.
+ */
+export function mayRead(graph: Graph | null, viewer: Viewer): boolean {
+  if (!hasAccounts() || !graph) return true;
+  if (rightOn(graph, viewer) !== 'read') return true;
+  const setting = readSettingOf(graph);
+  if (setting === 'everyone') return true;
+  if (viewer.id === null) return false;
+  return setting === 'accounts' || (graph.readers ?? []).includes(viewer.id);
+}
+
+// "log in" for a visitor (the UI offers the login), "ask the owner" for an account.
+function refuseReading(viewer: Viewer): never {
+  if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'This space is open to accounts only: log in to see it.' });
+  throw new TRPCError({ code: 'FORBIDDEN', message: 'This space is open only to the accounts its owner selected: ask its owner for access.' });
+}
+
 /** Why the viewer may not change this graph, or null when they may. */
 export function readOnlyReason(graph: Graph | null, viewer: Viewer): string | null {
   if (rightOn(graph, viewer) !== 'read') return null;
@@ -144,6 +168,8 @@ export function assertAllowed(path: string, type: string, viewer: Viewer, graph:
   if (need === 'local') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is not available on a server with accounts.` });
   }
+  // Nothing of a graph, not even a note on it, for whom may not read it.
+  if (!mayRead(graph, viewer)) refuseReading(viewer);
   if (need === 'read' || viewer.serverAdmin) return;
   if (need === 'serverAdmin') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is for server admins.` });

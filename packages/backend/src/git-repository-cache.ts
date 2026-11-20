@@ -33,7 +33,8 @@ const git = (args: string[], env: NodeJS.ProcessEnv, cwd?: string) => run('git',
 const gitReason = (error: unknown) => (error as { stderr?: string }).stderr?.trim() || (error as Error).message;
 
 /** A shallow, sparse clone of just the .bowman of `url` into `projectRoot` (replacing what is there). */
-export async function cloneBowman(url: string, projectRoot: string, env: NodeJS.ProcessEnv): Promise<void> {
+/** `allowMissing`: a repository without a .bowman yet is kept (a space starts there). */
+export async function cloneBowman(url: string, projectRoot: string, env: NodeJS.ProcessEnv, { allowMissing = false } = {}): Promise<void> {
   try {
     await fs.remove(projectRoot);
     await fs.ensureDir(path.dirname(projectRoot));
@@ -43,7 +44,7 @@ export async function cloneBowman(url: string, projectRoot: string, env: NodeJS.
     await fs.remove(projectRoot);
     throw new Error(`Could not clone ${url}: ${gitReason(error)}`);
   }
-  if (!(await fs.pathExists(path.join(projectRoot, AIMPARENCY_DIR_NAME)))) {
+  if (!allowMissing && !(await fs.pathExists(path.join(projectRoot, AIMPARENCY_DIR_NAME)))) {
     await fs.remove(projectRoot);
     throw new Error(`${url} has no ${AIMPARENCY_DIR_NAME} directory, so it holds no Aimparency space.`);
   }

@@ -6,7 +6,9 @@ import { agentsEnabled, mayCreateGraphs, viewerFor } from '../auth/access.js';
 import * as accounts from '../auth/accounts.js';
 import { newChallenge, verifyKeyLogin } from '../auth/browser-key.js';
 import { verifyWalletLogin, walletChallenge } from '../auth/wallet.js';
-import { findGraph } from '../graphs/registry.js';
+import { findGraph, grantAccess, GraphError, graphBowmanPath } from '../graphs/registry.js';
+import { readJsonOrNull } from '../storage/json.js';
+import path from 'node:path';
 import { accountFootprint, discardAccount } from '../auth/discard.js';
 import { withinLimit } from '../rate-limit.js';
 
@@ -47,6 +49,17 @@ async function logIn(ctx: Context, name: string): Promise<{ token: string }> {
   const token = await accounts.issueToken(name, 'browser');
   if (ctx.session) ctx.session.token = token;
   return { token };
+}
+
+// An invitation to a space, taken: the account reads or writes it. Returns its slug.
+async function takeGrant(grant: accounts.InvitationGrant | null, accountId: string): Promise<string | null> {
+  if (!grant) return null;
+  try {
+    return (await grantAccess(grant.graph, accountId, grant.right)).slug;
+  } catch (error) {
+    if (error instanceof GraphError) throw new TRPCError({ code: 'NOT_FOUND', message: error.message });
+    throw error;
+  }
 }
 
 // New accounts from one address per hour: sign-ups and automatic accounts together.
@@ -95,9 +108,12 @@ export const authRouter = t.router({
   // shows a login and the server's graphs instead of this machine's directories.
   me: delayedProcedure.query(({ ctx }) => {
     const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
-    const { login, signUp, publicUrl } = serverConfig();
+    const { login, signUp, publicUrl, guestDefaults } = serverConfig();
     return {
       login,
+      // Who reads a space unless its owner set otherwise: the start page tells a
+      // visitor to log in when spaces are for accounts.
+      read: guestDefaults.read,
       // The address people reach this server at, when the operator named it (server.json).
       publicUrl: publicUrl ?? null,
       agents: agentsEnabled(),
@@ -160,8 +176,44 @@ export const authRouter = t.router({
     .input(z.object({ name: z.string().max(200), password: z.string().max(1000), invitation: z.string().max(200).optional() }))
     .mutation(async ({ ctx, input }) => {
       assertMayCreateAccount(ctx);
+      // Read before the invitation is used up; signUp checks it again.
+      let grant: accounts.InvitationGrant | null = null;
+      try {
+        grant = input.invitation ? accounts.invitationGrant(input.invitation) : null;
+      } catch {
+        // invalid: signUp says so
+      }
       const account = await run(() => accounts.signUp(input.name, input.password, { open: serverConfig().signUp.open, invitation: input.invitation }));
-      return logIn(ctx, account.name);
+      const space = await takeGrant(grant, account.id);
+      return { ...await logIn(ctx, account.name), space };
+    }),
+
+  // What an invitation link offers, shown before taking it: a space (its name
+  // and the right) or an account on this server.
+  invitationInfo: delayedProcedure
+    .input(z.object({ invitation: z.string().max(200) }))
+    .query(async ({ input }) => {
+      assertAccounts();
+      let grant: accounts.InvitationGrant | null;
+      try {
+        grant = accounts.invitationGrant(input.invitation);
+      } catch {
+        return { valid: false, space: null, right: null };
+      }
+      const graph = grant ? findGraph(grant.graph) : null;
+      if (grant && !graph) return { valid: false, space: null, right: null };
+      const meta = graph ? await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json')) as { name?: string } | null : null;
+      return { valid: true, space: graph ? { slug: graph.slug, name: meta?.name ?? graph.slug } : null, right: grant?.right ?? null };
+    }),
+
+  // An account that exists takes an invitation to a space.
+  acceptInvitation: delayedProcedure
+    .input(z.object({ invitation: z.string().max(200) }))
+    .mutation(async ({ ctx, input }) => {
+      const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+      if (viewer.id === null) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
+      const grant = await run(() => accounts.redeemInvitation(input.invitation, viewer.id!));
+      return { space: await takeGrant(grant, viewer.id) };
     }),
 
   // Login with the key in the visitor's browser: a challenge to sign, then the
@@ -325,7 +377,7 @@ export const authRouter = t.router({
   getServerSettings: delayedProcedure.query(() => {
     assertAccounts();
     const { publicUrl, graphCreation, signUp, guestDefaults } = serverConfig();
-    return { publicUrl: publicUrl ?? null, graphCreation, signUp, notes: guestDefaults.notes };
+    return { publicUrl: publicUrl ?? null, graphCreation, signUp, notes: guestDefaults.notes, read: guestDefaults.read };
   }),
 
   setServerSettings: delayedProcedure
@@ -334,7 +386,8 @@ export const authRouter = t.router({
       publicUrl: z.union([z.literal(''), z.string().url().max(500).refine(url => /^https?:\/\//.test(url), 'An address starts with https:// or http://')]).optional(),
       graphCreation: z.enum(['everyone', 'selected']).optional(),
       signUp: z.object({ open: z.boolean(), browserKey: z.boolean(), wallet: z.boolean() }).partial().optional(),
-      notes: z.enum(['everyone', 'selected', 'nobody']).optional()
+      notes: z.enum(['everyone', 'selected', 'nobody']).optional(),
+      read: z.enum(['everyone', 'accounts', 'selected']).optional()
     }))
     .mutation(({ input }) => {
       assertAccounts();
@@ -344,7 +397,7 @@ export const authRouter = t.router({
         ...(publicUrl ? { publicUrl } : {}),
         ...(input.graphCreation ? { graphCreation: input.graphCreation } : {}),
         ...(input.signUp ? { signUp: { ...current.signUp, ...input.signUp } } : {}),
-        ...(input.notes ? { guestDefaults: { ...current.guestDefaults, notes: input.notes } } : {})
+        ...(input.notes || input.read ? { guestDefaults: { ...current.guestDefaults, ...(input.notes ? { notes: input.notes } : {}), ...(input.read ? { read: input.read } : {}) } } : {})
       }, input.publicUrl === '' ? ['publicUrl'] : []);
       return { success: true };
     }),

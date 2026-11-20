@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { ChevronDown, CircleAlert, CircleUser, KeyRound, LogOut, Plug, Server, Trash2, Users } from 'lucide-vue-next'
 import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
@@ -8,6 +8,8 @@ import { forgetBrowserKey } from '../utils/browser-key'
 import { serverLogins, storeServerLogin } from '../utils/server-logins'
 import { logOutOfServers, remoteTrpc } from '../utils/remote-trpc'
 import { useDataStore } from '../stores/data'
+import { useProjectLoadStore } from '../stores/project-load'
+import { useToastStore } from '../stores/toast'
 import FormModalShell from './FormModalShell.vue'
 import AccountsModal from './AccountsModal.vue'
 import McpConnectModal from './McpConnectModal.vue'
@@ -57,7 +59,40 @@ const open = (which: Dialog) => {
   dialog.value = which
   name.value = password.value = current.value = error.value = ''
 }
-onMounted(() => { if (invitation.value) open('sign-up') })
+// An invitation to one space: a new account takes it at sign-up; an account
+// that exists takes it once logged in, and the space opens.
+type InvitationInfo = Awaited<ReturnType<typeof trpc.auth.invitationInfo.query>>
+const invitationInfo = ref<InvitationInfo | null>(null)
+const invitedSentence = computed(() => {
+  const space = invitationInfo.value?.space
+  if (invitationInfo.value && !invitationInfo.value.valid) return 'This invitation is not valid any more.'
+  if (!space) return 'You were invited to this server.'
+  return `You were invited to the space "${space.name}", to ${invitationInfo.value?.right === 'write' ? 'work on it' : 'read it'}.`
+})
+const openSpace = (slug: string | null) => { if (slug) void useProjectLoadStore().open(slug) }
+const takeInvitation = async () => {
+  const code = invitation.value
+  if (!code || !viewer.name || !invitationInfo.value?.space) return
+  // Another login control on the page may have taken it already (it leaves the address then).
+  if (new URLSearchParams(window.location.search).get('invitation') !== code) return
+  forgetInvitation()
+  if (dialog.value === 'sign-up') dialog.value = null
+  try {
+    openSpace((await trpc.auth.acceptInvitation.mutate({ invitation: code })).space)
+  } catch (caught) {
+    useToastStore().error('Could not take the invitation', caught)
+  }
+}
+watch([() => viewer.name, invitationInfo], () => void takeInvitation())
+onMounted(async () => {
+  if (!invitation.value) return
+  if (!viewer.name) open('sign-up')
+  try {
+    invitationInfo.value = await trpc.auth.invitationInfo.query({ invitation: invitation.value })
+  } catch {
+    // Unknown here: the sign-up says what is wrong with it.
+  }
+})
 
 const submit = async (action: () => Promise<void>) => {
   busy.value = true
@@ -78,9 +113,10 @@ const login = () => submit(async () => {
 })
 
 const signUp = () => submit(async () => {
-  const { token } = await trpc.auth.signUp.mutate({ name: name.value, password: password.value, invitation: invitation.value || undefined })
+  const { token, space } = await trpc.auth.signUp.mutate({ name: name.value, password: password.value, invitation: invitation.value || undefined })
   forgetInvitation()
   await viewer.loginChanged(token)
+  openSpace(space)
 })
 
 const changePassword = () => submit(async () => {
@@ -230,12 +266,13 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
 
     <FormModalShell :show="dialog === 'sign-up'" title="Create account" width="min(90vw, 22rem)" @request-close="dialog = null">
       <form id="sign-up-form" @submit.prevent="signUp">
-        <p v-if="invitation" class="hint">You were invited to this server.</p>
+        <p v-if="invitation" class="hint">{{ invitedSentence }}</p>
         <input v-model="name" placeholder="Name" autocomplete="username" autofocus />
         <input v-model="password" type="password" placeholder="Password (8+ characters)" autocomplete="new-password" />
         <p v-if="error" class="error">{{ error }}</p>
       </form>
       <template #footer>
+        <button v-if="invitationInfo?.space" class="btn-secondary" type="button" @click="open('login')">I have an account</button>
         <button class="btn-primary" form="sign-up-form" type="submit" :disabled="busy">Create account</button>
       </template>
     </FormModalShell>

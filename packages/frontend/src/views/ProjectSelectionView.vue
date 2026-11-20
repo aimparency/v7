@@ -8,6 +8,7 @@ import { keepInMiddle } from '../utils/keep-in-middle'
 import { gitRepositoryLocation } from 'shared'
 import { Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next'
 import LoginControl from '../components/LoginControl.vue'
+import DeployKeyModal from '../components/DeployKeyModal.vue'
 import { useToastStore } from '../stores/toast'
 import { useViewerStore } from '../stores/viewer'
 import { hasAccounts } from '../utils/runtime-config'
@@ -66,7 +67,10 @@ const changeSpace = async (failure: string, action: () => Promise<unknown>) => {
 }
 const deleteSpace = (slug: string) => changeSpace('Could not delete the space', () => trpc.graphs.remove.mutate({ graph: slug }))
 const restoreSpace = (slug: string) => changeSpace('Could not restore the space', () => trpc.graphs.restore.mutate({ slug }))
-onMounted(() => loadSpaces().catch(error => toast.error('Could not list the spaces of this server', error)))
+const listSpaces = () => loadSpaces().catch(error => toast.error('Could not list the spaces of this server', error))
+onMounted(listSpaces)
+// Which spaces one may read depends on who is logged in.
+watch(() => viewer.name, listSpaces)
 
 const typed = computed(() => props.modelValue.trim())
 const busy = ref(false)
@@ -87,6 +91,18 @@ const act = async (failure: string, action: () => Promise<{ slug: string }>, nee
 const createSpace = () => act('Could not create the space', () => trpc.graphs.create.mutate({ name: typed.value }))
 // A space that lives in a repository elsewhere: the server clones its .bowman.
 const addRemote = () => act('Could not add the repository', () => trpc.graphs.addRemote.mutate({ url: typed.value }))
+// A private repository: cloned with a deploy key the server makes (DeployKeyModal).
+const deployKeyUrl = ref('')
+const offersDeployKey = computed(() => accounts && mayAddRemote.value && !!gitRepositoryLocation(typed.value))
+const openDeployKey = async () => {
+  if (await viewer.ensureAccount()) deployKeyUrl.value = typed.value
+}
+const addedWithKey = (slug: string, pushError: string | null) => {
+  deployKeyUrl.value = ''
+  if (pushError) toast.error('The space was started here, but pushing it to the repository failed (does the deploy key have write access?)', pushError)
+  emit('update:modelValue', '')
+  emit('open-graph', slug)
+}
 // A repository already on this machine, by its path: server admins only.
 const addCheckout = () => act('Could not add the repository', () => trpc.graphs.addCheckout.mutate({ path: typed.value }), false)
 
@@ -232,7 +248,7 @@ const sections = computed<Section[]>(() => {
     const others = spaceEntries.value.filter(matchesQuery)
     // Every space of the server is among the recent ones: no empty section for the rest.
     if (others.length > 0 || recentEntries.value.length === 0 || query.value) {
-      all.push({ id: 'spaces', title: accounts ? 'Spaces on this server' : 'Spaces of the local server', empty: query.value ? 'No other matching space.' : 'No spaces yet.', entries: others })
+      all.push({ id: 'spaces', title: accounts ? 'Spaces on this server' : 'Spaces of the local server', empty: query.value ? 'No other matching space.' : viewer.seesPublicSpacesOnly ? 'Log in to see the spaces on this server.' : 'No spaces yet.', entries: others })
     }
   }
   if (!accounts) {
@@ -391,6 +407,11 @@ onUnmounted(revokeThumbnails)
       <button class="select-project" :disabled="!primary || busy" @click="runPrimary">{{ primary?.label ?? 'Open' }}</button>
     </div>
     <p v-if="addHint" class="empty-state">{{ addHint }}</p>
+    <p v-if="offersDeployKey" class="empty-state">
+      Private repository, or one without a space yet?
+      <button class="icon-btn text" type="button" @click="openDeployKey">Add it with a deploy key</button>
+    </p>
+    <DeployKeyModal v-if="deployKeyUrl" :url="deployKeyUrl" @close="deployKeyUrl = ''" @added="addedWithKey" />
 
     <div ref="listRef" class="project-lists" @keydown="onListKeydown">
       <section v-for="section in sections" :key="section.id" class="project-history">

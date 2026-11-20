@@ -71,7 +71,8 @@ const describeInvitation = (invitation: (typeof invitations.value)[number]) => [
   invitation.redeemedBy ? `used by ${invitation.redeemedBy}`
     : invitation.expiresAt ? `until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'no end',
   ...(invitation.serverAdmin ? ['server admin'] : []),
-  ...(invitation.canCreateGraphs ? ['creates spaces'] : [])
+  ...(invitation.canCreateGraphs ? ['creates spaces'] : []),
+  ...(invitation.grant ? [`${invitation.grant.right === 'write' ? 'works on' : 'reads'} the space ${invitation.grant.graph}${invitation.invitedBy ? `, from ${invitation.invitedBy}` : ''}`] : [])
 ].join(' · ')
 
 const resetPassword = (account: string) => {

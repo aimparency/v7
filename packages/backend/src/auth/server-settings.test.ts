@@ -41,7 +41,7 @@ test('a server admin sets the public address and sign-up; the rest of server.jso
   assert.equal(serverConfig().port, 4100);
   assert.deepEqual(await admin.auth.getServerSettings(), {
     publicUrl: 'https://graphs.example.org', graphCreation: 'selected',
-    signUp: { open: true, browserKey: false, wallet: false }, notes: 'everyone'
+    signUp: { open: true, browserKey: false, wallet: false }, notes: 'everyone', read: 'everyone'
   });
 
   // Empty: no public address any more.

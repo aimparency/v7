@@ -1,6 +1,6 @@
 // The graphs of this server: graphs.json in the server directory. A graph is a
-// git repository with a .bowman; the list says where it is, who owns it and who
-// else may write it. Everyone may read every graph.
+// git repository with a .bowman; the list says where it is, who owns it, who
+// else may write it and who may read it (auth/access.ts mayRead).
 //
 //   created   made on this server by an account, or spun off into the spaces
 //             directory: <spaces dir>/<slug> (server.json spacesDir)
@@ -44,6 +44,10 @@ export type Graph = {
   notes?: 'everyone' | 'selected' | 'nobody';
   /** With notes 'selected': the account ids that may. */
   noteWriters?: string[];
+  /** Who may read it besides its owner and writers; absent: the server's default (server.json guestDefaults.read). */
+  read?: 'everyone' | 'accounts' | 'selected';
+  /** With read 'selected': the account ids that may. */
+  readers?: string[];
   /** Slugs the graph had before: they still lead here, and no other graph takes them. */
   formerSlugs?: string[];
   createdAt: string;
@@ -170,7 +174,7 @@ export async function addRemoteGraph(
   url: string,
   owner: string | null,
   clone: (directory: string) => Promise<void>,
-  { allowFileUrls = false } = {}
+  { allowFileUrls = false, key }: { allowFileUrls?: boolean; key?: { account: string; id: string } } = {}
 ): Promise<Graph> {
   const location = gitRepositoryLocation(url, { allowFileUrls });
   if (!location) throw new GraphError(`Not a Git URL Aimparency can open: ${url}`);
@@ -180,9 +184,25 @@ export async function addRemoteGraph(
     const directory = path.join(serverDir(), 'remotes', slug);
     await clone(directory);
     const graph: Graph = {
-      slug, kind: 'remote', path: directory, remote: { url: url.trim() }, owner, writers: [], createdAt: new Date().toISOString()
+      slug, kind: 'remote', path: directory, remote: { url: url.trim(), ...(key ? { key } : {}) }, owner, writers: [], createdAt: new Date().toISOString()
     };
     return { graphs: [...graphs, graph], result: graph };
+  });
+}
+
+/**
+ * What an invitation to a space gives the account that takes it: write access
+ * (it then reads too) or a place among the readers. Its owner gets nothing more.
+ */
+export async function grantAccess(slug: string, accountId: string, right: 'read' | 'write'): Promise<Graph> {
+  return change(async (graphs) => {
+    const graph = graphs.find(candidate => !candidate.deletedAt && slugsOf(candidate).includes(slug));
+    if (!graph) throw new GraphError('The space of this invitation is gone.');
+    if (graph.owner === accountId) return { graphs, result: graph };
+    const next: Graph = right === 'write'
+      ? { ...graph, writers: [...new Set([...graph.writers, accountId])] }
+      : { ...graph, readers: [...new Set([...(graph.readers ?? []), accountId])] };
+    return { graphs: graphs.map(candidate => candidate === graph ? next : candidate), result: next };
   });
 }
 
@@ -289,7 +309,7 @@ export async function restoreGraph(slug: string): Promise<Graph> {
 
 export async function setGraphAccess(
   slug: string,
-  access: { owner?: string | null; writers?: string[]; notes?: Graph['notes']; noteWriters?: string[] }
+  access: { owner?: string | null; writers?: string[]; notes?: Graph['notes']; noteWriters?: string[]; read?: Graph['read']; readers?: string[] }
 ): Promise<Graph> {
   return change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);

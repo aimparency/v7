@@ -41,9 +41,14 @@ type Invitation = {
   // The rights the account made with it gets, as set for an existing account.
   serverAdmin?: boolean;
   canCreateGraphs?: boolean;
+  // An invitation to one space, made by its owner: whoever takes it (a new
+  // account, or one that exists) reads or writes that space.
+  grant?: InvitationGrant;
+  invitedBy?: string;
   redeemedBy?: string;
   createdAt: string;
 };
+export type InvitationGrant = { graph: string; right: 'read' | 'write' };
 type Accounts = { accounts: Account[]; tokens: Token[]; invitations: Invitation[] };
 
 export type AccountView = {
@@ -183,7 +188,7 @@ function validInvitation(accounts: Accounts, code: string): Invitation {
 
 /** The code to hand out (in a link); only its hash is stored. */
 export async function createInvitation(
-  options: { kind: 'once' | 'permanent'; expiresAt?: string; serverAdmin?: boolean; canCreateGraphs?: boolean }
+  options: { kind: 'once' | 'permanent'; expiresAt?: string; serverAdmin?: boolean; canCreateGraphs?: boolean; grant?: InvitationGrant; invitedBy?: string }
 ): Promise<string> {
   // Server admin is a shell on the server: never for whoever holds a shared link.
   if (options.serverAdmin && options.kind !== 'once') {
@@ -197,6 +202,8 @@ export async function createInvitation(
     ...(options.expiresAt ? { expiresAt: options.expiresAt } : {}),
     ...(options.serverAdmin ? { serverAdmin: true } : {}),
     ...(options.canCreateGraphs ? { canCreateGraphs: true } : {}),
+    ...(options.grant ? { grant: options.grant } : {}),
+    ...(options.invitedBy ? { invitedBy: options.invitedBy } : {}),
     createdAt: new Date().toISOString()
   };
   await change(accounts => ({ ...accounts, invitations: [...accounts.invitations, invitation] }));
@@ -206,11 +213,13 @@ export async function createInvitation(
 export function listInvitations() {
   const accounts = load();
   const names = new Map(accounts.accounts.map(account => [account.id, account.name]));
-  return accounts.invitations.map(({ id, kind, expiresAt, serverAdmin, canCreateGraphs, redeemedBy, createdAt }) => ({
+  return accounts.invitations.map(({ id, kind, expiresAt, serverAdmin, canCreateGraphs, grant, invitedBy, redeemedBy, createdAt }) => ({
     id, kind, createdAt,
     expiresAt: expiresAt ?? null,
     serverAdmin: serverAdmin === true,
     canCreateGraphs: canCreateGraphs === true,
+    grant: grant ?? null,
+    invitedBy: invitedBy ? names.get(invitedBy) ?? '(removed account)' : null,
     // A redeemed one-time invitation stays listed, so the admin sees who came through it.
     redeemedBy: redeemedBy ? names.get(redeemedBy) ?? '(removed account)' : null
   }));
@@ -218,6 +227,30 @@ export function listInvitations() {
 
 export async function removeInvitation(id: string) {
   await change(accounts => ({ ...accounts, invitations: accounts.invitations.filter(invitation => invitation.id !== id) }));
+}
+
+/** What a valid invitation gives on a space; null for an invitation to the server only. Throws for an invalid one. */
+export function invitationGrant(code: string): InvitationGrant | null {
+  return validInvitation(load(), code).grant ?? null;
+}
+
+/**
+ * An account that exists takes an invitation to a space: a one-time
+ * invitation is used up by it. Invitations to the server only make accounts.
+ */
+export async function redeemInvitation(code: string, accountId: string): Promise<InvitationGrant> {
+  let grant!: InvitationGrant;
+  await change((accounts) => {
+    const invited = validInvitation(accounts, code);
+    if (!invited.grant) throw new AccountError('This invitation makes a new account; you have one already.');
+    grant = invited.grant;
+    return {
+      ...accounts,
+      invitations: accounts.invitations.map(candidate =>
+        candidate === invited && candidate.kind === 'once' ? { ...candidate, redeemedBy: accountId } : candidate)
+    };
+  });
+  return grant;
 }
 
 /** A person makes their own account: where sign-up is open, or with an invitation. */
