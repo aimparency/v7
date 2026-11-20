@@ -10,6 +10,7 @@ import * as vec2 from '../utils/vec2'
 import { trpc } from '../trpc'
 import { type GraphNode, type GraphLink, isIdeaNode, useGraphSimulation } from './useGraphSimulation'
 import { connectDrop } from '../utils/connect-drop'
+import { averageSupportWeight } from '../utils/connection-weight'
 
 export function useGraphInteraction(
     elementRef: Ref<HTMLElement | SVGSVGElement | undefined>,
@@ -255,70 +256,53 @@ export function useGraphInteraction(
                 void contributeGraph(mapStore.connectFrom as GraphNode, drop.repoId)
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'new') {
                 const parentNode = mapStore.connectFrom
-                const dropPosLogical = mapStore.mouse.logical  // Use already-computed logical coords
-                
+                // A copy: the mouse moves on while the idea modal is open.
+                const dropX = mapStore.mouse.logical[0] ?? 0
+                const dropY = mapStore.mouse.logical[1] ?? 0
+
                 modalStore.ideaCreationParentId = parentNode.id
                 modalStore.ideaCreationCallback = async (newIdeaId, onConnectionConfirmed) => {
-                     // Wait for node to exist in the graph
-                     const checkNode = () => {
-                         const newNode = nodeMap.get(newIdeaId)
-                         if (newNode) {
-                             // Validate drop position
-                             const x = dropPosLogical[0] ?? 0
-                             const y = dropPosLogical[1] ?? 0
-
-                             // 1. Position the new node
-                             newNode.pos[0] = x
-                             newNode.pos[1] = y
-                             newNode.renderPos[0] = x
-                             newNode.renderPos[1] = y
-                             newNode.shift = [0, 0]
-
-                             // 2. Connect parent -> newIdea
-                             const parentX = parentNode.pos[0] ?? 0
-                             const parentY = parentNode.pos[1] ?? 0
-                             const parentR = parentNode.r ?? 25
-                             const childR = newNode.r ?? 25
-
-                             const deltaX = x - parentX
-                             const deltaY = y - parentY
-                             const rSum = parentR + childR
-                             const relPos: [number, number] = [deltaX/rSum, deltaY/rSum]
-
-                             trpc.idea.connectIdeas.mutate({
-                                graph: projectStore.projectPath,
-                                parentIdeaId: parentNode.id,
-                                childIdeaId: newIdeaId,
-                                relativePosition: relPos as [number, number]
-                             }).then(async () => {
-                                 // Reload both ideas to get updated incoming/outgoing arrays
-                                 await dataStore.loadIdeas(projectStore.projectPath, [parentNode.id, newIdeaId])
-                                 // Let Vue's watcher flush so updateGraphData runs and newNode.r reflects
-                                 // the actual post-connection value (not the zero-value initial radius).
-                                 await nextTick()
-                                 const updatedChildR = newNode.r ?? 25
-                                 const correctedRelPos: [number, number] = [deltaX / (parentR + updatedChildR), deltaY / (parentR + updatedChildR)]
-                                 // Snap node back to the exact drop position
-                                 newNode.pos[0] = x
-                                 newNode.pos[1] = y
-                                 newNode.renderPos[0] = x
-                                 newNode.renderPos[1] = y
-                                 newNode.shift = [0, 0]
-                                 // Update the link so the flow force uses the corrected relPos immediately
-                                 const correctedLink = links.value.find(l => l.source.id === newIdeaId && l.target.id === parentNode.id)
-                                 if (correctedLink) correctedLink.relativePosition = correctedRelPos
-                                 // Persist the corrected relative position
-                                 await (dataStore as any).updateConnectionPosition(projectStore.projectPath, parentNode.id, newIdeaId, correctedRelPos)
-                                 // Offer contribution % + hypothesis for the new connection.
-                                 modalStore.openConnectionDetailsModal(parentNode.id, newIdeaId, onConnectionConfirmed)
-                             }).catch(err => {
-                                 toastStore.error('Connection failed', err)
-                             })
-                         } else {
-                             setTimeout(checkNode, 50)
-                         }
-                     }
-                     checkNode()
+                    const graph = projectStore.projectPath
+                    const parentR = parentNode.r ?? 25
+                    const relativeTo = (childR: number): [number, number] =>
+                        [(dropX - (parentNode.pos[0] ?? 0)) / (parentR + childR), (dropY - (parentNode.pos[1] ?? 0)) / (parentR + childR)]
+                    const placeAtDrop = (node: GraphNode) => {
+                        node.pos[0] = dropX
+                        node.pos[1] = dropY
+                        node.renderPos[0] = dropX
+                        node.renderPos[1] = dropY
+                        node.shift = [0, 0]
+                    }
+                    // Connect at once. The new idea's node may never show up
+                    // (a phase filter hides an uncommitted idea), so the
+                    // connection must not wait for it.
+                    try {
+                        await trpc.idea.connectIdeas.mutate({
+                            graph,
+                            parentIdeaId: parentNode.id,
+                            childIdeaId: newIdeaId,
+                            relativePosition: relativeTo(nodeMap.get(newIdeaId)?.r ?? 25),
+                            weight: averageSupportWeight(dataStore.ideas[parentNode.id]),
+                        })
+                        // Both ideas' incoming/outgoing arrays.
+                        await dataStore.loadIdeas(graph, [parentNode.id, newIdeaId])
+                    } catch (err) {
+                        toastStore.error('Connection failed', err)
+                        return
+                    }
+                    // Let Vue's watcher flush so updateGraphData runs and the
+                    // node's radius is the one with the connection.
+                    await nextTick()
+                    const newNode = nodeMap.get(newIdeaId)
+                    if (newNode) {
+                        placeAtDrop(newNode)
+                        const relativePosition = relativeTo(newNode.r ?? 25)
+                        const link = links.value.find(l => l.source.id === newIdeaId && l.target.id === parentNode.id)
+                        if (link) link.relativePosition = relativePosition
+                        await (dataStore as any).updateConnectionPosition(graph, parentNode.id, newIdeaId, relativePosition)
+                    }
+                    // Offer contribution % + hypothesis for the new connection.
+                    modalStore.openConnectionDetailsModal(parentNode.id, newIdeaId, onConnectionConfirmed)
                 }
                 modalStore.openIdeaModal('graph')
             }
@@ -627,6 +611,9 @@ export function useGraphInteraction(
                     parentIdeaId: parent.id,
                     childIdeaId: child.id,
                     relativePosition,
+                    // An existing connection keeps its weight; a new one gets the average.
+                    weight: dataStore.ideas[parent.id]?.supportingConnections?.find(c => c.ideaId === child.id)?.weight
+                        ?? averageSupportWeight(dataStore.ideas[parent.id]),
                 })
                 // Reload both ideas to get updated incoming/outgoing arrays
                 await dataStore.loadIdeas(projectStore.projectPath, [parent.id, child.id])

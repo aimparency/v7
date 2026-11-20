@@ -38,6 +38,12 @@ import { serverDirectory } from '../packages/shared/src/server-directory.mjs';
 // "accounts"`), `start` puts the built UI, the API and the MCP server for all
 // graphs on one port; everyone reads, accounts write the graphs they own or
 // were given (pnpm accounts, pnpm graphs), and agents and loops stay off.
+// Under a supervisor that starts it again (systemd, Restart=on-failure), set
+// AIMPARENCY_SUPERVISED=true: server admins then restart it, or pull main and
+// restart it, from the UI.
+
+// The backend's exit code for "start me again" (packages/backend/src/server-restart.ts).
+const RESTART_EXIT_CODE = 75;
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -491,7 +497,15 @@ async function startOnePort() {
     await runCommand(pnpmCommand, ['run', 'build:core'], env);
     await runCommand(pnpmCommand, ['--filter', 'mcp', 'build'], env);
   }
-  await concurrently(commands, { prefix: 'name' }).result;
+  // One process ending badly ends the stack, so a supervisor starts it anew;
+  // the backend asks for that with RESTART_EXIT_CODE (packages/backend/src/server-restart.ts).
+  await concurrently(commands, { prefix: 'name', killOthersOn: ['failure'] }).result.catch((events) => {
+    if (Array.isArray(events) && events.some((event) => event.exitCode === RESTART_EXIT_CODE)) {
+      console.log('[local-runtime] restart asked for: the supervisor starts the server again');
+      process.exit(RESTART_EXIT_CODE);
+    }
+    throw events;
+  });
 }
 
 async function main() {

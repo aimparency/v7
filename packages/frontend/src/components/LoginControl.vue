@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
-import { ChevronDown, CircleAlert, CircleUser, KeyRound, LogOut, Plug, Server, Trash2, Users } from 'lucide-vue-next'
+import { ChevronDown, CircleAlert, CircleUser, Download, KeyRound, LogOut, Plug, Power, RotateCw, Server, Trash2, Users } from 'lucide-vue-next'
 import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
 import { browserWallets, signWithWallet, type Wallet } from '../utils/wallets'
@@ -39,11 +39,46 @@ const forgetInvitation = () => {
 // The account's own things sit in one menu under its name.
 const root = ref<HTMLElement | null>(null)
 const menuOpen = ref(false)
+// A server admin's restart menu, by the power icon right of the name.
+const powerOpen = ref(false)
 const closeMenuOutside = (event: PointerEvent) => {
-  if (menuOpen.value && !root.value?.contains(event.target as Node)) menuOpen.value = false
+  if ((menuOpen.value || powerOpen.value) && !root.value?.contains(event.target as Node)) menuOpen.value = powerOpen.value = false
 }
 const closeMenuOnEscape = (event: KeyboardEvent) => {
-  if (menuOpen.value && event.key === 'Escape') menuOpen.value = false
+  if ((menuOpen.value || powerOpen.value) && event.key === 'Escape') menuOpen.value = powerOpen.value = false
+}
+
+// The server exits and its supervisor starts it again; once it answers, the
+// page reloads (a pull may have brought a new UI).
+const restarting = ref('')
+const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms))
+const waitForServer = async () => {
+  await sleep(2000)
+  for (let attempt = 0; attempt < 300; attempt++) {
+    const up = await fetch(window.location.origin + '/', { cache: 'no-store' }).then(response => response.ok, () => false)
+    if (up) return
+    await sleep(1000)
+  }
+}
+const restartServer = async (pull: boolean) => {
+  powerOpen.value = false
+  const question = pull
+    ? 'Pull main, build it and restart the server? Building takes a few minutes; everyone is disconnected for a moment at the restart.'
+    : 'Restart the server? Everyone is disconnected for a moment.'
+  if (!window.confirm(question)) return
+  restarting.value = pull ? 'Pulling and building…' : 'Restarting…'
+  try {
+    const result = pull ? await trpc.auth.updateServer.mutate() : await trpc.auth.restartServer.mutate()
+    if ('commits' in result) {
+      useToastStore().info(result.commits.length > 0 ? `${plural(result.commits.length, 'new commit', 'new commits')}: ${result.before} → ${result.after}. Restarting…` : 'Already up to date. Restarting…')
+    }
+    restarting.value = 'Restarting…'
+    await waitForServer()
+    window.location.reload()
+  } catch (caught) {
+    restarting.value = ''
+    useToastStore().error('Not restarted', caught)
+  }
 }
 onMounted(() => {
   document.addEventListener('pointerdown', closeMenuOutside)
@@ -204,7 +239,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
         :aria-expanded="menuOpen"
         aria-haspopup="menu"
         :title="viewer.permanentLogin ? 'Your account' : 'This account lives only in this browser'"
-        @click="menuOpen = !menuOpen; refreshElsewhere()"
+        @click="menuOpen = !menuOpen; powerOpen = false; refreshElsewhere()"
       >
         <CircleAlert v-if="!viewer.permanentLogin" /><CircleUser v-else />
         <span class="account-name">{{ viewer.name }}</span>
@@ -249,6 +284,23 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
         ><Trash2 /> Discard account</button>
       </div>
     </div>
+    <div v-if="viewer.name && viewer.restartable" class="menu-anchor">
+      <button
+        class="icon-btn"
+        :class="{ on: powerOpen }"
+        :aria-expanded="powerOpen"
+        aria-haspopup="menu"
+        :disabled="restarting !== ''"
+        :title="restarting || 'Restart the server'"
+        @click="powerOpen = !powerOpen; menuOpen = false"
+      ><Power /></button>
+      <div v-if="powerOpen" class="menu" role="menu">
+        <div class="menu-label">Server</div>
+        <button class="menu-item" role="menuitem" @click="restartServer(false)"><RotateCw /> Restart</button>
+        <button class="menu-item" role="menuitem" title="git pull origin main, install, build, then restart" @click="restartServer(true)"><Download /> Pull main and restart</button>
+      </div>
+    </div>
+    <span v-if="restarting" class="restarting">{{ restarting }}</span>
 
     <FormModalShell :show="dialog === 'login'" title="Log in" width="min(90vw, 22rem)" @request-close="dialog = null">
       <form id="login-form" @submit.prevent="login">
@@ -340,6 +392,8 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
   .account-btn {
     &.attention { color: var(--status-unclear); border-color: var(--status-unclear); }
   }
+
+  .restarting { color: var(--text-muted); white-space: nowrap; }
 
   .account-name {
     max-width: 12rem;

@@ -168,6 +168,10 @@ const createIdea = async () => {
 }
 
 const close = () => {
+  // Cancelled: a pending graph callback (a drag's connection) must not fire on
+  // the next idea made from the graph.
+  modalStore.ideaCreationCallback = null
+  modalStore.ideaCreationParentId = null
   modalStore.closeIdeaModal()
   draft?.cancel()
 }

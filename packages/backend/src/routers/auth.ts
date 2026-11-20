@@ -11,6 +11,7 @@ import { readJsonOrNull } from '../storage/json.js';
 import path from 'node:path';
 import { accountFootprint, discardAccount } from '../auth/discard.js';
 import { withinLimit } from '../rate-limit.js';
+import { restartable, restartServer, updateServer } from '../server-restart.js';
 
 const rights = { serverAdmin: z.boolean().optional(), canCreateGraphs: z.boolean().optional() };
 
@@ -120,6 +121,8 @@ export const authRouter = t.router({
       signUp: { ...signUp, wallet: walletEnabled() },
       name: viewer.name,
       serverAdmin: viewer.serverAdmin,
+      // A server admin may restart it from the UI: a supervisor starts it again.
+      restartable: viewer.serverAdmin && restartable(),
       canCreateGraphs: mayCreateGraphs(viewer),
       // False for an account held only by a key in this browser: the UI
       // recommends a name and password, since clearing the browser loses it.
@@ -379,6 +382,10 @@ export const authRouter = t.router({
     const { publicUrl, graphCreation, signUp, guestDefaults } = serverConfig();
     return { publicUrl: publicUrl ?? null, graphCreation, signUp, notes: guestDefaults.notes, read: guestDefaults.read };
   }),
+
+  // Server admins only (every auth mutation not listed in auth/access.ts is).
+  restartServer: delayedProcedure.mutation(() => restartServer()),
+  updateServer: delayedProcedure.mutation(() => updateServer()),
 
   setServerSettings: delayedProcedure
     .input(z.object({
