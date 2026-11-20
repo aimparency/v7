@@ -253,7 +253,7 @@ function toPhaseColumn(phases: Phase[], entries: PhaseLevelEntry[]): PhaseColumn
 
 // A floating idea has no phase commitment and no parent.
 type ProjectUpdate = { type: string, id: string, projectPath: string, entity?: any, deleted?: boolean, previous?: unknown, origin?: string }
-type ProjectAccess = { writable: boolean, reason: string | null, user: string | null, role: 'read' | 'write' | 'owner', serverAdmin: boolean }
+type ProjectAccess = { writable: boolean, reason: string | null, user: string | null, role: 'read' | 'write' | 'manage' | 'owner', serverAdmin: boolean }
 const unrestrictedAccess = (): ProjectAccess => ({ writable: true, reason: null, user: null, role: 'owner', serverAdmin: true })
 export type ProjectLoadStage = 'opening' | 'reading' | 'applying'
 export type ProjectLoadHooks = {

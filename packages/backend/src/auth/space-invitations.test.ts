@@ -86,3 +86,39 @@ test('the owner takes an invitation back; a space owner who is no server admin i
   const { space } = await visitor().auth.signUp({ name: 'ben', password: 'ben password', invitation: anaCode });
   assert.equal(space, own);
 });
+
+test('a manager writes and chooses who else writes and reads; the owner alone chooses the managers', async () => {
+  const ben = await loggedIn('ben');
+  const cleo = await loggedIn('cleo');
+  await assert.rejects(ben.graphs.setAccess({ graph: slug, writers: ['cleo'] }), /ask its owner|owner/i);
+
+  await felix.graphs.setAccess({ graph: slug, managers: ['ben'] });
+  assert.deepEqual((await ben.graphs.getAccess({ graph: slug }))?.managers, ['ben']);
+  await ben.idea.createFloatingIdea({ graph: slug, idea: { text: 'Levels' } });
+
+  // Who writes and reads: the manager's to choose.
+  await ben.graphs.setAccess({ graph: slug, writers: ['cleo'] });
+  await cleo.idea.createFloatingIdea({ graph: slug, idea: { text: 'Music' } });
+  await ben.graphs.setAccess({ graph: slug, writers: [], readers: ['cleo'] });
+  await assert.rejects(cleo.idea.createFloatingIdea({ graph: slug, idea: { text: 'More' } }), /open read-only/);
+  assert.ok(await cleo.project.getMeta({ graph: slug }));
+
+  // The owner's part stays the owner's.
+  await assert.rejects(ben.graphs.setAccess({ graph: slug, managers: ['ben', 'cleo'] }), /Only the owner .* managers/);
+  await assert.rejects(ben.graphs.setAccess({ graph: slug, read: 'everyone' }), /Only the owner .* read/);
+  await assert.rejects(ben.graphs.setSlug({ graph: slug, slug: 'elsewhere' }), /owner/i);
+  await assert.rejects(ben.graphs.remove({ graph: slug }), /owner/i);
+  await assert.rejects(ben.graphs.invite({ graph: slug, right: 'manage' }), /Only the owner/);
+
+  // Invitations: the manager's too.
+  const { code } = await ben.graphs.invite({ graph: slug, right: 'write' });
+  assert.equal((await ben.graphs.invitations({ graph: slug })).length, 1);
+  await visitor().auth.signUp({ name: 'dora', password: 'dora password', invitation: code });
+  assert.deepEqual((await felix.graphs.getAccess({ graph: slug }))?.writers, ['dora']);
+
+  // The owner invites someone to manage it.
+  const { code: manageCode } = await felix.graphs.invite({ graph: slug, right: 'manage' });
+  assert.equal((await visitor().auth.invitationInfo({ invitation: manageCode })).right, 'manage');
+  await visitor().auth.signUp({ name: 'emil', password: 'emil password', invitation: manageCode });
+  assert.deepEqual((await felix.graphs.getAccess({ graph: slug }))?.managers, ['ben', 'emil']);
+});

@@ -11,7 +11,10 @@ import { slugsOf, type Graph } from '../graphs/registry.js';
 import { resolveToken } from './accounts.js';
 
 // What a viewer is on one graph.
-const RIGHTS = ['read', 'write', 'owner'] as const;
+// Each includes the ones before it. manage: write, and choose who else reads
+// and writes (invitations too); the owner alone chooses the managers, who
+// reads at all, and the space's address, key and existence.
+const RIGHTS = ['read', 'write', 'manage', 'owner'] as const;
 export type GraphRight = typeof RIGHTS[number];
 
 // What a procedure asks for: a right on the graph it names, an account, the
@@ -64,7 +67,9 @@ const WRITE_MUTATIONS = new Set([
   // Accepting an offer links the offered space into the graph (routers/notes.ts).
   'notes.acceptOffer'
 ]);
-const OWNER_MUTATIONS = new Set(['graphs.setAccess', 'graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove', 'graphs.invite', 'graphs.removeInvitation']);
+const OWNER_MUTATIONS = new Set(['graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
+// Their handlers keep the owner's part of them to the owner (routers/graphs.ts).
+const MANAGE_MUTATIONS = new Set(['graphs.setAccess', 'graphs.invite', 'graphs.removeInvitation']);
 // What a website the account granted may do beyond writing its graphs; its
 // account (password, tokens, further websites) stays on this server's own pages.
 const SITE_ACCOUNT_MUTATIONS = new Set(['notes.add', 'notes.remove']);
@@ -81,6 +86,7 @@ export function neededRole(path: string, type: string): Need {
   if (ACCOUNT_MUTATIONS.has(path)) return 'account';
   if (WRITE_ROUTERS.has(router) || WRITE_MUTATIONS.has(path)) return 'write';
   if (OWNER_MUTATIONS.has(path)) return 'owner';
+  if (MANAGE_MUTATIONS.has(path)) return 'manage';
   return 'serverAdmin';
 }
 
@@ -126,6 +132,7 @@ export function rightOn(graph: Graph | null, viewer: Viewer): GraphRight {
   if (viewer.serverAdmin) return 'owner';
   if (!graph || viewer.id === null) return 'read';
   if (graph.owner === viewer.id) return 'owner';
+  if (graph.managers?.includes(viewer.id)) return 'manage';
   return graph.writers.includes(viewer.id) ? 'write' : 'read';
 }
 
@@ -181,7 +188,7 @@ export function assertAllowed(path: string, type: string, viewer: Viewer, graph:
     }
     return;
   }
-  if (viewer.site !== undefined && need === 'owner') {
+  if (viewer.site !== undefined && (need === 'owner' || need === 'manage')) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space may do this, on this server\'s own page.' });
   }
   const right = rightOn(graph, viewer);

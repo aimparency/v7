@@ -149,6 +149,8 @@ const handleKeydown = (event: KeyboardEvent) => {
   padding: 0.875rem;
   border-top: 1px solid #555;
   display: flex;
+  /* Narrow screens: the buttons go onto further lines rather than out of the window. */
+  flex-wrap: wrap;
   gap: 0.375rem;
   justify-content: flex-end;
   flex-shrink: 0;

@@ -12,6 +12,7 @@ import { useHistoryStore } from './stores/history'
 import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
 import LoginControl from './components/LoginControl.vue'
+import McpOffer from './components/McpOffer.vue'
 import NotesInbox from './components/NotesInbox.vue'
 import McpAuthorizeModal from './components/McpAuthorizeModal.vue'
 import type { IdeaSearchAdditionalOption, IdeaSearchPickPayload } from './stores/ui/idea-search-types'
@@ -886,6 +887,7 @@ onUnmounted(() => {
       <div v-if="historyStore.message" class="history-message">{{ historyStore.message }}</div>
     </footer>
     <ToastStack />
+    <McpOffer v-if="accounts" />
   </div>
 </template>
 

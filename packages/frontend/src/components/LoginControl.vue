@@ -104,7 +104,7 @@ const invitedSentence = computed(() => {
   const space = invitationInfo.value?.space
   if (invitationInfo.value && !invitationInfo.value.valid) return 'This invitation is not valid any more.'
   if (!space) return 'You were invited to this server.'
-  return `You were invited to the space "${space.name}", to ${invitationInfo.value?.right === 'write' ? 'work on it' : 'read it'}.`
+  return `You were invited to the space "${space.name}", to ${({ manage: 'manage it', write: 'work on it', read: 'read it' } as const)[invitationInfo.value?.right ?? 'read']}.`
 })
 const openSpace = (slug: string | null) => { if (slug) void useProjectLoadStore().open(slug) }
 const takeInvitation = async () => {
@@ -304,7 +304,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
     </div>
     <span v-if="restarting" class="restarting">{{ restarting }}</span>
 
-    <FormModalShell :show="dialog === 'login'" title="Log in" width="min(90vw, 22rem)" @request-close="dialog = null">
+    <FormModalShell :show="dialog === 'login'" title="Log in" width="min(92vw, 30rem)" @request-close="dialog = null">
       <form id="login-form" @submit.prevent="login">
         <input v-model="name" placeholder="Name" autocomplete="username" autofocus />
         <input v-model="password" type="password" placeholder="Password" autocomplete="current-password" />
@@ -318,7 +318,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
       </template>
     </FormModalShell>
 
-    <FormModalShell :show="dialog === 'sign-up'" title="Create account" width="min(90vw, 22rem)" @request-close="dialog = null">
+    <FormModalShell :show="dialog === 'sign-up'" title="Create account" width="min(92vw, 30rem)" @request-close="dialog = null">
       <form id="sign-up-form" @submit.prevent="signUp">
         <p v-if="invitation" class="hint">{{ invitedSentence }}</p>
         <input v-model="name" placeholder="Name" autocomplete="username" autofocus />
@@ -331,7 +331,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
       </template>
     </FormModalShell>
 
-    <FormModalShell :show="dialog === 'permanent'" title="Keep this account" width="min(90vw, 22rem)" @request-close="dialog = null">
+    <FormModalShell :show="dialog === 'permanent'" title="Keep this account" width="min(92vw, 30rem)" @request-close="dialog = null">
       <form id="permanent-form" @submit.prevent="makePermanent">
         <p class="hint">So far this account lives only in this browser. With a name and a password you can log in from anywhere, and it survives clearing the browser.</p>
         <input v-model="name" placeholder="Name" autocomplete="username" autofocus />
@@ -362,7 +362,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
       </template>
     </FormModalShell>
 
-    <FormModalShell :show="dialog === 'password'" title="Change password" width="min(90vw, 22rem)" @request-close="dialog = null">
+    <FormModalShell :show="dialog === 'password'" title="Change password" width="min(92vw, 30rem)" @request-close="dialog = null">
       <form id="password-form" @submit.prevent="changePassword">
         <input v-model="current" type="password" placeholder="Current password" autocomplete="current-password" autofocus />
         <input v-model="password" type="password" placeholder="New password (8+ characters)" autocomplete="new-password" />

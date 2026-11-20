@@ -30,9 +30,10 @@ export async function discardAccount(id: string): Promise<void> {
   for (const graph of owned) await removeSpace(graph);
   for (const graph of listGraphs()) {
     await removeNotesWhere(graph, note => note.author === id || (note.space !== undefined && repoIds.has(note.space.repoId)));
-    if (graph.writers.includes(id) || graph.noteWriters?.includes(id) || graph.readers?.includes(id)) {
+    if (graph.writers.includes(id) || graph.managers?.includes(id) || graph.noteWriters?.includes(id) || graph.readers?.includes(id)) {
       await setGraphAccess(graph.slug, {
         writers: graph.writers.filter(writer => writer !== id),
+        ...(graph.managers ? { managers: graph.managers.filter(manager => manager !== id) } : {}),
         ...(graph.noteWriters ? { noteWriters: graph.noteWriters.filter(writer => writer !== id) } : {}),
         ...(graph.readers ? { readers: graph.readers.filter(reader => reader !== id) } : {})
       });

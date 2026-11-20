@@ -145,7 +145,7 @@ export const graphsRouter = t.router({
     .query(({ input }) => {
       const { graph } = resolveGraphAddress(input.graph);
       return graph && {
-        slug: graph.slug, kind: graph.kind, owner: ownerName(graph), writers: accountNames(graph.writers),
+        slug: graph.slug, kind: graph.kind, owner: ownerName(graph), managers: accountNames(graph.managers ?? []), writers: accountNames(graph.writers),
         notes: graph.notes ?? serverConfig().guestDefaults.notes, noteWriters: accountNames(graph.noteWriters ?? []),
         read: readSettingOf(graph), readers: accountNames(graph.readers ?? []),
         // The address is public; of the key only whose it is, never the key.
@@ -157,6 +157,7 @@ export const graphsRouter = t.router({
     .input(z.object({
       graph: z.string(),
       owner: z.string().optional(),
+      managers: z.array(z.string()).max(500).optional(),
       writers: z.array(z.string()).max(500).optional(),
       // Who may leave notes: null goes back to the server's default.
       notes: z.enum(['everyone', 'selected', 'nobody']).nullable().optional(),
@@ -165,10 +166,17 @@ export const graphsRouter = t.router({
       read: z.enum(['everyone', 'accounts', 'selected']).nullable().optional(),
       readers: z.array(z.string()).max(500).optional()
     }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const graph = listed(input.graph);
+      // A manager chooses who writes, reads and leaves notes; who owns and
+      // manages it, and whether it is read at all or noted on, stay the owner's.
+      const ownerOnly = (['owner', 'managers', 'read', 'notes'] as const).filter(field => input[field] !== undefined);
+      if (ownerOnly.length > 0 && rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'owner') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: `Only the owner of this space changes ${ownerOnly.join(', ')}.` });
+      }
       await run(() => setGraphAccess(graph.slug, {
         ...(input.owner !== undefined ? { owner: accountId(input.owner) } : {}),
+        ...(input.managers !== undefined ? { managers: [...new Set(input.managers.map(accountId))] } : {}),
         ...(input.writers !== undefined ? { writers: [...new Set(input.writers.map(accountId))] } : {}),
         ...(input.notes !== undefined ? { notes: input.notes ?? undefined } : {}),
         ...(input.noteWriters !== undefined ? { noteWriters: [...new Set(input.noteWriters.map(accountId))] } : {}),
@@ -178,13 +186,17 @@ export const graphsRouter = t.router({
       return { success: true };
     }),
 
-  // Its owner invites someone to this space: a link for one person, who takes
+  // Its owner or a manager invites someone to this space (to manage it: the
+  // owner only): a link for one person, who takes
   // it with a new account or the one they have. The code is shown this once.
   invite: delayedProcedure
-    .input(z.object({ graph: z.string(), right: z.enum(['read', 'write']), days: z.number().positive().max(365).default(14) }))
+    .input(z.object({ graph: z.string(), right: z.enum(['read', 'write', 'manage']), days: z.number().positive().max(365).default(14) }))
     .mutation(async ({ ctx, input }) => {
       const graph = listed(input.graph);
       const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
+      if (input.right === 'manage' && rightOn(graph, viewer) !== 'owner') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space invites someone to manage it.' });
+      }
       const code = await createInvitation({
         kind: 'once', grant: { graph: graph.slug, right: input.right },
         expiresAt: new Date(Date.now() + input.days * 24 * 60 * 60_000).toISOString(),
@@ -193,13 +205,14 @@ export const graphsRouter = t.router({
       return { code };
     }),
 
-  // The invitations to this space, for its owner.
+  // The invitations to this space, for its owner and managers.
   invitations: delayedProcedure
     .input(z.object({ graph: z.string() }))
     .query(({ ctx, input }) => {
       const graph = listed(input.graph);
-      if (rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'owner') {
-        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space sees its invitations.' });
+      const right = rightOn(graph, ctx.viewer ?? viewerFor(ctx.session?.token));
+      if (right !== 'owner' && right !== 'manage') {
+        throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space and its managers see its invitations.' });
       }
       const slugs = slugsOf(graph);
       return listInvitations().filter(invitation => invitation.grant && slugs.includes(invitation.grant.graph))

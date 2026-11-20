@@ -73,8 +73,10 @@ const accounts = hasAccounts()
 // Who may use this graph. Its owner names the accounts that may also change it,
 // and who else reads it: everyone, every account, or the accounts named.
 const graphAccess = ref<Awaited<ReturnType<typeof trpc.graphs.getAccess.query>>>(null)
-const newWriter = ref('')
-const mayManageAccess = computed(() => dataStore.access.role === 'owner')
+// owner: everything; manage: who else writes and reads, invitations too; the
+// owner alone chooses the managers, who reads at all, the address and the key.
+const isOwner = computed(() => dataStore.access.role === 'owner')
+const mayManageAccess = computed(() => dataStore.access.role === 'owner' || dataStore.access.role === 'manage')
 
 async function loadGraphAccess() {
   if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ graph: projectStore.projectPath })
@@ -85,20 +87,47 @@ type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'gr
 async function setAccess(change: AccessChange) {
   try {
     await trpc.graphs.setAccess.mutate({ graph: projectStore.projectPath, ...change })
-    newWriter.value = newNoteWriter.value = newReader.value = ''
+    newPerson.value = newNoteWriter.value = ''
     await loadGraphAccess()
   } catch (e) {
     useToastStore().error('Could not change who may use this space', e)
   }
 }
-const setWriters = (writers: string[]) => setAccess({ writers })
 const newNoteWriter = ref('')
-const newReader = ref('')
+
+// The people of the space, each with their highest role: one list of managers,
+// writers and readers. Readers count where only named accounts read it.
+type Role = 'manage' | 'write' | 'read'
+const ROLE_LABELS: Record<Role, string> = { manage: 'manages', write: 'writes', read: 'reads' }
+const ROLE_LISTS = { manage: 'managers', write: 'writers', read: 'readers' } as const
+const people = computed(() => {
+  const access = graphAccess.value
+  if (!access) return []
+  const roles = new Map<string, Role>()
+  for (const name of access.readers) roles.set(name, 'read')
+  for (const name of access.writers) roles.set(name, 'write')
+  for (const name of access.managers) roles.set(name, 'manage')
+  return [...roles].map(([name, role]) => ({ name, role }))
+})
+const newPerson = ref('')
+const newPersonRole = ref<Role>('write')
+// Out of every list, then into the one of the role (null: out of the space).
+function setRole(name: string, role: Role | null) {
+  const access = graphAccess.value
+  if (!access || !name.trim()) return
+  const change: AccessChange = {}
+  for (const [listRole, list] of Object.entries(ROLE_LISTS) as [Role, typeof ROLE_LISTS[Role]][]) {
+    const before = access[list]
+    const after = [...before.filter(other => other !== name), ...(listRole === role ? [name.trim()] : [])]
+    if (after.length !== before.length || after.some((other, index) => other !== before[index])) change[list] = after
+  }
+  if (Object.keys(change).length > 0) void setAccess(change)
+}
 
 // Inviting someone to this space: a link for one person, who takes it with a
 // new account or the one they have.
 const spaceInvitations = ref<Awaited<ReturnType<typeof trpc.graphs.invitations.query>>>([])
-const inviteRight = ref<'write' | 'read'>('write')
+const inviteRight = ref<Role>('write')
 const inviteLink = ref('')
 const inviteCopied = ref(false)
 async function loadSpaceInvitations() {
@@ -123,8 +152,9 @@ async function removeSpaceInvitation(id: string) {
     useToastStore().error('Could not take the invitation back', e)
   }
 }
+const INVITATION_LABELS: Record<Role, string> = { manage: 'to manage it', write: 'to work on it', read: 'to read it' }
 const describeSpaceInvitation = (invitation: (typeof spaceInvitations.value)[number]) => [
-  invitation.right === 'write' ? 'to work on it' : 'to read it',
+  INVITATION_LABELS[invitation.right],
   invitation.redeemedBy ? `taken by ${invitation.redeemedBy}`
     : invitation.expiresAt && Date.parse(invitation.expiresAt) < Date.now() ? 'expired'
     : invitation.expiresAt ? `open until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'open'
@@ -132,7 +162,7 @@ const describeSpaceInvitation = (invitation: (typeof spaceInvitations.value)[num
 const READ_SENTENCES = {
   everyone: 'Everyone may read this space, also without logging in.',
   accounts: 'Every logged-in account may read this space.',
-  selected: 'Only the accounts named here (and those who may change it) read this space.'
+  selected: 'Only the people below read this space.'
 } as const
 
 // A graph from a remote URL is pushed back with one of its owner's SSH keys.
@@ -141,7 +171,7 @@ const myKeys = ref<Awaited<ReturnType<typeof trpc.keys.list.query>>>([])
 const selectedKey = computed(() => myKeys.value.find(key => key.id === graphAccess.value?.remote?.key))
 
 async function loadKeys() {
-  if (graphAccess.value?.remote && mayManageAccess.value) myKeys.value = await trpc.keys.list.query()
+  if (graphAccess.value?.remote && isOwner.value) myKeys.value = await trpc.keys.list.query()
 }
 
 async function selectKey(id: string | null) {
@@ -598,33 +628,67 @@ const save = async () => {
 
         <div v-if="graphAccess" class="form-group">
           <label>Access</label>
-          <div v-if="mayManageAccess" class="add-repo-row">
-            <span class="linked-repo-name">Address</span>
+          <div v-if="isOwner" class="add-repo-row">
+            <span class="row-label">Address</span>
             <span class="address-prefix">/spaces/</span>
             <input v-model="slug" type="text" spellcheck="false" placeholder="address" @keydown.enter="changeSlug" />
             <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
           </div>
-          <p v-if="mayManageAccess" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
-          <p class="hint-text">{{ READ_SENTENCES[graphAccess.read] }} {{ graphAccess.owner ?? 'The server admin' }} owns it; the accounts below may also change it.</p>
-          <div v-if="graphAccess.writers.length > 0" class="status-list">
-            <div v-for="writer in graphAccess.writers" :key="writer" class="linked-repo-row">
-              <span class="linked-repo-name">{{ writer }}</span>
+          <p v-if="isOwner" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
+          <div v-if="isOwner" class="add-repo-row">
+            <span class="row-label">Who reads it</span>
+            <select :value="graphAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof graphAccess.read })">
+              <option value="everyone">everyone, without logging in</option>
+              <option value="accounts">every logged-in account</option>
+              <option value="selected">only the people below</option>
+            </select>
+          </div>
+          <p class="hint-text">{{ READ_SENTENCES[graphAccess.read] }}</p>
+
+          <label class="sub-label">People</label>
+          <div class="status-list">
+            <div class="linked-repo-row">
+              <span class="linked-repo-name">{{ graphAccess.owner ?? 'The server admins' }}</span>
+              <span class="role-text">owns it</span>
+            </div>
+            <div v-for="person in people" :key="person.name" class="linked-repo-row">
+              <span class="linked-repo-name">{{ person.name }}</span>
+              <select
+                v-if="mayManageAccess && (isOwner || person.role !== 'manage')"
+                class="role-select"
+                :value="person.role"
+                @change="setRole(person.name, ($event.target as HTMLSelectElement).value as Role)"
+              >
+                <option v-if="isOwner" value="manage">manages</option>
+                <option value="write">writes</option>
+                <option value="read">reads</option>
+              </select>
+              <span v-else class="role-text">{{ ROLE_LABELS[person.role] }}</span>
               <button
-                v-if="mayManageAccess"
+                v-if="mayManageAccess && (isOwner || person.role !== 'manage')"
                 class="delete-btn"
-                title="Take write access away"
-                @click="setWriters(graphAccess.writers.filter(other => other !== writer))"
+                :title="`Take ${person.name} out of this space`"
+                @click="setRole(person.name, null)"
               ><X /></button>
             </div>
           </div>
-          <p v-else class="hint-text">Nobody else may change it yet.</p>
+          <p v-if="people.length === 0" class="hint-text">Nobody else is named yet.</p>
+          <p v-if="people.some(person => person.role === 'read') && graphAccess.read !== 'selected'" class="hint-text">Those who read only matter while only the people named here read it.</p>
           <div v-if="mayManageAccess" class="add-repo-row">
-            <input v-model="newWriter" type="text" placeholder="Account name" @keydown.enter="setWriters([...graphAccess.writers, newWriter.trim()])" />
-            <button class="action-btn add-repo-btn" :disabled="!newWriter.trim()" @click="setWriters([...graphAccess.writers, newWriter.trim()])">Give write access</button>
+            <input v-model="newPerson" type="text" placeholder="Account name" @keydown.enter="setRole(newPerson, newPersonRole)" />
+            <select v-model="newPersonRole">
+              <option v-if="isOwner" value="manage">manages</option>
+              <option value="write">writes</option>
+              <option value="read">reads</option>
+            </select>
+            <button class="action-btn add-repo-btn" :disabled="!newPerson.trim()" @click="setRole(newPerson, newPersonRole)">Add</button>
           </div>
+          <p class="hint-text">Managing: writing, and choosing who else writes and reads. The owner alone chooses the managers, who reads it at all, its address and its key.</p>
+
           <div v-if="mayManageAccess" class="add-repo-row">
             <span class="row-label">Invite someone</span>
             <select v-model="inviteRight">
+              <option v-if="isOwner" value="manage">to manage it</option>
               <option value="write">to work on it</option>
               <option value="read">to read it</option>
             </select>
@@ -640,29 +704,15 @@ const save = async () => {
               <button v-if="!invitation.redeemedBy" class="delete-btn" title="Take the invitation back" @click="removeSpaceInvitation(invitation.id)"><X /></button>
             </div>
           </div>
-          <div v-if="mayManageAccess" class="add-repo-row">
-            <span class="linked-repo-name">Who reads it</span>
-            <select :value="graphAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof graphAccess.read })">
-              <option value="everyone">everyone, without logging in</option>
-              <option value="accounts">every logged-in account</option>
-              <option value="selected">only the accounts named here</option>
-            </select>
-          </div>
-          <div v-if="mayManageAccess && graphAccess.read === 'selected'" class="add-repo-row">
-            <span class="linked-repo-name">{{ graphAccess.readers.join(', ') || 'Nobody named yet' }}</span>
-            <input v-model="newReader" type="text" placeholder="Account name" @keydown.enter="setAccess({ readers: [...graphAccess.readers, newReader.trim()] })" />
-            <button class="action-btn add-repo-btn" :disabled="!newReader.trim()" @click="setAccess({ readers: [...graphAccess.readers, newReader.trim()] })">Add</button>
-            <button class="action-btn add-repo-btn" :disabled="graphAccess.readers.length === 0" @click="setAccess({ readers: [] })">Clear</button>
-          </div>
-          <div v-if="mayManageAccess" class="add-repo-row">
-            <span class="linked-repo-name">Notes from visitors</span>
+          <div v-if="isOwner" class="add-repo-row">
+            <span class="row-label">Notes from visitors</span>
             <select :value="graphAccess.notes" @change="setAccess({ notes: ($event.target as HTMLSelectElement).value as typeof graphAccess.notes })">
               <option value="everyone">every account may leave notes</option>
               <option value="selected">only the accounts named here</option>
               <option value="nobody">nobody</option>
             </select>
           </div>
-          <div v-if="mayManageAccess && graphAccess.notes === 'selected'" class="add-repo-row">
+          <div v-if="isOwner && graphAccess.notes === 'selected'" class="add-repo-row">
             <span class="linked-repo-name">{{ graphAccess.noteWriters.join(', ') || 'Nobody named yet' }}</span>
             <input v-model="newNoteWriter" type="text" placeholder="Account name" @keydown.enter="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })" />
             <button class="action-btn add-repo-btn" :disabled="!newNoteWriter.trim()" @click="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })">Add</button>
@@ -673,7 +723,7 @@ const save = async () => {
               Follows <code>{{ graphAccess.remote.url }}</code>.
               {{ graphAccess.remote.key ? `Edited here and pushed back with a key of ${graphAccess.remote.keyOwner ?? 'a removed account'}.` : 'Read-only here until its owner selects a key to push with.' }}
             </p>
-            <div v-if="mayManageAccess" class="add-repo-row">
+            <div v-if="isOwner" class="add-repo-row">
               <select :value="selectedKey?.id ?? ''" @change="selectKey(($event.target as HTMLSelectElement).value || null)">
                 <option value="">No key: read-only here</option>
                 <option v-for="key in myKeys" :key="key.id" :value="key.id">{{ key.label }}</option>
@@ -685,7 +735,7 @@ const save = async () => {
               <code class="public-key">{{ selectedKey.publicKey }}</code>
             </p>
           </template>
-          <button v-if="mayManageAccess" class="action-btn" @click="removeGraph">Delete this space</button>
+          <button v-if="isOwner" class="action-btn" @click="removeGraph">Delete this space</button>
         </div>
 
         <div class="form-group">
@@ -1052,6 +1102,11 @@ const save = async () => {
         flex-shrink: 0;
         padding: 0.5rem 1rem;
       }
+    }
+
+    .linked-repo-row {
+      .role-text { color: var(--text-muted); white-space: nowrap; }
+      .role-select { flex: 0 0 auto; min-width: 7rem; }
     }
 
     .sub-label {

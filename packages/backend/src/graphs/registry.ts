@@ -40,6 +40,8 @@ export type Graph = {
   owner: string | null;
   /** Account ids that may change the graph, next to its owner. */
   writers: string[];
+  /** Account ids that change it and also choose who else reads and writes it (not who manages it). */
+  managers?: string[];
   /** Who may leave notes; absent: the server's default (server.json guestDefaults). */
   notes?: 'everyone' | 'selected' | 'nobody';
   /** With notes 'selected': the account ids that may. */
@@ -194,14 +196,16 @@ export async function addRemoteGraph(
  * What an invitation to a space gives the account that takes it: write access
  * (it then reads too) or a place among the readers. Its owner gets nothing more.
  */
-export async function grantAccess(slug: string, accountId: string, right: 'read' | 'write'): Promise<Graph> {
+export async function grantAccess(slug: string, accountId: string, right: 'read' | 'write' | 'manage'): Promise<Graph> {
   return change(async (graphs) => {
     const graph = graphs.find(candidate => !candidate.deletedAt && slugsOf(candidate).includes(slug));
     if (!graph) throw new GraphError('The space of this invitation is gone.');
     if (graph.owner === accountId) return { graphs, result: graph };
-    const next: Graph = right === 'write'
-      ? { ...graph, writers: [...new Set([...graph.writers, accountId])] }
-      : { ...graph, readers: [...new Set([...(graph.readers ?? []), accountId])] };
+    const next: Graph = right === 'manage'
+      ? { ...graph, managers: [...new Set([...(graph.managers ?? []), accountId])] }
+      : right === 'write'
+        ? { ...graph, writers: [...new Set([...graph.writers, accountId])] }
+        : { ...graph, readers: [...new Set([...(graph.readers ?? []), accountId])] };
     return { graphs: graphs.map(candidate => candidate === graph ? next : candidate), result: next };
   });
 }
@@ -309,7 +313,7 @@ export async function restoreGraph(slug: string): Promise<Graph> {
 
 export async function setGraphAccess(
   slug: string,
-  access: { owner?: string | null; writers?: string[]; notes?: Graph['notes']; noteWriters?: string[]; read?: Graph['read']; readers?: string[] }
+  access: { owner?: string | null; writers?: string[]; managers?: string[]; notes?: Graph['notes']; noteWriters?: string[]; read?: Graph['read']; readers?: string[] }
 ): Promise<Graph> {
   return change(async (graphs) => {
     const graph = graphs.find(candidate => candidate.slug === slug);

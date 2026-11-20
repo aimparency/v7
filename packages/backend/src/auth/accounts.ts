@@ -48,7 +48,7 @@ type Invitation = {
   redeemedBy?: string;
   createdAt: string;
 };
-export type InvitationGrant = { graph: string; right: 'read' | 'write' };
+export type InvitationGrant = { graph: string; right: 'read' | 'write' | 'manage' };
 type Accounts = { accounts: Account[]; tokens: Token[]; invitations: Invitation[] };
 
 export type AccountView = {
