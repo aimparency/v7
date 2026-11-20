@@ -68,9 +68,11 @@ const restartServer = async (pull: boolean) => {
   if (!window.confirm(question)) return
   restarting.value = pull ? 'Pulling and building…' : 'Restarting…'
   try {
-    const result = pull ? await trpc.auth.updateServer.mutate() : await trpc.auth.restartServer.mutate()
-    if ('commits' in result) {
-      useToastStore().info(result.commits.length > 0 ? `${plural(result.commits.length, 'new commit', 'new commits')}: ${result.before} → ${result.after}. Restarting…` : 'Already up to date. Restarting…')
+    if (pull) {
+      const { commits, before, after } = await trpc.auth.updateServer.mutate()
+      useToastStore().info(commits.length > 0 ? `${plural(commits.length, 'new commit', 'new commits')}: ${before} → ${after}. Restarting…` : 'Already up to date. Restarting…')
+    } else {
+      await trpc.auth.restartServer.mutate()
     }
     restarting.value = 'Restarting…'
     await waitForServer()
