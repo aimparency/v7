@@ -123,6 +123,14 @@ const awaitingHumanCount = computed(() => rankIdeasAwaitingHuman(dataStore.ideas
 // With accounts other people use this server: no loops, and wrapped agents (a
 // shell on the server) only for server admins, when the operator turned them on.
 const accounts = hasAccounts()
+// The viewer's role in the open space, shown next to its name.
+const ROLE_LABELS = { owner: 'own', manage: 'manage', write: 'write', read: 'read' } as const
+const ROLE_TITLES = {
+  owner: 'You own this space: everything is yours to decide.',
+  manage: 'You manage this space: you write it and choose who else writes and reads it.',
+  write: 'You may change this space.',
+  read: 'You may read this space.'
+} as const
 const viewerStore = useViewerStore()
 const agentsAllowed = computed(() => !accounts || (getRuntimeConfig().agents && viewerStore.name !== null && viewerStore.serverAdmin))
 // The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
@@ -562,7 +570,12 @@ onUnmounted(() => {
           :title="`aimparency server: ${projectStore.connectionStatus}`"
         ></span>
         <span class="project-chip-value">{{ activeProjectName }}</span>
-        <span v-if="!dataStore.access.writable" class="read-only-badge" :title="dataStore.access.reason ?? ''">read-only</span>
+        <span
+          v-if="accounts"
+          class="role-badge"
+          :class="dataStore.access.role"
+          :title="dataStore.access.reason ?? ROLE_TITLES[dataStore.access.role]"
+        >{{ ROLE_LABELS[dataStore.access.role] }}</span>
         <template v-if="!accounts">
           <code class="project-path">{{ normalizedProjectRoot }}</code>
         </template>
@@ -940,13 +953,20 @@ onUnmounted(() => {
     white-space: nowrap;
   }
 
-  .read-only-badge {
+  /* The viewer's role in the space, each its own colour. */
+  .role-badge {
+    --role-color: var(--status-unclear);
     flex-shrink: 0;
     padding: 0 0.35rem;
-    border: 1px solid var(--status-unclear);
+    border: 1px solid var(--role-color);
     border-radius: var(--radius);
-    color: var(--status-unclear);
+    color: var(--role-color);
     font-size: var(--font-size-tiny);
+
+    &.owner { --role-color: #7ee8a5; }
+    &.manage { --role-color: #8cc4ff; }
+    &.write { --role-color: #e3a6ff; }
+    &.read { --role-color: var(--status-unclear); }
   }
 
   .project-path {
