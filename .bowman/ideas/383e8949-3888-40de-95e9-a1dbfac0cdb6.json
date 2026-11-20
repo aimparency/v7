@@ -12,7 +12,25 @@
         1.45,
         3.46
       ],
-      "weight": 1
+      "weight": 34
+    },
+    {
+      "ideaId": "35b4a0e2-e3e0-4a5f-a591-6e2713275ac8",
+      "relativePosition": [
+        -3.74,
+        -0.32
+      ],
+      "weight": 17,
+      "hypothesis": "An invitation to one space is the least friction for a closed server: the invited person lands where they were asked to work, and nobody else gets in."
+    },
+    {
+      "ideaId": "8460d0fe-3414-4eac-906a-630a3bbcf055",
+      "relativePosition": [
+        0.66,
+        -3.69
+      ],
+      "weight": 15,
+      "hypothesis": "A person who can leave cleanly, and change their mind for a month, trusts the server with an account in the first place."
     }
   ],
   "supportedIdeas": [
@@ -27,7 +45,7 @@
   },
   "intrinsicValue": 0,
   "cost": 5,
-  "selfWeight": 1,
+  "selfWeight": 34,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

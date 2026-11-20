@@ -1,0 +1,24 @@
+{
+  "id": "69043478-d1ad-4ddf-aa04-e065183f5be2",
+  "text": "get_idea_context fails on ideas with long descriptions: it searches with the description, over the 2000-character query limit",
+  "description": "Found by Claude 2026-11-20 on ideas.commons-hub.at: get_idea_context for d4203221 returned a zod error \"Too big: expected string to have <=2000 characters\" at path query. The related-ideas lookup passes the idea's text and description as a search query, and the search procedure caps the query at 2000 characters. Fix: cut the query (text plus the beginning of the description) to the limit before searching, and add a test with a long description.",
+  "archived": false,
+  "color": "#3e2d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "051ae7cd-9509-4451-a686-2041d9b38a98"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Reproduced 2026-11-20 with get_idea_context(graph: aimparency, ideaId: d4203221). Not fixed yet.",
+    "date": 1795194801269
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

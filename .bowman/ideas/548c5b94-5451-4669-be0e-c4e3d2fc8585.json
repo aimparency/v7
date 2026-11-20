@@ -5,7 +5,26 @@
   "archived": false,
   "color": "#2c6c2c",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "c7041656-69c6-4ca5-9c54-72fe073011ca",
+      "relativePosition": [
+        -1.41,
+        3.47
+      ],
+      "weight": 18,
+      "hypothesis": "When a private repository becomes a space in one dialog, teams keep their intention network next to their code without making the repository public."
+    },
+    {
+      "ideaId": "450ce07a-9210-45bb-9f4d-740c92cb3e22",
+      "relativePosition": [
+        -0.05,
+        -3.75
+      ],
+      "weight": 10,
+      "hypothesis": "When updating a hosted server is one click for its admin, hosted servers run current code instead of drifting behind main."
+    }
+  ],
   "supportedIdeas": [
     "d4203221-939e-44e6-bf3f-b3933c790e6b",
     "96e9fc41-b91f-405c-829c-2e5bf65c175c"
@@ -18,7 +37,7 @@
   },
   "intrinsicValue": 0,
   "cost": 6,
-  "selfWeight": 1,
+  "selfWeight": 72,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

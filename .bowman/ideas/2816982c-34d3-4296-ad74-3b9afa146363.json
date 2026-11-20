@@ -1,0 +1,24 @@
+{
+  "id": "2816982c-34d3-4296-ad74-3b9afa146363",
+  "text": "Spaces of a deleted account pass to a manager or writer instead of going with the account",
+  "description": "Raised by Claude 2026-11-20 after building account deletion; Felix: low priority. Today discarding an account (30 days after deletion, or an idle automatic account) removes the spaces it owns, also when others manage or write in them. 10c6b4a7 had noted the same choice for automatic accounts (\"assumed they still go\"). Proposed: hand each such space to a manager, else a writer (longest in the space first); only a space nobody else is in goes.",
+  "archived": false,
+  "color": "#39612b",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8faf6a70-d197-4fac-a6f9-3975d776c735"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Low priority (Felix 2026-11-20). Where: auth/discard.ts discardAccount, before removeSpace for owned spaces.",
+    "date": 1795194800990
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

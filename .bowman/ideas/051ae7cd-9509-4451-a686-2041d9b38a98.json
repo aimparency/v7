@@ -11,8 +11,17 @@
         -3.26,
         1.85
       ],
-      "weight": 1,
+      "weight": 45,
       "hypothesis": "The strongest few paths orient an agent as well as all of them, at a size it can read."
+    },
+    {
+      "ideaId": "69043478-d1ad-4ddf-aa04-e065183f5be2",
+      "relativePosition": [
+        3.74,
+        -0.29
+      ],
+      "weight": 10,
+      "hypothesis": "Agents orient on the well-described ideas too, which are the ones that matter most."
     }
   ],
   "supportedIdeas": [
@@ -28,7 +37,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1,
+  "selfWeight": 45,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

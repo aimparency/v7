@@ -2,8 +2,19 @@
   "id": "c3a52342-553b-4fe0-a600-38c004be9ad2",
   "text": "draging from an idea into an empty area should create a new supporting idea",
   "description": "",
+  "archived": false,
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "4f515bab-2a17-44f6-828d-ff128ed8f6e2",
+      "relativePosition": [
+        3.33,
+        1.72
+      ],
+      "weight": 10,
+      "hypothesis": "With a sensible starting weight and a connection that is always made, dragging is trusted as the way to grow the graph."
+    }
+  ],
   "supportedIdeas": [
     "d0851a84-5300-4c25-a59e-7831c8f6b642"
   ],
@@ -15,5 +26,8 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 0
+  "selfWeight": 90,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
 }

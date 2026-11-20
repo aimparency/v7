@@ -1,0 +1,24 @@
+{
+  "id": "8460d0fe-3414-4eac-906a-630a3bbcf055",
+  "text": "Delete your own account: logged out everywhere at once, back by logging in within 30 days, then gone",
+  "description": "Felix 2026-11-20: normal (non-temporary) accounts get \"Delete account\" below \"Log out\", in #ff5555. Delete logs out; logging in again recovers it for 30 days; then the final delete. Server admins can't delete their own account (another admin removes it, or the admin right goes first).\n\nBuilt: auth.deleteOwnAccount marks deletedAt and revokes every token of the account (browsers, MCP clients, websites); the name stays taken; logging in clears the mark (\"Welcome back\"); the daily sweep discards it after 30 days with what it made (owned spaces, notes, places in other spaces). Confirmed by typing the account name. Server admins see \"deleted, gone on <date>\" in Accounts.",
+  "archived": false,
+  "color": "#3c652e",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "383e8949-3888-40de-95e9-a1dbfac0cdb6"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "f14a3574 (2026-11-20). Evidence: backend auth/account-deletion.test.ts (logs out everywhere incl. an agent token, name stays taken, login restores, discarded after 30 days with its spaces, server admin refused, visitor refused); frontend LoginControl.spec (typed-name confirmation, no entry for server admins).",
+    "date": 1795194787310
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

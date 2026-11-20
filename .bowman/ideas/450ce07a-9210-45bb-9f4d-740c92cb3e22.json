@@ -1,0 +1,24 @@
+{
+  "id": "450ce07a-9210-45bb-9f4d-740c92cb3e22",
+  "text": "Server admins restart the server, or pull main, build and restart it, from a power menu in the UI",
+  "description": "Felix 2026-11-20 asked whether the personal server could run in dev mode to stay up to date; dev mode has no one-port server with logins, so instead: \"give an admin user when logged in a restart option. Power icon right of user name, drop down menu => restart and pull main and restart\".\n\nBuilt: only under a supervisor that starts the server again (AIMPARENCY_SUPERVISED=true in its systemd unit, Restart=on-failure). The backend exits with code 75, run-local-stack ends the stack with it, systemd starts it again; the page waits for the server and reloads. \"Pull main and restart\" runs git pull --ff-only origin main, and when something came, pnpm install, build:core and the MCP build; anything failing leaves the server running as it was and shows why.",
+  "archived": false,
+  "color": "#2a753f",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "548c5b94-5451-4669-be0e-c4e3d2fc8585"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "0ee33bd2, cfbc73f2 (2026-11-20). Evidence: auth/server-restart.test.ts (no supervisor: refused and not offered; server admin only; exits with 75). Live on ideas.entour.fyi: restart back in ~7 s (status=75/TEMPFAIL, then systemd restart); pull-and-restart with nothing new to pull. The install and build path through the menu has not run live yet.",
+    "date": 1795194787676
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

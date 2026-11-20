@@ -1,0 +1,24 @@
+{
+  "id": "81f0b32f-37c5-41e0-a16e-134720667a36",
+  "text": "Roles in a space: own, manage, write, read; shown as a coloured badge next to its name",
+  "description": "Felix 2026-11-20: different usage rights per space: owner (all), manage (can add collaborators), write (can't add collaborators), read. The header shows the viewer's role always, each its own pastel colour (own mint, manage blue, write lilac, read the orange of the former \"read-only\").\n\nDecided in the build (Claude): a manager writes and chooses who else writes and reads, and makes and takes back invitations; the owner alone chooses the managers, who reads at all, notes from visitors, the address, the deploy key, handing over and deleting. Space settings list the people of a space with a role each; a redeemed invitation can take its person out again. The owner hands the space to someone of it and stays as a manager.",
+  "archived": false,
+  "color": "#316e41",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "8faf6a70-d197-4fac-a6f9-3975d776c735"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "6d5e706d, 5248393a, 1e518f36 (2026-11-20). RIGHTS read < write < manage < owner (auth/access.ts), Graph.managers, setAccess refuses owner-only fields to managers. Evidence: auth/space-invitations.test.ts \"a manager writes and chooses who else writes and reads; the owner alone chooses the managers\"; settings layout checked by browser screenshots at 1280 and 390 px wide. Not tested by a person yet.",
+    "date": 1795194758078
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

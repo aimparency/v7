@@ -1,11 +1,39 @@
 {
   "id": "8faf6a70-d197-4fac-a6f9-3975d776c735",
   "text": "Access per graph: its owner, accounts with write access, and who may add notes",
-  "description": "Felix 2026-11-12: whoever creates a graph owns it. Write access can be granted to accounts. What guests may do is configured by the server admin or even per graph: making offers and making notes (like creating issues on GitHub). Creating a graph on a server needs that permission for the account.\n\nNo private graphs, decided by Felix 2026-11-12: limit complexity for now, and it is the \"parency\" in the name. Everyone may read every graph on a server.\n\nGuests are accounts without rights on a graph, including automatic accounts.\n\nReplaces the roles of today's hosted mode, which apply to the whole server (read, write, admin in access.ts). Rights are per graph, not per idea: the owner and accounts with write access may change everything in the graph, including committing in the UI.\n\nOffers and notes themselves (the guest layer) are ideas b7e0b972 and 34b3d747.\n\nUnchanged from 2026-11-10: write access never allows starting a terminal or an agent on the server.\n\nAssumed by Claude, not said by Felix: the server admin sets the defaults and the owner of a graph may change them for that graph.",
+  "description": "Felix 2026-11-12: whoever creates a graph owns it. Write access can be granted to accounts. What guests may do is configured by the server admin or even per graph: making offers and making notes (like creating issues on GitHub). Creating a graph on a server needs that permission for the account.\n\nNo private graphs, decided by Felix 2026-11-12: limit complexity for now, and it is the \"parency\" in the name. Everyone may read every graph on a server. SUPERSEDED 2026-11-20: Felix wanted a personal server where reading needs an account; who reads is now a setting per server and per space (33fe4f07). Public servers such as Commons Hub keep \"everyone\".\n\nRoles, extended 2026-11-20 (81f0b32f): own, manage, write, read. A manager writes and chooses who else writes and reads; the owner alone chooses the managers, who reads at all, the address, the key, handing over and deletion. Invitations to a space carry a role (35b4a0e2).\n\nGuests are accounts without rights on a graph, including automatic accounts.\n\nReplaces the roles of today's hosted mode, which apply to the whole server (read, write, admin in access.ts). Rights are per graph, not per idea: the owner and accounts with write access may change everything in the graph, including committing in the UI.\n\nOffers and notes themselves (the guest layer) are ideas b7e0b972 and 34b3d747.\n\nUnchanged from 2026-11-10: write access never allows starting a terminal or an agent on the server.\n\nAssumed by Claude, not said by Felix: the server admin sets the defaults and the owner of a graph may change them for that graph.",
   "archived": false,
   "color": "#2c6a2b",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "33fe4f07-5560-40b9-a9fe-b77ed3d8cc47",
+      "relativePosition": [
+        -3.73,
+        -0.38
+      ],
+      "weight": 17.8125,
+      "hypothesis": "With reading closable per server and per space, people host spaces they would not put in public, and the public servers stay as open as before."
+    },
+    {
+      "ideaId": "81f0b32f-37c5-41e0-a16e-134720667a36",
+      "relativePosition": [
+        2.57,
+        -2.73
+      ],
+      "weight": 23.75,
+      "hypothesis": "An owner who can delegate adding people lets a space grow its team without the owner being the bottleneck, while the owner keeps the decisions that cannot be undone."
+    },
+    {
+      "ideaId": "2816982c-34d3-4296-ad74-3b9afa146363",
+      "relativePosition": [
+        2.68,
+        -2.63
+      ],
+      "weight": 5,
+      "hypothesis": "Collaborators keep the space they built together when its owner leaves, so working in someone else's space is not a risk."
+    }
+  ],
   "supportedIdeas": [
     "d4203221-939e-44e6-bf3f-b3933c790e6b",
     "96e9fc41-b91f-405c-829c-2e5bf65c175c"
@@ -18,7 +46,7 @@
   },
   "intrinsicValue": 0,
   "cost": 4,
-  "selfWeight": 1,
+  "selfWeight": 53.4375,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

@@ -1,0 +1,24 @@
+{
+  "id": "c7041656-69c6-4ca5-9c54-72fe073011ca",
+  "text": "Add a private repository as a space by its git URL with a deploy key the server makes",
+  "description": "Felix 2026-11-20: \"add a repo by git URL, then generate a deploy key? That'd be awesome.\" On the start page, \"Add it with a deploy key\": the server makes an SSH key for the account (only the public half leaves the server), the person adds it on the repository with write access (link straight to GitHub's deploy-key page), and the server clones over SSH with it and pushes changes back. A repository without .bowman gets a new space, committed and pushed.",
+  "archived": false,
+  "color": "#326f3d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "548c5b94-5451-4669-be0e-c4e3d2fc8585"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "partially",
+    "comment": "1aee99ba (2026-11-20): DeployKeyModal.vue, graphs.addRemote with key, remote-graph.ts clones with the key and starts .bowman in an empty repository. Evidence: graphs/remote-graph.test.ts against local repositories. Not yet tried against GitHub: Felix adds the game repository this way next.",
+    "date": 1795194758432
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

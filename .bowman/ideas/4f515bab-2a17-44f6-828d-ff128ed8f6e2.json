@@ -1,0 +1,24 @@
+{
+  "id": "4f515bab-2a17-44f6-828d-ff128ed8f6e2",
+  "text": "A connection dragged in the graph starts at the average weight and is made even when the new idea's node never shows",
+  "description": "Felix 2026-11-20: \"when adding a connection in graph by dragging give it average weight. Also I just dragged and for some reason the connection was not created the first time.\"\n\nFound: drag-to-create waited for the new idea's node before connecting; under a phase filter an uncommitted new idea never gets a node, so it waited forever and nothing connected. Also the drop position was the live mouse position read when the modal was submitted, and a cancelled idea modal left the drag's callback behind for the next idea made from the graph.\n\nFixed: connect at once (position corrected once the node appears), drop position copied at release, callback cleared on cancel. New connections weigh the average of the parent's other supporting connections (1 for the first); dropping on an already connected idea keeps its weight. 1e554f38 had noted \"connect creates at weight=1 not computed defaultWeight\" as a known deviation; this closes it for graph drags.",
+  "archived": false,
+  "color": "#66502d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c3a52342-553b-4fe0-a600-38c004be9ad2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "0ee33bd2 (2026-11-20). Evidence: utils/connection-weight.test.ts; frontend suite green. The phase-filter cause is inferred from the code, not reproduced with Felix's first drag; if it happens again without a phase filter, look further.",
+    "date": 1795194801140
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,24 @@
+{
+  "id": "35b4a0e2-e3e0-4a5f-a591-6e2713275ac8",
+  "text": "Invite someone to a space: a link for one person, with a role, taken with a new or an existing account",
+  "description": "Felix 2026-11-20: strangers should not make their own accounts on the personal server; invitations are the way in. The server admin invites to the server; space owners (and managers) invite collaborators per space, new or existing users.\n\nBuilt: graphs.invite gives a one-person link (14 days) that grants read, write or manage on the space. Opening it without an account offers sign-up even where sign-up is closed; with an account it is taken on login (auth.acceptInvitation) and the space opens. The space's settings list its invitations, open, expired or taken, and take them back.",
+  "archived": false,
+  "color": "#2f6137",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "383e8949-3888-40de-95e9-a1dbfac0cdb6"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "1aee99ba, 6d5e706d (2026-11-20). Evidence: auth/space-invitations.test.ts (new account where sign-up is closed, existing account, one use only, owner-only listing, manager invites, owner invites to manage); LoginControl.spec. Live smoke test on ideas.entour.fyi 2026-11-20 (test space and account removed afterwards). Felix invites David next.",
+    "date": 1795194758232
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

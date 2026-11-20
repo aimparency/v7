@@ -5,7 +5,17 @@
   "archived": false,
   "color": "#2c652f",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "c9b37fb6-4752-4c45-9ab6-4641bd9dafe2",
+      "relativePosition": [
+        3.59,
+        1.07
+      ],
+      "weight": 25,
+      "hypothesis": "Most people never find the MCP entry in the account menu; asked at the moment they open a space, many connect an assistant and then work with it in the space."
+    }
+  ],
   "supportedIdeas": [
     "d4203221-939e-44e6-bf3f-b3933c790e6b"
   ],
@@ -17,7 +27,7 @@
   },
   "intrinsicValue": 0,
   "cost": 4,
-  "selfWeight": 1,
+  "selfWeight": 75,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

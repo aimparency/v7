@@ -1,0 +1,24 @@
+{
+  "id": "c9b37fb6-4752-4c45-9ab6-4641bd9dafe2",
+  "text": "Ask accounts to connect their AI assistant each time they open a space, until connected or declined three times",
+  "description": "Felix 2026-11-20: \"We want to more actively ask the user to connect their assistant. Offer MCP! When user registered, and opens a space, offer it! When he opens a space next 3 times, offer it again and again. Only stay silent when clicked away for the third time.\"\n\nBuilt: a card in the bottom-right corner (McpOffer.vue) after a space finishes loading, with Connect (opens the MCP dialog) and Not now; it does not time out. Silent once the account holds a non-browser token (an MCP client) or after three \"Not now\". Counted per browser, server and account (localStorage). Claude recommended the card over a blocking dialog; open whether to open the dialog right away on the first space after sign-up.",
+  "archived": false,
+  "color": "#336b2b",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "e34b5ff1-77eb-48cf-baf2-eac4fa51d361"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "6d5e706d (2026-11-20). Evidence: frontend McpOffer.spec.ts (offered on each space open until three dismissals, silent with an assistant connected, Connect opens the dialog). Whether people connect more: not observed yet.",
+    "date": 1795194787529
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
