@@ -111,6 +111,33 @@ const people = computed(() => {
 })
 const newPerson = ref('')
 const newPersonRole = ref<Role>('write')
+// A manager changes the roles of those who write and read; the owner everyone's.
+const mayChangeRole = (role: Role) => mayManageAccess.value && (isOwner.value || role !== 'manage')
+// Out of the space; the invitation it came by, if any, goes with it.
+async function removePerson(name: string, invitationId?: string) {
+  if (!window.confirm(`Take ${name} out of this space?`)) return
+  setRole(name, null)
+  if (invitationId) await removeSpaceInvitation(invitationId)
+}
+
+// The owner hands the space over to someone of it, and stays in it as a manager.
+const newOwner = ref('')
+async function handOver() {
+  const access = graphAccess.value
+  if (!access || !newOwner.value) return
+  if (!window.confirm(`Hand this space over to ${newOwner.value}? They decide everything about it from then on; you stay in it as a manager.`)) return
+  const next = newOwner.value
+  const without = (list: string[]) => list.filter(name => name !== next)
+  await setAccess({
+    owner: next,
+    managers: [...without(access.managers), ...(access.owner && access.owner !== next ? [access.owner] : [])],
+    writers: without(access.writers),
+    readers: without(access.readers)
+  })
+  newOwner.value = ''
+  await dataStore.refreshAccess(projectStore.projectPath)
+}
+
 // Out of every list, then into the one of the role (null: out of the space).
 function setRole(name: string, role: Role | null) {
   const access = graphAccess.value
@@ -499,357 +526,402 @@ const save = async () => {
       </div>
       
       <div class="modal-body">
-        <div class="form-group">
-          <label>Name</label>
-          <input 
-            v-model="name" 
-            type="text" 
-            placeholder="Name of this space"
-            @keydown="handleKeydown"
-          />
-        </div>
-
-        <div class="form-group">
-          <label>Color</label>
-          <div class="color-picker-row">
+        <fieldset class="settings-section">
+          <legend>Space</legend>
+          <div class="form-group">
+            <label>Name</label>
             <input 
-                v-model="color" 
-                type="color" 
-                class="color-input"
-            />
-            <input 
-                v-model="color" 
-                type="text" 
-                placeholder="#RRGGBB"
-                @keydown.enter="save"
+              v-model="name" 
+              type="text" 
+              placeholder="Name of this space"
+              @keydown="handleKeydown"
             />
           </div>
-        </div>
-
-        <div class="form-group">
-          <label>Initial Instructions</label>
-          <p class="hint-text">Posted to the agent at the start of each conversation (e.g. "work directly on main, no PRs"). Stored in meta.json.</p>
-          <textarea
-            v-model="initialInstructions"
-            class="instructions-input"
-            rows="4"
-            placeholder="Instructions for the coding agent, for this whole space…"
-            @keydown="blockLeakage"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Supervisor Guidance Prefix</label>
-          <p class="hint-text">Optional reminder prefixed to each natural-language supervisor message. Leave empty for ordinary spaces.</p>
-          <textarea
-            v-model="supervisorGuidancePrefix"
-            class="supervisor-guidance-input"
-            rows="2"
-            placeholder="Reminder for the coding agent, for this space…"
-            @keydown="blockLeakage"
-          ></textarea>
-        </div>
-
-        <div class="form-group">
-          <label>Cost Unit</label>
-          <p class="hint-text">What one unit of idea cost means in this space, e.g. "hours" or "€". Shown next to cost fields and told to agents. Leave empty for abstract units.</p>
-          <input v-model="costUnit" type="text" placeholder="abstract units" @keydown="blockLeakage" />
-        </div>
-
-        <div class="form-group">
-          <label>Default Cost</label>
-          <p class="hint-text">Cost of new ideas until someone estimates them.</p>
-          <input v-model.number="defaultCost" type="number" min="0" step="any" @keydown="blockLeakage" />
-          <p v-if="costSettingsError" class="validation-error" role="alert">{{ costSettingsError }}</p>
-        </div>
-
-        <div class="form-group">
-          <label>Idea Statuses</label>
-          <div class="status-list">
-            <div v-for="(status, index) in statuses" :key="index" class="status-row">
+          <div class="form-group">
+            <label>Color</label>
+            <div class="color-picker-row">
               <input 
-                v-model="status.color" 
-                type="color" 
-                class="status-color-input"
+                  v-model="color" 
+                  type="color" 
+                  class="color-input"
               />
               <input 
-                v-model="status.key" 
-                type="text" 
-                placeholder="key"
-                class="status-key-input"
-                @input="status.key = status.key.toLowerCase().replace(/\s+/g, '-')"
+                  v-model="color" 
+                  type="text" 
+                  placeholder="#RRGGBB"
+                  @keydown.enter="save"
               />
-              <label class="status-flag" title="Entering this status asks to reflect on the idea's parent connections">
-                <input v-model="status.promptsReflection" type="checkbox" />
-                reflect
-              </label>
-              <button @click="removeStatus(index)" class="delete-btn" title="Remove Status"><X /></button>
             </div>
           </div>
-          <button @click="addStatus" class="add-btn">+ Add Status</button>
-        </div>
+        </fieldset>
 
-        <div class="form-group">
-          <label>Linked repos</label>
-          <p class="hint-text">Whole other spaces this one can link to as supporters: by their address on the server hosting them, or as a folder checked out here. A space linked here is pickable from an idea's "link a whole repo".</p>
-
-          <div v-if="linkedRepos.length > 0" class="status-list">
-            <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">
-              <span class="linked-repo-name">{{ repo.name }}</span>
-              <a v-if="repo.host" class="linked-repo-chip" :href="repo.host" target="_blank" rel="noopener">{{ hostLabel(repo.host) }}</a>
-              <span v-else class="linked-repo-chip" :class="{ unresolved: !repo.resolved }">
-                {{ repo.resolved ? 'checked out' : 'not here' }}
-              </span>
-              <button
-                @click="removeLinkedRepo(repo.repoId)"
-                class="delete-btn"
-                :class="{ confirm: confirmUnlinkRepoId === repo.repoId }"
-                :title="confirmUnlinkRepoId === repo.repoId ? 'Confirm unlink' : 'Unlink repo'"
-              ><Check v-if="confirmUnlinkRepoId === repo.repoId" /><X v-else /></button>
+        <fieldset class="settings-section">
+          <legend>Ideas</legend>
+          <div class="form-group">
+            <label>Idea Statuses</label>
+            <div class="status-list">
+              <div v-for="(status, index) in statuses" :key="index" class="status-row">
+                <input 
+                  v-model="status.color" 
+                  type="color" 
+                  class="status-color-input"
+                />
+                <input 
+                  v-model="status.key" 
+                  type="text" 
+                  placeholder="key"
+                  class="status-key-input"
+                  @input="status.key = status.key.toLowerCase().replace(/\s+/g, '-')"
+                />
+                <label class="status-flag" title="Entering this status asks to reflect on the idea's parent connections">
+                  <input v-model="status.promptsReflection" type="checkbox" />
+                  reflect
+                </label>
+                <button @click="removeStatus(index)" class="delete-btn" title="Remove Status"><X /></button>
+              </div>
             </div>
+            <button @click="addStatus" class="add-btn">+ Add Status</button>
           </div>
-          <p v-else class="hint-text">No linked repos yet.</p>
+          <div class="form-group">
+            <label>Cost Unit</label>
+            <p class="hint-text">What one unit of idea cost means in this space, e.g. "hours" or "€". Shown next to cost fields and told to agents. Leave empty for abstract units.</p>
+            <input v-model="costUnit" type="text" placeholder="abstract units" @keydown="blockLeakage" />
+          </div>
+          <div class="form-group">
+            <label>Default Cost</label>
+            <p class="hint-text">Cost of new ideas until someone estimates them.</p>
+            <input v-model.number="defaultCost" type="number" min="0" step="any" @keydown="blockLeakage" />
+            <p v-if="costSettingsError" class="validation-error" role="alert">{{ costSettingsError }}</p>
+          </div>
+        </fieldset>
 
-          <div class="add-repo-row">
-            <input v-model="hostAddress" placeholder="https://server/spaces/space" :disabled="repoBusy" @keydown.enter="linkByHost" />
-            <button @click="linkByHost" class="action-btn add-repo-btn" :disabled="!hostAddress.trim() || repoBusy">Link</button>
-          </div>
-          <p v-if="hostError" class="hint-text">{{ hostError }}</p>
-          <div v-if="!accounts" class="add-repo-row">
-            <select v-model="selectedTargetPath" :disabled="availableRepoTargets.length === 0 || repoBusy">
-              <option value="">
-                {{ availableRepoTargets.length === 0 ? 'No other local spaces found' : 'Select a space to link…' }}
-              </option>
-              <option v-for="p in availableRepoTargets" :key="p.bowmanPath" :value="p.path">{{ projectLabel(p) }}</option>
-            </select>
-            <button @click="addLinkedRepo" class="action-btn add-repo-btn" :disabled="!selectedTargetPath || repoBusy">Link</button>
-          </div>
-        </div>
-
-        <div v-if="graphAccess" class="form-group">
-          <label>Access</label>
-          <div v-if="isOwner" class="add-repo-row">
-            <span class="row-label">Address</span>
-            <span class="address-prefix">/spaces/</span>
-            <input v-model="slug" type="text" spellcheck="false" placeholder="address" @keydown.enter="changeSlug" />
-            <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
-          </div>
-          <p v-if="isOwner" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
-          <div v-if="isOwner" class="add-repo-row">
-            <span class="row-label">Who reads it</span>
-            <select :value="graphAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof graphAccess.read })">
-              <option value="everyone">everyone, without logging in</option>
-              <option value="accounts">every logged-in account</option>
-              <option value="selected">only the people below</option>
-            </select>
-          </div>
-          <p class="hint-text">{{ READ_SENTENCES[graphAccess.read] }}</p>
-
-          <label class="sub-label">People</label>
-          <div class="status-list">
-            <div class="linked-repo-row">
-              <span class="linked-repo-name">{{ graphAccess.owner ?? 'The server admins' }}</span>
-              <span class="role-text">owns it</span>
+        <template v-if="graphAccess">
+          <fieldset class="settings-section">
+            <legend>Access</legend>
+            <div v-if="isOwner" class="field-row">
+              <span class="row-label">Address</span>
+              <span class="address-prefix">/spaces/</span>
+              <input v-model="slug" type="text" spellcheck="false" placeholder="address" @keydown.enter="changeSlug" />
+              <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
             </div>
-            <div v-for="person in people" :key="person.name" class="linked-repo-row">
-              <span class="linked-repo-name">{{ person.name }}</span>
-              <select
-                v-if="mayManageAccess && (isOwner || person.role !== 'manage')"
-                class="role-select"
-                :value="person.role"
-                @change="setRole(person.name, ($event.target as HTMLSelectElement).value as Role)"
-              >
-                <option v-if="isOwner" value="manage">manages</option>
-                <option value="write">writes</option>
-                <option value="read">reads</option>
+            <p v-if="isOwner" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
+            <div v-if="isOwner" class="field-row">
+              <span class="row-label">Who reads it</span>
+              <select :value="graphAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof graphAccess.read })">
+                <option value="everyone">everyone, without logging in</option>
+                <option value="accounts">every logged-in account</option>
+                <option value="selected">only the people of this space</option>
               </select>
-              <span v-else class="role-text">{{ ROLE_LABELS[person.role] }}</span>
-              <button
-                v-if="mayManageAccess && (isOwner || person.role !== 'manage')"
-                class="delete-btn"
-                :title="`Take ${person.name} out of this space`"
-                @click="setRole(person.name, null)"
-              ><X /></button>
             </div>
-          </div>
-          <p v-if="people.length === 0" class="hint-text">Nobody else is named yet.</p>
-          <p v-if="people.some(person => person.role === 'read') && graphAccess.read !== 'selected'" class="hint-text">Those who read only matter while only the people named here read it.</p>
-          <div v-if="mayManageAccess" class="add-repo-row">
-            <input v-model="newPerson" type="text" placeholder="Account name" @keydown.enter="setRole(newPerson, newPersonRole)" />
-            <select v-model="newPersonRole">
-              <option v-if="isOwner" value="manage">manages</option>
-              <option value="write">writes</option>
-              <option value="read">reads</option>
-            </select>
-            <button class="action-btn add-repo-btn" :disabled="!newPerson.trim()" @click="setRole(newPerson, newPersonRole)">Add</button>
-          </div>
-          <p class="hint-text">Managing: writing, and choosing who else writes and reads. The owner alone chooses the managers, who reads it at all, its address and its key.</p>
+            <p class="hint-text">{{ READ_SENTENCES[graphAccess.read] }}</p>
 
-          <div v-if="mayManageAccess" class="add-repo-row">
-            <span class="row-label">Invite someone</span>
-            <select v-model="inviteRight">
-              <option v-if="isOwner" value="manage">to manage it</option>
-              <option value="write">to work on it</option>
-              <option value="read">to read it</option>
-            </select>
-            <button class="action-btn add-repo-btn" @click="inviteSomeone">Make invitation link</button>
-          </div>
-          <div v-if="mayManageAccess && inviteLink" class="add-repo-row">
-            <input :value="inviteLink" type="text" readonly @focus="($event.target as HTMLInputElement).select()" />
-          </div>
-          <p v-if="mayManageAccess && inviteLink" class="hint-text">{{ inviteCopied ? 'Copied. ' : '' }}For one person, valid 14 days: they open it, create an account (or log in with theirs) and land in this space.</p>
-          <div v-if="mayManageAccess && spaceInvitations.length > 0" class="status-list">
-            <div v-for="invitation in spaceInvitations" :key="invitation.id" class="linked-repo-row">
-              <span class="linked-repo-name">{{ describeSpaceInvitation(invitation) }}</span>
-              <button v-if="!invitation.redeemedBy" class="delete-btn" title="Take the invitation back" @click="removeSpaceInvitation(invitation.id)"><X /></button>
+            <fieldset class="settings-subsection">
+              <legend>People</legend>
+              <div class="status-list">
+                <div class="linked-repo-row">
+                  <span class="linked-repo-name">{{ graphAccess.owner ?? 'The server admins' }}</span>
+                  <span class="role-text">owns it</span>
+                </div>
+                <div v-for="person in people" :key="person.name" class="linked-repo-row">
+                  <span class="linked-repo-name">{{ person.name }}</span>
+                  <select
+                    v-if="mayChangeRole(person.role)"
+                    class="role-select"
+                    :value="person.role"
+                    @change="setRole(person.name, ($event.target as HTMLSelectElement).value as Role)"
+                  >
+                    <option v-if="isOwner" value="manage">manages</option>
+                    <option value="write">writes</option>
+                    <option value="read">reads</option>
+                  </select>
+                  <span v-else class="role-text">{{ ROLE_LABELS[person.role] }}</span>
+                  <button
+                    v-if="mayChangeRole(person.role)"
+                    class="delete-btn"
+                    :title="`Take ${person.name} out of this space`"
+                    @click="removePerson(person.name)"
+                  ><X /></button>
+                </div>
+              </div>
+              <p v-if="people.length === 0" class="hint-text">Nobody else is in this space yet.</p>
+              <p v-if="people.some(person => person.role === 'read') && graphAccess.read !== 'selected'" class="hint-text">Who reads only matters while only the people of this space read it.</p>
+              <div v-if="mayManageAccess" class="field-row">
+                <input v-model="newPerson" type="text" placeholder="Account name" @keydown.enter="setRole(newPerson, newPersonRole)" />
+                <select v-model="newPersonRole" class="role-select">
+                  <option v-if="isOwner" value="manage">manages</option>
+                  <option value="write">writes</option>
+                  <option value="read">reads</option>
+                </select>
+                <button class="action-btn add-repo-btn" :disabled="!newPerson.trim()" @click="setRole(newPerson, newPersonRole)">Add</button>
+              </div>
+              <p class="hint-text">Managers write and choose who else writes and reads. The owner alone chooses the managers, who reads it at all, its address and its key.</p>
+            </fieldset>
+
+            <fieldset v-if="mayManageAccess" class="settings-subsection">
+              <legend>Invitations</legend>
+              <div class="field-row">
+                <select v-model="inviteRight">
+                  <option v-if="isOwner" value="manage">to manage it</option>
+                  <option value="write">to work on it</option>
+                  <option value="read">to read it</option>
+                </select>
+                <button class="action-btn add-repo-btn" @click="inviteSomeone">Make invitation link</button>
+              </div>
+              <div v-if="inviteLink" class="field-row">
+                <input :value="inviteLink" type="text" readonly @focus="($event.target as HTMLInputElement).select()" />
+              </div>
+              <p v-if="inviteLink" class="hint-text">{{ inviteCopied ? 'Copied. ' : '' }}For one person, valid 14 days: they open it, create an account (or log in with theirs) and land in this space.</p>
+              <div v-if="spaceInvitations.length > 0" class="status-list">
+                <div v-for="invitation in spaceInvitations" :key="invitation.id" class="linked-repo-row">
+                  <span class="linked-repo-name">{{ describeSpaceInvitation(invitation) }}</span>
+                  <button
+                    v-if="!invitation.redeemedBy"
+                    class="delete-btn"
+                    title="Take the invitation back"
+                    @click="removeSpaceInvitation(invitation.id)"
+                  ><X /></button>
+                  <button
+                    v-else-if="people.some(person => person.name === invitation.redeemedBy && mayChangeRole(person.role))"
+                    class="delete-btn"
+                    :title="`Take ${invitation.redeemedBy} out of this space`"
+                    @click="removePerson(invitation.redeemedBy, invitation.id)"
+                  ><X /></button>
+                </div>
+              </div>
+            </fieldset>
+
+            <fieldset v-if="isOwner" class="settings-subsection">
+              <legend>Notes from visitors</legend>
+              <div class="field-row">
+                <select :value="graphAccess.notes" @change="setAccess({ notes: ($event.target as HTMLSelectElement).value as typeof graphAccess.notes })">
+                  <option value="everyone">every account may leave notes</option>
+                  <option value="selected">only the accounts named here</option>
+                  <option value="nobody">nobody</option>
+                </select>
+              </div>
+              <div v-if="graphAccess.notes === 'selected'" class="field-row">
+                <span class="linked-repo-name">{{ graphAccess.noteWriters.join(', ') || 'Nobody named yet' }}</span>
+                <input v-model="newNoteWriter" type="text" placeholder="Account name" @keydown.enter="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })" />
+                <button class="action-btn add-repo-btn" :disabled="!newNoteWriter.trim()" @click="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })">Add</button>
+                <button class="action-btn add-repo-btn" :disabled="graphAccess.noteWriters.length === 0" @click="setAccess({ noteWriters: [] })">Clear</button>
+              </div>
+            </fieldset>
+          </fieldset>
+
+          <fieldset v-if="graphAccess.remote" class="settings-section">
+            <legend>Repository</legend>
+              <p class="hint-text">
+                Follows <code>{{ graphAccess.remote!.url }}</code>.
+                {{ graphAccess.remote!.key ? `Edited here and pushed back with a key of ${graphAccess.remote!.keyOwner ?? 'a removed account'}.` : 'Read-only here until its owner selects a key to push with.' }}
+              </p>
+              <div v-if="isOwner" class="add-repo-row">
+                <select :value="selectedKey?.id ?? ''" @change="selectKey(($event.target as HTMLSelectElement).value || null)">
+                  <option value="">No key: read-only here</option>
+                  <option v-for="key in myKeys" :key="key.id" :value="key.id">{{ key.label }}</option>
+                </select>
+                <button class="action-btn add-repo-btn" @click="createKey">New key</button>
+              </div>
+              <p v-if="selectedKey" class="hint-text">
+                Add this public key on the remote with write access (on GitHub: the repository's Settings, Deploy keys):
+                <code class="public-key">{{ selectedKey.publicKey }}</code>
+              </p>
+          </fieldset>
+        </template>
+
+        <fieldset class="settings-section">
+          <legend>Linked spaces</legend>
+          <div class="form-group">
+            <p class="hint-text">Whole other spaces this one can link to as supporters: by their address on the server hosting them, or as a folder checked out here. A space linked here is pickable from an idea's "link a whole repo".</p>
+
+            <div v-if="linkedRepos.length > 0" class="status-list">
+              <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">
+                <span class="linked-repo-name">{{ repo.name }}</span>
+                <a v-if="repo.host" class="linked-repo-chip" :href="repo.host" target="_blank" rel="noopener">{{ hostLabel(repo.host) }}</a>
+                <span v-else class="linked-repo-chip" :class="{ unresolved: !repo.resolved }">
+                  {{ repo.resolved ? 'checked out' : 'not here' }}
+                </span>
+                <button
+                  @click="removeLinkedRepo(repo.repoId)"
+                  class="delete-btn"
+                  :class="{ confirm: confirmUnlinkRepoId === repo.repoId }"
+                  :title="confirmUnlinkRepoId === repo.repoId ? 'Confirm unlink' : 'Unlink repo'"
+                ><Check v-if="confirmUnlinkRepoId === repo.repoId" /><X v-else /></button>
+              </div>
             </div>
-          </div>
-          <div v-if="isOwner" class="add-repo-row">
-            <span class="row-label">Notes from visitors</span>
-            <select :value="graphAccess.notes" @change="setAccess({ notes: ($event.target as HTMLSelectElement).value as typeof graphAccess.notes })">
-              <option value="everyone">every account may leave notes</option>
-              <option value="selected">only the accounts named here</option>
-              <option value="nobody">nobody</option>
-            </select>
-          </div>
-          <div v-if="isOwner && graphAccess.notes === 'selected'" class="add-repo-row">
-            <span class="linked-repo-name">{{ graphAccess.noteWriters.join(', ') || 'Nobody named yet' }}</span>
-            <input v-model="newNoteWriter" type="text" placeholder="Account name" @keydown.enter="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })" />
-            <button class="action-btn add-repo-btn" :disabled="!newNoteWriter.trim()" @click="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })">Add</button>
-            <button class="action-btn add-repo-btn" :disabled="graphAccess.noteWriters.length === 0" @click="setAccess({ noteWriters: [] })">Clear</button>
-          </div>
-          <template v-if="graphAccess.remote">
-            <p class="hint-text">
-              Follows <code>{{ graphAccess.remote.url }}</code>.
-              {{ graphAccess.remote.key ? `Edited here and pushed back with a key of ${graphAccess.remote.keyOwner ?? 'a removed account'}.` : 'Read-only here until its owner selects a key to push with.' }}
-            </p>
-            <div v-if="isOwner" class="add-repo-row">
-              <select :value="selectedKey?.id ?? ''" @change="selectKey(($event.target as HTMLSelectElement).value || null)">
-                <option value="">No key: read-only here</option>
-                <option v-for="key in myKeys" :key="key.id" :value="key.id">{{ key.label }}</option>
+            <p v-else class="hint-text">No linked repos yet.</p>
+
+            <div class="add-repo-row">
+              <input v-model="hostAddress" placeholder="https://server/spaces/space" :disabled="repoBusy" @keydown.enter="linkByHost" />
+              <button @click="linkByHost" class="action-btn add-repo-btn" :disabled="!hostAddress.trim() || repoBusy">Link</button>
+            </div>
+            <p v-if="hostError" class="hint-text">{{ hostError }}</p>
+            <div v-if="!accounts" class="add-repo-row">
+              <select v-model="selectedTargetPath" :disabled="availableRepoTargets.length === 0 || repoBusy">
+                <option value="">
+                  {{ availableRepoTargets.length === 0 ? 'No other local spaces found' : 'Select a space to link…' }}
+                </option>
+                <option v-for="p in availableRepoTargets" :key="p.bowmanPath" :value="p.path">{{ projectLabel(p) }}</option>
               </select>
-              <button class="action-btn add-repo-btn" @click="createKey">New key</button>
+              <button @click="addLinkedRepo" class="action-btn add-repo-btn" :disabled="!selectedTargetPath || repoBusy">Link</button>
             </div>
-            <p v-if="selectedKey" class="hint-text">
-              Add this public key on the remote with write access (on GitHub: the repository's Settings, Deploy keys):
-              <code class="public-key">{{ selectedKey.publicKey }}</code>
-            </p>
-          </template>
-          <button v-if="isOwner" class="action-btn" @click="removeGraph">Delete this space</button>
-        </div>
+          </div>
+        </fieldset>
 
-        <div class="form-group">
-          <label>GitHub Issues</label>
-          <p class="hint-text">Imports the open issues of a repository as ideas under one parent idea; importing again only adds new ones.</p>
-          <div class="add-repo-row">
-            <input v-model="issueRepository" type="text" placeholder="owner/repo or github.com URL" @keydown.enter="importIssues" />
-            <button @click="importIssues" class="action-btn add-repo-btn" :disabled="!issueRepository.trim() || isImportingIssues">
-              {{ isImportingIssues ? 'Importing…' : 'Import' }}
+        <fieldset class="settings-section">
+          <legend>Import</legend>
+          <div class="form-group">
+            <label>GitHub Issues</label>
+            <p class="hint-text">Imports the open issues of a repository as ideas under one parent idea; importing again only adds new ones.</p>
+            <div class="add-repo-row">
+              <input v-model="issueRepository" type="text" placeholder="owner/repo or github.com URL" @keydown.enter="importIssues" />
+              <button @click="importIssues" class="action-btn add-repo-btn" :disabled="!issueRepository.trim() || isImportingIssues">
+                {{ isImportingIssues ? 'Importing…' : 'Import' }}
+              </button>
+            </div>
+            <p v-if="issueImportResult" class="hint-text">{{ issueImportResult }}</p>
+          </div>
+        </fieldset>
+
+        <fieldset class="settings-section">
+          <legend>Agents</legend>
+          <div class="form-group">
+            <label>Initial Instructions</label>
+            <p class="hint-text">Posted to the agent at the start of each conversation (e.g. "work directly on main, no PRs"). Stored in meta.json.</p>
+            <textarea
+              v-model="initialInstructions"
+              class="instructions-input"
+              rows="4"
+              placeholder="Instructions for the coding agent, for this whole space…"
+              @keydown="blockLeakage"
+            ></textarea>
+          </div>
+          <div class="form-group">
+            <label>Supervisor Guidance Prefix</label>
+            <p class="hint-text">Optional reminder prefixed to each natural-language supervisor message. Leave empty for ordinary spaces.</p>
+            <textarea
+              v-model="supervisorGuidancePrefix"
+              class="supervisor-guidance-input"
+              rows="2"
+              placeholder="Reminder for the coding agent, for this space…"
+              @keydown="blockLeakage"
+            ></textarea>
+          </div>
+          <div v-if="!accounts" class="form-group">
+            <label>Agent Integration</label>
+            <p class="hint-text">Injects Aimparency MCP instructions into .gemini/GEMINI.md, CLAUDE.md, etc.</p>
+            <button @click="updateInstructions" class="action-btn" :disabled="isUpdatingInstructions">
+              {{ isUpdatingInstructions ? 'Updating...' : 'Update Agent Instructions' }}
             </button>
-          </div>
-          <p v-if="issueImportResult" class="hint-text">{{ issueImportResult }}</p>
-        </div>
-
-        <div v-if="!accounts" class="form-group">
-          <label>Agent Integration</label>
-          <p class="hint-text">Injects Aimparency MCP instructions into .gemini/GEMINI.md, CLAUDE.md, etc.</p>
-          <button @click="updateInstructions" class="action-btn" :disabled="isUpdatingInstructions">
-            {{ isUpdatingInstructions ? 'Updating...' : 'Update Agent Instructions' }}
-          </button>
-          <div v-if="updateResults.length > 0" class="update-results">
-            <div v-for="(res, i) in updateResults" :key="i" class="result-line">{{ res }}</div>
-          </div>
-        </div>
-
-        <div v-if="!accounts" class="form-group">
-          <label>Autonomy Policy</label>
-          <p class="hint-text">Stored in <code>{{ autonomyRuntimePath }}/autonomy-policy.json</code>.</p>
-
-          <div class="stacked-fields">
-            <div>
-              <label class="sub-label">Autonomy Mode</label>
-              <select v-model="autonomyMode">
-                <option value="manual">Manual</option>
-                <option value="supervised">Supervised</option>
-                <option value="autonomous">Autonomous</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="sub-label">Preferred Agent</label>
-              <select v-model="preferredAgentType">
-                <option value="">Follow UI selection</option>
-                <option value="claude">Claude</option>
-                <option value="gemini">Gemini</option>
-                <option value="codex">Codex</option>
-                <option value="agy">Agy</option>
-                <option value="grok">Grok</option>
-              </select>
-            </div>
-
-            <div>
-              <label class="sub-label">Session Lease Minutes</label>
-              <input v-model.number="sessionLeaseMinutes" type="number" min="1" step="1" />
-            </div>
-
-            <label class="checkbox-row">
-              <input v-model="autoConnectToExistingSession" type="checkbox" />
-              <span>Auto-connect to an existing session on reload</span>
-            </label>
-
-            <label class="checkbox-row">
-              <input v-model="restoreSupervisorStateOnSessionRestart" type="checkbox" />
-              <span>Restore supervisor state when a session restarts</span>
-            </label>
-
-            <label class="checkbox-row">
-              <input v-model="requireCommitBeforeCompact" type="checkbox" />
-              <span>Require commit before compact / wrap-up</span>
-            </label>
-
-            <div>
-              <label class="sub-label">Ask For Human On</label>
-              <input
-                v-model="askForHumanOnText"
-                type="text"
-                placeholder="destructive-git, network, api-keys"
-                @keydown="handleKeydown"
-              />
+            <div v-if="updateResults.length > 0" class="update-results">
+              <div v-for="(res, i) in updateResults" :key="i" class="result-line">{{ res }}</div>
             </div>
           </div>
-        </div>
+          <div v-if="!accounts" class="form-group">
+            <label>Autonomy Policy</label>
+            <p class="hint-text">Stored in <code>{{ autonomyRuntimePath }}/autonomy-policy.json</code>.</p>
 
-        <div v-if="!accounts" class="form-group">
-          <label>Runtime Ownership</label>
-          <p class="hint-text">Current runtime state observed from <code>{{ autonomyRuntimePath }}</code>.</p>
-
-          <div class="runtime-box">
-            <div class="runtime-line">
-              <span class="runtime-key">Folder</span>
-              <code>{{ projectStore.projectPath.replace(/\/\.bowman$/, '') }}</code>
-            </div>
-            <div class="runtime-line">
-              <span class="runtime-key">.bowman Runtime</span>
-              <code>{{ autonomyRuntimePath }}</code>
-            </div>
-            <div class="runtime-line">
-              <span class="runtime-key">Runtime Updated</span>
-              <span>{{ formatRuntimeTimestamp(runtimeState?.updatedAt) }}</span>
-            </div>
-          </div>
-
-          <div class="runtime-agent-list">
-            <div v-for="agent in runtimeAgents" :key="agent.key" class="runtime-agent-card">
-              <div class="runtime-agent-header">
-                <strong>{{ agent.label }}</strong>
-                <span class="runtime-status-chip">{{ describeAgentRuntimeState(agent.key) }}</span>
+            <div class="stacked-fields">
+              <div>
+                <label class="sub-label">Autonomy Mode</label>
+                <select v-model="autonomyMode">
+                  <option value="manual">Manual</option>
+                  <option value="supervised">Supervised</option>
+                  <option value="autonomous">Autonomous</option>
+                </select>
               </div>
-              <div class="runtime-agent-meta">
-                <span>Updated: {{ formatRuntimeTimestamp(runtimeState?.agents?.[agent.key]?.updatedAt) }}</span>
+
+              <div>
+                <label class="sub-label">Preferred Agent</label>
+                <select v-model="preferredAgentType">
+                  <option value="">Follow UI selection</option>
+                  <option value="claude">Claude</option>
+                  <option value="gemini">Gemini</option>
+                  <option value="codex">Codex</option>
+                  <option value="agy">Agy</option>
+                  <option value="grok">Grok</option>
+                </select>
+              </div>
+
+              <div>
+                <label class="sub-label">Session Lease Minutes</label>
+                <input v-model.number="sessionLeaseMinutes" type="number" min="1" step="1" />
+              </div>
+
+              <label class="checkbox-row">
+                <input v-model="autoConnectToExistingSession" type="checkbox" />
+                <span>Auto-connect to an existing session on reload</span>
+              </label>
+
+              <label class="checkbox-row">
+                <input v-model="restoreSupervisorStateOnSessionRestart" type="checkbox" />
+                <span>Restore supervisor state when a session restarts</span>
+              </label>
+
+              <label class="checkbox-row">
+                <input v-model="requireCommitBeforeCompact" type="checkbox" />
+                <span>Require commit before compact / wrap-up</span>
+              </label>
+
+              <div>
+                <label class="sub-label">Ask For Human On</label>
+                <input
+                  v-model="askForHumanOnText"
+                  type="text"
+                  placeholder="destructive-git, network, api-keys"
+                  @keydown="handleKeydown"
+                />
               </div>
             </div>
           </div>
-        </div>
+          <div v-if="!accounts" class="form-group">
+            <label>Runtime Ownership</label>
+            <p class="hint-text">Current runtime state observed from <code>{{ autonomyRuntimePath }}</code>.</p>
+
+            <div class="runtime-box">
+              <div class="runtime-line">
+                <span class="runtime-key">Folder</span>
+                <code>{{ projectStore.projectPath.replace(/\/\.bowman$/, '') }}</code>
+              </div>
+              <div class="runtime-line">
+                <span class="runtime-key">.bowman Runtime</span>
+                <code>{{ autonomyRuntimePath }}</code>
+              </div>
+              <div class="runtime-line">
+                <span class="runtime-key">Runtime Updated</span>
+                <span>{{ formatRuntimeTimestamp(runtimeState?.updatedAt) }}</span>
+              </div>
+            </div>
+
+            <div class="runtime-agent-list">
+              <div v-for="agent in runtimeAgents" :key="agent.key" class="runtime-agent-card">
+                <div class="runtime-agent-header">
+                  <strong>{{ agent.label }}</strong>
+                  <span class="runtime-status-chip">{{ describeAgentRuntimeState(agent.key) }}</span>
+                </div>
+                <div class="runtime-agent-meta">
+                  <span>Updated: {{ formatRuntimeTimestamp(runtimeState?.agents?.[agent.key]?.updatedAt) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </fieldset>
+
+
+        <fieldset v-if="graphAccess && isOwner" class="settings-section danger">
+          <legend>Danger zone</legend>
+          <div v-if="people.length > 0" class="field-row">
+            <span class="row-label">Hand over ownership to</span>
+            <select v-model="newOwner">
+              <option value="" disabled>someone of this space…</option>
+              <option v-for="person in people" :key="person.name" :value="person.name">{{ person.name }}</option>
+            </select>
+            <button class="action-btn add-repo-btn" :disabled="!newOwner" @click="handOver">Hand over</button>
+          </div>
+          <p v-if="people.length > 0" class="hint-text">You stay in the space as a manager.</p>
+          <div class="field-row">
+            <button class="action-btn danger-btn" @click="removeGraph">Delete this space</button>
+          </div>
+        </fieldset>
       </div>
       
       <div class="modal-footer">
@@ -899,6 +971,73 @@ const save = async () => {
     padding: 1rem;
     flex: 1;
     overflow-y: auto;
+
+    /* Framed groups of settings; Access holds framed subgroups. */
+    .settings-section {
+      min-width: 0;
+      margin: 0 0 1rem;
+      padding: 0.5rem 1rem 0.75rem;
+      border: 1px solid #484848;
+      border-radius: 6px;
+
+      > legend {
+        padding: 0 0.4rem;
+        font-weight: 600;
+        color: #e8e8e8;
+      }
+      .form-group:last-child { margin-bottom: 0.25rem; }
+
+      input[type="text"], input[type="number"], select {
+        padding: 0.5rem;
+        background: #1a1a1a;
+        border: 1px solid #555;
+        border-radius: 3px;
+        color: #e0e0e0;
+        &:focus { outline: none; border-color: #007acc; }
+      }
+
+      &.danger {
+        border-color: rgba(255, 85, 85, 0.55);
+        > legend { color: #ff5555; }
+      }
+    }
+    .settings-subsection {
+      min-width: 0;
+      margin: 0.75rem 0 0;
+      padding: 0.4rem 0.75rem 0.6rem;
+      border: 1px solid #3a3a3a;
+      border-radius: 5px;
+
+      > legend {
+        padding: 0 0.3rem;
+        font-size: 0.85rem;
+        color: #bbb;
+      }
+    }
+    .action-btn.danger-btn {
+      color: #ff5555;
+      border-color: rgba(255, 85, 85, 0.55);
+    }
+    /* A hint under a row of fields: below it, not pulled up into it. */
+    .field-row + .hint-text { margin-top: 0.3rem; }
+    .settings-section .linked-repo-row {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-height: 2.2rem;
+
+      .linked-repo-name { flex: 1; min-width: 0; }
+      .role-select { flex: 0 0 8rem; width: 8rem; min-width: 0; padding: 0.3rem 0.4rem; }
+      .delete-btn {
+        background: transparent;
+        border: none;
+        color: #ff6666;
+        cursor: pointer;
+        padding: 0 0.25rem;
+        line-height: 1;
+        &:hover { color: #ff4444; }
+      }
+    }
     
     .form-group {
       margin-bottom: 1rem;
@@ -1086,7 +1225,7 @@ const save = async () => {
       }
     }
 
-    .add-repo-row {
+    .add-repo-row, .field-row {
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
