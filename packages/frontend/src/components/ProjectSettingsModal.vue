@@ -623,7 +623,7 @@ const save = async () => {
             <button class="action-btn add-repo-btn" :disabled="!newWriter.trim()" @click="setWriters([...graphAccess.writers, newWriter.trim()])">Give write access</button>
           </div>
           <div v-if="mayManageAccess" class="add-repo-row">
-            <span class="linked-repo-name">Invite someone</span>
+            <span class="row-label">Invite someone</span>
             <select v-model="inviteRight">
               <option value="write">to work on it</option>
               <option value="read">to read it</option>
@@ -832,8 +832,8 @@ const save = async () => {
   background: #2d2d2d;
   border: 1px solid #555;
   border-radius: 5px;
-  width: 25rem;
-  max-width: 90vw;
+  width: 40rem;
+  max-width: 92vw;
   max-height: 90vh;
   display: flex;
   flex-direction: column;
@@ -1039,10 +1039,12 @@ const save = async () => {
     .add-repo-row {
       display: flex;
       gap: 0.5rem;
+      flex-wrap: wrap;
       align-items: stretch;
       margin-top: 0.5rem;
 
-      select, input { flex: 1; }
+      select, input { flex: 1; min-width: 10rem; }
+      .row-label { align-self: center; color: #e0e0e0; white-space: nowrap; }
       .address-prefix { align-self: center; color: var(--text-muted); }
 
       .add-repo-btn {
