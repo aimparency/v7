@@ -64,6 +64,20 @@ for disabled_flag in "$TARGET/.bowman/runtime/continue-hook-disabled" "$(git -C 
   node -e 'const x=JSON.parse(process.argv[1]); if(x.continue!==true || x.decision==="block") process.exit(1)' "$disabled_output"
 done
 
+# A selected hook loop replaces the work text; without its own human section the
+# default challenge still applies. An unknown slug falls back to the default.
+mkdir -p "$TARGET/.bowman/hook-loops"
+printf '# Refactor\n\nRefactor one module, then stop asking.\n' >"$TARGET/.bowman/hook-loops/refactor.md"
+printf 'refactor\n' >"$TARGET/.bowman/runtime/continue-hook-loop"
+loop_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
+loop_human_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Need input. [AIMPARENCY_REQUEST_HUMAN]"}' | "$HOOK")"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || x.reason!=="Refactor one module, then stop asking.") process.exit(1)' "$loop_output"
+node -e 'const x=JSON.parse(process.argv[1]); if(!x.reason.includes("challenge the claimed blocker")) process.exit(1)' "$loop_human_output"
+printf '../etc\n' >"$TARGET/.bowman/runtime/continue-hook-loop"
+bad_slug_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
+node -e 'const x=JSON.parse(process.argv[1]); if(!x.reason.includes("get_prioritized_ideas")) process.exit(1)' "$bad_slug_output"
+rm -r "$TARGET/.bowman/hook-loops" "$TARGET/.bowman/runtime/continue-hook-loop"
+
 # Quoting a marker mid-message is not a request; only a trailing marker counts.
 quoted_marker_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Ends with [AIMPARENCY_CONFIRM_HUMAN_BLOCK] or [AIMPARENCY_REQUEST_HUMAN] per the protocol. Done."}' | "$HOOK")"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || x.reason.includes("challenge the claimed blocker")) process.exit(1)' "$quoted_marker_output"

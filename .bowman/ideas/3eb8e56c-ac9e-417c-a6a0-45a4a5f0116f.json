@@ -1,0 +1,24 @@
+{
+  "id": "3eb8e56c-ac9e-417c-a6a0-45a4a5f0116f",
+  "text": "Hook loops: pick, edit and save what the Stop hook tells the agent (menu: None, loops, Manage)",
+  "description": "Felix 2026-11-21: the header hook toggle vanished in repos without the hook installed. The Hook button opens a menu: None, Default, saved loops, Manage loops…; without the hook it offers install for Claude Code / Codex / Antigravity. Loops are fully rewritable texts (work text + optional 'When the agent asks for the human' challenge), saved in .bowman/hook-loops/<slug>.md (versioned); the active one is machine-local in .bowman/runtime/continue-hook-loop. The built-in default (scripts/hooks/default-loop.md) is editable but only saved as a new loop; Reset to default reloads its text. Admin only: local servers, or server admins when agents are on. Extends eb0e448a (the old on/off checkbox).",
+  "archived": false,
+  "color": "#664b2d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "61dc3d49-4b9a-4d21-b6b0-131a69e82bf2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Why the toggle vanished: it rendered only when the hook script was installed in the space's repo (share-ring, ideas, life, an-der-rax have none). Now: HookControl.vue menu (None, loops, Manage loops…; install for Claude Code/Codex/Antigravity when missing), HookLoopsModal.vue (edit title/work/human text, Save, Save as new, Delete, Reset to default; default only saved as new). Hook script reads .bowman/runtime/continue-hook-loop → .bowman/hook-loops/<slug>.md, falls back to scripts/hooks/default-loop.md (install.sh and the recognized-copy upgrade copy it). shared/continue-hook.ts: list/save/delete loops, enableContinueHook({agent, loop}); switching loops while on keeps the run's progress log. Backend: new continueHook router (local-only, server admin when agents are on); MCP enable_continue_hook takes loop. Evidence: continue-hook tests 8/8 (2 new), hook contract test with loop + bad-slug cases PASS, HookControl.spec 4/4, live dev UI shows the menu and the modal with the default text, pnpm check 25/25.",
+    "date": 1795286519929
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

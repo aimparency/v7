@@ -37,8 +37,8 @@ export function agentsEnabled(): boolean {
 }
 
 // Agents, loops and server paths: things a shared server must not hand out.
-// The watchdog's runtime state goes to server admins when agents are on.
-const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'system', 'voice', 'market', 'spinOff']);
+// The watchdog's runtime state and the agents' Stop hook go to server admins when agents are on.
+const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'continueHook', 'system', 'voice', 'market', 'spinOff']);
 const LOCAL_ONLY = new Set([
   'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions',
   'linkedRepo.register'
@@ -79,7 +79,7 @@ const PUBLIC_AUTH_QUERIES = new Set(['auth.me', 'auth.listTokens', 'auth.ownFoot
 
 export function neededRole(path: string, type: string): Need {
   const router = path.split('.')[0]!;
-  if (router === 'watchdog' && agentsEnabled()) return 'serverAdmin';
+  if ((router === 'watchdog' || router === 'continueHook') && agentsEnabled()) return 'serverAdmin';
   if (LOCAL_ONLY_ROUTERS.has(router) || LOCAL_ONLY.has(path)) return 'local';
   if (type !== 'mutation') return router === 'auth' && !PUBLIC_AUTH_QUERIES.has(path) ? 'serverAdmin' : 'read';
   if (OPEN_MUTATIONS.has(path)) return 'read';

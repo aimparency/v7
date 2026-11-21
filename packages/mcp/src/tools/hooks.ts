@@ -77,6 +77,9 @@ If the assistant determines human intervention (credentials, explicit authorizat
 2. The hook challenges the assistant once: fresh research and hypotheses on the major ideas, a prepared step for every waiting idea, graph hygiene, decomposing abstract ideas, safe reversible work.
 3. If human action is still strictly required, the assistant re-states the request and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
+### Hook loops
+What the hook tells the agent is a hook loop. The default is \`scripts/hooks/default-loop.md\` (installed next to the hook script). Saved loops are versioned with the graph in \`.bowman/hook-loops/<slug>.md\`: a \`# Title\` line, the text the agent gets when it tries to stop, and optionally a \`## When the agent asks for the human\` section with the challenge text (else the default's). Which loop runs is machine-local (\`.bowman/runtime/continue-hook-loop\`); pick one in the UI's Hook menu or with \`enable_continue_hook\`'s \`loop\`.
+
 ### Enable / Disable
 Use the \`enable_continue_hook\` / \`disable_continue_hook\` tools (or the \`enable-hook\` / \`disable-hook\` prompts) only when the human asks. Disabling writes a machine-local flag (\`.bowman/runtime/continue-hook-disabled\`, gitignored) checked on every Stop — no hook-config reload needed.
 
@@ -119,11 +122,15 @@ pnpm test:hooks
           enum: [...CONTINUE_HOOK_AGENTS],
           description: "Coding assistant to install the hook for. Omit to only re-enable an already installed hook.",
         },
+        loop: {
+          type: "string",
+          description: "Hook loop to run: \"default\" or the slug of a saved loop in .bowman/hook-loops/. Omit to keep the loop chosen last.",
+        },
       },
       required: ["graph"],
     },
     handler: async (args, trpcClient) => {
-      const text = enableContinueHook(args.graph as string, args.agent as string | undefined);
+      const text = enableContinueHook(args.graph as string, { agent: args.agent as string | undefined, loop: args.loop as string | undefined });
       return { content: [{ type: "text", text }] };
     },
   },

@@ -68,6 +68,30 @@ Each enable also starts a progress log, `.bowman/runtime/continue-logs/<timestam
 asks the agent to append one succinct line per finished step, so the human can
 read the run's changes later. Disabling appends the stop time and drops the pointer.
 
+The UI's header has the same switch as a menu: None, then every hook loop,
+then Manage loops… (local servers; with accounts, server admins when agents are on).
+
+## Hook loops
+
+What the hook tells the agent is a hook loop. The built-in one is
+`default-loop.md` next to the hook script (install.sh copies it). Saved loops are
+versioned with the graph in `.bowman/hook-loops/<slug>.md`:
+
+```markdown
+# Optimize & refactor
+
+The text the agent gets when it tries to stop.
+
+## When the agent asks for the human
+
+Optional: the challenge before it may wait for the human (else the default's).
+```
+
+Which loop runs is machine-local: `.bowman/runtime/continue-hook-loop` holds its
+slug (absent: the default). Pick one in the UI's Hook menu or with
+`enable_continue_hook`'s `loop`; the Manage dialog edits loops, saves the
+default only as a new loop, and resets a loop's text to the default's.
+
 ## Continuation contract
 
 On a normal Codex `Stop`, the hook returns valid JSON with

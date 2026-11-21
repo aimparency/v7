@@ -15,7 +15,7 @@
         2.05729503276133,
         1.4204003478511116
       ],
-      "weight": 1,
+      "weight": 13.883333333333333,
       "hypothesis": "Makes the existing indefinite continuation behavior portable, explicit, and testable."
     },
     {
@@ -24,7 +24,7 @@
         2.34,
         0.89
       ],
-      "weight": 1,
+      "weight": 13.883333333333333,
       "hypothesis": "The deliberate opt-out is one click away in the UI instead of an MCP prompt in an agent session"
     },
     {
@@ -33,7 +33,7 @@
         -2.13,
         3.09
       ],
-      "weight": 1,
+      "weight": 13.883333333333333,
       "hypothesis": "A purpose-built session command complements the existing hook controls by establishing the idea-recording workflow at session start."
     },
     {
@@ -42,7 +42,7 @@
         -0.42,
         -3.73
       ],
-      "weight": 1,
+      "weight": 13.883333333333333,
       "hypothesis": "A per-run log lets the human see what an autonomous run changed in a minute instead of reading git log and idea diffs; if the agent skips lines, the log is useless."
     },
     {
@@ -51,8 +51,17 @@
         3.75,
         -0.1
       ],
-      "weight": 1,
+      "weight": 13.883333333333333,
       "hypothesis": "Agents stop asking the human while actionable open ideas exist below the ranking cut. Refuted if a hooked session again confirms a human block while list_ideas shows an actionable open leaf."
+    },
+    {
+      "ideaId": "3eb8e56c-ac9e-417c-a6a0-45a4a5f0116f",
+      "relativePosition": [
+        -1.52,
+        -3.43
+      ],
+      "weight": 16.7,
+      "hypothesis": "Named loops (e.g. refactoring, ideation) let the human steer what autonomous runs focus on without editing the hook script; refuted if Felix keeps running only the default."
     }
   ],
   "supportedIdeas": [
@@ -68,7 +77,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1,
+  "selfWeight": 13.883333333333333,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

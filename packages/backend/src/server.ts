@@ -11,6 +11,7 @@ import './value-recalculation.js'; // recalculates idea values after changes
 import { ideaRouter } from './routers/idea.js';
 import { phaseRouter } from './routers/phase.js';
 import { systemRouter } from './routers/system.js';
+import { continueHookRouter } from './routers/continue-hook.js';
 import { voiceRouter } from './routers/voice.js';
 import { graphRouter } from './routers/graph.js';
 import { marketRouter } from './routers/market.js';
@@ -40,6 +41,7 @@ const appRouter = t.router({
   idea: ideaRouter,
   phase: phaseRouter,
   system: systemRouter,
+  continueHook: continueHookRouter,
   voice: voiceRouter,
   graph: graphRouter,
   market: marketRouter,

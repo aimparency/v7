@@ -45,11 +45,12 @@ import { useToastStore } from './stores/toast'
 import { gitRepositoryLocation } from 'shared'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
+import HookControl from './components/HookControl.vue'
 import { getRuntimeConfig, hasAccounts } from './utils/runtime-config'
 import { useViewerStore } from './stores/viewer'
 import { isModalOpen } from './stores/ui/modal-helpers'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
-import { Check, ChevronUp, EllipsisVertical, GitCommitHorizontal, Hourglass, Info, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
+import { Check, ChevronUp, EllipsisVertical, GitCommitHorizontal, Hourglass, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -133,25 +134,8 @@ const ROLE_TITLES = {
 } as const
 const viewerStore = useViewerStore()
 const agentsAllowed = computed(() => !accounts || (getRuntimeConfig().agents && viewerStore.name !== null && viewerStore.serverAdmin))
-// The agents' Stop continuation hook (a per-clone git flag, also toggled by the MCP enable-hook / disable-hook prompts).
-const continueHook = ref({ installed: false, enabled: false })
-const showHookInfo = ref(false)
 // Narrow screens: the bar's further controls fold out below it.
 const headerOpen = ref(false)
-const refreshContinueHook = async () => {
-  const projectPath = projectStore.projectPath
-  let hook = { installed: false, enabled: false }
-  try {
-    if (projectPath) hook = await trpc.system.getContinueHook.query({ graph: projectPath })
-  } catch {
-    // stays off
-  }
-  if (projectPath === projectStore.projectPath) continueHook.value = hook
-}
-const toggleContinueHook = async () => {
-  continueHook.value = await trpc.system.setContinueHook.mutate({ graph: projectStore.projectPath, enabled: !continueHook.value.enabled })
-}
-watch(() => projectStore.projectPath, refreshContinueHook, { immediate: true })
 // Uncommitted work of the project's repository; the header prompts a commit when it piles up.
 const workingTree = ref<{ changes: WorkingTreeChange[]; lastCommitAt: number | null; ahead: number | null } | null>(null)
 const showCommitDialog = ref(false)
@@ -615,22 +599,7 @@ onUnmounted(() => {
 
         <span class="spacer"></span>
 
-        <label v-if="continueHook.installed && !accounts" class="hook-control group check" @mouseenter="refreshContinueHook">
-          <input type="checkbox" :checked="continueHook.enabled" @change="toggleContinueHook" />
-          Hook {{ continueHook.enabled ? 'on' : 'off' }}
-          <button
-            type="button"
-            class="info-btn"
-            aria-label="What is the hook?"
-            @click.prevent="showHookInfo = !showHookInfo"
-            @blur="showHookInfo = false"
-          ><Info /></button>
-          <span v-if="showHookInfo" class="hook-info" role="tooltip" @click.prevent>
-            The Stop hook of your coding agent (Claude Code, Codex) in this repository.
-            On: when the agent finishes, it is sent back to work on the next idea of the space.
-            Off: the agent stops normally. Applies from its next stop, only in this clone.
-          </span>
-        </label>
+        <HookControl v-if="agentsAllowed" />
 
         <div v-if="agentsAllowed" class="watchdog-controls group">
           <button
@@ -1017,35 +986,6 @@ onUnmounted(() => {
   }
 
   .column-controls { color: var(--text-muted); }
-
-  .hook-control {
-    position: relative;
-    padding: 0 0.5rem;
-
-    .info-btn {
-      display: flex;
-      background: none;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-    }
-
-    .hook-info {
-      position: absolute;
-      top: calc(100% + 0.3rem);
-      left: 0;
-      z-index: 100;
-      width: min(22rem, 90vw);
-      padding: 0.5rem 0.6rem;
-      background: var(--bg-menu);
-      border: 1px solid var(--line-strong);
-      border-radius: var(--radius);
-      color: #ddd;
-      font-size: var(--font-size-small);
-      white-space: normal;
-      cursor: default;
-    }
-  }
 
   .loop-btn { position: relative; }
 

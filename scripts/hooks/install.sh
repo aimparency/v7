@@ -144,6 +144,7 @@ NODE
 mkdir -p "$HOOK_DIR" "$CONFIG_DIR"
 if [[ "$SCRIPT_DIR/codex-continue-on-stop.sh" != "$HOOK_PATH" ]]; then
   cp "$SCRIPT_DIR/codex-continue-on-stop.sh" "$HOOK_PATH"
+  cp "$SCRIPT_DIR/default-loop.md" "$HOOK_DIR/default-loop.md"
 fi
 cp "$config_tmp" "$CONFIG_PATH"
 chmod +x "$HOOK_PATH"
@@ -173,7 +174,7 @@ NODE
 
 blocked_output="$(cd "$nested_dir" && printf '{"hook_event_name":"Stop"}\n' | bash -c "$hook_command")"
 allowed_output="$(cd "$nested_dir" && printf '{"hook_event_name":"Stop"}\n' | AIMPARENCY_ALLOW_STOP=1 bash -c "$hook_command")"
-node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("Aimparency MCP")) process.exit(1)' "$blocked_output"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason) process.exit(1)' "$blocked_output"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.continue!==true || x.decision==="block") process.exit(1)' "$allowed_output"
 
 echo "Installed and smoke-tested the Aimparency ($AGENT) continuation loop in: $TARGET"

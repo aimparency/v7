@@ -1,31 +1,9 @@
 import { z } from 'zod';
 import { t, delayedProcedure } from '../trpc.js';
-import { continueHookStatus, disableContinueHook, enableContinueHook } from 'shared/continue-hook';
 import { readSystemStatus, writeSystemStatus } from '../storage/project.js';
 import { graphAddress } from '../graphs/address.js';
 
-const readContinueHook = (projectPath: string) => {
-  try {
-    return continueHookStatus(projectPath);
-  } catch {
-    return { installed: false, enabled: false }; // not a git repository
-  }
-};
-
 export const systemRouter = t.router({
-  // The agents' Stop continuation hook, the same switch as the MCP enable-hook / disable-hook prompts.
-  getContinueHook: delayedProcedure
-    .input(z.object({ graph: graphAddress }))
-    .query(({ input }) => readContinueHook(input.graph)),
-
-  setContinueHook: delayedProcedure
-    .input(z.object({ graph: graphAddress, enabled: z.boolean() }))
-    .mutation(({ input }) => {
-      if (input.enabled) enableContinueHook(input.graph);
-      else disableContinueHook(input.graph);
-      return readContinueHook(input.graph);
-    }),
-
   getStatus: delayedProcedure
     .input(z.object({
       graph: graphAddress
