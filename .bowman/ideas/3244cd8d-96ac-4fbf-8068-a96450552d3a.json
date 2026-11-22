@@ -1,0 +1,24 @@
+{
+  "id": "3244cd8d-96ac-4fbf-8068-a96450552d3a",
+  "text": "Cancelled and failed ideas still take and pass on value: should the value model stop flow through them?",
+  "description": "Found 2026-11-22 while building what_if (65fe5876). calculateIdeaValues only distinguishes implemented (done cost); cancelled and failed ideas keep their share of each parent's value and pass it on to their own children. Measured on this repo (951 ideas): 13.7% of all value flowing along connections goes into cancelled/failed ideas, 20% of 'achieve ASI' itself. Simulating their removal (what_if remove of all 93) changes the top 5 open ideas: 'Expose a schema-validated A2A Agent Card' and 'Use Aimparency as the strategy and intent agent for external runtimes' drop out (they rank high only through the cancelled parent f6af0b7a), and 26 open/partial ideas gain value (median x1.32, max x3.95).\\nOptions: (a) cancelled and failed get no share and pass nothing on (their weight counts 0 in the split; children reachable only through them get nothing from that path); (b) as (a) for cancelled, but failed keeps its share as the record of a tried path; (c) leave the model and only exclude them from ranking (today's state, distortion stays in values).\\nRecommendation: (a): the value of an abandoned route should return to the parent's living children; history stays in git and in the status comment.",
+  "archived": false,
+  "color": "#342d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Question for Felix: should cancelled (and failed) ideas stop taking and passing on value? Options (a) both get nothing, (b) only cancelled, (c) leave as is. Recommendation (a). Evidence in the description; implementing (a) is a small change in shared/value-calculation.ts plus tests.",
+    "date": 1795380719424
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

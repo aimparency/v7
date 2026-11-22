@@ -11,8 +11,17 @@
         0.82,
         3.66
       ],
-      "weight": 2,
+      "weight": 53.333333333333336,
       "hypothesis": "Measured actual cost per idea gives the calibration the 30+ estimate/actual pairs it is waiting for within weeks instead of months."
+    },
+    {
+      "ideaId": "3244cd8d-96ac-4fbf-8068-a96450552d3a",
+      "relativePosition": [
+        -2.07,
+        3.13
+      ],
+      "weight": 20,
+      "hypothesis": "Letting value flow only through living ideas makes the ranking reflect the routes still being pursued; refuted if, after the change, the top of the ranking is no closer to what Felix would pick next."
     }
   ],
   "supportedIdeas": [
@@ -26,7 +35,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1,
+  "selfWeight": 26.666666666666668,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0
