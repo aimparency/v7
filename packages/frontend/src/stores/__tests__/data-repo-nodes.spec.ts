@@ -139,4 +139,30 @@ describe('graphData repo-node injection', () => {
     // The open space's values leave the space's ideas out.
     expect(store.ownIdeas.map(idea => idea.id)).toEqual(['idea-1'])
   })
+  it('gives the ideas of a space opened in place their part of the value flowing into it, as on the canvas', () => {
+    const store = useDataStore()
+    store.ideas = {
+      'idea-1': mkIdea({ id: 'idea-1', intrinsicValue: 10 }),
+      aim: mkIdea({ id: 'aim', intrinsicValue: 1, supportingConnections: [{ ideaId: 'pot', weight: 1, relativePosition: [1, 0] }] }),
+      pot: mkIdea({ id: 'pot', supportedIdeas: ['aim'], cost: 3 })
+    }
+    store.ideaSpaces = { aim: REPO_ID, pot: REPO_ID }
+    store.meta = { name: 'p', color: '#ffffff', linkedRepos: [] } as any
+    store.offers = [{
+      id: 'offer-1', ideaId: 'idea-1', kind: 'offer', text: '', createdAt: '', author: 'ben', removable: true, mine: true,
+      space: { repoId: REPO_ID, name: 'Cook', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
+    }]
+    store.linkedGraphViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), inPlace: { graph: 'cook', writable: true } } }
+    store.recalculateValuesNow()
+
+    const aim = store.getIdeaValue('aim')
+    const pot = store.getIdeaValue('pot')
+    expect(aim).toBeGreaterThan(0)
+    expect(pot).toBeGreaterThan(0)
+    // Values are cumulative: the central aim takes in all that flows into the space.
+    expect(aim).toBeCloseTo((store.calculatedValues.get(REPO_ID) ?? 0) * store.totalIntrinsicValue)
+    const canvas = new Map(store.graphData.nodes.map(node => [node.id, node.value]))
+    expect(pot).toBeCloseTo(canvas.get('pot')! * store.totalIntrinsicValue)
+    expect(store.getIdeaCost('pot')).toBe(3)
+  })
 })

@@ -349,13 +349,33 @@ export const useDataStore = defineStore('data', {
       return phase.commitments.map(ideaId => state.ideas[ideaId]).filter((a): a is Idea => !!a)
     },
 
-    getIdeaValue: (state) => (ideaId: string): number => {
-      const normalized = state.calculatedValues.get(ideaId) || 0
-      return normalized * state.totalIntrinsicValue
+    // Each space opened in place, calculated on its own: what its ideas keep of
+    // the value flowing into the space, and their costs.
+    inPlaceSpaceValues(state): Map<string, ReturnType<typeof calculateIdeaValues>> {
+      const bySpace = new Map<string, Idea[]>()
+      for (const idea of Object.values(state.ideas)) {
+        const space = state.ideaSpaces[idea.id]
+        if (space) bySpace.set(space, [...(bySpace.get(space) ?? []), idea as Idea])
+      }
+      return new Map([...bySpace].map(([space, ideas]) => [space, calculateIdeaValues(ideas)]))
     },
 
-    getIdeaCost: (state) => (ideaId: string): number => {
-      return state.calculatedCosts.get(ideaId) || 0
+    getIdeaValue(state) {
+      return (ideaId: string): number => {
+        const space = state.ideaSpaces[ideaId]
+        // An idea of a space opened in place takes its part of the space's inflow.
+        const normalized = space
+          ? (this.inPlaceSpaceValues.get(space)?.values.get(ideaId) || 0) * (state.calculatedValues.get(space) || 0)
+          : state.calculatedValues.get(ideaId) || 0
+        return normalized * state.totalIntrinsicValue
+      }
+    },
+
+    getIdeaCost(state) {
+      return (ideaId: string): number => {
+        const space = state.ideaSpaces[ideaId]
+        return (space ? this.inPlaceSpaceValues.get(space)?.costs : state.calculatedCosts)?.get(ideaId) || 0
+      }
     },
 
     getIdeaPriority: (state) => (ideaId: string): number => {
@@ -593,7 +613,7 @@ export const useDataStore = defineStore('data', {
         if (view.state !== 'shown' || !repoNodeIds.has(repoId)) continue
         const editable = !!view.inPlace
         const viewIdeas = ideasInPlace(repoId, view)
-        const ownValues = editable ? calculateIdeaValues(viewIdeas as Idea[]).values : view.ownValues
+        const ownValues = (editable ? this.inPlaceSpaceValues.get(repoId)?.values : view.ownValues) ?? new Map<string, number>()
         const values = spreadInflow(state.calculatedValues.get(repoId) || 0, ownValues)
         const ids = new Set(viewIdeas.map(idea => idea.id))
         const nodeId = (id: string) => editable ? id : linkedIdeaNodeId(repoId, id)
