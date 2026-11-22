@@ -18,12 +18,12 @@ const graph = () => [
 ];
 
 test('removing an idea takes its connections with it and moves value to its siblings', () => {
-  const changed = applyWhatIf(graph(), { kind: 'remove', ideaId: 'b' });
+  const changed = applyWhatIf(graph(), { kind: 'remove', ideaIds: ['b'] });
   assert.deepEqual(changed.map(i => i.id), ['root', 'a', 'c']);
   assert.deepEqual(changed.find(i => i.id === 'root')!.supportingConnections.map(c => c.ideaId), ['a']);
   assert.deepEqual(changed.find(i => i.id === 'c')!.supportedIdeas, []);
 
-  const { shifts } = whatIf(graph(), { kind: 'remove', ideaId: 'b' });
+  const { shifts } = whatIf(graph(), { kind: 'remove', ideaIds: ['b'] });
   const a = shifts.find(s => s.id === 'a')!;
   assert.ok(a.valueAfter > a.valueBefore, 'a takes what b had');
   assert.equal(shifts.find(s => s.id === 'b')!.valueAfter, 0);

@@ -325,13 +325,13 @@ export const navigationTools: ToolDefinition[] = [
     handler: async (args, trpcClient) => {
       const graph = args.graph as string;
       const change: WhatIfChange = args.change === "remove"
-        ? { kind: "remove", ideaId: String(args.ideaId ?? "") }
+        ? { kind: "remove", ideaIds: [String(args.ideaId ?? "")] }
         : { kind: "weight", parentId: String(args.parentId ?? ""), childId: String(args.childId ?? ""), weight: Number(args.weight) };
       const [ideas, meta] = await Promise.all([
         trpcClient.idea.list.query({ graph }),
         trpcClient.project.getMeta.query({ graph }).catch(() => null)
       ]);
-      if (change.kind === "remove" && !ideas.some((idea) => idea.id === change.ideaId)) throw new Error(`No idea ${change.ideaId}.`);
+      if (change.kind === "remove" && !ideas.some((idea) => idea.id === change.ideaIds[0])) throw new Error(`No idea ${change.ideaIds[0]}.`);
       if (change.kind === "weight" && !(change.weight > 0)) throw new Error("weight must be positive.");
       const result = whatIf(ideas, change, defaultIdeaCost(meta));
       const text = new Map(ideas.map((idea) => [idea.id, idea.text]));

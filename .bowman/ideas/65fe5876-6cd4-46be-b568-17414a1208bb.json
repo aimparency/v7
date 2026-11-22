@@ -14,9 +14,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "2026-11-22, smallest step done: read-only MCP tool what_if (mcp/tools/navigation.ts) over a pure shared/what-if.ts (applyWhatIf, whatIf). Changes: remove (the idea leaves with its connections, as if deleted) and weight (a connection's raw weight). Returns the ideas whose value or priority moves, largest relative move first, and the top 5 open ideas before/after. Note found on the way: the value model ignores 'cancelled' (only implemented counts as done), so 'what if I cancel X' moves no numbers; remove is the meaningful variant. Evidence: shared what-if.test (2), mcp tools-what-if.test (removal moves B's share to A; reweighting shifts B; nothing written); mcp 72/72, shared 131/131, loop-worker 35/35, tsc clean. On this repo's 951 ideas: 61 ms; removing 96e9fc41 shifts 45 ideas. Available to MCP clients after /mcp reconnect.\n\nOpen: the UI preview in the idea panel (show the shift while hovering delete or dragging a share), which is where the hypothesis (prospective decisions by people) gets tested.",
-    "date": 1795380442059
+    "state": "review",
+    "comment": "2026-11-22: built in two steps.\n1. Read-only MCP tool what_if (mcp/tools/navigation.ts) over pure shared/what-if.ts: remove (ideas leave with their connections, as if deleted) or weight (a connection's raw weight); returns the ideas whose value or priority moves, largest move first, and the top 5 open ideas before/after. Found on the way: the value model ignores 'cancelled' (only implemented counts as done), so cancelling moves no numbers; removal is the meaningful what-if. On this repo's 951 ideas: 61 ms; removing 96e9fc41 shifts 45 ideas.\n2. UI: the delete/remove dialog (IdeaRemovalDialog.vue, shown when a delete would take sub-ideas or an idea leaves its last list) now says 'Its value goes to: A, B, C', the three ideas that gain most, computed on the open space's own ideas.\nEvidence: shared what-if.test, mcp tools-what-if.test (removal moves B's share to A, reweighting shifts B, nothing written), IdeaRemovalDialog.spec (names the gainer), frontend 472/472, mcp 72/72, shared 131/131, vue-tsc/tsc clean. MCP clients see what_if after /mcp reconnect.\n\nQuestion for Felix: is the 'value goes to' line in the delete dialog useful as it reads, and should the same preview also show while dragging a connection's share?",
+    "date": 1795380665494
   },
   "intrinsicValue": 0,
   "cost": 3,

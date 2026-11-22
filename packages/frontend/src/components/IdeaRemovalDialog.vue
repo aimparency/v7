@@ -3,6 +3,7 @@ import { computed, onMounted, onUnmounted } from 'vue'
 import FormModalShell from './FormModalShell.vue'
 import { useUIModalStore, type IdeaRemovalRequest } from '../stores/ui/modal-store'
 import { useDataStore } from '../stores/data'
+import { whatIf } from 'shared'
 
 const props = defineProps<{ request: IdeaRemovalRequest }>()
 
@@ -26,6 +27,24 @@ const keepLabel = computed(() => props.request.fromLabel
 const cascadeLabel = computed(() => subIdeaCount.value > 0
   ? `Delete ${subject.value} and ${subIdeaCount.value} sub-idea${subIdeaCount.value === 1 ? '' : 's'} nothing else holds`
   : `Delete ${subject.value}`)
+
+// Where the value these ideas carry goes once they are gone: the ideas that
+// gain most (what_if over the open space's own ideas). Nothing when none gains.
+const GAINERS_SHOWN = 3
+const valueGoesTo = computed(() => {
+  const ideas = dataStore.ownIdeas
+  const removed = props.request.ideaIds.filter(id => ideas.some(idea => idea.id === id))
+  if (removed.length === 0) return []
+  try {
+    return whatIf(ideas, { kind: 'remove', ideaIds: removed }, dataStore.defaultCost).shifts
+      .filter(shift => shift.valueAfter > shift.valueBefore)
+      .sort((left, right) => (right.valueAfter - right.valueBefore) - (left.valueAfter - left.valueBefore))
+      .slice(0, GAINERS_SHOWN)
+      .map(shift => shift.text || '(untitled)')
+  } catch {
+    return [] // an incomplete graph (still loading) has no forecast
+  }
+})
 
 // Capture phase: the dialog owns the keyboard, nothing leaks to list or graph keys.
 const handleKeydown = (event: KeyboardEvent) => {
@@ -56,6 +75,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
           <li v-if="request.cascadeIds.length > SHOWN_IDEAS">… and {{ request.cascadeIds.length - SHOWN_IDEAS }} more</li>
         </ul>
       </template>
+      <p v-if="valueGoesTo.length" class="hint">{{ request.ideaIds.length === 1 ? 'Its' : 'Their' }} value goes to: {{ valueGoesTo.join(', ') }}</p>
       <div class="choices">
         <button @click="modalStore.answerIdeaRemoval('keep')"><kbd>r</kbd>{{ keepLabel }}</button>
         <button class="danger" @click="modalStore.answerIdeaRemoval('cascade')"><kbd>x</kbd>{{ cascadeLabel }}</button>

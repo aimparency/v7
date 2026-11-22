@@ -3,6 +3,7 @@ import { mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import IdeaRemovalDialog from '../IdeaRemovalDialog.vue'
 import { useUIModalStore } from '../../stores/ui/modal-store'
+import { useDataStore } from '../../stores/data'
 
 vi.mock('../../trpc', () => ({ trpc: {} }))
 
@@ -35,6 +36,21 @@ describe('IdeaRemovalDialog', () => {
     expect(wrapper.text()).toContain('Remove from “Gitarre spielen”, keep it floating')
     expect(wrapper.text()).toContain('Delete “Martina” and 1 sub-idea nothing else holds')
     expect(wrapper.findAll('li').map((item) => item.text())).toEqual(['Martina', 'Ideen mit Martina besprechen'])
+    wrapper.unmount()
+  })
+
+  it('says which ideas gain the value of what it deletes', () => {
+    const idea = (id: string, text: string, partial: Record<string, unknown> = {}) => ({
+      id, text, intrinsicValue: 0, cost: 1, duration: 1, costVariance: 0, valueVariance: 0, selfWeight: 0, archived: false, tags: [], committedIn: [],
+      status: { state: 'open', comment: '', date: 0 }, supportingConnections: [], supportedIdeas: ['root'], ...partial
+    })
+    useDataStore().ideas = {
+      root: idea('root', 'Cook every Friday', { intrinsicValue: 10, supportedIdeas: [], supportingConnections: [{ ideaId: 'idea', weight: 1 }, { ideaId: 'pot', weight: 1 }] }),
+      idea: idea('idea', 'Martina'),
+      pot: idea('pot', 'Buy a big pot')
+    } as never
+    const wrapper = mountDialog()
+    expect(wrapper.text()).toContain('Its value goes to: Buy a big pot')
     wrapper.unmount()
   })
 

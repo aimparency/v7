@@ -8,8 +8,8 @@ import { DEFAULT_IDEA_COST } from './constants.js';
 import { isOngoingState } from './work-selection.js';
 
 export type WhatIfChange =
-  /** The idea leaves the graph with its connections, as if deleted. */
-  | { kind: 'remove'; ideaId: string }
+  /** The ideas leave the graph with their connections, as if deleted. */
+  | { kind: 'remove'; ideaIds: string[] }
   /** The connection parent → child carries this weight. */
   | { kind: 'weight'; parentId: string; childId: string; weight: number };
 
@@ -17,12 +17,13 @@ export type WhatIfShift = { id: string; text: string; valueBefore: number; value
 
 export function applyWhatIf(ideas: Idea[], change: WhatIfChange): Idea[] {
   if (change.kind === 'remove') {
+    const gone = new Set(change.ideaIds);
     return ideas
-      .filter(idea => idea.id !== change.ideaId)
+      .filter(idea => !gone.has(idea.id))
       .map(idea => ({
         ...idea,
-        supportingConnections: (idea.supportingConnections ?? []).filter(connection => connection.ideaId !== change.ideaId),
-        supportedIdeas: (idea.supportedIdeas ?? []).filter(id => id !== change.ideaId)
+        supportingConnections: (idea.supportingConnections ?? []).filter(connection => !gone.has(connection.ideaId)),
+        supportedIdeas: (idea.supportedIdeas ?? []).filter(id => !gone.has(id))
       }));
   }
   if (!ideas.some(idea => idea.id === change.parentId && idea.supportingConnections?.some(connection => connection.ideaId === change.childId))) {
