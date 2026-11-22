@@ -274,7 +274,9 @@ async function removeFiles(graph: Graph) {
     if (!relative || relative.startsWith('..') || path.isAbsolute(relative)) {
       throw new GraphError(`"${graph.slug}" points outside ${parent}: its directory is left alone.`);
     }
-    await fs.remove(graph.path);
+    // A background write into the graph (the search warm-up, a pull) may still
+    // be filling a directory as it goes: retry instead of failing on ENOTEMPTY.
+    await fs.promises.rm(graph.path, { recursive: true, force: true, maxRetries: 10, retryDelay: 50 });
   }
   await fs.remove(path.join(serverDir(), 'guest', graph.slug));
 }

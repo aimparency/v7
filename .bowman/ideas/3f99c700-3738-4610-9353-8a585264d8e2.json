@@ -1,0 +1,24 @@
+{
+  "id": "3f99c700-3738-4610-9353-8a585264d8e2",
+  "text": "remote-graph.test.ts flakes under parallel load: search warm-up writes runtime/ while the test removes its temp dir",
+  "description": "Found 2026-11-22: 'a remote graph is read-only until its owner selects a key, then commits are pushed back' fails about 1 in 3-5 runs when other test files run in parallel (vitest src/graphs/ src/auth/discard.test.ts), never alone. Error: ENOTEMPTY rmdir .../remotes/plans/.bowman, after '[Search] Warm-up failed: ENOENT rename ...runtime/.autonomy-policy.json.tmp...'. The background search warm-up (or the autonomy-policy write it triggers) still writes into the graph while afterEach removes it. Fix: await or cancel the warm-up before teardown, or let teardown retry the removal.",
+  "archived": false,
+  "color": "#2d6650",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "01fe0313-b467-40fd-9a3d-ae4a93af38ba"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "2026-11-22: the failing removal was the test's own purge (removeSpace → registry removeFiles) racing getMeta's fire-and-forget search warm-up, which still wrote runtime/autonomy-policy.json into the space. removeFiles now uses fs.rm with maxRetries 10 / retryDelay 50, so removing a space no longer fails on ENOTEMPTY when a background write (warm-up, pull) is still filling it; that also covers the real server case. Evidence: vitest src/graphs/ + auth/discard.test.ts in parallel failed 2 of 6 and 1 of 5 runs before, 0 of 10 after; tsc clean.",
+    "date": 1795379593730
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
