@@ -25,9 +25,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "2026-11-13 (9102def6): notes and \"I'd like to work on this\" are built. Accounts without rights on a graph leave them on its ideas; they are kept in the server directory (guest/<slug>/notes.json), never in the repository; owner and writers see recent ones in the header and remove any; the owner sets who may leave notes; a limit per account and hour; agents get them only through the MCP tool list_notes, marked as visitors' text. Evidence: guest/notes.test.ts, frontend IdeaNotes.spec.ts. Still open: proposing (offering a graph to an idea, and accepting), which is b7e0b972. The earlier undecided point is settled by the accounts: a visitor gets an account automatically before the first note.",
-    "date": 1794591693664
+    "state": "implemented",
+    "comment": "2026-11-13 (9102def6): notes and \"I'd like to work on this\" are built. Accounts without rights on a graph leave them on its ideas; they are kept in the server directory (guest/<slug>/notes.json), never in the repository; owner and writers see recent ones in the header and remove any; the owner sets who may leave notes; a limit per account and hour; agents get them only through the MCP tool list_notes, marked as visitors' text. A visitor gets an account automatically before the first note. Evidence: guest/notes.test.ts, frontend IdeaNotes.spec.ts.\n2026-11-22: proposing, the last open part, is done in b7e0b972 (offer a graph to an idea by dragging into empty space; the owner accepts; implemented with tests and a browser probe). Proposals are graphs rather than loose sub-ideas, kept as guest notes on the server until accepted, as this idea asked.",
+    "date": 1795380019103
   },
   "intrinsicValue": 0,
   "cost": 4,
