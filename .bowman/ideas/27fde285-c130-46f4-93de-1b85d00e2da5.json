@@ -12,7 +12,7 @@
         2.25,
         -3
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "6ad092fc-a69e-475d-8870-30f994a7f6a5",
@@ -20,7 +20,7 @@
         3.69,
         -0.65
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "c254d8bd-d7ba-494e-8a97-8c46636fdb2f",
@@ -28,7 +28,7 @@
         1.25,
         3.54
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "cffdcd91-fd9c-45e4-98fd-e265650be143",
@@ -36,7 +36,7 @@
         3.03,
         -2.21
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "e81b11c3-8eca-4f7d-8ca3-578179d24225",
@@ -44,7 +44,7 @@
         2.28,
         2.98
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "629396d0-891d-42c7-b2b2-1be5423de649",
@@ -52,7 +52,7 @@
         -3.25,
         -1.88
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "c561dd26-86c5-45c2-96a3-4b4f90e448a3",
@@ -60,7 +60,7 @@
         0.52,
         -3.71
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "7634e681-d234-48fa-ad82-876ef97460ca",
@@ -68,7 +68,7 @@
         -3.63,
         -0.96
       ],
-      "weight": 11.11111111111111
+      "weight": 10.555555555555554
     },
     {
       "ideaId": "e1734671-9f93-4e01-9c66-aaa6ce7da4a1",
@@ -76,8 +76,18 @@
         -2.47,
         -2.82
       ],
-      "weight": 11.11111111111111,
+      "weight": 10.555555555555554,
       "hypothesis": "Consolidated memory across dreams lets the graph notice patterns over time instead of repeating them; weight 0 because it stores memory and carries no value."
+    },
+    {
+      "ideaId": "b80839d8-4c02-4ce3-80e4-3c306e40819c",
+      "relativePosition": [
+        -3.64,
+        0.89
+      ],
+      "weight": 5,
+      "hypothesis": "At least one peer intent-graph tool has active users whose intents could be linked into Aimparency graphs, so a bridge brings participants into the network faster than building alone. Refuted if the comparison finds none with meaningful activity (e.g. every one under ~100 stars or weekly downloads and no outside contributors), or if their data models carry no value or connection information worth linking.",
+      "reflection": "Did not hold (2026-11-22): the open intent-graph tools found have tens of downloads a month or single-digit stars; the space is crowded with experiments but has no user base to bridge to. The network has to grow from its own users (Commons Hub, Hack the Hub 96e9fc41), not from peers."
     }
   ],
   "supportedIdeas": [

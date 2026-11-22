@@ -1,0 +1,27 @@
+{
+  "id": "b80839d8-4c02-4ce3-80e4-3c306e40819c",
+  "text": "Bridge to peer intent-graph tools instead of competing: find which of Coherence, convergentAI, OpenIntent, IntentLang, sigil, agent-spec has real users, and link their intents into Aimparency graphs",
+  "description": "Major hypothesis loop 2026-11-22. RESEARCHED: several open projects now link intent to agent work in a graph: Coherence (opencollective.com/coherence: product intent, specs, acceptance criteria, code changes and verification evidence in one versioned graph, hosted by Open Source Europe), convergentAI (pypi.org/project/convergentAI: agents publish intents to a shared append-only graph and check overlaps before building; one maintainer), and the PyPI/CLI packages openintent, intentgraph, IntentLang (krakenhavoc.github.io/IntentLang), sigil (fielding.github.io/sigil), agent-spec (github.com/ZhangHanDong/agent-spec). OBSERVED: Aimparency already imports GitHub issues and spec-kit tasks (import_github_issues, import_spec_tasks) and has an A2A boundary waiting on a real exchange (6c611056). INFERRED: an open intention network grows by linking graphs, so each peer's users are potential participants rather than competitors. Smallest step: a one-page comparison (data model, license, activity, downloads or stars, whether agents write to it), no code; build an importer only for a peer with real usage, and approach its maintainers with appreciation first (relationship principle on 3d868d5b).",
+  "archived": false,
+  "color": "#625627",
+  "tags": [
+    "hypothesis",
+    "major-hypothesis-loop"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "27fde285-c130-46f4-93de-1b85d00e2da5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "failed",
+    "comment": "Comparison done 2026-11-22 (GitHub API, pypistats.org): intent-graph peers have almost no users. convergentAI 29 downloads/month, intentgraph 33, openintent 104; krakenhavoc/IntentLang 4 stars (last push 2026-03), fielding/sigil 0 stars, fireharp/coherence 6 stars (a drift detector, not the Open Collective 'Coherence', whose repository I could not find). The one tool with traction is ZhangHanDong/agent-spec (464 stars, 35 forks, MIT, pushed 2026-08-29), but it is a per-task BDD spec verification tool, not an intent graph with values or connections. So no peer has an intent network worth bridging; refuted by its own criterion. Narrow follow-up if ever wanted: agent-spec specs could be read like import_spec_tasks reads spec-kit tasks, or used as acceptance checks in the harness verify stage. Not created as an idea: no demand seen.",
+    "date": 1795379670138
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
