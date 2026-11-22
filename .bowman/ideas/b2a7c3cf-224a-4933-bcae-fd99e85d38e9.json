@@ -21,7 +21,7 @@
   "committedIn": [],
   "status": {
     "state": "partially",
-    "comment": "Economic priority refactor (18d9bbb) and the value-calculation rewrite (bb8150a8) are done. Calibration attempt 2026-11-02 with scripts/priority-calibration.mjs (actual effort = code churn of commits citing the idea): of 666 implemented ideas, 96% carry the default duration 1 and 84% the default cost 1; only 49 are cited by commits with code changes, 9 of those with a real cost estimate. Spearman(cost, churn) = 0.69 on those 9 (0.13 over all 49, diluted by defaults): promising but far too few. Waiting on data, not on a human: rerun the script when at least 30 estimated implemented ideas exist (create_idea now asks for a cost). Duration cannot be calibrated at all yet; nearly every idea keeps the default.",
+    "comment": "Economic priority refactor (18d9bbb) and the value-calculation rewrite (bb8150a8) are done. Calibration with scripts/priority-calibration.mjs (actual effort = code churn of commits citing the idea):\n- 2026-11-02: 49 implemented ideas cited by commits with code changes, 9 with a real cost estimate; Spearman(cost, churn) 0.69 on those 9, 0.13 over all 49.\n- 2026-11-22 rerun: 84 cited with code churn, 28 with a non-default cost; Spearman 0.58 on the 28, 0.43 over all 84. The correlation holds as data grows (moderate, positive), the all-ideas figure rose as defaults got replaced. Still 2 short of the script's 30 threshold.\nWaiting on data, not on a human: rerun at 30+ (a few more estimated implemented ideas citing commits). Duration cannot be calibrated yet; nearly every idea keeps the default.",
     "date": 1793550911626
   },
   "intrinsicValue": 0,
