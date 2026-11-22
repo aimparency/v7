@@ -52,7 +52,8 @@
         3.34
       ],
       "weight": 1,
-      "hypothesis": "The server can be opened to all participants without risk."
+      "hypothesis": "The server can be opened to all participants without risk.",
+      "reflection": "Holds as far as tests show; the event itself is the first real load."
     },
     {
       "ideaId": "34b3d747-a5fe-4658-b004-5aa603ad6c14",

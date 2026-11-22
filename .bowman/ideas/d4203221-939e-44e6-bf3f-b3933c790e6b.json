@@ -80,7 +80,8 @@
         -1.95
       ],
       "weight": 1,
-      "hypothesis": "With these limits, opening a server to anyone does not put the server, its graphs or its agents at risk."
+      "hypothesis": "With these limits, opening a server to anyone does not put the server, its graphs or its agents at risk.",
+      "reflection": "Holds in tests: every resource a stranger can consume (accounts, graphs, notes/offers, graph size, request size) has a limit, and no stranger reaches a shell or server paths. Not yet probed adversarially on the public server."
     },
     {
       "ideaId": "e34b5ff1-77eb-48cf-baf2-eac4fa51d361",
