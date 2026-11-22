@@ -89,4 +89,27 @@ describe('HookLoopsModal', () => {
     await flushPromises()
     expect(saveLoop).toHaveBeenCalledWith({ graph: '/p', slug: 'refactor', title: 'Refactor', work: defaultLoop.work, human: defaultLoop.human })
   })
+
+  it('Escape or the close button closes it; with unsaved edits it asks first, Escape again keeps editing', async () => {
+    const wrapper = mount(HookLoopsModal, { props: { state }, global, attachTo: document.body })
+    const escape = (target = wrapper.find('textarea')) => target.trigger('keydown', { key: 'Escape' })
+
+    await escape()
+    expect(wrapper.emitted('close')).toHaveLength(1)
+    await wrapper.find('button[title="Close (Esc)"]').trigger('click')
+    expect(wrapper.emitted('close')).toHaveLength(2)
+
+    await wrapper.find('textarea').setValue('Changed.')
+    await escape()
+    expect(wrapper.emitted('close')).toHaveLength(2)
+    expect(wrapper.find('.discard-prompt').exists()).toBe(true)
+    await escape()
+    expect(wrapper.find('.discard-prompt').exists()).toBe(false)
+    expect((wrapper.find('textarea').element as HTMLTextAreaElement).value).toBe('Changed.')
+
+    await escape()
+    await wrapper.find('.btn-discard').trigger('click')
+    expect(wrapper.emitted('close')).toHaveLength(3)
+    wrapper.unmount()
+  })
 })

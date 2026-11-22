@@ -1,6 +1,8 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
+import { X } from 'lucide-vue-next'
 import FormModalShell from './FormModalShell.vue'
+import DiscardPrompt from './DiscardPrompt.vue'
 import { useProjectStore } from '../stores/project-store'
 import { errorMessage } from '../stores/toast'
 import { trpc } from '../trpc'
@@ -61,16 +63,33 @@ const save = (asNew: boolean) => run(() => trpc.continueHook.saveLoop.mutate({
 }))
 const remove = () => run(() => trpc.continueHook.deleteLoop.mutate({ graph: graph(), slug: slug.value }))
 
-// Keys stay inside the dialog: the app's shortcuts must not fire while typing.
+// Escape out of a textarea is a vim habit, so leaving with unsaved edits asks
+// first (as the idea editor does); Escape on that prompt keeps editing.
+const confirmingDiscard = ref(false)
+const requestClose = () => {
+  if (confirmingDiscard.value) confirmingDiscard.value = false
+  else if (dirty.value) confirmingDiscard.value = true
+  else emit('close')
+}
+
+// Capture phase: the dialog owns the keyboard wherever focus is, so the app's
+// shortcuts never fire while it is open.
 const handleKeydown = (event: KeyboardEvent) => {
   event.stopPropagation()
-  if (event.key === 'Escape') emit('close')
+  if (event.key !== 'Escape') return
+  event.preventDefault()
+  requestClose()
 }
+onMounted(() => window.addEventListener('keydown', handleKeydown, true))
+onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 </script>
 
 <template>
-  <FormModalShell :show="true" title="Hook loops" width="min(94vw, 64rem)" :close-on-escape="false" @request-close="emit('close')">
-    <div class="hook-loops" @keydown="handleKeydown">
+  <FormModalShell :show="true" title="Hook loops" width="min(94vw, 64rem)" :close-on-escape="false" @request-close="requestClose">
+    <template #header-right>
+      <button type="button" class="icon-btn" title="Close (Esc)" @click="requestClose"><X /></button>
+    </template>
+    <div class="hook-loops">
       <nav class="loop-list">
         <button
           v-for="loop in state.loops"
@@ -110,6 +129,7 @@ const handleKeydown = (event: KeyboardEvent) => {
         </div>
       </form>
     </div>
+    <DiscardPrompt v-if="confirmingDiscard" @keep="confirmingDiscard = false" @discard="emit('close')" />
   </FormModalShell>
 </template>
 
