@@ -5,6 +5,7 @@ import { runWithOrigin } from './change-origin.js';
 import { hasAccounts } from 'shared/server-config';
 import { assertAllowed, graphOf, viewerFor, type Viewer } from './auth/access.js';
 import { touchAccount } from './auth/accounts.js';
+import { assertGraphMayGrow, GraphTooLargeError } from './graphs/size-limit.js';
 
 // `session` is one object per connection: logging in sets its token, so the
 // same WebSocket goes on as that account without reconnecting.
@@ -92,6 +93,11 @@ const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, nex
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Other websites may read this server; they write only with a login you give them here.' });
   }
   assertAllowed(path, type, viewer, graph);
+  if (graph && type === 'mutation') {
+    await assertGraphMayGrow(graph, path).catch((error) => {
+      throw error instanceof GraphTooLargeError ? new TRPCError({ code: 'PAYLOAD_TOO_LARGE', message: error.message }) : error;
+    });
+  }
   // When it was last used decides when an automatic account is discarded (auth/discard.ts).
   if (viewer.id !== null) void touchAccount(viewer.id).catch(() => {});
   return next({ ctx: { ...ctx, viewer } });

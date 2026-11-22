@@ -9,32 +9,21 @@ import path from 'node:path';
 import { promisify } from 'node:util';
 import { toBowmanPath } from 'shared';
 import { READ_ONLY_MARKER } from 'shared/bowman-migration';
-import { serverConfig } from 'shared/server-config';
 import { cloneBowman } from '../git-repository-cache.js';
 import { commitPaths, pushToUpstream, readWorkingTreeStatus } from '../git-working-tree.js';
 import { updateProjectMeta } from '../storage/project.js';
 import { addRemoteGraph, graphBowmanPath, GraphError, setRemoteKey, type Graph } from './registry.js';
 import { graphGitEnv, remoteGitEnv } from './remote-git.js';
 import { privateKeyFile } from './ssh-keys.js';
+import { directoryBytes, graphLimitBytes, GraphTooLargeError } from './size-limit.js';
 
 const execFileAsync = promisify(execFile);
 
 // What was cloned from a stranger's URL must not fill the disk.
 async function assertFitsLimit(directory: string) {
-  const limit = serverConfig().limits.graphMegabytes;
-  let bytes = 0;
-  const measure = async (current: string): Promise<void> => {
-    for (const entry of await fs.readdir(current, { withFileTypes: true })) {
-      const file = path.join(current, entry.name);
-      if (entry.isDirectory()) await measure(file);
-      else bytes += (await fs.lstat(file)).size;
-    }
-  };
-  await measure(directory);
-  if (bytes > limit * 1024 * 1024) {
-    await fs.remove(directory);
-    throw new Error(`This space is larger than the ${limit} MB a space may have on this server.`);
-  }
+  if (await directoryBytes(directory) <= graphLimitBytes()) return;
+  await fs.remove(directory);
+  throw new GraphTooLargeError();
 }
 
 /**
