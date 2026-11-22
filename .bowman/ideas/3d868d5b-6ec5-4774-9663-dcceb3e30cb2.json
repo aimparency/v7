@@ -14,7 +14,7 @@
         8.68,
         -1.17
       ],
-      "weight": 1
+      "weight": 2.5297652795101486
     },
     {
       "ideaId": "22dd4138-d7c2-436a-8891-15568dacf338",
@@ -22,7 +22,7 @@
         2.6149372463822185,
         -4.513956698054294
       ],
-      "weight": 5
+      "weight": 12.648826397550742
     },
     {
       "ideaId": "2fbd88df-3698-4f48-8e66-a001c37a99ea",
@@ -30,7 +30,7 @@
         -1.843963421655553,
         -1.60016078852884
       ],
-      "weight": 1.0434782608695652,
+      "weight": 2.6397550742714593,
       "hypothesis": "i sometimes feel the urge to say something like \"work directly on main\" - throughout the project. And need a place to configure this. maybe even a separate file next to the meta.json. something that get's posted when a new worker session starts. Same for the watchdog session maybe? There is already a prompt there, i think"
     },
     {
@@ -39,7 +39,7 @@
         -3.45,
         1.48
       ],
-      "weight": 3
+      "weight": 7.589295838530446
     },
     {
       "ideaId": "ef6ec235-3a93-42f6-aeb4-c1efd43e8265",
@@ -47,7 +47,7 @@
         -3.36,
         1.67
       ],
-      "weight": 8
+      "weight": 20.23812223608119
     },
     {
       "ideaId": "5f5d6950-44a3-4f81-934a-0b26d327e7b6",
@@ -55,7 +55,7 @@
         -3.71,
         -0.55
       ],
-      "weight": 3
+      "weight": 7.589295838530446
     },
     {
       "ideaId": "d677ae6f-bf39-4362-81a6-4373405a0e85",
@@ -63,7 +63,7 @@
         3.05,
         -2.19
       ],
-      "weight": 5
+      "weight": 12.648826397550742
     },
     {
       "ideaId": "e7a61faf-d11c-4979-b8d6-e3e7973b9cf5",
@@ -71,7 +71,7 @@
         2.48,
         -2.81
       ],
-      "weight": 3.5
+      "weight": 8.85417847828552
     },
     {
       "ideaId": "ccd6b576-fc66-4b76-bdf3-dc130d898037",
@@ -79,7 +79,7 @@
         3.5,
         -1.35
       ],
-      "weight": 5.8
+      "weight": 14.672638621158862
     },
     {
       "ideaId": "486c3934-bd21-4d36-b0cf-08d1f0caed5f",
@@ -87,7 +87,16 @@
         -0.03,
         3.75
       ],
-      "weight": 3
+      "weight": 7.589295838530446
+    },
+    {
+      "ideaId": "65fe5876-6cd4-46be-b568-17414a1208bb",
+      "relativePosition": [
+        2.26,
+        -3
+      ],
+      "weight": 3,
+      "hypothesis": "Seeing how a decision cascades through the goal graph before making it lets people and agents decide prospectively (Tankelevitch & Rintel's capability 5), so fewer changes get reverted. Refuted if, once available, the preview is rarely used before cancels or share changes, or undo/revert rates of such changes do not drop."
     }
   ],
   "supportedIdeas": [

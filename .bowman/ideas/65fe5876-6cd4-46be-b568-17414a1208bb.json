@@ -1,0 +1,27 @@
+{
+  "id": "65fe5876-6cd4-46be-b568-17414a1208bb",
+  "text": "What-if preview: before cancelling an idea or changing a share, show how value and priorities would shift across the graph",
+  "description": "Major hypothesis loop 2026-11-22. RESEARCHED: Tankelevitch & Rintel, 'Goals as First-Class Abstractions in Human-AI Collaboration', AutomationXP26 workshop, CHI 2026 (Microsoft Research; PDF matthiasbaldauf.com/automationxp26/papers/AutomationXP26_paper_0982.pdf) name six capabilities a goal-oriented system should support: (1) goal articulation, (2) goals as first-class representations, (3) alignment and misalignment surfacing, (4) goal provenance and history, (5) outcome simulation: 'anticipate how decisions cascade across goal dependencies: lightweight what-if projections that move goal management from retrospective tracking to prospective reasoning', (6) situated goal support in workflows, incl. agents receiving delegated goals and reporting against them.\\nOBSERVED mapping: (2) ideas are persistent git objects linked across servers; (3) value flow, path to root, duplicates, offers; (4) git history per idea (IdeaHistoryModal); (6) hooks and MCP put the idea into the agent's work, agents report in status comments; (1) partly (create_idea review, decomposition with hypotheses). (5) is missing: the value model already computes flows (calculateIdeaValues), but nothing shows the effect of a change before it is made.\\nProposal: in the idea panel, hovering 'cancel' or dragging a share shows the shift: which ideas gain or lose value and priority, and the new top of the ranking. Pure client-side recalculation on a modified copy, nothing written. Smallest step: the same as a read-only MCP tool (what_if: cancel idea X / set share) so agents can reason prospectively first.",
+  "archived": false,
+  "color": "#43662d",
+  "tags": [
+    "hypothesis",
+    "major-hypothesis-loop"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "3d868d5b-6ec5-4774-9663-dcceb3e30cb2"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "From the 2026-11-22 research; smallest step is a read-only MCP what_if tool.",
+    "date": 1795380194765
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
