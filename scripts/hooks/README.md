@@ -69,7 +69,8 @@ asks the agent to append one succinct line per finished step, so the human can
 read the run's changes later. Disabling appends the stop time and drops the pointer.
 
 The UI's header has the same switch as a menu: Off, then every hook loop,
-then Manage loops… (local servers; with accounts, server admins when agents are on).
+then Manage loops…, whose Activate runs the open loop (local servers; with accounts,
+server admins when agents are on).
 
 ## Hook loops
 

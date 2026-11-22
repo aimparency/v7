@@ -55,12 +55,27 @@ const run = async (action: () => Promise<HookState & { saved?: string }>) => {
 }
 
 const graph = () => projectStore.projectPath
-const save = (asNew: boolean) => run(() => trpc.continueHook.saveLoop.mutate({
+const saveDraft = (asNew: boolean) => trpc.continueHook.saveLoop.mutate({
   graph: graph(),
   slug: asNew || isDefault.value ? undefined : slug.value,
   ...draft.value,
   title: asNew && draft.value.title === original.value?.title ? `${draft.value.title} (copy)` : draft.value.title
-}))
+})
+const save = (asNew: boolean) => run(() => saveDraft(asNew))
+
+// Activate runs the open loop from the agent's next stop; unsaved edits are
+// saved first (the default's as a new loop). Installing stays in the Hook menu.
+const running = computed(() => props.state.enabled && (props.state.loop ?? DEFAULT_LOOP) === slug.value)
+const canActivate = computed(() => !running.value || (dirty.value && isDefault.value))
+const activate = () => run(async () => {
+  let loop = slug.value
+  if (dirty.value) {
+    const saved = await saveDraft(isDefault.value)
+    emit('update', saved) // kept even if activating fails
+    loop = saved.saved
+  }
+  return { ...await trpc.continueHook.select.mutate({ graph: graph(), loop }), saved: loop }
+})
 const remove = () => run(() => trpc.continueHook.deleteLoop.mutate({ graph: graph(), slug: slug.value }))
 
 // Escape out of a textarea is a vim habit, so leaving with unsaved edits asks
@@ -126,7 +141,16 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
           <span class="grow"></span>
           <button v-if="!isDefault" type="button" class="btn-secondary" :disabled="busy" @click="save(true)">Save as new</button>
           <button type="submit" class="btn-primary" :disabled="busy || (!isDefault && !dirty)">{{ isDefault ? 'Save as new loop' : 'Save' }}</button>
+          <button
+            v-if="canActivate"
+            type="button"
+            class="btn-primary"
+            :disabled="busy || !state.installed"
+            :title="state.installed ? 'Run this loop from the agent\'s next stop' : 'Install the hook from the Hook menu first'"
+            @click="activate"
+          >{{ dirty ? 'Save & activate' : 'Activate' }}</button>
         </div>
+        <p v-if="!state.installed" class="hint">The hook is not installed in this repository yet: install it from the Hook menu to activate a loop.</p>
       </form>
     </div>
     <DiscardPrompt v-if="confirmingDiscard" @keep="confirmingDiscard = false" @discard="emit('close')" />

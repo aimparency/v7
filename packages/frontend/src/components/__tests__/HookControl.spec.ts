@@ -112,4 +112,36 @@ describe('HookLoopsModal', () => {
     expect(wrapper.emitted('close')).toHaveLength(3)
     wrapper.unmount()
   })
+
+  it('Activate runs the open loop; with edits it saves first, the default as a new loop', async () => {
+    const off = { ...state, enabled: false, loop: null }
+    const ideation = { ...defaultLoop, slug: 'ideation', title: 'Ideation' }
+    select.mockResolvedValue({ ...state, loop: 'refactor' })
+    const wrapper = mount(HookLoopsModal, { props: { state: off }, global })
+    const activate = () => wrapper.findAll('button').find(button => /activate/i.test(button.text()))
+    await wrapper.findAll('.loop-list button')[1]!.trigger('click')
+    expect(activate()!.text()).toBe('Activate')
+    await activate()!.trigger('click')
+    await flushPromises()
+    expect(select).toHaveBeenCalledWith({ graph: '/p', loop: 'refactor' })
+
+    await wrapper.setProps({ state: { ...state, loop: 'refactor' } })
+    expect(activate()).toBeUndefined() // already running
+
+    saveLoop.mockResolvedValue({ ...state, loops: [defaultLoop, refactor, ideation], saved: 'ideation' })
+    select.mockResolvedValue({ ...state, loop: 'ideation', loops: [defaultLoop, refactor, ideation] })
+    await wrapper.findAll('.loop-list button')[0]!.trigger('click')
+    await wrapper.find('input').setValue('Ideation')
+    expect(activate()!.text()).toBe('Save & activate')
+    await activate()!.trigger('click')
+    await flushPromises()
+    expect(saveLoop).toHaveBeenCalledWith(expect.objectContaining({ slug: undefined, title: 'Ideation' }))
+    expect(select).toHaveBeenLastCalledWith({ graph: '/p', loop: 'ideation' })
+  })
+
+  it('without the hook installed Activate points to the Hook menu', () => {
+    const wrapper = mount(HookLoopsModal, { props: { state: { ...state, installed: false, enabled: false, loop: null } }, global })
+    expect(wrapper.findAll('button').find(button => button.text() === 'Activate')!.attributes('disabled')).toBeDefined()
+    expect(wrapper.text()).toContain('install it from the Hook menu')
+  })
 })
