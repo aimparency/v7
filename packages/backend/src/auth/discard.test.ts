@@ -50,7 +50,7 @@ test('discarding a browser-key account removes its spaces, notes, offers, rights
   await ana.graphs.setAccess({ graph: hub, writers: [account.name] });
   await ana.notes.add({ graph: hub, ideaId, kind: 'note', text: 'Ana stays' });
 
-  assert.deepEqual(await caller.auth.ownFootprint(), { spaces: ['Ben cooks'], notes: 1, offers: 1 });
+  assert.deepEqual(await caller.auth.ownFootprint(), { spaces: ['Ben cooks'], passedOn: [], notes: 1, offers: 1 });
   assert.equal(await ana.auth.ownFootprint(), null, 'a permanent account is logged out, not discarded');
   await assert.rejects(ana.auth.discardOwnAccount(), /permanent login/);
 
@@ -62,6 +62,33 @@ test('discarding a browser-key account removes its spaces, notes, offers, rights
   assert.equal(accounts.findAccount(account.name), null);
   assert.equal(accounts.resolveToken('anything'), null);
   assert.equal((await caller.auth.me()).name, null, 'its login is gone');
+});
+
+test('a space others manage or write in passes to a manager, else the writer added first; only one nobody else is in goes', async () => {
+  const { account: ben, caller } = await guest('key-ben');
+  const { account: cleo } = await guest('key-cleo');
+  const { account: dana } = await guest('key-dana');
+  const garden = (await caller.graphs.create({ name: 'Garden' })).slug;
+  const bakery = (await caller.graphs.create({ name: 'Bakery' })).slug;
+  const alone = (await caller.graphs.create({ name: 'Alone' })).slug;
+  await caller.graphs.setAccess({ graph: garden, writers: [cleo.name, dana.name] });
+  await caller.graphs.setAccess({ graph: bakery, writers: [cleo.name], managers: [dana.name] });
+  const gardenRepo = (await caller.project.getMeta({ graph: garden })).repoId!;
+  await caller.notes.add({ graph: hub, ideaId, kind: 'offer', text: '', space: { host: `https://hub.example.org/spaces/${garden}`, repoId: gardenRepo, name: 'Garden' } });
+
+  assert.deepEqual(await caller.auth.ownFootprint(), { spaces: ['Alone'], passedOn: ['Garden', 'Bakery'], notes: 0, offers: 1 });
+  await caller.auth.discardOwnAccount();
+
+  const bySlug = new Map(listGraphs().map(graph => [graph.slug, graph]));
+  assert.equal(bySlug.has(alone), false, 'nobody else was in it');
+  assert.equal(await fs.pathExists(path.join(root, 'spaces', alone)), false);
+  assert.equal(bySlug.get(garden)!.owner, cleo.id, 'the writer added first');
+  assert.deepEqual(bySlug.get(garden)!.writers, [dana.id]);
+  assert.equal(bySlug.get(bakery)!.owner, dana.id, 'a manager before writers');
+  assert.deepEqual(bySlug.get(bakery)!.managers, []);
+  assert.deepEqual(bySlug.get(bakery)!.writers, [cleo.id]);
+  assert.equal(accounts.findAccount(ben.name), null);
+  assert.equal((await ana.notes.list({ graph: hub, ideaId })).notes.length, 0, 'its own offer goes with it, as any note it wrote');
 });
 
 test('automatic accounts unused for longer than the server allows are discarded; others stay', async () => {

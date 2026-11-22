@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Low priority (Felix 2026-11-20). Where: auth/discard.ts discardAccount, before removeSpace for owned spaces.",
-    "date": 1795194800990
+    "state": "implemented",
+    "comment": "2026-11-22: auth/discard.ts heirOf picks a manager, else a writer, the one added first (list order = join order; there is no join date); discardAccount makes the heir owner and takes them out of the writer/manager lists before removing the rest. Only owned spaces nobody else is in go (with their offers); deleted spaces in the trash still go. ownFootprint now returns passedOn next to spaces, and the discard dialog (LoginControl.vue) says 'Others are in X: it passes to them.' Evidence: discard.test.ts new case (Garden → first writer, Bakery → manager before writer, Alone removed, offer of the passed-on space removed as Ben's own note), discard/read-access/account-deletion 12/12, LoginControl.spec 9/9, tsc + vue-tsc clean. Not changed: a remote space's push key stays the gone account's key until the new owner picks another.",
+    "date": 1795378529649
   },
   "intrinsicValue": 0,
   "cost": 2,

@@ -370,6 +370,7 @@ const plural = (count: number, one: string, many: string) => `${count} ${count =
           <li v-if="footprint.spaces.length">{{ plural(footprint.spaces.length, 'space', 'spaces') }}: {{ footprint.spaces.join(', ') }}</li>
           <li>{{ plural(footprint.notes, 'note', 'notes') }} and {{ plural(footprint.offers, 'offer', 'offers') }} on other spaces</li>
         </ul>
+        <p v-if="footprint?.passedOn.length" class="hint">Others are in {{ footprint.passedOn.join(', ') }}: it passes to them.</p>
         <p class="hint">To keep it, choose a name and a password instead.</p>
         <p v-if="error" class="error">{{ error }}</p>
       </div>

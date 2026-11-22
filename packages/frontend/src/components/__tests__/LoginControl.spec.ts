@@ -153,12 +153,13 @@ describe('LoginControl', () => {
 
   it('discards an account that lives only in this browser instead of logging it out, saying what goes with it', async () => {
     const wrapper = await mountControl({ name: 'guest-1a2b3c', permanentLogin: false })
-    auth.ownFootprint.query.mockResolvedValue({ spaces: ['Cook every Friday'], notes: 2, offers: 1 })
+    auth.ownFootprint.query.mockResolvedValue({ spaces: ['Cook every Friday'], passedOn: ['Shared garden'], notes: 2, offers: 1 })
     await menuItems(wrapper)
     await wrapper.findAll('.menu-item').find(item => item.text() === 'Discard account')!.trigger('click')
     await flushPromises()
     expect(document.body.textContent).toContain('1 space: Cook every Friday')
     expect(document.body.textContent).toContain('2 notes and 1 offer on other spaces')
+    expect(document.body.textContent).toContain('Others are in Shared garden: it passes to them.')
 
     auth.discardOwnAccount.mutate.mockResolvedValue({ success: true })
     auth.me.query.mockResolvedValue(me({ name: null }))
