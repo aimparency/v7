@@ -5,12 +5,13 @@ import { clientId, mutationActivity } from '../utils/mutation-activity'
 import { useDataStore } from './data'
 import { useProjectStore } from './project-store'
 import { useUIStore } from './ui'
+import { setIdeaSpace } from '../utils/idea-spaces'
 import { applySelectionAnchor, captureSelectionAnchor, type SelectionAnchor } from './ui/selection-anchor'
 
 // Undo/redo over entity snapshots.
 //
 // The backend tags every change event with the raw `previous` file content and
-// the `origin` client. One user action (all mutations started after one user
+// the `origin` client; spaces opened in place report their ideas' changes too. One user action (all mutations started after one user
 // input, until they settle) becomes one entry: per touched entity the first
 // `previous` and the last written state. Undo asks the backend to write the
 // `before` states back, but only if every entity still equals its `after` state
@@ -28,6 +29,8 @@ type EntityChange = {
   id: string
   before: unknown
   after: unknown
+  // The space opened in place it happened in (its address); null: the open space.
+  space: string | null
 }
 
 type HistoryEntry = {
@@ -46,6 +49,7 @@ export type ChangeEvent = {
   deleted?: boolean
   previous?: unknown
   origin?: string
+  space?: string
 }
 
 const RESTORE_PATH = 'history.restore'
@@ -138,7 +142,7 @@ export const useHistoryStore = defineStore('history', {
       if (existing) {
         existing.after = after ?? null
       } else {
-        openGroup.changes.set(key, { type: event.type, id: event.id, before: event.previous ?? null, after: after ?? null })
+        openGroup.changes.set(key, { type: event.type, id: event.id, before: event.previous ?? null, after: after ?? null, space: event.space ?? null })
       }
     },
 
@@ -184,6 +188,12 @@ export const useHistoryStore = defineStore('history', {
         return
       }
 
+      const spaces = new Set(entry.changes.map((change) => change.space))
+      if (spaces.size > 1) {
+        this.showMessage(`Can't ${direction} ${this.describe(entry)}: it changed more than one space`)
+        return
+      }
+      const [space] = spaces
       const changes = entry.changes.map((change) => ({
         type: change.type,
         id: change.id,
@@ -200,10 +210,16 @@ export const useHistoryStore = defineStore('history', {
       restoring = true
       let result
       try {
+        // The changed ideas' ids route the restore to their space when they
+        // belong to one opened in place (utils/idea-spaces.ts), also those
+        // deleted since; the backend ignores them.
+        const ideaIds = changes.filter((change) => change.type === 'idea').map((change) => change.id)
+        if (space) for (const id of ideaIds) setIdeaSpace(id, space)
         result = await trpc.history.restore.mutate({
           graph: useProjectStore().projectPath,
-          changes
-        })
+          changes,
+          ideaIds
+        } as { graph: string; changes: typeof changes })
       } catch (error: any) {
         this.showMessage(`${direction === 'undo' ? 'Undo' : 'Redo'} failed: ${error?.message ?? error}`)
         return

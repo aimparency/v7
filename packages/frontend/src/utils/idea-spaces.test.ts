@@ -51,6 +51,14 @@ describe('ideaSpaceLink', () => {
     ])
   })
 
+  it('sends an undo of ideas of a space opened in place to that space', async () => {
+    const { sent, trpc } = client()
+    setIdeaSpace('mine-1', 'cook-every-friday')
+    await trpc.history.restore.mutate({ graph: 'host', changes: [], ideaIds: ['mine-1'] } as never)
+    await trpc.history.restore.mutate({ graph: 'host', changes: [], ideaIds: [] } as never)
+    expect(sent).toEqual(['history.restore cook-every-friday', 'history.restore host'])
+  })
+
   it('refuses to connect ideas of two spaces one by one', async () => {
     const { sent, trpc } = client()
     setIdeaSpace('mine', 'cook-every-friday')

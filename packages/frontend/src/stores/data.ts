@@ -713,6 +713,7 @@ export const useDataStore = defineStore('data', {
       spaceSubscriptions.set(repoId, client.project.onUpdate.subscribe({ graph }, {
         onData: async (data: ProjectUpdate) => {
           if (data.type !== 'idea' || this.linkedGraphViews[repoId]?.state !== 'shown') return
+          useHistoryStore().recordChange({ ...data, space: address }) // its edits here are undone like the open space's
           if (data.deleted) {
             this.removeIdeaLocally(data.id)
             return

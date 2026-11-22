@@ -8,6 +8,7 @@ import { useHistoryStore } from '../history'
 import { useDataStore } from '../data'
 import { useUIStore } from '../ui'
 import { clientId, mutationActivity } from '../../utils/mutation-activity'
+import { spaceOfIdeas } from '../../utils/idea-spaces'
 
 const userAction = (events: Array<Record<string, unknown>>, paths = ['phase.delete']) => {
   window.dispatchEvent(new KeyboardEvent('keydown', { key: 'd' }))
@@ -46,6 +47,24 @@ describe('history store', () => {
 
     await useHistoryStore().redo()
     expect(restore.mock.calls[1]![0].changes[1]).toEqual({ type: 'phase', id: 'doomed', expected: { id: 'doomed', name: 'Doomed' }, target: null })
+  })
+
+  it('sends the undo of a change in a space opened in place to that space, also for an idea deleted since', async () => {
+    userAction([{ type: 'idea', id: 'pot', deleted: true, previous: { text: 'Buy a pot' }, space: 'cook-every-friday' }], ['idea.delete'])
+    restore.mockResolvedValue({ ok: true, conflicts: [] })
+    await useHistoryStore().undo()
+    expect(restore.mock.calls[0]![0].ideaIds).toEqual(['pot'])
+    expect(spaceOfIdeas(['pot'])).toBe('cook-every-friday')
+  })
+
+  it('does not undo one action across two spaces', async () => {
+    userAction([
+      { type: 'idea', id: 'aim', entity: { text: 'B' }, previous: { text: 'A' } },
+      { type: 'idea', id: 'pot', entity: { text: 'B' }, previous: { text: 'A' }, space: 'cook-every-friday' }
+    ], ['idea.update'])
+    await useHistoryStore().undo()
+    expect(restore).not.toHaveBeenCalled()
+    expect(useHistoryStore().message).toContain('more than one space')
   })
 
   it('keeps the entry and reports the conflict when an entity changed since', async () => {
