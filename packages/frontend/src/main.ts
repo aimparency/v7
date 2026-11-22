@@ -4,8 +4,12 @@ import { createPinia } from 'pinia'
 import './style.css'
 import { loadRuntimeConfig } from './utils/runtime-config'
 import { useToastStore } from './stores/toast'
+import { blockBackspaceNavigation } from './utils/backspace-navigation'
 
 await loadRuntimeConfig()
+
+// Registered before any component, so no dialog's capture handler can hide Backspace from it.
+blockBackspaceNavigation()
 
 const { default: App } = await import('./App.vue')
 
