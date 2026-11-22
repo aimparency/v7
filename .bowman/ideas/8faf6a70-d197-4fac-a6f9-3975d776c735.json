@@ -31,7 +31,8 @@
         -2.63
       ],
       "weight": 5,
-      "hypothesis": "Collaborators keep the space they built together when its owner leaves, so working in someone else's space is not a risk."
+      "hypothesis": "Collaborators keep the space they built together when its owner leaves, so working in someone else's space is not a risk.",
+      "reflection": "Held in tests: a space with managers or writers survives its owner's discard and passes to them; not yet seen with real people on a public server."
     }
   ],
   "supportedIdeas": [
