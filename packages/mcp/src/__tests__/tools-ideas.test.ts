@@ -103,6 +103,20 @@ test('get_idea_context returns every distinct root path while preserving the hig
   assert.equal(payload.path_to_root.at(-1).text, 'Middle');
 });
 
+test('get_idea_context works for an idea whose description exceeds the search query limit', async () => {
+  const server = new MockServer();
+  registerTools(server as any, createCallerProxy(caller) as any);
+
+  const idea = await caller.idea.createFloatingIdea({
+    graph: ctx.projectPath,
+    idea: { text: 'Long one', description: 'word '.repeat(1000), status: { state: 'open', comment: '', date: Date.now() } }
+  });
+
+  const result = await server.callTool('get_idea_context', { graph: ctx.projectPath, ideaId: idea.id });
+  assert.ok(!result.isError, result.content[0].text);
+  assert.equal(JSON.parse(result.content[0].text).idea.text, 'Long one');
+});
+
 test('MCP Tools - create_idea requires review and surfaces cancelled context', async () => {
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);

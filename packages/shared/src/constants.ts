@@ -15,6 +15,10 @@ export const CURRENT_DATA_MODEL_VERSION = 7;
 // estimate stays visible (graph_hygiene lists them).
 export const DEFAULT_IDEA_COST = 1;
 
+// Search text is scanned or embedded per request, so the search procedures
+// bound it; callers that build a query from an idea's text cut it to this.
+export const MAX_SEARCH_QUERY_CHARS = 2000;
+
 export function defaultIdeaCost(meta?: { defaultCost?: unknown } | null): number {
   const cost = meta?.defaultCost;
   return typeof cost === 'number' && Number.isFinite(cost) && cost > 0 ? cost : DEFAULT_IDEA_COST;

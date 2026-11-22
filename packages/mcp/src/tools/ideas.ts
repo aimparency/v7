@@ -1,4 +1,4 @@
-import { calculateIdeaValues, childBrief, defaultIdeaCost, INITIAL_STATES, missionPathsToRoot } from "shared";
+import { calculateIdeaValues, childBrief, defaultIdeaCost, INITIAL_STATES, MAX_SEARCH_QUERY_CHARS, missionPathsToRoot } from "shared";
 import { IDEA_STATES_DESCRIPTION, GRAPH_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
@@ -126,7 +126,8 @@ export async function ideaContext(trpcClient: BackendClient, projectPath: string
 
   const similarIdeas = await trpcClient.idea.searchSemantic.query({
     graph: projectPath,
-    query: `${idea.text} ${idea.description || ''}`.trim(),
+    // Text and the start of the description: a long description would exceed the search limit.
+    query: `${idea.text} ${idea.description || ''}`.trim().slice(0, MAX_SEARCH_QUERY_CHARS),
     limit: 6 // Request 6, filter self
   });
   const semanticContext = similarIdeas

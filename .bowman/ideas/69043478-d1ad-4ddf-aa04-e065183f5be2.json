@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Reproduced 2026-11-20 with get_idea_context(graph: aimparency, ideaId: d4203221). Not fixed yet.",
-    "date": 1795194801269
+    "state": "implemented",
+    "comment": "2026-11-22: the related-ideas query (text plus description) is cut to MAX_SEARCH_QUERY_CHARS (2000, now in shared/constants.ts and used by the backend search procedures) in packages/mcp/src/tools/ideas.ts ideaContext. Evidence: new test 'get_idea_context works for an idea whose description exceeds the search query limit' in mcp tools-ideas.test.ts reproduced the zod 'Too big' error before the fix; all 20 tests in that file pass under Node 22 (the dev stack's version; with system Node 26 better-sqlite3 fails to load). tsc clean for shared, backend, mcp. The agent-tools getIdeaContext does no semantic search, so it was not affected. The running MCP server needs /mcp reconnect to pick it up.",
+    "date": 1795378377950
   },
   "intrinsicValue": 0,
   "cost": 1,

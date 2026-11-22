@@ -21,7 +21,8 @@
         -0.29
       ],
       "weight": 10,
-      "hypothesis": "Agents orient on the well-described ideas too, which are the ones that matter most."
+      "hypothesis": "Agents orient on the well-described ideas too, which are the ones that matter most.",
+      "reflection": "Held: well-described ideas (the ones most worth orienting on) could not be oriented at all; now any description length works."
     }
   ],
   "supportedIdeas": [

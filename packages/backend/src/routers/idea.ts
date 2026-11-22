@@ -3,7 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs-extra';
 import { createHash } from 'node:crypto';
-import { DEFAULT_IDEA_COST, IdeaProposalSchema, INITIAL_STATES, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
+import { DEFAULT_IDEA_COST, IdeaProposalSchema, INITIAL_STATES, MAX_SEARCH_QUERY_CHARS, defaultIdeaCost, flattenIdeaProposal, type Idea, type IdeaProposal, type SearchIdeaResult } from 'shared';
 import { embeddingTextForIdea } from '../embeddings.js';
 import { defaultIdeaColor } from '../idea-color.js';
 import { hasAccounts } from 'shared/server-config';
@@ -23,9 +23,6 @@ import { generateEmbedding, generateQueryEmbedding, saveEmbedding, removeEmbeddi
 import { ensureSearchIndex } from '../search-index.js';
 import { generateIdeaProposal } from '../idea-proposal-generator.js';
 import { graphAddress } from '../graphs/address.js';
-
-// Search text is scanned or embedded per request, so it is bounded.
-const MAX_QUERY_CHARS = 2000;
 
 const newIdeaInputSchema = z.object({
   text: z.string(),
@@ -918,7 +915,7 @@ export const ideaRouter = t.router({
   search: delayedProcedure
     .input(z.object({
       graph: graphAddress,
-      query: z.string().max(MAX_QUERY_CHARS),
+      query: z.string().max(MAX_SEARCH_QUERY_CHARS),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional(),
       limit: z.number().optional(),
@@ -1022,7 +1019,7 @@ export const ideaRouter = t.router({
   searchSemantic: delayedProcedure
     .input(z.object({
       graph: graphAddress,
-      query: z.string().max(MAX_QUERY_CHARS),
+      query: z.string().max(MAX_SEARCH_QUERY_CHARS),
       limit: z.number().optional(),
       status: z.union([z.string(), z.array(z.string())]).optional(),
       phaseId: z.string().uuid().optional()
