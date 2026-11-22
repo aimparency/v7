@@ -69,9 +69,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "2026-11-13: of what this needs, built are many graphs on one server (548c5b94, waiting for Felix's look at the UI), accounts with automatic login (383e8949), access per graph (8faf6a70), notes (34b3d747) and most of the safety limits (8a303626). A participant can already create their own graph in one step and leave notes on the prepared one. Missing for the event: offering a graph to an idea and the organizers accepting (b7e0b972), then deployment on the Commons Hub server and preparing the graph.",
-    "date": 1794511934463
+    "state": "human-dependent",
+    "comment": "2026-11-22: everything the event needs is built: many graphs per server (548c5b94), automatic accounts (383e8949), access per graph (8faf6a70), notes (34b3d747), offering a graph to an idea and accepting it (b7e0b972, implemented today), safety limits incl. graph size (8a303626). Checked read-only on https://ideas.commons-hub.at: login accounts, signUp open + browserKey, offers procedure answers, spaces 'ideas' (22 ideas, has 'hack the hub!') and 'aimparency'.\n\nWaiting on Felix (server access), checklist:\n1. On the server (/srv/aimparency/aimparency, user aimparency): git pull && sudo systemctl restart aimparency (pnpm start rebuilds), so today's fixes are live (space handover 342efe11, size limit eab65397/4e48c7f1, in-place value + undo b5e26039/d4b92ad0). Watch journalctl -u aimparency -f for a clean start.\n2. server.json: check \"graphCreation\": \"everyone\" so participants' automatic accounts can create their own graph; keep limits (graphsPerAccount 20, graphMegabytes 50).\n3. Prepare the graph: either a new space 'Hack the Hub' or the 'hack the hub!' idea in 'ideas' with the challenges as sub-ideas, each with a short description; set its notes to 'everyone' in the space settings.\n4. Dry run with a second browser (private window): open the space link, drag out of a challenge into empty space, 'Propose a space' → new space, then accept it as owner. Then undo an edit inside the offered space.\n5. Put the space link (https://ideas.commons-hub.at/spaces/<slug>) on the event page or a QR code.\nOnly question: which of step 3's two options (own space vs. inside 'ideas')?",
+    "date": 1795379964208
   },
   "intrinsicValue": 0,
   "cost": 2,
