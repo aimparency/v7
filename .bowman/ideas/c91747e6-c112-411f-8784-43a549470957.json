@@ -39,9 +39,9 @@
     "1260e724-8db3-4d04-97cf-09d34c467f4e"
   ],
   "status": {
-    "state": "open",
-    "comment": "",
-    "date": 1792512399385
+    "state": "unclear",
+    "comment": "Measured 2026-11-22 on this repo (951 ideas), backend in-process via appRouter: project.loadIdeas 150-180 ms, returning 1.44 MB; phase.list ~30 ms; getMeta 1.5 s on the first call (cold start), 2 ms after. Of the 1.5 MB of idea files, status comments are 469 KB, descriptions 315 KB, connections 182 KB: about half the transfer is text the canvas does not draw. So the backend is not the slow part; transfer of 1.4 MB over the WebSocket and client work (value calculation, graph layout settling) are the candidates, which only a browser trace shows (perfLog already logs data.loadProject:start/done).\n\nQuestion for Felix: what feels slow: (a) first open of a space until the graph shows, (b) the graph moving until it settles, (c) switching between spaces, or (d) something else? With (a) the likely step is loading descriptions and status comments on demand (halves the transfer); with (b) the force simulation; then I'd take one browser trace to confirm before changing anything.",
+    "date": 1795380006482
   },
   "intrinsicValue": 0,
   "cost": 1,
