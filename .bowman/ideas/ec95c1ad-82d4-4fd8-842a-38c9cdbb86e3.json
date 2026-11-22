@@ -60,7 +60,8 @@
         -0.93
       ],
       "weight": 1,
-      "hypothesis": "Event participants who can say \"I'd like to work on this\" and leave notes without login or git will use the graph to find and claim work."
+      "hypothesis": "Event participants who can say \"I'd like to work on this\" and leave notes without login or git will use the graph to find and claim work.",
+      "reflection": "Not yet tested with people: the mechanism (notes, interest, automatic account) works in tests and is live on ideas.commons-hub.at; whether participants use it to claim work shows at Hack the Hub."
     },
     {
       "ideaId": "96e9fc41-b91f-405c-829c-2e5bf65c175c",

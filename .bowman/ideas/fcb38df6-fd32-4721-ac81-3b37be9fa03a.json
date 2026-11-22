@@ -13,7 +13,8 @@
         3.75
       ],
       "weight": 0.5,
-      "hypothesis": "A guest layer tests proposing and accepting with real people before the data model gets owners."
+      "hypothesis": "A guest layer tests proposing and accepting with real people before the data model gets owners.",
+      "reflection": "Partly held: proposing and accepting run on the guest layer without data-model owners (b7e0b972); the test with real people is still ahead (Hack the Hub)."
     },
     {
       "ideaId": "5955a048-948d-4df8-bc97-c356d5050491",
