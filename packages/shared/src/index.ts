@@ -1,5 +1,6 @@
 export * from './types.js';
 export * from './value-calculation.js';
+export * from './what-if.js';
 export * from './connection-weight.js';
 export * from './spin-off.js';
 export * from './constants.js';

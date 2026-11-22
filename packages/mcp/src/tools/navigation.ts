@@ -1,4 +1,4 @@
-import { calculateIdeaValues, defaultIdeaCost, resolveWorkPhase, selectWorkCandidates, type Phase } from "shared";
+import { calculateIdeaValues, defaultIdeaCost, resolveWorkPhase, selectWorkCandidates, whatIf, type Phase, type WhatIfChange } from "shared";
 import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
@@ -304,6 +304,54 @@ export const navigationTools: ToolDefinition[] = [
                 text: JSON.stringify(result, null, 2)
             }]
         };
+    },
+  },
+  {
+    name: "what_if",
+    description: "Before deciding: how value and priority would shift if an idea left the graph (remove: as if deleted, with its connections) or a connection carried another weight (weight). Read-only; nothing is written. Returns the ideas whose value or priority moves, largest relative move first (values in the graph's units), and the top 5 open ideas before and after.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        graph: GRAPH_TOOL_PROPERTY,
+        change: { type: "string", enum: ["remove", "weight"] },
+        ideaId: { type: "string", description: "remove: the idea that leaves" },
+        parentId: { type: "string", description: "weight: the parent of the connection" },
+        childId: { type: "string", description: "weight: the child of the connection" },
+        weight: { type: "number", exclusiveMinimum: 0, description: "weight: the connection's new raw weight" },
+        limit: { type: "number", description: "Most shifts to list (default 15)" }
+      },
+      required: ["graph", "change"],
+    },
+    handler: async (args, trpcClient) => {
+      const graph = args.graph as string;
+      const change: WhatIfChange = args.change === "remove"
+        ? { kind: "remove", ideaId: String(args.ideaId ?? "") }
+        : { kind: "weight", parentId: String(args.parentId ?? ""), childId: String(args.childId ?? ""), weight: Number(args.weight) };
+      const [ideas, meta] = await Promise.all([
+        trpcClient.idea.list.query({ graph }),
+        trpcClient.project.getMeta.query({ graph }).catch(() => null)
+      ]);
+      if (change.kind === "remove" && !ideas.some((idea) => idea.id === change.ideaId)) throw new Error(`No idea ${change.ideaId}.`);
+      if (change.kind === "weight" && !(change.weight > 0)) throw new Error("weight must be positive.");
+      const result = whatIf(ideas, change, defaultIdeaCost(meta));
+      const text = new Map(ideas.map((idea) => [idea.id, idea.text]));
+      const round = (value: number) => Number(value.toPrecision(4));
+      return {
+        content: [{
+          type: "text",
+          text: JSON.stringify({
+            change,
+            shifted: result.shifts.length,
+            shifts: result.shifts.slice(0, (args.limit as number | undefined) ?? 15).map((shift) => ({
+              id: shift.id, text: shift.text,
+              value: `${round(shift.valueBefore)} -> ${round(shift.valueAfter)}`,
+              priority: `${round(shift.priorityBefore)} -> ${round(shift.priorityAfter)}`
+            })),
+            topBefore: result.topBefore.map((id) => ({ id, text: text.get(id) })),
+            topAfter: result.topAfter.map((id) => ({ id, text: text.get(id) }))
+          }, null, 2)
+        }],
+      };
     },
   },
 ];
