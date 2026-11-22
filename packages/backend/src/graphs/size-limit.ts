@@ -32,6 +32,6 @@ export class GraphTooLargeError extends Error {
  * that is how it gets small again.
  */
 export async function assertGraphMayGrow(graph: Graph, procedurePath: string): Promise<void> {
-  if (/^(delete|remove)/i.test(procedurePath.split('.').at(-1) ?? '')) return;
+  if (/^(delete|remove)/i.test(procedurePath.slice(procedurePath.lastIndexOf('.') + 1))) return;
   if (await directoryBytes(graphBowmanPath(graph), ['cache', 'runtime']) > graphLimitBytes()) throw new GraphTooLargeError();
 }
