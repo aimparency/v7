@@ -25,7 +25,7 @@ const menuItems = (wrapper: ReturnType<typeof mount>) => wrapper.findAll('.menu-
 describe('HookControl', () => {
   beforeEach(() => vi.clearAllMocks())
 
-  it('offers None, every loop and Manage; picking a loop turns the hook on with it', async () => {
+  it('offers Off, every loop and Manage; picking a loop turns the hook on with it', async () => {
     get.mockResolvedValue({ installed: true, enabled: false, loop: null, loops: [defaultLoop, refactor] })
     select.mockResolvedValue({ installed: true, enabled: true, loop: 'refactor', loops: [defaultLoop, refactor] })
     const wrapper = mount(HookControl, { global, attachTo: document.body })
@@ -34,7 +34,7 @@ describe('HookControl', () => {
 
     await wrapper.find('button').trigger('click')
     await flushPromises()
-    expect(menuItems(wrapper)).toEqual(['None', 'Default', 'Refactor', 'Manage loops…'])
+    expect(menuItems(wrapper)).toEqual(['Off', 'Default', 'Refactor', 'Manage loops…'])
 
     await wrapper.findAll('.menu-item')[2]!.trigger('click')
     await flushPromises()
@@ -50,7 +50,7 @@ describe('HookControl', () => {
     await flushPromises()
     await wrapper.find('button').trigger('click')
     await flushPromises()
-    expect(menuItems(wrapper)).toEqual(['None', 'Claude Code', 'Codex', 'Antigravity', 'Manage loops…'])
+    expect(menuItems(wrapper)).toEqual(['Off', 'Claude Code', 'Codex', 'Antigravity', 'Manage loops…'])
 
     await wrapper.findAll('.menu-item')[1]!.trigger('click')
     await flushPromises()

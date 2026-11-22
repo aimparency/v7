@@ -81,7 +81,7 @@ onBeforeUnmount(() => {
     >{{ label }} <ChevronDown /></button>
     <div v-if="menuOpen" class="menu" role="menu">
       <button class="menu-item" role="menuitemradio" :aria-checked="selected === 'none'" @click="select('none')">
-        <Check :class="{ hidden: selected !== 'none' }" /> None
+        <Check :class="{ hidden: selected !== 'none' }" /> Off
       </button>
       <template v-if="state.installed">
         <button
