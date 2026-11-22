@@ -70,7 +70,8 @@
         2.9
       ],
       "weight": 1,
-      "hypothesis": "When proposing is the same gesture as adding an idea, people who cannot write to a graph still contribute to it, with a graph of their own."
+      "hypothesis": "When proposing is the same gesture as adding an idea, people who cannot write to a graph still contribute to it, with a graph of their own.",
+      "reflection": "Mechanism holds in tests and a browser probe: someone without write access contributes by dragging out a space of their own, and the owner accepts it into the graph. Whether people actually do it is still untested; Hack the Hub (96e9fc41) is the first chance."
     },
     {
       "ideaId": "8a303626-d260-4675-a965-86a66de1030c",
