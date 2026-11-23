@@ -12,6 +12,7 @@ import { useHistoryStore } from './stores/history'
 import { captureSelectionAnchor } from './stores/ui/selection-anchor'
 import { trpc } from './trpc'
 import LoginControl from './components/LoginControl.vue'
+import ServerPowerMenu from './components/ServerPowerMenu.vue'
 import McpOffer from './components/McpOffer.vue'
 import NotesInbox from './components/NotesInbox.vue'
 import McpAuthorizeModal from './components/McpAuthorizeModal.vue'
@@ -714,7 +715,10 @@ onUnmounted(() => {
       ><ChevronUp v-if="headerOpen" /><EllipsisVertical v-else /></button>
 
       <LoginControl v-if="accounts" />
-      <button v-else class="icon-btn" title="Connect an agent (MCP)" @click="showLocalMcp = true"><Plug /></button>
+      <template v-else>
+        <ServerPowerMenu v-if="viewerStore.restartable" />
+        <button class="icon-btn" title="Connect an agent (MCP)" @click="showLocalMcp = true"><Plug /></button>
+      </template>
     </header>
 
     <ProjectSelectionView

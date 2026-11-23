@@ -7,7 +7,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
-import { RESTART_EXIT_CODE } from '../server-restart';
+import { RESTART_EXIT_CODE, RESTART_SIGNAL } from '../server-restart';
 import * as accounts from './accounts';
 
 let root = '';
@@ -27,6 +27,7 @@ afterEach(async () => {
   vi.useRealTimers();
   vi.restoreAllMocks();
   delete process.env.AIMPARENCY_SUPERVISED;
+  delete process.env.AIMPARENCY_STACK_PID;
   process.env.AIMPARENCY_SERVER_DIR = localServerDir;
   await fs.remove(root);
 });
@@ -52,4 +53,20 @@ test('under a supervisor a server admin restarts it: the backend exits with the 
   assert.equal(exit.mock.calls.length, 0);
   vi.advanceTimersByTime(600);
   assert.deepEqual(exit.mock.calls, [[RESTART_EXIT_CODE]]);
+});
+
+test('the local stack (pnpm dev) restarts itself: the person at the machine gets the button, the backend signals the stack', async () => {
+  updateServerConfig({ login: 'none' });
+  const local = appRouter.createCaller({ session: {} });
+  assert.equal((await local.auth.me()).restartable, false);
+
+  process.env.AIMPARENCY_STACK_PID = '4242';
+  assert.equal((await local.auth.me()).restartable, true);
+  vi.useFakeTimers();
+  const kill = vi.spyOn(process, 'kill').mockImplementation((() => true) as never);
+  const exit = vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
+  assert.deepEqual(await local.auth.restartServer(), { restarting: true });
+  vi.advanceTimersByTime(600);
+  assert.deepEqual(kill.mock.calls, [[4242, RESTART_SIGNAL]]);
+  assert.equal(exit.mock.calls.length, 0, 'the backend keeps running until the stack stops it');
 });

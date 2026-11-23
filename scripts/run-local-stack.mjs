@@ -40,7 +40,8 @@ import { serverDirectory } from '../packages/shared/src/server-directory.mjs';
 // were given (pnpm accounts, pnpm graphs), and agents and loops stay off.
 // Under a supervisor that starts it again (systemd, Restart=on-failure), set
 // AIMPARENCY_SUPERVISED=true: server admins then restart it, or pull main and
-// restart it, from the UI.
+// restart it, from the UI. Without accounts (`pnpm dev`, `pnpm start`) the
+// stack restarts itself, so the person at the machine gets that button too.
 
 // The backend's exit code for "start me again" (packages/backend/src/server-restart.ts).
 const RESTART_EXIT_CODE = 75;
@@ -564,7 +565,39 @@ async function main() {
     await runCommand(command, commandArgs, env);
   }
 
-  await concurrently(commands, { prefix: 'name' }).result;
+  await runRestartable(commands);
+}
+
+// The stack is its own supervisor: "Restart" in the UI makes the backend send
+// RESTART_SIGNAL to this process (AIMPARENCY_STACK_PID), which stops every
+// process of the stack and starts them again (packages/backend/src/server-restart.ts).
+const RESTART_SIGNAL = 'SIGUSR2';
+
+async function runRestartable(commands) {
+  if (process.platform === 'win32') {
+    await concurrently(commands, { prefix: 'name' }).result;
+    return;
+  }
+  const withStackPid = commands.map((command) => ({ ...command, env: { ...command.env, AIMPARENCY_STACK_PID: String(process.pid) } }));
+  let running;
+  let restarting = false;
+  process.on(RESTART_SIGNAL, () => {
+    if (!running || restarting) return;
+    restarting = true;
+    console.log('[local-runtime] restart asked for: stopping the stack');
+    for (const command of running.commands) command.kill();
+  });
+  for (;;) {
+    running = concurrently(withStackPid, { prefix: 'name' });
+    try {
+      await running.result;
+    } catch (events) {
+      if (!restarting) throw events;
+    }
+    if (!restarting) return;
+    restarting = false;
+    console.log('[local-runtime] starting the stack again');
+  }
 }
 
 main().catch((error) => {
