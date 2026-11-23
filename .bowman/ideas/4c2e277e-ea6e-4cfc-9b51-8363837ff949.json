@@ -1,0 +1,24 @@
+{
+  "id": "4c2e277e-ea6e-4cfc-9b51-8363837ff949",
+  "text": "Space assistants talk via Claude Code session messaging (ask the owning session instead of reading its graph)",
+  "description": "Felix 2026-11-23 asked how assistants of different spaces could talk to each other, e.g. one Claude doing research for the others. Claude Code sessions on one machine can already message each other (ListAgents / SendMessage, plus notify_when_idle); with Remote Control on, cloud and other-machine sessions show up too.\n\nProposal: a convention plus a little MCP support.\n- Each space's CLAUDE.md names its session (\"v7\", \"life\", \"research\").\n- A session that needs something from another space sends a request to that space's session instead of reading or editing its .bowman.\n- The owning session records the request as an idea in its own graph (status ai-proposition, tag from:<space>) and answers when settled.\n- A dedicated research session takes questions and writes answers back to the asking idea via its owner.\n- MCP: a tool that registers which session currently serves which graph, so the request reaches the right session.\n\nThis respects the black-box rule (e81b11c3): only the owner touches its graph. It could replace the machine-wide queue (74a932da): the life session asks each space \"what's your top item?\".\n\nLimits: messages to a session in another permission mode wait for that user's approval; nothing triggers sessions automatically without a convention or routine.",
+  "archived": false,
+  "color": "#286229",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude from the life session after Felix's question on 23.11.2026. Accept to open or cancel.",
+    "date": 1795471614456
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

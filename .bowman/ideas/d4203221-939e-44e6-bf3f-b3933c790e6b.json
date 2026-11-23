@@ -12,7 +12,7 @@
         -3.73,
         0.35
       ],
-      "weight": 1
+      "weight": 6.311428571428573
     },
     {
       "ideaId": "548c5b94-5451-4669-be0e-c4e3d2fc8585",
@@ -20,7 +20,7 @@
         2.93,
         2.34
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "With many graphs on one server, a person gets a graph without setting up a repo or a server of their own."
     },
     {
@@ -29,7 +29,7 @@
         -1.25,
         -3.54
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "When an account appears without a form, people act on a graph the moment they open it, and still can keep the account later.",
       "reflection": "2026-11-13: the mechanism is there: the account appears at the first action that needs one, and \"Keep account\" makes it permanent without losing what it owns. Whether people then act at once is not known: no person has used it yet."
     },
@@ -39,7 +39,7 @@
         1.67,
         3.36
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "Rights per graph instead of per idea are enough for people to work together, and simple enough to understand without explanation.",
       "reflection": "2026-11-13: built, and the rights fit in one sentence (everyone reads, owner and writers change, the owner decides who writes). Whether people understand it without explanation is not known yet: nobody but the tests has used it."
     },
@@ -49,7 +49,7 @@
         -3.27,
         1.84
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "A link by server address can be followed by anyone from anywhere, so graphs on different servers join into one.",
       "reflection": "Holds in mechanism: the link is the space's address on its server, and that server answers reads from any origin (checked 2026-11-15 on ideas.commons-hub.at: access-control-allow-origin *, writes from other sites refused). The browser follows it; no server fetches foreign spaces. Joining real spaces on two different servers is still to be tried by Felix by hand, not waiting for Hack the Hub."
     },
@@ -59,7 +59,7 @@
         3.75,
         -0.18
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "When a linked graph opens in place, people experience the graphs of many owners on many servers as one graph.",
       "reflection": "Not yet observed with people: the mechanics work in tests and the live server answers other origins. Felix tests it by hand now (link a space on another server, open it in place), not waiting for Hack the Hub."
     },
@@ -69,7 +69,7 @@
         -2.38,
         2.9
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "When proposing is the same gesture as adding an idea, people who cannot write to a graph still contribute to it, with a graph of their own.",
       "reflection": "Mechanism holds in tests and a browser probe: someone without write access contributes by dragging out a space of their own, and the owner accepts it into the graph. Whether people actually do it is still untested; Hack the Hub (96e9fc41) is the first chance."
     },
@@ -79,7 +79,7 @@
         -3.2,
         -1.95
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "With these limits, opening a server to anyone does not put the server, its graphs or its agents at risk.",
       "reflection": "Holds in tests: every resource a stranger can consume (accounts, graphs, notes/offers, graph size, request size) has a limit, and no stranger reaches a shell or server paths. Not yet probed adversarially on the public server."
     },
@@ -89,7 +89,7 @@
         -1.04,
         -3.6
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "When a person can connect an agent to chosen graphs in one approval step, agents work on hosted graphs without receiving more rights than the task needs.",
       "reflection": "2026-11-13: one approval step exists in both forms, and in the tests a token limited to chosen graphs writes only those and has none of the account's server-wide rights. Not yet tried with a real agent on a hosted graph."
     },
@@ -99,7 +99,7 @@
         -0.8,
         -3.66
       ],
-      "weight": 1,
+      "weight": 6.311428571428573,
       "hypothesis": "With one key that signs in everywhere, a person takes part in spaces on any server without registering on each, so spaces of many servers work as one."
     },
     {
@@ -108,7 +108,7 @@
         -3.46,
         1.45
       ],
-      "weight": 6.714285714285714,
+      "weight": 6.311428571428573,
       "hypothesis": "Agents can only link graphs they can find; one discovery call replaces ad-hoc find + scripts and makes cross-graph wiring a routine step."
     },
     {
@@ -117,7 +117,7 @@
         1.79,
         3.29
       ],
-      "weight": 6.714285714285714,
+      "weight": 6.311428571428573,
       "hypothesis": "Repo links get meaningful value shares and readable labels without manual weight math, so cross-graph links stop silently draining (or barely receiving) value.",
       "reflection": "Held: share and split were already the language of child links. Extending them to repo edges removed the raw-weight guessing that put two repo links at 0.8%. The local name fixes labels like 'v3' or 'ideas' without touching the other graph."
     },
@@ -127,7 +127,7 @@
         -0.18,
         -3.75
       ],
-      "weight": 6.714285714285714,
+      "weight": 6.311428571428573,
       "hypothesis": "With value flowing across graph links, one queue lets an agent (or Felix) pick the most valuable work across life + projects, instead of optimizing each repo in isolation."
     },
     {
@@ -136,8 +136,17 @@
         3.05,
         2.18
       ],
-      "weight": 6,
+      "weight": 5.6400000000000015,
       "hypothesis": "Graphs that should be linked often aren't, because nobody sees the match; a public one-line mission per graph makes links discoverable while keeping every graph a black box."
+    },
+    {
+      "ideaId": "4c2e277e-ea6e-4cfc-9b51-8363837ff949",
+      "relativePosition": [
+        -2.73,
+        2.57
+      ],
+      "weight": 6,
+      "hypothesis": "If space assistants coordinate by messaging the owning session, cross-space work (research, priorities) happens without breaking the black-box rule, and people keep sole ownership of their graphs."
     }
   ],
   "supportedIdeas": [
@@ -151,7 +160,7 @@
   },
   "intrinsicValue": 0,
   "cost": 8,
-  "selfWeight": 1,
+  "selfWeight": 6.311428571428573,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0
