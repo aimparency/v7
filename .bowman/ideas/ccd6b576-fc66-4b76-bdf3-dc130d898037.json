@@ -62,7 +62,8 @@
         -2.4
       ],
       "weight": 5,
-      "hypothesis": "A session that starts without the MCP loses the whole graph loop; robust launch removes the most common silent failure in other repos on the same machine."
+      "hypothesis": "A session that starts without the MCP loses the whole graph loop; robust launch removes the most common silent failure in other repos on the same machine.",
+      "reflection": "Held in part. The failure was a hand-written bare 'tsx' entry. The UI's generated command was already absolute, and the README's dev snippet was the remaining way to copy a cwd-dependent launcher. Whether failures stop is only testable over the next cross-repo sessions."
     },
     {
       "ideaId": "d6698128-6386-4f38-bb20-2740c092d4dc",

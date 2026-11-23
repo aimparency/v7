@@ -249,13 +249,17 @@ This bundles the server with tsdown into `packages/mcp/build` (executable `build
 
 ### Development Mode
 
-No build is needed while developing: run the server from source through tsx.
-This repo's `.mcp.json` does exactly that:
+No build is needed while developing: run the server from source through the
+checkout's own tsx, named by its absolute path. A bare `tsx` (or
+`node --import tsx`) is resolved from the client's working directory, so it
+fails with ENOENT in every other repo. Without accounts, "Connect an agent" in
+the UI header shows this command for your checkout:
 
-```json
-"command": "node",
-"args": ["--import", "tsx", "/absolute/path/to/aimparency/v7/packages/mcp/src/index.ts"]
+```bash
+claude mcp add --scope user aimparency -- /absolute/path/to/aimparency/v7/packages/mcp/node_modules/.bin/tsx /absolute/path/to/aimparency/v7/packages/mcp/src/index.ts
 ```
+
+This repo's `.mcp.json` uses `node --import tsx` with `"cwd"` set to the checkout, which works for the same reason.
 
 The MCP client loads the code when it connects, so reconnect it (e.g. `/mcp` in
 Claude Code) to pick up changes. `pnpm --filter mcp dev` runs a restarting stdio server for manual testing.
