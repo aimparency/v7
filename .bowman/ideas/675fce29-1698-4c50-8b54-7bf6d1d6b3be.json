@@ -16,7 +16,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Felix 2026-11-23 decided: store it in dollars (option a, e.g. realizedCostUsd), the nominal amount at the time it was spent. Conversions are computed, not stored: interest compounding (5c1ccaa8) and the intelligence-growth discount (760d59dd). Still a data model change: migration per AGENTS.md.",
+    "comment": "Felix 2026-11-23 decided: store it in dollars (option a). A dollar amount needs its date for the discounts (interest 5c1ccaa8, intelligence growth 760d59dd), but no history list: store realizedCostUsd plus realizedCostAt (the date the sum refers to). When the harness adds a cost, it compounds the stored sum to today, adds the new amount and sets the date to today; git keeps the older states. Idea values stay undated: they are shares of the root's value, not money. Still a data model change: migration per AGENTS.md.",
     "date": 1795472031310
   },
   "intrinsicValue": 0,
