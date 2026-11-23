@@ -67,15 +67,15 @@ When the coding assistant attempts to stop normally, the hook blocks the stop ev
 4. Record status and evidence (status comment) with \`update_idea\`, reflect on each parent connection's hypothesis, and commit the code with the \`.bowman\` idea files it changed in one commit
 5. Reprioritize and continue
 
-Work is not only code. Research and ideation under the root and major ideas (\`major_hypothesis_loop\`, outside research, new hypotheses as sub ideas) are regular work, not a fallback: a session should not end without fresh outside research against the root idea. Every Aimparency MCP tool may be run in the loop except the continue-hook toggles.
+The loop has no finished state. Exploring is the main work, not a fallback: research and ideation under the root and major ideas (\`major_hypothesis_loop\`, outside research), modeling, new hypotheses as sub ideas, and safe experiments to test them. Every Aimparency MCP tool may be run in the loop except the continue-hook toggles.
 
-An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for a human action) with the exact question and the prepared material in its status comment; it leaves the priority list and the loop moves on. Asking the human is right only once the major ideas got fresh hypotheses and every waiting idea has its step prepared.
+An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for a human action) with the exact question and the prepared material in its status comment; it leaves the priority list and the loop turns to other work. Waiting on the human is never a reason to stop.
 
 ### Two-Stage Human-Wait Protocol
-If the assistant determines human intervention (credentials, explicit authorization, human judgment) is indispensable:
-1. The assistant states the exact blocker and ends its response with \`[AIMPARENCY_REQUEST_HUMAN]\`.
-2. The hook challenges the assistant once: fresh research and hypotheses on the major ideas, a prepared step for every waiting idea, graph hygiene, decomposing abstract ideas, safe reversible work.
-3. If human action is still strictly required, the assistant re-states the request and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
+The default loop stops only when the human explicitly told the agent in this session to stop or to wait:
+1. The assistant says so and ends its response with \`[AIMPARENCY_REQUEST_HUMAN]\`.
+2. The hook challenges the assistant once: anything else waiting on the human is parked in the graph, and there is always more to explore (list_ideas, graph hygiene, research, modeling, experiments).
+3. If the human really asked, the assistant quotes their words and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
 ### Hook loops
 What the hook tells the agent is a hook loop. The default is \`scripts/hooks/default-loop.md\` (installed next to the hook script). Saved loops are versioned with the graph in \`.bowman/hook-loops/<slug>.md\`: a \`# Title\` line, the text the agent gets when it tries to stop, and optionally a \`## When the agent asks for the human\` section with the challenge text (else the default's). Which loop runs is machine-local (\`.bowman/runtime/continue-hook-loop\`); pick one in the UI's Hook menu or with \`enable_continue_hook\`'s \`loop\`.

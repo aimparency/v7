@@ -46,7 +46,7 @@ human_request_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant
 human_confirm_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Broader search exhausted; input is indispensable. [AIMPARENCY_CONFIRM_HUMAN_BLOCK]"}' | "$HOOK")"
 
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("Aimparency MCP") || !x.reason.includes("get_prioritized_ideas") || !x.reason.includes("list_ideas") || !x.reason.includes("[AIMPARENCY_REQUEST_HUMAN]")) process.exit(1)' "$default_output"
-node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("challenge the claimed blocker") || !x.reason.includes("list_ideas") || !x.reason.includes("graph hygiene") || !x.reason.includes("[AIMPARENCY_CONFIRM_HUMAN_BLOCK]")) process.exit(1)' "$human_request_output"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("Challenge the claimed blocker") || !x.reason.includes("list_ideas") || !x.reason.includes("graph hygiene") || !x.reason.includes("[AIMPARENCY_CONFIRM_HUMAN_BLOCK]")) process.exit(1)' "$human_request_output"
 node -e 'for(const s of process.argv.slice(1)){const x=JSON.parse(s); if(x.continue!==true || x.decision==="block") process.exit(1)}' "$canonical_output" "$legacy_output" "$human_confirm_output"
 
 # The marker is authoritative only in Codex's last assistant message, never in
@@ -72,7 +72,7 @@ printf 'refactor\n' >"$TARGET/.bowman/runtime/continue-hook-loop"
 loop_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
 loop_human_output="$(printf '%s\n' '{"hook_event_name":"Stop","last_assistant_message":"Need input. [AIMPARENCY_REQUEST_HUMAN]"}' | "$HOOK")"
 node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || x.reason!=="Refactor one module, then stop asking.") process.exit(1)' "$loop_output"
-node -e 'const x=JSON.parse(process.argv[1]); if(!x.reason.includes("challenge the claimed blocker")) process.exit(1)' "$loop_human_output"
+node -e 'const x=JSON.parse(process.argv[1]); if(!x.reason.includes("Challenge the claimed blocker")) process.exit(1)' "$loop_human_output"
 printf '../etc\n' >"$TARGET/.bowman/runtime/continue-hook-loop"
 bad_slug_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
 node -e 'const x=JSON.parse(process.argv[1]); if(!x.reason.includes("get_prioritized_ideas")) process.exit(1)' "$bad_slug_output"

@@ -105,14 +105,14 @@ On a normal Codex `Stop`, the hook returns valid JSON with
    on each parent connection's hypothesis; and
 5. reprioritize instead of substituting Markdown planning for graph state.
 
-Human waiting is an extreme-case, two-stage protocol. When Codex first believes
-progress requires human judgment, authorization, credentials, or an
-institutionally human action, it states the blocker and ends with
-`[AIMPARENCY_REQUEST_HUMAN]`. The hook does **not** yield. It creates one more
-turn challenging Codex to step back, inspect graph hygiene and connection reflections,
-decompose abstract ideas, dream up hypotheses, and try safe reversible work.
-Only if that broader search still proves the human action indispensable may
-Codex restate the exact request and end with
+The loop has no finished state: when ready work runs out, exploring (research,
+modeling, hypotheses, safe experiments) is the work. Something waiting on the
+human is parked in the graph (unclear or human-dependent, with its step
+prepared) and the loop turns elsewhere. The default loop stops only when the
+human explicitly told the agent to stop or wait, in a two-stage protocol: Codex
+says so and ends with `[AIMPARENCY_REQUEST_HUMAN]`. The hook does **not** yield.
+It creates one more turn challenging Codex to park what waits and pick other
+work. Only if the human really asked may Codex quote them and end with
 `[AIMPARENCY_CONFIRM_HUMAN_BLOCK]`; the hook then yields. Markers are recognized
 only as the final token of the agent's `last_assistant_message`; quoting one
 mid-message does not count.
