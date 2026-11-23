@@ -1,7 +1,7 @@
 {
   "id": "36665fa6-d49e-41e0-afcf-f06035b5abfc",
   "text": "MCP: suggest_repo_links — match a graph's open ideas against other local graphs' portable mission line (meta), never their ideas",
-  "description": "OBSERVED 2026-11-23: to wire 9 ~/dev graphs into Felix's life graph, the agent matched life ideas to repos with a keyword script over every graph's idea texts. That reads the other graphs' internals, which e81b11c3 rules out for links (cross-repo idea search was cancelled in c4df7232).\n\nProposal, black-box compatible: each graph gets an optional portable mission line in meta.json (one or two sentences, e.g. 'Sunk City: a VR world generated live by a tiny neural renderer'), editable in settings and defaulting to empty. suggest_repo_links(graph) embeds those mission lines (from discover_local_graphs / linkedRepos) and the calling graph's open ideas, and returns ranked candidate (idea, repo, similarity, draft hypothesis) pairs for the agent or human to confirm with link_repo. Never auto-links, never reads foreign ideas. Sibling of 1bc19167 (LLM pass for missing links inside one graph).\n\nRefuted if the mission line stays empty in most graphs, or the matches are too weak to help.",
+  "description": "OBSERVED 2026-11-23: to wire 9 ~/dev graphs into Felix's life graph, the agent matched life ideas to repos with a keyword script over every graph's idea texts. That reads the other graphs' internals, which e81b11c3 rules out for links.\n\nFelix 2026-11-23 shaped it: \"support subtitles, and deliver top 3 intrinsically valuable ideas.\" Each graph describes itself to others by (1) an optional subtitle in meta.json (one line, editable) and (2) its up to 3 ideas with the highest intrinsic value: what the graph says matters most to it, not its internals. suggest_repo_links(graph) matches the calling graph's open ideas against these self-descriptions of the other local graphs (embeddings) and returns ranked (idea, repo, similarity, the matched line) candidates. It only suggests; link_repo does the linking. The subtitle is a new optional meta field, so it goes through a data model migration.\n\nRefuted if the suggestions are mostly wrong for Felix's life graph.",
   "archived": false,
   "color": "#3c6f31",
   "tags": [],
@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468110998
+    "state": "open",
+    "comment": "Accepted by Felix 2026-11-23 with the shape: subtitle + top 3 ideas by intrinsic value as each graph's self-description.",
+    "date": 1795471937069
   },
   "intrinsicValue": 0,
   "cost": 2,

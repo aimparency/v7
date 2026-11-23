@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468096176
+    "state": "open",
+    "comment": "Accepted by Felix 2026-11-23: \"yes please. MCP needs an equivalent to the project/spaces page.\" So it mirrors what the start page shows: the local projects (discoverLocalProjects) or, with accounts, the spaces, with name, repoId, counts, last activity and whether each is already linked from the calling graph.",
+    "date": 1795471936841
   },
   "intrinsicValue": 0,
   "cost": 1,

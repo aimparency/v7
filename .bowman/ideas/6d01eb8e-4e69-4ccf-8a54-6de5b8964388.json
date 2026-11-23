@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468098261
+    "state": "cancelled",
+    "comment": "Felix 2026-11-23: \"let's keep dates out.\" No date fields on ideas; urgency is order and speed. Hard-dated ideas keep their date in the text.",
+    "date": 1795471936379
   },
   "intrinsicValue": 0,
   "cost": 2,

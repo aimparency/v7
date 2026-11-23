@@ -1,7 +1,7 @@
 {
   "id": "74a932da-96cd-4f9c-a977-04b8172b0b54",
   "text": "Machine-wide work queue: get_prioritized_ideas descends into linked repos, and black-box repo nodes show a status rollup",
-  "description": "OBSERVED 2026-11-23: after linking 9 repos into the life graph, value flows into each repo node, but get_prioritized_ideas stops at the box. An agent asked 'what's most valuable on this machine' must call it per graph and compare numbers that aren't on the same scale. The repo node also says nothing about the box's state (40 open ideas, last activity yesterday, vs. an empty or stale space).\n\nProposal: (a) an opt-in mode where get_prioritized_ideas ranks the calling graph's leaves together with the top leaves of each resolved linked repo, scaling them by the value flowing into that repo node. Read-only, no edges into internals. (b) The repo node shows a rollup: open/partially counts and last activity.\n\nCONFLICT: e81b11c3 says no external ideas are loaded, permanently. (a) needs reading the box's ranking, (b) only aggregates. Needs Felix's decision (see status).",
+  "description": "OBSERVED 2026-11-23: after linking 9 repos into the life graph, value flows into each repo node, but get_prioritized_ideas stops at the box. Asked 'what's most valuable on this machine', an agent must call it per graph and compare numbers that aren't on the same scale.\n\nFelix 2026-11-23: comparing globally \"only is possible if they are all connected into one graph with a single normalized total value that spreads to supporting idea spaces.\" So: ranking starts at one top graph (e.g. the life graph) whose root carries the total value. The value flowing into a repo node becomes that linked graph's total, and its ideas get their share of it, so all numbers are on the top graph's scale. Graphs not reachable through links from the top graph don't take part. Read-only: no edges into another graph's internals. Repo nodes also show a rollup (open/partially counts, last activity).\n\nRefuted if the cross-graph ranking stays worse than ranking each graph alone.",
   "archived": false,
   "color": "#336b3c",
   "tags": [],
@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "QUESTION for Felix: this touches the final black-box decision (e81b11c3). Allow a read-only exception for ranking work and a status rollup (counts and last activity only, no idea rendering or links into the internals)? Or keep the strict box and cancel this?",
-    "date": 1795468096882
+    "state": "open",
+    "comment": "Accepted by Felix 2026-11-23 under his condition: one top graph whose normalized total value spreads through repo links to the linked graphs. Largest of the batch.",
+    "date": 1795471937306
   },
   "intrinsicValue": 0,
   "cost": 4,

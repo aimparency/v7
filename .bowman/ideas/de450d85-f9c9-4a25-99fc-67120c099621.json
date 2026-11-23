@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468097783
+    "state": "cancelled",
+    "comment": "Felix 2026-11-23: out of scope for now. Private details need a safer server, and \"I trust GitHub\" for the graph as it is.",
+    "date": 1795471936586
   },
   "intrinsicValue": 0,
   "cost": 2,

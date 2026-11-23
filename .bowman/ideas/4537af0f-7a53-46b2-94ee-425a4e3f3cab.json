@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468097539
+    "state": "cancelled",
+    "comment": "Felix 2026-11-23: \"just commit everything when committing (everything in .bowman I mean) - no need to separate it.\" The Stop hook (scripts/hooks/default-loop.md) now says to commit all of .bowman with the code, including graph edits the agent did not make; only other code changes stay unstaged.",
+    "date": 1795471936137
   },
   "intrinsicValue": 0,
   "cost": 3,

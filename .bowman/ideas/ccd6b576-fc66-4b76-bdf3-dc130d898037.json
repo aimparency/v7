@@ -11,7 +11,7 @@
         0.78,
         -3.67
       ],
-      "weight": 13.793103448275865,
+      "weight": 9.655172413793105,
       "hypothesis": "Improves reproducible human-governed autonomous cooperation in any Aimparency repository."
     },
     {
@@ -20,7 +20,7 @@
         -1.16,
         -3.56
       ],
-      "weight": 17.24137931034483,
+      "weight": 12.068965517241379,
       "hypothesis": "Long-term continuity: lessons compound across sessions instead of being lost, so the graph's judgment improves over time."
     },
     {
@@ -29,7 +29,7 @@
         3,
         -2.24
       ],
-      "weight": 17.24137931034483
+      "weight": 12.068965517241379
     },
     {
       "ideaId": "47805633-84e2-406f-bd09-6dca45b204f0",
@@ -37,7 +37,7 @@
         -1.85,
         3.26
       ],
-      "weight": 17.24137931034483
+      "weight": 12.068965517241379
     },
     {
       "ideaId": "834bd5e2-cbec-4b91-aeea-05712e52d3f0",
@@ -45,7 +45,7 @@
         2.77,
         -2.53
       ],
-      "weight": 17.24137931034483
+      "weight": 12.068965517241379
     },
     {
       "ideaId": "6119682f-bf88-4b6b-ab7d-6024b1c170ba",
@@ -53,7 +53,7 @@
         -3.57,
         -1.14
       ],
-      "weight": 17.24137931034483
+      "weight": 12.068965517241379
     },
     {
       "ideaId": "74038708-ef45-4611-8424-c7d6f3256684",
@@ -82,7 +82,8 @@
         3.61
       ],
       "weight": 6,
-      "hypothesis": "Clean per-agent commits are what let git link ideas to work (6da9b226); without tooling, agents in shared dirty graphs either commit the human's work or skip committing."
+      "hypothesis": "Clean per-agent commits are what let git link ideas to work (6da9b226); without tooling, agents in shared dirty graphs either commit the human's work or skip committing.",
+      "reflection": "Did not hold for Felix: separating the agent's graph edits from his isn't worth the tooling. Committing all of .bowman together is fine, so the hook rule changed instead."
     },
     {
       "ideaId": "de450d85-f9c9-4a25-99fc-67120c099621",
@@ -91,7 +92,8 @@
         0.35
       ],
       "weight": 4,
-      "hypothesis": "A life graph is the most valuable use of the loop and the one full of sensitive data; a private field lets agents prepare real-world steps completely without leaking them into git history."
+      "hypothesis": "A life graph is the most valuable use of the loop and the one full of sensitive data; a private field lets agents prepare real-world steps completely without leaking them into git history.",
+      "reflection": "Out of scope: real privacy would need a safer server, and Felix trusts GitHub with the graph as it is."
     },
     {
       "ideaId": "a940dd30-2421-4670-bdb7-e323c48dc63d",
@@ -109,7 +111,8 @@
         -2.69
       ],
       "weight": 5,
-      "hypothesis": "Real-world goals (grants, applications, travel) are deadline-bound; without a field, the loop misses windows that no later effort can recover."
+      "hypothesis": "Real-world goals (grants, applications, travel) are deadline-bound; without a field, the loop misses windows that no later effort can recover.",
+      "reflection": "Rejected by design: dates stay out of idea space; urgency is expressed by order and speed, not a field."
     },
     {
       "ideaId": "f85fbfe0-9a75-4dc7-b1e0-ea3014fa3800",
