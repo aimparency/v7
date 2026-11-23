@@ -12,7 +12,7 @@
         -0.17,
         3.75
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "A clear entry page for picking or cloning a project lowers the first-use barrier, which decides whether new people try it."
     },
     {
@@ -21,7 +21,7 @@
         -3.74,
         0.33
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "Reading and triaging ideas from a phone lets humans answer review and human-dependent ideas away from the desk, shortening agent wait times."
     },
     {
@@ -30,7 +30,7 @@
         -3.29,
         1.8
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "One live copy of the project in the frontend removes stale views and per-component fetching, so concurrent agent edits show up immediately."
     },
     {
@@ -39,7 +39,7 @@
         -0.15,
         3.75
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "One consistent word for the unit of planning makes the UI, the MCP and the docs easier to learn."
     },
     {
@@ -48,7 +48,7 @@
         -3.57,
         1.14
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "Toasts report results and errors without blocking, so the user notices failures that used to vanish in the console."
     },
     {
@@ -57,7 +57,7 @@
         -1.6,
         -3.39
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "One icon set renders the same everywhere and reads calmer than mixed emoji glyphs."
     },
     {
@@ -66,8 +66,16 @@
         -3.74,
         -0.25
       ],
-      "weight": 1,
+      "weight": 11.5,
       "hypothesis": "A UI that opens and responds without waiting keeps people working in it instead of around it."
+    },
+    {
+      "ideaId": "37e61205-db5f-4063-b89a-e2b62bc40e43",
+      "relativePosition": [
+        3.3,
+        1.78
+      ],
+      "weight": 8
     }
   ],
   "supportedIdeas": [
@@ -81,7 +89,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1,
+  "selfWeight": 11.5,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

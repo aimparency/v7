@@ -45,12 +45,13 @@ import { useToastStore } from './stores/toast'
 import { gitRepositoryLocation } from 'shared'
 import { rankIdeasAwaitingHuman } from './utils/review-inbox'
 import ProjectSettingsModal from './components/ProjectSettingsModal.vue'
+import LocalMcpModal from './components/LocalMcpModal.vue'
 import HookControl from './components/HookControl.vue'
 import { getRuntimeConfig, hasAccounts } from './utils/runtime-config'
 import { useViewerStore } from './stores/viewer'
 import { isModalOpen } from './stores/ui/modal-helpers'
 import { hasQueryFlag, installPerfLoggingControls, perfLog } from './utils/perf-log'
-import { Check, ChevronUp, EllipsisVertical, GitCommitHorizontal, Hourglass, Maximize2, Menu, Minimize2, Minus, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
+import { Check, ChevronUp, EllipsisVertical, GitCommitHorizontal, Hourglass, Maximize2, Menu, Minimize2, Minus, Plug, Plus, RefreshCw, Search, Settings, X } from 'lucide-vue-next'
 
 const uiStore = useUIStore()
 const modalStore = useUIModalStore()
@@ -114,6 +115,7 @@ const loopHeight = ref(parseInt(localStorage.getItem('aimparency-loop-height') |
 const watchdogRef = ref<InstanceType<typeof WatchdogPanel>>()
 const loopRef = ref<InstanceType<typeof LoopPanel>>()
 const showConsistencyModal = ref(false)
+const showLocalMcp = ref(false)
 const showReviewInbox = ref(false)
 const handleProposalPersisted = async (result: { rootIdeaId: string }) => {
   await dataStore.loadAllIdeas(projectStore.projectPath)
@@ -712,6 +714,7 @@ onUnmounted(() => {
       ><ChevronUp v-if="headerOpen" /><EllipsisVertical v-else /></button>
 
       <LoginControl v-if="accounts" />
+      <button v-else class="icon-btn" title="Connect an agent (MCP)" @click="showLocalMcp = true"><Plug /></button>
     </header>
 
     <ProjectSelectionView
@@ -847,6 +850,7 @@ onUnmounted(() => {
     />
 
     <!-- Consistency Modal -->
+    <LocalMcpModal v-if="showLocalMcp" @close="showLocalMcp = false" />
     <ConsistencyModal 
         v-if="showConsistencyModal" 
         @close="showConsistencyModal = false" 

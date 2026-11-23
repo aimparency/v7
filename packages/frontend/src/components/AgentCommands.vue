@@ -3,35 +3,70 @@ import { computed, ref } from 'vue'
 import { Copy } from 'lucide-vue-next'
 import { useToastStore } from '../stores/toast'
 
-// How to add this server to a coding agent, one command per agent. `login`:
-// the address lets the agent log in by itself (OAuth); otherwise it carries a token.
-const props = defineProps<{ url: string, login: boolean }>()
+// How to add this server to a coding agent, one command per agent: either an
+// address (`login`: the agent logs in by itself, OAuth; otherwise the address
+// carries a token) or, on a server without accounts, a command the agent
+// starts itself (stdio).
+type Stdio = { command: string, args: string[], env: Record<string, string> }
+const props = defineProps<{ url?: string, login?: boolean, stdio?: Stdio }>()
 
 type Agent = { id: string, name: string, command: string, note: string }
 
-const agents = computed<Agent[]>(() => [
+const quote = (word: string) => /^[\w/.:=@%+-]+$/.test(word) ? word : `'${word.split("'").join("'\\''")}'`
+const line = (words: string[]) => words.map(quote).join(' ')
+
+const stdioAgents = (stdio: Stdio): Agent[] => {
+  const env = Object.entries(stdio.env).map(([key, value]) => `${key}=${value}`)
+  const launch = [stdio.command, ...stdio.args]
+  return [
+    {
+      id: 'claude', name: 'Claude Code',
+      command: line(['claude', 'mcp', 'add', '--scope', 'user', ...env.flatMap(pair => ['-e', pair]), 'aimparency', '--', ...launch]),
+      note: 'For all your projects; the tools name the space they work on.'
+    },
+    {
+      id: 'codex', name: 'Codex',
+      command: line(['codex', 'mcp', 'add', ...env.flatMap(pair => ['--env', pair]), 'aimparency', '--', ...launch]),
+      note: ''
+    },
+    {
+      id: 'gemini', name: 'Gemini CLI',
+      command: line(['gemini', 'mcp', 'add', '--scope', 'user', ...env.flatMap(pair => ['-e', pair]), 'aimparency', ...launch]),
+      note: ''
+    },
+    {
+      id: 'other', name: 'Other',
+      command: JSON.stringify({ mcpServers: { aimparency: { command: stdio.command, args: stdio.args, ...(env.length ? { env: stdio.env } : {}) } } }, null, 2),
+      note: 'For clients configured with an mcpServers JSON (Cursor, Claude Desktop, …).'
+    }
+  ]
+}
+
+const urlAgents = (url: string, login: boolean): Agent[] => [
   {
     id: 'claude', name: 'Claude Code',
-    command: `claude mcp add --transport sse aimparency "${props.url}"`,
-    note: props.login ? 'Then /mcp in Claude Code: it opens this server in the browser to log in.' : ''
+    command: `claude mcp add --transport sse aimparency "${url}"`,
+    note: login ? 'Then /mcp in Claude Code: it opens this server in the browser to log in.' : ''
   },
   {
     id: 'codex', name: 'Codex',
     // Codex reaches remote servers only over streamable HTTP; mcp-remote bridges to SSE.
-    command: `codex mcp add aimparency -- npx -y mcp-remote "${props.url}"`,
-    note: `Codex speaks only streamable HTTP to remote servers, so mcp-remote (Node) bridges.${props.login ? ' It opens this server in the browser to log in.' : ''}`
+    command: `codex mcp add aimparency -- npx -y mcp-remote "${url}"`,
+    note: `Codex speaks only streamable HTTP to remote servers, so mcp-remote (Node) bridges.${login ? ' It opens this server in the browser to log in.' : ''}`
   },
   {
     id: 'gemini', name: 'Gemini CLI',
-    command: `gemini mcp add --transport sse aimparency "${props.url}"`,
-    note: props.login ? 'Then /mcp auth aimparency in Gemini CLI to log in.' : ''
+    command: `gemini mcp add --transport sse aimparency "${url}"`,
+    note: login ? 'Then /mcp auth aimparency in Gemini CLI to log in.' : ''
   },
   {
     id: 'other', name: 'Other',
-    command: JSON.stringify({ mcpServers: { aimparency: { type: 'sse', url: props.url } } }, null, 2),
+    command: JSON.stringify({ mcpServers: { aimparency: { type: 'sse', url } } }, null, 2),
     note: 'For clients configured with an mcpServers JSON (Cursor, Claude Desktop through mcp-remote, …).'
   }
-])
+]
+
+const agents = computed<Agent[]>(() => props.stdio ? stdioAgents(props.stdio) : urlAgents(props.url ?? '', props.login ?? false))
 
 const selected = ref('claude')
 const agent = computed(() => agents.value.find(candidate => candidate.id === selected.value)!)

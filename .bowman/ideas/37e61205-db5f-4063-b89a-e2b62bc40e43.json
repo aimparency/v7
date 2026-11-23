@@ -1,0 +1,24 @@
+{
+  "id": "37e61205-db5f-4063-b89a-e2b62bc40e43",
+  "text": "Local mode: connect an agent (MCP) from the header",
+  "description": "Felix 2026-11-23: \"local mode needs a way to add mcp\". Without accounts the account menu (with \"Connect an agent (MCP)\") is hidden, and pnpm dev runs no SSE MCP server, so there was no way in the UI. The agent starts the MCP over stdio itself; the backend names the command with this checkout's absolute paths.",
+  "archived": false,
+  "color": "#294d61",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "bd292a4b-146a-43fe-afc9-2c66be52c199"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Backend system.mcpCommand (null with accounts) returns {command: packages/mcp/node_modules/.bin/tsx, args: [packages/mcp/src/index.ts], env: BACKEND_WS_URL only when the backend is not on localhost:3001}. Frontend: Plug button in the header when !accounts opens LocalMcpModal, which shows AgentCommands in a new stdio variant (claude mcp add --scope user aimparency -- …, codex, gemini, mcpServers JSON). Evidence: started that exact command from an unrelated directory with the MCP SDK's StdioClientTransport: 40 tools, get_idea read bd292a4b from the running backend. AgentCommands.spec (command line, quoting, env, JSON) 2/2; frontend 478/478; vue-tsc and backend tsc clean.",
+    "date": 1795467456605
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
