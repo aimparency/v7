@@ -272,18 +272,19 @@ const perfectMatchIndex = computed(() => {
 const primary = computed<{ label: string, run: () => unknown, disabled?: boolean } | null>(() => {
   const text = typed.value
   if (perfectMatchIndex.value >= 0) return { label: 'Open', run: () => entries.value[perfectMatchIndex.value]!.open() }
+  // Nothing typed yet: the button already says what typing leads to.
+  if (!text) return !accounts || mayCreate.value ? { label: accounts ? 'New space' : 'Open space', run: () => {}, disabled: true } : null
   if (!accounts) {
     const label = gitRepositoryLocation(text) ? 'Open read-only'
       : text && inspectedPath.value === text && bowmanExists.value === false ? 'New space' : 'Open space'
     return { label, run: () => emit('select-project') }
   }
-  if (!text) return null
   if (gitRepositoryLocation(text)) return mayAddRemote.value ? { label: busy.value ? 'Cloning…' : 'Add from Git', run: addRemote } : null
   if (text.startsWith('/') && viewer.serverAdmin) return { label: 'Add from server', run: addCheckout }
   return mayCreate.value ? { label: 'New space', run: createSpace } : null
 })
 const runPrimary = () => {
-  if (primary.value && !busy.value) void primary.value.run()
+  if (primary.value && !primary.value.disabled && !busy.value) void primary.value.run()
 }
 // Why the box adds nothing here.
 const addHint = computed(() => {
@@ -404,7 +405,7 @@ onUnmounted(revokeThumbnails)
           @keydown.enter.prevent="runPrimary"
         />
       </div>
-      <button class="select-project" :disabled="!primary || busy" @click="runPrimary">{{ primary?.label ?? 'Open' }}</button>
+      <button class="select-project" :disabled="!primary || primary.disabled || busy" @click="runPrimary">{{ primary?.label ?? 'Open' }}</button>
     </div>
     <p v-if="addHint" class="empty-state">{{ addHint }}</p>
     <p v-if="offersDeployKey" class="empty-state">
