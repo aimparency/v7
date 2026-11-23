@@ -1,0 +1,24 @@
+{
+  "id": "de450d85-f9c9-4a25-99fc-67120c099621",
+  "text": "Private notes: sensitive details on an idea live outside git (gitignored store or linked file), and the MCP warns before writing them to tracked fields",
+  "description": "OBSERVED 2026-11-23 in Felix's life graph: preparing human steps (tax office letter, health insurance, phone contract) naturally produces details like tax numbers, insurance numbers, phone numbers and addresses. A status comment containing the tax number was blocked by Claude Code's safety classifier, because .bowman is committed to git. The workaround was to put the draft in a non-git docs/ folder and reference the path. That works, but it's ad hoc and the graph can't show the content.\n\nProposal: an idea can carry a private note stored in .bowman/runtime/ (gitignored, machine-local) or a linked file path outside the repo. The UI shows it with a lock, and the MCP exposes it as a separate field. Optionally, update_idea warns when tracked fields match common secret/PII patterns (IBAN, tax IDs, phone numbers) and suggests the private field.\n\nRefuted if personal graphs stay rare or users accept everything in git.",
+  "archived": false,
+  "color": "#292f61",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468097783
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

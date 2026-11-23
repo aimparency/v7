@@ -1,0 +1,24 @@
+{
+  "id": "74038708-ef45-4611-8424-c7d6f3256684",
+  "text": "MCP launch that survives PATH: setup writes an absolute launcher, plus an aimparency doctor check",
+  "description": "OBSERVED 2026-11-23: in ~/.claude.json the aimparency MCP was configured as command \"tsx\" + packages/mcp/src/index.ts. tsx isn't on PATH in Claude Code's environment (it lives in v7/node_modules/.bin), so the server failed with ENOENT and the whole session started without Aimparency. /mcp reconnect fails the same way. The human had to fix it by hand.\n\nProposal: (1) the setup/install path (install_hooks guide, README, 'Local mode: connect an agent' 37e61205) writes MCP config with an absolute launcher (node + built dist, or the repo-local tsx path) instead of a bare command; (2) a small `aimparency doctor` (CLI + MCP-less) that checks: launcher resolvable, backend ws reachable at 3001, token, graph data model version, and prints the exact config line to paste. Related: d8e9a2b1 (publish as package would also fix this).\n\nRefuted if no further launch failures show up after (1).",
+  "archived": false,
+  "color": "#2f436b",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468097092
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

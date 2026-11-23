@@ -1,0 +1,24 @@
+{
+  "id": "6d01eb8e-4e69-4ccf-8a54-6de5b8964388",
+  "text": "Deadlines: optional deadline field, urgency in prioritization, and an upcoming_deadlines tool",
+  "description": "OBSERVED 2026-11-23 in the life graph: several ideas are hard-dated. Culture Moves Europe application by 18.01.2027, NLnet 03.01.2027, NLnet office hour 25.11., a trip before 29.11., Ars Electronica Prix ~March. Dates only live in titles and descriptions; 'duration' (days until value) is a different concept. Ranking can't see that a funded application loses all value after its deadline, and the relevance check (8197b533) has to parse dates out of prose.\n\nProposal: optional deadline (date) on ideas. Priority falls to ~0 after the deadline for deadline-bound ideas, and urgency rises as it approaches (exact formula to calibrate with b2a7c3cf). A tool upcoming_deadlines(days) lists them across the graph, and the UI shows a date chip.\n\nRefuted if deadline-bound ideas are rare in practice.",
+  "archived": false,
+  "color": "#274162",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468098261
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

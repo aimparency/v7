@@ -1,0 +1,24 @@
+{
+  "id": "f85fbfe0-9a75-4dc7-b1e0-ea3014fa3800",
+  "text": "MCP graph parameter optional: default to the .bowman graph of the client's working directory",
+  "description": "OBSERVED 2026-11-23: every tool call needs graph=/absolute/path; in one session the agent wrote to /home/felix/life and /home/felix/dev/aimparency/v7 and guessed a full UUID wrong once. A stdio MCP inherits the client's cwd, and graph-address sessions already hide projectPath (e34b5ff1). Proposal: if graph is omitted, use the git root of the MCP process's cwd that has a .bowman; responses name which graph was used, and cross-graph calls still pass it explicitly.\n\nRefuted if ambiguity causes wrong-graph writes; then keep it required.",
+  "archived": false,
+  "color": "#293b61",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468098446
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

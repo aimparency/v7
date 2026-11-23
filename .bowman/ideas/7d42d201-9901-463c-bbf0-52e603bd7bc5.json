@@ -1,0 +1,24 @@
+{
+  "id": "7d42d201-9901-463c-bbf0-52e603bd7bc5",
+  "text": "link_repo takes share (percent) like child links, and register_linked_repo takes a local display name",
+  "description": "OBSERVED 2026-11-23 in Felix's life graph: link_repo defaults to weight 1, but the siblings under 'commons-hub' had rescaled weights around 9, so two repo links landed at 0.8% each and a new child idea at 1%. update_idea/create_idea answer with the parent's split in percent and accept share; link_repo does neither, so the agent had to guess raw weights (re-linked with weight 8/4). Also: a linked repo's name comes from the other graph's meta name, which gave unclear labels in the life graph: 'ideas' (commons-hub/ideas), 'pong' (laser tests), 'v3' (repeer). Renaming the other graph isn't always right.\n\nProposal: link_repo accepts share (percent, same semantics as child links) and replies with the parent's split including repo edges. register_linked_repo (and the settings UI) accepts an optional local display name stored in the portable linkedRepos entry, falling back to the target's meta name.\n\nRefuted if repo edges are rarely mixed with idea children.",
+  "archived": false,
+  "color": "#317041",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468096633
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

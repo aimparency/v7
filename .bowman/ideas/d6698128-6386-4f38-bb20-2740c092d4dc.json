@@ -1,0 +1,24 @@
+{
+  "id": "d6698128-6386-4f38-bb20-2740c092d4dc",
+  "text": "MCP tool schemas list the target graph's own statuses instead of a fixed set",
+  "description": "OBSERVED 2026-11-23: update_idea's description advertises human-dependent, ai-proposition and review, and the Stop hook says to park ideas as human-dependent. Felix's life graph (an older project) doesn't define human-dependent, so the call failed with 'Unknown status' (7218baeb correctly rejects undefined statuses; be32e3a6 only added it to NEW projects). The agent fell back to 'unclear' and lost the distinction between a decision and an action.\n\nProposal: the error (and ideally get_prioritized_ideas/graph_hygiene) names the graph's statuses; the hook text says 'human-dependent if the graph has it, else unclear'; and a one-time offer/migration adds the standard agent statuses (human-dependent, ai-proposition, review) to older graphs, with the human's OK.\n\nRefuted if all graphs already share the same status set.",
+  "archived": false,
+  "color": "#2c4761",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468097331
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

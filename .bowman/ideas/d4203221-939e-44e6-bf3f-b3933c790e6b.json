@@ -101,6 +101,42 @@
       ],
       "weight": 1,
       "hypothesis": "With one key that signs in everywhere, a person takes part in spaces on any server without registering on each, so spaces of many servers work as one."
+    },
+    {
+      "ideaId": "1542e9a3-abf5-4fdf-b855-d261686baf7b",
+      "relativePosition": [
+        -3.46,
+        1.45
+      ],
+      "weight": 6.714285714285714,
+      "hypothesis": "Agents can only link graphs they can find; one discovery call replaces ad-hoc find + scripts and makes cross-graph wiring a routine step."
+    },
+    {
+      "ideaId": "7d42d201-9901-463c-bbf0-52e603bd7bc5",
+      "relativePosition": [
+        1.79,
+        3.29
+      ],
+      "weight": 6.714285714285714,
+      "hypothesis": "Repo links get meaningful value shares and readable labels without manual weight math, so cross-graph links stop silently draining (or barely receiving) value."
+    },
+    {
+      "ideaId": "74a932da-96cd-4f9c-a977-04b8172b0b54",
+      "relativePosition": [
+        -0.18,
+        -3.75
+      ],
+      "weight": 6.714285714285714,
+      "hypothesis": "With value flowing across graph links, one queue lets an agent (or Felix) pick the most valuable work across life + projects, instead of optimizing each repo in isolation."
+    },
+    {
+      "ideaId": "36665fa6-d49e-41e0-afcf-f06035b5abfc",
+      "relativePosition": [
+        3.05,
+        2.18
+      ],
+      "weight": 6,
+      "hypothesis": "Graphs that should be linked often aren't, because nobody sees the match; a public one-line mission per graph makes links discoverable while keeping every graph a black box."
     }
   ],
   "supportedIdeas": [

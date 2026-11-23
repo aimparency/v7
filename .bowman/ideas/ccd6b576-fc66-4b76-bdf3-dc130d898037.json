@@ -54,6 +54,69 @@
         -1.14
       ],
       "weight": 17.24137931034483
+    },
+    {
+      "ideaId": "74038708-ef45-4611-8424-c7d6f3256684",
+      "relativePosition": [
+        -2.88,
+        -2.4
+      ],
+      "weight": 5,
+      "hypothesis": "A session that starts without the MCP loses the whole graph loop; robust launch removes the most common silent failure in other repos on the same machine."
+    },
+    {
+      "ideaId": "d6698128-6386-4f38-bb20-2740c092d4dc",
+      "relativePosition": [
+        2.19,
+        3.04
+      ],
+      "weight": 3,
+      "hypothesis": "Agents working in many graphs hit each graph's own status vocabulary; matching schemas and hook wording to it prevents failed writes and lost meaning."
+    },
+    {
+      "ideaId": "4537af0f-7a53-46b2-94ee-425a4e3f3cab",
+      "relativePosition": [
+        -1.02,
+        3.61
+      ],
+      "weight": 6,
+      "hypothesis": "Clean per-agent commits are what let git link ideas to work (6da9b226); without tooling, agents in shared dirty graphs either commit the human's work or skip committing."
+    },
+    {
+      "ideaId": "de450d85-f9c9-4a25-99fc-67120c099621",
+      "relativePosition": [
+        3.73,
+        0.35
+      ],
+      "weight": 4,
+      "hypothesis": "A life graph is the most valuable use of the loop and the one full of sensitive data; a private field lets agents prepare real-world steps completely without leaking them into git history."
+    },
+    {
+      "ideaId": "a940dd30-2421-4670-bdb7-e323c48dc63d",
+      "relativePosition": [
+        -3.71,
+        -0.52
+      ],
+      "weight": 5,
+      "hypothesis": "The human is the bottleneck (90cf0309); one-click artifacts and option chips turn a prepared step into a 10-second decision instead of reading a wall of text."
+    },
+    {
+      "ideaId": "6d01eb8e-4e69-4ccf-8a54-6de5b8964388",
+      "relativePosition": [
+        2.61,
+        -2.69
+      ],
+      "weight": 5,
+      "hypothesis": "Real-world goals (grants, applications, travel) are deadline-bound; without a field, the loop misses windows that no later effort can recover."
+    },
+    {
+      "ideaId": "f85fbfe0-9a75-4dc7-b1e0-ea3014fa3800",
+      "relativePosition": [
+        -3.26,
+        1.86
+      ],
+      "weight": 2,
+      "hypothesis": "Fewer required parameters on every call reduces friction and errors for agents that mostly work in their own repo's graph."
     }
   ],
   "supportedIdeas": [

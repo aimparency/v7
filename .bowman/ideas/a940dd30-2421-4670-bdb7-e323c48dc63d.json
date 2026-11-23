@@ -1,0 +1,24 @@
+{
+  "id": "a940dd30-2421-4670-bdb7-e323c48dc63d",
+  "text": "Prepared human step as structured data: action, artifact links (draft URL, file), question and options, shown in the review inbox",
+  "description": "OBSERVED 2026-11-23: the loop correctly demands that every idea waiting on the human has its step prepared. In practice the agent stuffed long text into status comments: a whole draft message to Felix Fritsch, email text for the EYE office, Gmail draft references, file paths, 'DECISION: (a)/(b)/(c)'. The inbox (90cf0309) shows that as one blob. The human can't click to the Gmail draft or pick an option.\n\nProposal: an optional structured humanStep on an idea: {kind: send | decide | do, summary, artifacts: [{label, url or path}], options: [{label, consequence}], recommended}. The MCP accepts it in update_idea. The review inbox renders it: buttons to open artifacts, option chips that record the choice as the status comment and move the idea back to open for the agent.\n\nRefuted if humans prefer the free-text comment.",
+  "archived": false,
+  "color": "#2c4c66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468098054
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

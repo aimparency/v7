@@ -1,0 +1,24 @@
+{
+  "id": "1542e9a3-abf5-4fdf-b855-d261686baf7b",
+  "text": "MCP: discover_local_graphs — list every .bowman graph on this machine with name, repoId, idea counts, last activity and root aims",
+  "description": "From a Claude Code session 2026-11-23 wiring ~/dev graphs into Felix's life graph. OBSERVED: to find the graphs the agent ran `find ~/dev -name .bowman` and a Python script reading every meta.json and idea file, because the backend's discoverLocalProjects (3ec89f4a) is UI-only. 31 .bowman folders were found, 12 with content; several had no repoId and some had no meta.json at all (3dream, bowman, avonx/artwork), so they can't be linked.\n\nProposal: an MCP tool over discoverLocalProjects with configurable roots (default ~/dev), returning per graph: path, meta name, repoId (or 'none'), idea/open counts, last status change or commit date, whether it's already registered from the calling graph, and the graph's portable mission line (see the suggest_repo_links idea). Optionally initialize missing repoId/meta. Root aim titles only if Felix sees that as compatible with the black-box rule (e81b11c3): before linking, it's discovery, not a link.\n\nRefuted if agents don't use it, or discovery from the UI is enough.",
+  "archived": false,
+  "color": "#43712e",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468096176
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

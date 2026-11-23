@@ -1,0 +1,24 @@
+{
+  "id": "36665fa6-d49e-41e0-afcf-f06035b5abfc",
+  "text": "MCP: suggest_repo_links — match a graph's open ideas against other local graphs' portable mission line (meta), never their ideas",
+  "description": "OBSERVED 2026-11-23: to wire 9 ~/dev graphs into Felix's life graph, the agent matched life ideas to repos with a keyword script over every graph's idea texts. That reads the other graphs' internals, which e81b11c3 rules out for links (cross-repo idea search was cancelled in c4df7232).\n\nProposal, black-box compatible: each graph gets an optional portable mission line in meta.json (one or two sentences, e.g. 'Sunk City: a VR world generated live by a tiny neural renderer'), editable in settings and defaulting to empty. suggest_repo_links(graph) embeds those mission lines (from discover_local_graphs / linkedRepos) and the calling graph's open ideas, and returns ranked candidate (idea, repo, similarity, draft hypothesis) pairs for the agent or human to confirm with link_repo. Never auto-links, never reads foreign ideas. Sibling of 1bc19167 (LLM pass for missing links inside one graph).\n\nRefuted if the mission line stays empty in most graphs, or the matches are too weak to help.",
+  "archived": false,
+  "color": "#3c6f31",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "d4203221-939e-44e6-bf3f-b3933c790e6b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468110998
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

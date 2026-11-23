@@ -1,0 +1,24 @@
+{
+  "id": "4537af0f-7a53-46b2-94ee-425a4e3f3cab",
+  "text": "Agent changeset: track what an MCP session wrote and stage only that, even when the human's graph has uncommitted edits",
+  "description": "OBSERVED 2026-11-23 in ~/life: the Stop hook says 'commit your work, leave changes you did not make unstaged' (6da9b226). But Felix's .bowman had dozens of uncommitted edits (modified ideas, new untracked idea files, rescaled weights, a v6→v7 migration), and the agent's writes landed in the SAME files. Staging only its own changes took a hand-written script: load HEAD JSON, re-apply only the agent's fields (new supportingRepos entries, new child connections, phase commitments), hash-object + update-index. Edits to ideas that only exist untracked couldn't be committed without committing the human's ideas, so they stayed uncommitted.\n\nProposal: the backend records per MCP session/token which ideas and fields it changed (it sees every write anyway). A tool session_changes lists them; stage_session_changes writes a git index entry per file = HEAD + only those field changes (or reports conflicts, e.g. untracked parent files). The hook's 'commit your work' then becomes one tool call.\n\nRefuted if humans usually commit before agent sessions (then the problem doesn't arise).",
+  "archived": false,
+  "color": "#2d486b",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
+    "date": 1795468097539
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
