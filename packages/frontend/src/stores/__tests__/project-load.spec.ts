@@ -116,7 +116,7 @@ describe('project load', () => {
   })
 
   it('chooses the saved view before any view can mount', async () => {
-    localStorage.setItem('aimparency-ui-state:/p/one', JSON.stringify({ currentView: 'graph' }))
+    localStorage.setItem('aimparency-ui-state:/p/one', JSON.stringify({ currentView: 'columns' }))
     const load = useProjectLoadStore()
     const seen: string[] = []
     const projectStore = useProjectStore()
@@ -125,8 +125,16 @@ describe('project load', () => {
       if (load.viewsMayMount) seen.push(projectStore.currentView)
       expect(load.viewsMayMount).toBe(true)
     })
-    expect(seen.every((view) => view === 'graph')).toBe(true)
-    expect(load.stepLabel).toBe('Preparing the graph')
+    expect(seen.every((view) => view === 'columns')).toBe(true)
+    expect(load.stepLabel).toBe('Laying out lists')
+  })
+
+  it('shows a new visitor the graph, colored by custom colors', async () => {
+    const load = useProjectLoadStore()
+    void load.open('/p/one')
+    await vi.waitFor(() => expect(load.viewsMayMount).toBe(true))
+    expect(useProjectStore().currentView).toBe('graph')
+    expect(useGraphUIStore().graphColorMode).toBe('custom')
   })
 
   it('clears the previous project when a load starts', async () => {

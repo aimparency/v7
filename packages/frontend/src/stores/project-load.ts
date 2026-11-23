@@ -200,7 +200,7 @@ export const useProjectLoadStore = defineStore('project-load', {
       useDataStore().resetProjectData()
       useUIStore().resetViewState()
       useHistoryStore().reset()
-      useProjectStore().setCurrentView('columns')
+      useProjectStore().setCurrentView('graph')
       useMapStore().resetView()
     },
 

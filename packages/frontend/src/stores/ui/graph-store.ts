@@ -51,7 +51,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
     selectedLink: null,
     pendingDeleteIdeaId: null,
     pendingDeleteLink: null,
-    graphColorMode: 'status',
+    graphColorMode: 'custom',
     graphPanelWidth: 300,
     graphShowLabels: true,
     phaseFilter: null,
@@ -189,7 +189,7 @@ export const useGraphUIStore = defineStore('ui-graph', {
 
     clearSpinOffPreview() {
       this.spinOffPreviewRootIds = []
-      this.graphColorMode = this.spinOffPreviewPrevMode ?? 'status'
+      this.graphColorMode = this.spinOffPreviewPrevMode ?? 'custom'
       this.spinOffPreviewPrevMode = null
     },
 
