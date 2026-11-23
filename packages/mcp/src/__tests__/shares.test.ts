@@ -36,7 +36,7 @@ test('impossible shares are refused', () => {
   assert.throws(() => applyShares(twoChildren, { shares: new Map([['new', 70]]), loopShare: 40 }), /more than 100%/);
   assert.throws(() => applyShares(twoChildren, { shares: new Map([['new', 100]]) }), /nothing for its other children/);
   assert.throws(() => applyShares(twoChildren, { shares: new Map([['a', 30], ['new', 30]]), loopShare: 10 }), /must add up to 100%/);
-  assert.throws(() => applyShares(twoChildren, { shares: new Map([['stranger', 10]]) }), /not a child/);
+  assert.throws(() => applyShares(twoChildren, { shares: new Map([['stranger', 10]]) }), /neither a child nor a linked repo/);
   assert.throws(() => applyShares(twoChildren, { shares: new Map([['new', 0]]) }), /percentage above 0/);
 });
 

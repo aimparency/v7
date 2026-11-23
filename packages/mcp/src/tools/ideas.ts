@@ -4,7 +4,7 @@ import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea, formatIdeas, describeRepoEdges } from "./format.js";
 import { connectionInputSchema, normalizeConnectionInput, setsShares, toStoredConnection, type ConnectionInput } from "./connections.js";
-import { applyShares, describeShares, SHARE_GUIDE, validatePercent, type ShareRequest } from "./shares.js";
+import { applyShares, describeSplits, SHARE_GUIDE, shareUpdate, splitsSection, validatePercent, type ShareRequest } from "./shares.js";
 import { createHash } from "crypto";
 
 /**
@@ -53,32 +53,9 @@ function withChild(parent: IdeaRecord, childId: string): IdeaRecord {
     : { ...parent, supportingConnections: [...parent.supportingConnections, { ideaId: childId, weight: 1, relativePosition: [0, 0] }] };
 }
 
-function shareUpdate(idea: IdeaRecord, request: ShareRequest) {
-  const next = applyShares(idea, request);
-  return {
-    supportingConnections: next.supportingConnections,
-    selfWeight: next.selfWeight,
-    ...(idea.supportingRepos?.length ? { supportingRepos: next.supportingRepos } : {}),
-  };
-}
-
 async function setShares(trpcClient: BackendClient, graph: string, ideaId: string, request: ShareRequest) {
   const idea = await trpcClient.idea.get.query({ graph, ideaId });
   await trpcClient.idea.update.mutate({ graph, ideaId, idea: shareUpdate(idea, request) });
-}
-
-// Each idea's split in percent, for the agent to judge a share against its siblings.
-async function describeSplits(trpcClient: BackendClient, graph: string, ideaIds: string[], focusId?: string): Promise<string> {
-  if (ideaIds.length === 0) return "";
-  const ideas = await trpcClient.idea.getMany.query({ graph, ideaIds: [...new Set(ideaIds)] });
-  const childIds = [...new Set(ideas.flatMap((idea) => idea.supportingConnections.map((conn) => conn.ideaId)))];
-  const children = await trpcClient.idea.getMany.query({ graph, ideaIds: childIds });
-  const texts = new Map(children.map((child) => [child.id, child.text]));
-  return ideas.map((idea) => describeShares(idea, texts, focusId)).join("\n\n");
-}
-
-function splitsSection(splits: string): string {
-  return splits ? `\n\n${splits}\n\nIs each share right next to its siblings? Adjust with share (percent). ${SHARE_GUIDE}` : "";
 }
 
 /**

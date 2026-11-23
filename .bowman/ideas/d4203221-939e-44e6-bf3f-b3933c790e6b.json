@@ -118,7 +118,8 @@
         3.29
       ],
       "weight": 6.714285714285714,
-      "hypothesis": "Repo links get meaningful value shares and readable labels without manual weight math, so cross-graph links stop silently draining (or barely receiving) value."
+      "hypothesis": "Repo links get meaningful value shares and readable labels without manual weight math, so cross-graph links stop silently draining (or barely receiving) value.",
+      "reflection": "Held: share and split were already the language of child links. Extending them to repo edges removed the raw-weight guessing that put two repo links at 0.8%. The local name fixes labels like 'v3' or 'ideas' without touching the other graph."
     },
     {
       "ideaId": "74a932da-96cd-4f9c-a977-04b8172b0b54",

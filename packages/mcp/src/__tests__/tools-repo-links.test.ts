@@ -144,3 +144,28 @@ test('a linked repo that is not checked out here reads as not-checked-out, not b
   assert.equal(fetched.supportingRepos[0].health, 'not-checked-out');
   assert.equal(fetched.supportingRepos[0].name, 'Ways of Will');
 });
+
+test('link_repo takes a share in percent and answers with the split; a link keeps the name this graph gives it', async () => {
+  const server = makeServer();
+  await createIdea(server, { graph: ctx.projectPath, text: 'Parent' });
+  const parentId = (await caller.idea.list({ graph: ctx.projectPath }))[0]!.id;
+  await createIdea(server, { graph: ctx.projectPath, text: 'Child', supportedIdeas: [parentId] });
+
+  await server.callTool('register_linked_repo', { graph: ctx.projectPath, targetPath: targetCtx.projectPath, name: 'Will repo' });
+  const repoId = JSON.parse((await server.callTool('list_linked_repos', { graph: ctx.projectPath })).content[0].text)[0].repoId;
+
+  const refused = await server.callTool('link_repo', { graph: ctx.projectPath, ideaId: parentId, repoId, share: 100 });
+  assert.equal(refused.isError, true);
+  assert.match(refused.content[0].text, /nothing for its other children/);
+  assert.equal((await caller.idea.get({ graph: ctx.projectPath, ideaId: parentId })).supportingRepos?.length ?? 0, 0, 'a refused share writes no link');
+
+  const reply = (await server.callTool('link_repo', { graph: ctx.projectPath, ideaId: parentId, repoId, share: 40 })).content[0].text;
+  assert.match(reply, new RegExp(`40% → repo Will repo \\(${repoId}\\)`));
+  const parent = await caller.idea.get({ graph: ctx.projectPath, ideaId: parentId });
+  const total = parent.supportingConnections.reduce((sum, conn) => sum + conn.weight, 0) + parent.supportingRepos![0]!.weight + (parent.selfWeight ?? 0);
+  assert.ok(Math.abs(parent.supportingRepos![0]!.weight / total - 0.4) < 1e-9);
+
+  await server.callTool('register_linked_repo', { graph: ctx.projectPath, repoId, name: 'Ways of Will (life)' });
+  const listed = JSON.parse((await server.callTool('list_linked_repos', { graph: ctx.projectPath })).content[0].text);
+  assert.equal(listed[0].name, 'Ways of Will (life)');
+});

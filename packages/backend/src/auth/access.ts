@@ -63,7 +63,7 @@ const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // viewer (activity): not for visitors.
 const WRITE_MUTATIONS = new Set([
   'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
-  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost',
+  'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost', 'linkedRepo.rename',
   // Accepting an offer links the offered space into the graph (routers/notes.ts).
   'notes.acceptOffer'
 ]);

@@ -48,6 +48,7 @@ export const linkedRepoRouter = t.router({
       targetPath: z.string(),
       url: z.string().optional(),
       access: z.enum(['read', 'write']).default('read'),
+      name: z.string().trim().min(1).optional(),
     }))
     .output(LinkedRepoStatusSchema)
     .mutation(async ({ input }) => {
@@ -66,7 +67,8 @@ export const linkedRepoRouter = t.router({
 
       // Portable part → meta.linkedRepos (upsert by repoId).
       const known = selfMeta.linkedRepos?.find((l) => l.repoId === repoId);
-      const portable: LinkedRepo = { ...known, repoId, name: targetMeta.name, ...(input.url ? { url: input.url } : {}) };
+      // A name this graph gave the link stays until a new one is given.
+      const portable: LinkedRepo = { ...known, repoId, name: input.name ?? known?.name ?? targetMeta.name, ...(input.url ? { url: input.url } : {}) };
       const links = (selfMeta.linkedRepos ?? []).filter((l) => l.repoId !== repoId);
       links.push(portable);
       selfMeta.linkedRepos = links;
@@ -96,8 +98,23 @@ export const linkedRepoRouter = t.router({
       const meta = await readProjectMeta(input.graph);
       if (input.repoId === meta.repoId) throw new Error('Cannot link a space to itself.');
       const known = meta.linkedRepos?.find((l) => l.repoId === input.repoId);
-      const link: LinkedRepo = { ...known, repoId: input.repoId, name: input.name, host: graphHostUrl(parseGraphHost(input.host)!) };
+      const link: LinkedRepo = { ...known, repoId: input.repoId, name: known?.name ?? input.name, host: graphHostUrl(parseGraphHost(input.host)!) };
       meta.linkedRepos = [...(meta.linkedRepos ?? []).filter((l) => l.repoId !== input.repoId), link];
+      await writeProjectMeta(input.graph, meta);
+      return link;
+    }),
+
+  // The name this graph shows for a linked repo. It starts as the target's own
+  // name, which can be unclear here (a graph named 'ideas' or 'v3').
+  rename: delayedProcedure
+    .input(z.object({ graph: graphAddress, repoId: z.string().uuid(), name: z.string().trim().min(1) }))
+    .output(LinkedRepoSchema)
+    .mutation(async ({ input }) => {
+      const meta = await readProjectMeta(input.graph);
+      const known = meta.linkedRepos?.find((l) => l.repoId === input.repoId);
+      if (!known) throw new Error(`Repo ${input.repoId} is not linked from this graph.`);
+      const link: LinkedRepo = { ...known, name: input.name };
+      meta.linkedRepos = meta.linkedRepos!.map((l) => (l.repoId === input.repoId ? link : l));
       await writeProjectMeta(input.graph, meta);
       return link;
     }),

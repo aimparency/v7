@@ -127,6 +127,19 @@ test('register upserts rather than duplicating on re-register', async () => {
   assert.equal(registry.repos[0].access, 'write', 'access updated');
 });
 
+test('a linked repo keeps the name this graph gives it', async () => {
+  const { repoId } = await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, name: 'Laser tests' });
+  assert.equal((await readMeta(projectAPath)).linkedRepos![0].name, 'Laser tests');
+
+  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, access: 'write' });
+  assert.equal((await readMeta(projectAPath)).linkedRepos![0].name, 'Laser tests', 're-registering keeps the name');
+
+  const renamed = await caller.linkedRepo.rename({ graph: projectAPath, repoId, name: 'Repeer' });
+  assert.equal(renamed.name, 'Repeer');
+  assert.equal((await readMeta(projectAPath)).linkedRepos![0].name, 'Repeer');
+  await assert.rejects(caller.linkedRepo.rename({ graph: projectAPath, repoId: '22222222-2222-4222-8222-222222222222', name: 'x' }), /not linked/);
+});
+
 test('unregister removes the link from both meta and the runtime registry', async () => {
   const { repoId } = await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath });
 

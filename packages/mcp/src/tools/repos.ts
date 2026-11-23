@@ -1,6 +1,7 @@
 import { GRAPH_TOOL_PROPERTY } from "../constants.js";
 import { fetchGraphAtHost } from "shared";
 import type { ToolDefinition } from "./types.js";
+import { applyShares, describeSplits, shareUpdate, splitsSection, validatePercent } from "./shares.js";
 
 export const repoTools: ToolDefinition[] = [
   {
@@ -77,7 +78,7 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "register_linked_repo",
-    description: "Make another Aimparency graph linkable from this one. Give host, the graph's address on the server hosting it (https://<server>/spaces/<space>), or targetPath for a project checked out on this machine. Needed once per graph, before the first link_repo to it.",
+    description: "Make another Aimparency graph linkable from this one. Give host, the graph's address on the server hosting it (https://<server>/spaces/<space>), or targetPath for a project checked out on this machine. Needed once per graph, before the first link_repo to it. name: what this graph calls it, when the graph's own name is unclear here; with repoId and name alone it renames an existing link.",
     inputSchema: {
       type: "object",
       properties: {
@@ -86,23 +87,35 @@ export const repoTools: ToolDefinition[] = [
         targetPath: { type: "string", description: "Absolute path to the other project's .bowman dir (or its repo root), for a local checkout" },
         url: { type: "string", description: "Optional relocation hint, e.g. the git remote, so collaborators can find the repo" },
         access: { type: "string", enum: ["read", "write"], description: "Machine-local access intent for the linked checkout. Default read." },
+        name: { type: "string", description: "The name this graph shows for it. Default: the linked graph's own name; a name given once stays on re-registering." },
+        repoId: { type: "string", description: "With name and no host/targetPath: rename this already linked repo" },
       },
       required: ["graph"],
     },
     handler: async (args, trpcClient) => {
+      const graph = args.graph as string;
+      const name = typeof args.name === "string" ? args.name : undefined;
       if (typeof args.host === "string") {
         const target = await fetchGraphAtHost(args.host);
-        const link = await trpcClient.linkedRepo.linkHost.mutate({ graph: args.graph as string, ...target });
+        let link = await trpcClient.linkedRepo.linkHost.mutate({ graph, ...target });
+        if (name) link = await trpcClient.linkedRepo.rename.mutate({ graph, repoId: link.repoId, name });
         return {
           content: [{ type: "text", text: `Linked graph "${link.name}" at ${link.host} (${link.repoId}). Use link_repo with that repoId to attach it to an idea.` }],
         };
       }
-      if (typeof args.targetPath !== "string") throw new Error("Give host (https://<server>/spaces/<space>) or targetPath.");
+      if (typeof args.targetPath !== "string") {
+        if (typeof args.repoId === "string" && name) {
+          const link = await trpcClient.linkedRepo.rename.mutate({ graph, repoId: args.repoId, name });
+          return { content: [{ type: "text", text: `Linked repo ${link.repoId} is now shown as "${link.name}".` }] };
+        }
+        throw new Error("Give host (https://<server>/spaces/<space>) or targetPath, or repoId and name to rename a link.");
+      }
       const repo = await trpcClient.linkedRepo.register.mutate({
-        graph: args.graph as string,
+        graph,
         targetPath: args.targetPath as string,
         url: args.url as string | undefined,
         access: (args.access as "read" | "write" | undefined) ?? "read",
+        name,
       });
       return {
         content: [
@@ -116,14 +129,15 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "link_repo",
-    description: "Declare that a WHOLE external repo supports this idea — a black-box dependency. Targets a repo, never an idea inside it: there is no cross-repo idea link by design. Idempotent per repoId (re-linking updates weight/hypothesis). Value flows out of this idea into the repo, and the other repo keeps no back-reference.",
+    description: "Declare that a WHOLE external repo supports this idea — a black-box dependency. Targets a repo, never an idea inside it: there is no cross-repo idea link by design. Idempotent per repoId (re-linking updates share/hypothesis). Value flows out of this idea into the repo, and the other repo keeps no back-reference. The reply shows the idea's split in percent.",
     inputSchema: {
       type: "object",
       properties: {
         graph: GRAPH_TOOL_PROPERTY,
         ideaId: { type: "string", description: "The LOCAL idea being supported" },
         repoId: { type: "string", description: "Linked repo UUID from list_linked_repos" },
-        weight: { type: "number", description: "Share of this idea's value flowing into the repo, like any child edge. Default 1." },
+        share: { type: "number", description: "Percent of this idea's value flowing into the repo, like a child link's share. Children and repos not named keep their proportions." },
+        weight: { type: "number", description: "Raw relative weight; prefer share. Default 1." },
         hypothesis: { type: "string", description: "Why that repo supports this idea" },
       },
       required: ["graph", "ideaId", "repoId"],
@@ -144,18 +158,34 @@ export const repoTools: ToolDefinition[] = [
         );
       }
 
+      const ideaId = args.ideaId as string;
+      const share = args.share === undefined ? undefined : validatePercent(args.share, "share", false);
+      if (share !== undefined) {
+        // Check the share against the idea with the link in place before writing anything.
+        const idea = await trpcClient.idea.get.query({ graph: projectPath, ideaId });
+        const linked = idea.supportingRepos?.some((link) => link.repoId === repoId);
+        applyShares(
+          linked ? idea : { ...idea, supportingRepos: [...(idea.supportingRepos ?? []), { repoId, weight: 1, relativePosition: [0, 0] }] },
+          { shares: new Map([[repoId, share]]) },
+        );
+      }
       await trpcClient.idea.linkRepo.mutate({
         graph: projectPath,
-        ideaId: args.ideaId as string,
+        ideaId,
         repoId,
         weight: args.weight as number | undefined,
         hypothesis: args.hypothesis as string | undefined,
       });
+      if (share !== undefined) {
+        const idea = await trpcClient.idea.get.query({ graph: projectPath, ideaId });
+        await trpcClient.idea.update.mutate({ graph: projectPath, ideaId, idea: shareUpdate(idea, { shares: new Map([[repoId, share]]) }) });
+      }
       return {
         content: [
           {
             type: "text",
-            text: `Linked idea ${args.ideaId} to repo "${repo.name}" (${repoId})${repo.resolved || repo.host ? "" : " — note: that repo is neither checked out on this machine nor linked by its server address, so it renders as an unresolved stub"}`,
+            text: `Linked idea ${ideaId} to repo "${repo.name}" (${repoId})${repo.resolved || repo.host ? "" : " — note: that repo is neither checked out on this machine nor linked by its server address, so it renders as an unresolved stub"}` +
+              splitsSection(await describeSplits(trpcClient, projectPath, [ideaId], repoId)),
           },
         ],
       };

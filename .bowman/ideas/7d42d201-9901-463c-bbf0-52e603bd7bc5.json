@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468096633
+    "state": "implemented",
+    "comment": "Accepted by Felix ('can we work on them?'). link_repo takes share (percent, same semantics as a child link's share: children and repos not named keep their proportions). It checks the share against the idea with the link in place before writing anything, and replies with the idea's split, now showing repo links by name ('40% → repo Will repo (id)'). Shares on update_idea can name a linked repo too (applyShares). Local display name: backend linkedRepo.register takes an optional name, and a new linkedRepo.rename (a write mutation in access.ts). A name this graph gave a link stays on re-registering or re-linking by host. MCP register_linked_repo takes name, and with repoId + name alone it renames. No UI form: renaming goes through the agent, as in the config philosophy. Evidence: backend linked-repos + auth tests 67/67, MCP suite 74/74 including the new 'link_repo takes a share in percent…' test, backend and mcp tsc clean.",
+    "date": 1795469161526
   },
   "intrinsicValue": 0,
   "cost": 1,
