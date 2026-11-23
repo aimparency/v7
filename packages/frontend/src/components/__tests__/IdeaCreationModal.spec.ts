@@ -44,6 +44,7 @@ describe('IdeaCreationModal', () => {
     uiStore.getSelectionPath.mockReturnValue({ ideas: [], ideaStates: [], phase: null })
 
     wrapper = mount(IdeaCreationModal, {
+      attachTo: document.body,
       global: {
         plugins: [pinia]
       }

@@ -43,6 +43,7 @@ function mountPhaseModal() {
 
   const modalStore = useUIModalStore(pinia)
   const wrapper = mount(PhaseCreationModal, {
+    attachTo: document.body,
     global: {
       plugins: [pinia],
       stubs: {

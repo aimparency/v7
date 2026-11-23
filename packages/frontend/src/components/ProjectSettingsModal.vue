@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, onMounted, onUnmounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useUIModalStore } from '../stores/ui/modal-store'
 import { useProjectStore } from '../stores/project-store'
 import { useDataStore } from '../stores/data'
@@ -11,6 +11,7 @@ import type { AgentType } from '../stores/watchdog'
 import { Check, X } from 'lucide-vue-next'
 import { hasAccounts } from '../utils/runtime-config'
 import { useViewerStore } from '../stores/viewer'
+import { useModalEscape } from '../composables/useModalEscape'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -393,20 +394,10 @@ async function loadAutonomyState() {
   askForHumanOnText.value = policy.askForHumanOn.join(', ')
 }
 
-const blockLeakage = (e: KeyboardEvent) => {
-  // If typing in any input, let it through but stop it from reaching others
-  if (e.target instanceof HTMLInputElement) {
-    e.stopPropagation()
-    return
-  }
-  e.stopPropagation()
-}
-
 onMounted(async () => {
   if (document.activeElement instanceof HTMLElement) {
     document.activeElement.blur()
   }
-  window.addEventListener('keydown', blockLeakage, true)
 
   // Load data
   loading.value = true
@@ -434,15 +425,8 @@ onMounted(async () => {
   }
 })
 
-onUnmounted(() => {
-  window.removeEventListener('keydown', blockLeakage, true)
-})
-
-const handleKeydown = (e: KeyboardEvent) => {
-  if (e.key === 'Escape') modalStore.closeSettingsModal()
-  // Disable enter to save because it conflicts with status editing?
-  // Or just allow it if not in an input.
-}
+// The app's shortcuts stand down while a modal is open (isModalOpen).
+const { armed: escapeArmed } = useModalEscape(() => modalStore.closeSettingsModal())
 
 const addStatus = () => {
   statuses.value.push({ key: 'new-status', color: '#888888' })
@@ -523,6 +507,8 @@ const save = async () => {
     <div class="modal">
       <div class="modal-header">
         <h3>Space settings</h3>
+        <span v-if="escapeArmed" class="hint-text">Esc again closes</span>
+        <button type="button" class="icon-btn" title="Close (Esc)" @click="modalStore.closeSettingsModal()"><X /></button>
       </div>
       
       <div class="modal-body">
@@ -534,7 +520,6 @@ const save = async () => {
               v-model="name" 
               type="text" 
               placeholder="Name of this space"
-              @keydown="handleKeydown"
             />
           </div>
           <div class="form-group">
@@ -585,12 +570,12 @@ const save = async () => {
           <div class="form-group">
             <label>Cost Unit</label>
             <p class="hint-text">What one unit of idea cost means in this space, e.g. "hours" or "€". Shown next to cost fields and told to agents. Leave empty for abstract units.</p>
-            <input v-model="costUnit" type="text" placeholder="abstract units" @keydown="blockLeakage" />
+            <input v-model="costUnit" type="text" placeholder="abstract units" />
           </div>
           <div class="form-group">
             <label>Default Cost</label>
             <p class="hint-text">Cost of new ideas until someone estimates them.</p>
-            <input v-model.number="defaultCost" type="number" min="0" step="any" @keydown="blockLeakage" />
+            <input v-model.number="defaultCost" type="number" min="0" step="any" />
             <p v-if="costSettingsError" class="validation-error" role="alert">{{ costSettingsError }}</p>
           </div>
         </fieldset>
@@ -792,7 +777,6 @@ const save = async () => {
               class="instructions-input"
               rows="4"
               placeholder="Instructions for the coding agent, for this whole space…"
-              @keydown="blockLeakage"
             ></textarea>
           </div>
           <div class="form-group">
@@ -803,7 +787,6 @@ const save = async () => {
               class="supervisor-guidance-input"
               rows="2"
               placeholder="Reminder for the coding agent, for this space…"
-              @keydown="blockLeakage"
             ></textarea>
           </div>
           <div v-if="!accounts" class="form-group">
@@ -868,7 +851,6 @@ const save = async () => {
                   v-model="askForHumanOnText"
                   type="text"
                   placeholder="destructive-git, network, api-keys"
-                  @keydown="handleKeydown"
                 />
               </div>
             </div>
@@ -964,7 +946,10 @@ const save = async () => {
     padding: 1rem;
     border-bottom: 1px solid #555;
     flex-shrink: 0;
-    h3 { margin: 0; }
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    h3 { margin: 0; flex: 1; }
   }
 
   .modal-body {

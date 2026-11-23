@@ -189,6 +189,9 @@ describe('ConnectionDetailsModal', () => {
 
     const reflection = wrapper.findAll('textarea')[1]!
     await reflection.setValue('it held')
+    // The first Escape only leaves the textarea (a vim habit), the second asks.
+    await reflection.trigger('keydown', { key: 'Escape' })
+    expect(wrapper.find('.btn-discard').exists()).toBe(false)
     await reflection.trigger('keydown', { key: 'Escape' })
 
     expect(modalStore.closeConnectionDetailsModal).not.toHaveBeenCalled()
@@ -200,6 +203,7 @@ describe('ConnectionDetailsModal', () => {
     expect((reflection.element as HTMLTextAreaElement).value).toBe('it held')
 
     await reflection.trigger('keydown', { key: 'Escape' })
+    await reflection.trigger('keydown', { key: 'Escape' })
     await wrapper.find('.btn-discard').trigger('click')
     expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
     expect(dataStore.updateConnectionDetails).not.toHaveBeenCalled()
@@ -207,8 +211,11 @@ describe('ConnectionDetailsModal', () => {
     div.remove()
   })
 
-  it('closes on Escape without asking when nothing was edited', async () => {
-    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] } })
+  it('closes on a second Escape from a textarea without asking when nothing was edited', async () => {
+    const wrapper = mount(ConnectionDetailsModal, { global: { plugins: [pinia] }, attachTo: document.body })
+    await wrapper.find('textarea').trigger('keydown', { key: 'Escape' })
+    expect(modalStore.closeConnectionDetailsModal).not.toHaveBeenCalled()
+    expect(wrapper.text()).toContain('Esc again closes')
     await wrapper.find('textarea').trigger('keydown', { key: 'Escape' })
     expect(modalStore.closeConnectionDetailsModal).toHaveBeenCalled()
     wrapper.unmount()

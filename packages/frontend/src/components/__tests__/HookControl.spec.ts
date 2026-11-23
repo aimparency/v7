@@ -96,7 +96,7 @@ describe('HookLoopsModal', () => {
 
     await escape()
     expect(wrapper.emitted('close')).toHaveLength(1)
-    await wrapper.find('button[title="Close (Esc)"]').trigger('click')
+    await wrapper.find('.modal-header button[title="Close"]').trigger('click')
     expect(wrapper.emitted('close')).toHaveLength(2)
 
     await wrapper.find('textarea').setValue('Changed.')

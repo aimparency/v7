@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted, ref } from 'vue'
-import { X } from 'lucide-vue-next'
 import FormModalShell from './FormModalShell.vue'
 import DiscardPrompt from './DiscardPrompt.vue'
 import { useProjectStore } from '../stores/project-store'
@@ -101,9 +100,6 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
 
 <template>
   <FormModalShell :show="true" title="Hook loops" width="min(94vw, 64rem)" :close-on-escape="false" @request-close="requestClose">
-    <template #header-right>
-      <button type="button" class="icon-btn" title="Close (Esc)" @click="requestClose"><X /></button>
-    </template>
     <div class="hook-loops">
       <nav class="loop-list">
         <button

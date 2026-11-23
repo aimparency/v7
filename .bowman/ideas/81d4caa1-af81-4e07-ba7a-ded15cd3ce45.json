@@ -11,7 +11,7 @@
         -3.7,
         -0.59
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "c6cdb537-d734-47ff-94da-269cdcbadc3a",
@@ -19,7 +19,7 @@
         -0.41,
         3.73
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "632f83e7-f22b-4c98-b75b-f1e517bcce98",
@@ -27,7 +27,7 @@
         2.33,
         2.94
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "5c6742e2-5cfe-4fb7-a049-e42eaf5a280c",
@@ -35,7 +35,7 @@
         -1.63,
         3.38
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "44ccf082-6032-49c7-a0dd-e5b4681be2cd",
@@ -43,7 +43,7 @@
         2.09,
         3.12
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "a71ee22c-d7d2-45dc-a17b-00ba7fcadda2",
@@ -51,7 +51,7 @@
         -3.6,
         -1.06
       ],
-      "weight": 8.333333333333334,
+      "weight": 7.641666666666668,
       "hypothesis": "Idea/phase modal keyboard flow belongs to the list-view interaction surface."
     },
     {
@@ -60,7 +60,7 @@
         -1.77,
         3.31
       ],
-      "weight": 8.333333333333334,
+      "weight": 7.641666666666668,
       "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
@@ -69,7 +69,7 @@
         -3.42,
         1.54
       ],
-      "weight": 8.333333333333334,
+      "weight": 7.641666666666668,
       "hypothesis": "Grouped under the structural list/modal interaction area."
     },
     {
@@ -78,7 +78,7 @@
         -2.2,
         3.03
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "2e7aa327-e5ee-4622-858e-ab6d1877a009",
@@ -86,7 +86,7 @@
         -3.73,
         0.37
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "b605abd8-948e-4795-a634-ecc73c9e4a27",
@@ -94,7 +94,7 @@
         2.47,
         -2.82
       ],
-      "weight": 8.333333333333334
+      "weight": 7.641666666666668
     },
     {
       "ideaId": "155226ac-22fa-4c39-95dc-e34183b84347",
@@ -102,8 +102,16 @@
         1.61,
         3.39
       ],
-      "weight": 8.333333333333334,
+      "weight": 7.641666666666668,
       "hypothesis": "Grouped under the structural list/modal interaction area."
+    },
+    {
+      "ideaId": "c12eff30-145a-490c-a865-285e6969f0ff",
+      "relativePosition": [
+        0.05,
+        -3.75
+      ],
+      "weight": 8.3
     }
   ],
   "supportedIdeas": [

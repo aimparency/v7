@@ -4,6 +4,7 @@ import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useToastStore } from '../stores/toast'
 import { CircleCheck, TriangleAlert, Wrench } from 'lucide-vue-next'
+import { useModalEscape } from '../composables/useModalEscape'
 
 const emit = defineEmits(['close'])
 
@@ -45,6 +46,7 @@ const handleFix = async () => {
 const close = () => {
     emit('close')
 }
+useModalEscape(close)
 </script>
 
 <template>

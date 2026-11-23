@@ -55,6 +55,7 @@ function mountEditModal(description = 'Old description', statusState = 'open', a
   })
 
   const wrapper = mount(IdeaEditModal, {
+    attachTo: document.body,
     props: {
       show: false,
       ideaId: 'idea-1'

@@ -1,6 +1,8 @@
 <script setup lang="ts">
+import { X } from 'lucide-vue-next'
 import CopyableMetaId from './CopyableMetaId.vue'
 import { isModalConfirmKey } from '../stores/ui/modal-helpers'
+import { useModalEscape } from '../composables/useModalEscape'
 
 const props = withDefaults(defineProps<{
   show: boolean
@@ -38,14 +40,10 @@ const handleKeydown = (event: KeyboardEvent) => {
     event.preventDefault()
     event.stopPropagation()
     props.onConfirm()
-    return
-  }
-  if (props.closeOnEscape && event.key === 'Escape' && !event.defaultPrevented) {
-    event.preventDefault()
-    event.stopPropagation()
-    emit('requestClose')
   }
 }
+
+const { armed } = useModalEscape(() => emit('requestClose'), { open: () => props.show, enabled: () => props.closeOnEscape })
 </script>
 
 <template>
@@ -71,6 +69,8 @@ const handleKeydown = (event: KeyboardEvent) => {
             </div>
             <div class="modal-header-right">
               <slot name="header-right" />
+              <span v-if="armed" class="hint">Esc again closes</span>
+              <button type="button" class="icon-btn" :title="closeOnEscape ? 'Close (Esc)' : 'Close'" @click="emit('requestClose')"><X /></button>
             </div>
           </div>
         </slot>
@@ -131,6 +131,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 .modal-header-right {
   display: flex;
   align-items: center;
+  gap: 0.375rem;
 }
 
 .modal-header h2 {
