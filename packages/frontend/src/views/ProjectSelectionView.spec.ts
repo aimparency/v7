@@ -309,6 +309,19 @@ describe('ProjectSelectionView on a server with accounts', () => {
     expect(mountServer('/srv/repo').find('.select-project').text()).toBe('New space')
   })
 
+  it('with nothing typed shows a disabled New space and lists the ways to add one, the server path for admins only', async () => {
+    const admin = mountServer('', { serverAdmin: true })
+    await flushPromises()
+    expect(admin.find('.select-project').text()).toBe('New space')
+    expect(admin.find('.select-project').attributes('disabled')).toBeDefined()
+    const ways = (wrapper: ReturnType<typeof mountView>) => wrapper.findAll('.ways strong').map(way => way.text())
+    expect(ways(admin)).toEqual(['a name', 'a Git URL (GitHub, …)', 'a path on this server (/…)'])
+    expect(ways(mountServer(''))).toEqual(['a name', 'a Git URL (GitHub, …)'])
+    await admin.setProps({ modelValue: 'My idea' })
+    expect(admin.find('.ways').exists()).toBe(false)
+    expect(admin.find('.select-project').attributes('disabled')).toBeUndefined()
+  })
+
   it('asks a visitor to log in before creating a space', async () => {
     const wrapper = mountServer('My idea', { name: null, canCreateGraphs: false })
     await flushPromises()

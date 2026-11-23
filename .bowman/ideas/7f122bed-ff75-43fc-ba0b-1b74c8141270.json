@@ -11,7 +11,7 @@
         -0.07046188538731572,
         2.440867069963804
       ],
-      "weight": 1
+      "weight": 17
     },
     {
       "ideaId": "6079181f-923d-4d17-9488-6ac6b343ea06",
@@ -19,7 +19,7 @@
         0.9256336533811622,
         -2.3223269235248174
       ],
-      "weight": 1,
+      "weight": 17,
       "hypothesis": "Project URL restoration belongs to project loading and switching."
     },
     {
@@ -28,7 +28,7 @@
         -1.76,
         1.77
       ],
-      "weight": 1
+      "weight": 17
     },
     {
       "ideaId": "1bbf67a3-a365-4f2c-a7e8-e18b717a40b2",
@@ -36,8 +36,16 @@
         -2.16,
         -3.06
       ],
-      "weight": 1,
+      "weight": 17,
       "hypothesis": "Focusing the path field improves the project-loading page's immediate keyboard workflow."
+    },
+    {
+      "ideaId": "4de25804-92bf-4b2e-91ab-a66426fbe129",
+      "relativePosition": [
+        3.24,
+        -1.88
+      ],
+      "weight": 15
     }
   ],
   "supportedIdeas": [
@@ -51,7 +59,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 1,
+  "selfWeight": 17,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

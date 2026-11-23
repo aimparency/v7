@@ -291,11 +291,20 @@ const addHint = computed(() => {
   if (!accounts || mayCreate.value) return ''
   return viewer.name ? 'Creating spaces here is for selected accounts.' : 'Log in to create a space.'
 })
-const placeholder = computed(() => {
-  if (!accounts) return 'Find a space, or a folder path or Git URL to open'
-  const adds = [mayCreate.value && 'name a new one', mayAddRemote.value && 'paste a Git URL', viewer.serverAdmin && 'a path on this server'].filter(Boolean)
-  return adds.length ? `Find a space, ${adds.join(', ')}` : 'Find a space'
-})
+const placeholder = computed(() => ways.value.length ? 'Find a space, or add one' : 'Find a space')
+
+// The ways to add a space, shown while nothing is typed: each is what the
+// box does with that kind of text.
+const ways = computed(() => accounts
+  ? [
+      mayCreate.value && { what: 'a name', does: 'creates a new space' },
+      mayAddRemote.value && { what: 'a Git URL (GitHub, …)', does: 'adds the space from that repository' },
+      viewer.serverAdmin && { what: 'a path on this server (/…)', does: 'adds the space in that folder' }
+    ].filter(way => !!way)
+  : [
+      { what: 'a folder path', does: 'opens its space, or creates one there' },
+      { what: 'a Git URL (GitHub, …)', does: 'opens its space read-only' }
+    ])
 
 const listRef = ref<HTMLElement>()
 const inputRef = ref<HTMLInputElement>()
@@ -407,6 +416,9 @@ onUnmounted(revokeThumbnails)
       </div>
       <button class="select-project" :disabled="!primary || primary.disabled || busy" @click="runPrimary">{{ primary?.label ?? 'Open' }}</button>
     </div>
+    <ul v-if="!typed && ways.length" class="ways">
+      <li v-for="way in ways" :key="way.what"><strong>{{ way.what }}</strong> {{ way.does }}</li>
+    </ul>
     <p v-if="addHint" class="empty-state">{{ addHint }}</p>
     <p v-if="offersDeployKey" class="empty-state">
       Private repository, or one without a space yet?
@@ -557,6 +569,12 @@ onUnmounted(revokeThumbnails)
 .project-input:focus {
   outline: none;
   border-color: #007acc;
+}
+
+.ways {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: #999;
 }
 
 .project-input::placeholder {

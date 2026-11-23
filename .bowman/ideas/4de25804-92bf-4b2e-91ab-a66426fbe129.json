@@ -1,0 +1,24 @@
+{
+  "id": "4de25804-92bf-4b2e-91ab-a66426fbe129",
+  "text": "Spaces page shows how to add a space before anything is typed",
+  "description": "Felix 2026-11-23: the spaces page should show a create button, disabled until typing, and the ways to create a space (from a GitHub repo, at a path). All ways already existed through the one box (name → New space, Git URL → Add from Git, /path → Add from server for admins; locally folder path or Git URL), but nothing showed them before typing.",
+  "archived": false,
+  "color": "#2d5866",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "7f122bed-ff75-43fc-ba0b-1b74c8141270"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "ba90596e and the next commit: with an empty box the button reads New space (Open space locally), disabled; below it a list of what each kind of text does, from the same rights as the actions (name if mayCreate, Git URL if mayAddRemote, server path for server admins; locally folder path and Git URL); it disappears when typing starts. Placeholder shortened to 'Find a space, or add one'. Evidence: ProjectSelectionView.spec new case (admin sees three ways, others two, button disabled until typing) plus existing 20; App.spec; vue-tsc clean. Not looked at in the browser.",
+    "date": 1795477970048
+  },
+  "intrinsicValue": 0,
+  "cost": 0.3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
