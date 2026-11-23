@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "unclear",
-    "comment": "Question for Felix: store realized cost on ideas in USD (what the harness measures), or in the project's abstract cost unit (what estimates use)? Options: (a) USD field `realizedCostUsd`, calibration converts with a configurable rate; (b) cost-unit field, with the USD-per-unit rate in meta.json; (c) no data model change: keep it in traces and export a calibration CSV.",
-    "date": 1794161142163
+    "state": "open",
+    "comment": "Felix 2026-11-23 decided: store it in dollars (option a, e.g. realizedCostUsd), the nominal amount at the time it was spent. Conversions are computed, not stored: interest compounding (5c1ccaa8) and the intelligence-growth discount (760d59dd). Still a data model change: migration per AGENTS.md.",
+    "date": 1795472031310
   },
   "intrinsicValue": 0,
   "cost": 2,

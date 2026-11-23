@@ -1,0 +1,24 @@
+{
+  "id": "760d59dd-08ac-4485-b476-61026d8ff281",
+  "text": "Discount costs by intelligence growth: the same work costs fewer dollars as AI gets cheaper per capability",
+  "description": "Felix 2026-11-23: discount because of intelligence growth. The price of a given level of AI capability falls fast (per-token prices for the same benchmark level have dropped by large factors per year). Two uses: (1) Past: to compare a realized cost from months ago with today's estimates, convert it to what the same work would cost now: cost_now = cost_then · g^(-days/365), where g is the yearly factor by which capability gets cheaper. (2) Future: an idea that is mostly AI work gets cheaper the longer it waits, so priority can account for that: doing it now has a price (paying more today), and waiting has a price (the value arrives later, discounted by the existing annual rate). Where intelligence gets cheaper faster than value is discounted, AI-heavy work that isn't urgent should wait, and human-heavy work doesn't get cheaper. g starts as a configurable assumption, later measured from the harness's own price table over time (same model tier, price per million tokens). Pulls the opposite way of the interest compounding (sibling idea).",
+  "archived": false,
+  "color": "#2d3c66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1795472024058
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

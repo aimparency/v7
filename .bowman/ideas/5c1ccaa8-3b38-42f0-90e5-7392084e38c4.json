@@ -1,0 +1,24 @@
+{
+  "id": "5c1ccaa8-3b38-42f0-90e5-7392084e38c4",
+  "text": "Compound past dollar costs to today's money: a dollar spent earlier was worth more (interest)",
+  "description": "Felix 2026-11-23, with the decision to store realized harness cost in USD (675fce29): money gets cheaper over time, so a dollar spent back then was worth more, like interest. When realized costs from different months are summed or compared with estimates, compound each to today's money: cost_today = cost_then · (1 + r)^(days/365). r is the same annual rate the model already uses for cost of capital (ANNUAL_DISCOUNT_RATE, 10%), or a per-project setting. It applies wherever past USD costs are added up: an idea's realized total, a branch's aggregated cost, the calibration script. The stored value stays the nominal dollars at the time; compounding is computed, so git keeps the raw facts. Pulls the opposite way of the intelligence-growth discount (sibling idea): interest makes past dollars count more, cheaper intelligence makes past work count less.",
+  "archived": false,
+  "color": "#4b662d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "",
+    "date": 1795472023532
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

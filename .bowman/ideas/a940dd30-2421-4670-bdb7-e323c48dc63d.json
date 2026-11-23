@@ -1,7 +1,7 @@
 {
   "id": "a940dd30-2421-4670-bdb7-e323c48dc63d",
-  "text": "Prepared human step as structured data: action, artifact links (draft URL, file), question and options, shown in the review inbox",
-  "description": "OBSERVED 2026-11-23: the loop correctly demands that every idea waiting on the human has its step prepared. In practice the agent stuffed long text into status comments: a whole draft message to Felix Fritsch, email text for the EYE office, Gmail draft references, file paths, 'DECISION: (a)/(b)/(c)'. The inbox (90cf0309) shows that as one blob. The human can't click to the Gmail draft or pick an option.\n\nProposal: an optional structured humanStep on an idea: {kind: send | decide | do, summary, artifacts: [{label, url or path}], options: [{label, consequence}], recommended}. The MCP accepts it in update_idea. The review inbox renders it: buttons to open artifacts, option chips that record the choice as the status comment and move the idea back to open for the agent.\n\nRefuted if humans prefer the free-text comment.",
+  "text": "Quick decisions on waiting ideas: options as proposal children, clickable links in status comments",
+  "description": "OBSERVED 2026-11-23: the agent stuffed long text into status comments when an idea waited on Felix: draft messages, Gmail draft references, file paths, 'DECISION: (a)/(b)/(c)'. The inbox shows it as one blob; the human can't click the draft or pick an option.\n\nFelix 2026-11-23: loves the goal (work through human-dependent ideas quickly, decide fast) but doesn't want extra data for one specific state. Shape agreed instead, using what exists:\n(1) Options as child ideas: the agent adds each choice as a child of the waiting idea with status ai-proposition, its description saying what the choice leads to. Deciding = accepting one (it turns open, becomes the next work) and cancelling the others. The review inbox shows a waiting idea with its proposal children as buttons.\n(2) Links in status comments, for every status: URLs and file paths render clickable, so a prepared draft or file is one click away. Display only, no new data.\nThe hook/MCP guidance tells agents to prepare decisions this way.\n\nRefuted if Felix still ends up reading long comments to decide.",
   "archived": false,
   "color": "#2c4c66",
   "tags": [],
@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468098054
+    "state": "open",
+    "comment": "Accepted by Felix 2026-11-23 in this shape (no new field).",
+    "date": 1795472031426
   },
   "intrinsicValue": 0,
   "cost": 2,
