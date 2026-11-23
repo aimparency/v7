@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "0ee33bd2, cfbc73f2 (2026-11-20). Evidence: auth/server-restart.test.ts (no supervisor: refused and not offered; server admin only; exits with 75). Live on ideas.entour.fyi: restart back in ~7 s (status=75/TEMPFAIL, then systemd restart); pull-and-restart with nothing new to pull. The install and build path through the menu has not run live yet.",
+    "comment": "0ee33bd2, cfbc73f2 (2026-11-20). Evidence: auth/server-restart.test.ts (no supervisor: refused and not offered; server admin only; exits with 75). Live on ideas.entour.fyi: restart back in ~7 s (status=75/TEMPFAIL, then systemd restart); pull-and-restart with nothing new to pull. The install and build path through the menu has not run live yet.\n\nb6d338b4 (2026-11-24, Felix: 'when I run npm run dev, can we make that also supervised'): the local stack (pnpm dev, pnpm start without accounts) is its own supervisor. It passes AIMPARENCY_STACK_PID; the backend sends it SIGUSR2, and it stops every process of the stack and starts them again (works under tsx watch, which never exits). Pull main from source only installs, no build. The power menu is a shared ServerPowerMenu.vue, shown in the local header next to the MCP button too. Evidence: a new server-restart test (the local viewer gets restartable, the backend signals the stack pid and doesn't exit), ServerPowerMenu.spec (confirm/cancel, restart, pull), LoginControl spec 11/11 with it, vue-tsc and backend tsc clean, and the runner's restart loop run with dummy processes (signal → both stopped → started again). Not yet run against the real dev stack: it needs one manual restart of pnpm dev first.",
     "date": 1795194787676
   },
   "intrinsicValue": 0,
