@@ -192,7 +192,7 @@ const MCP_LOGIN_PATHS = /^\/(authorize|token|register|\.well-known\/oauth-[a-z-]
 
 // Streams both ways, so the MCP's server-sent events pass through unbuffered.
 // The visitor's address goes along, so the MCP server's limits count per visitor.
-function proxy(req: http.IncomingMessage, res: http.ServerResponse, port: number) {
+export function proxy(req: http.IncomingMessage, res: http.ServerResponse, port: number) {
   const forwarded = [req.headers['x-forwarded-for'], req.socket.remoteAddress].flat().filter(Boolean).join(', ');
   const upstream = http.request(
     { host: '127.0.0.1', port, path: req.url, method: req.method, headers: { ...req.headers, 'x-forwarded-for': forwarded } },
@@ -202,9 +202,14 @@ function proxy(req: http.IncomingMessage, res: http.ServerResponse, port: number
     }
   );
   upstream.on('error', () => {
+    if (res.destroyed) return;
     if (!res.headersSent) res.writeHead(502, { 'content-type': 'text/plain' });
     res.end('The MCP server is not running.');
   });
+  // The client went away: so does the request to the MCP server. An MCP
+  // session lives as long as its event stream, and the server holds only so
+  // many: kept open, they piled up until it took no more ("Too many MCP sessions").
+  res.on('close', () => upstream.destroy());
   req.pipe(upstream);
 }
 
