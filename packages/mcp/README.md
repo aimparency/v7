@@ -108,6 +108,10 @@ claude mcp add --transport sse aimparency "https://<host>/mcp/login/sse"
 
 ## Choosing `graph`
 
+Over stdio, `graph` defaults to the graph of the directory the client started
+the server in (the nearest `.bowman` upwards, within that repository). Name a
+graph only to work on another one.
+
 Aimparency stores project state inside a `.bowman` directory, but MCP calls can usually use either of these absolute paths:
 
 - the repo or workspace root, for example `/home/user/my-project`

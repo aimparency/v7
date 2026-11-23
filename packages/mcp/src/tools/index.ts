@@ -18,8 +18,9 @@ export function availableTools(withAccounts: boolean) {
   return withAccounts ? TOOLS.filter((tool) => !LOCAL_ONLY_TOOLS.has(tool.name)) : TOOLS;
 }
 
-// A session connected through a graph's own address (<host>/spaces/<slug>/mcp/sse)
-// works on that graph: its tools take `graph` as optional.
+// A session with a graph of its own (connected through the graph's address,
+// <host>/spaces/<slug>/mcp/sse, or started in a repo with a .bowman) works on
+// that graph unless a call names another: its tools take `graph` as optional.
 export function toolForGraph(tool: ToolDefinition, graph: string | undefined): Pick<ToolDefinition, "name" | "description" | "inputSchema"> {
   const { name, description, inputSchema } = tool;
   if (!graph || !inputSchema.required?.includes("graph")) return { name, description, inputSchema };
@@ -29,7 +30,7 @@ export function toolForGraph(tool: ToolDefinition, graph: string | undefined): P
     inputSchema: {
       ...inputSchema,
       required: inputSchema.required.filter((property) => property !== "graph"),
-      properties: { ...inputSchema.properties, graph: { type: "string", description: `Leave out: this session works on the graph "${graph}"` } },
+      properties: { ...inputSchema.properties, graph: { type: "string", description: `Leave out to work on this session's graph "${graph}"; name another graph to work there` } },
     },
   };
 }

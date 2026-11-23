@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468098446
+    "state": "implemented",
+    "comment": "Accepted by Felix ('can we work on them?'). The stdio server now takes the graph of its working directory (graphOfDirectory in packages/mcp/src/working-graph.ts: the nearest .bowman upwards, never beyond the repository root) as the session graph. It reuses the mechanism the graph-address SSE sessions already had: tools list `graph` as optional, and the schema names which graph a call without it uses ('Leave out to work on this session's graph \"…\"; name another graph to work there'). Calls that name a graph still go there. A repo without a .bowman keeps `graph` required. Evidence: new working-graph.test.ts plus tools-with-accounts tests pass (4/4), mcp tsc clean, and the server starts from ~/dev/ways-of-will. Takes effect on the next /mcp reconnect. Refutation test still open: watch for writes to the wrong graph.",
+    "date": 1795468920171
   },
   "intrinsicValue": 0,
   "cost": 0.5,
