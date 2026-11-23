@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "1aee99ba (2026-11-20): DeployKeyModal.vue, graphs.addRemote with key, remote-graph.ts clones with the key and starts .bowman in an empty repository. Evidence: graphs/remote-graph.test.ts against local repositories. Not yet tried against GitHub: Felix adds the game repository this way next.",
-    "date": 1795194758432
+    "state": "human-dependent",
+    "comment": "Built and tested against local repositories (1aee99ba, remote-graph.test.ts). What remains needs Felix's GitHub account: (1) Start page → 'Add it with a deploy key' → paste the game repository's SSH URL (git@github.com:<owner>/<repo>.git). (2) Copy the public key, click 'Open the repository's deploy keys on GitHub', add it with 'Allow write access'. (3) Back in Aimparency, confirm: the space opens (a new .bowman is committed and pushed if the repo had none). (4) Edit one idea and check that the commit shows up on GitHub. If a step fails, the backend log line is enough for the next agent to fix it.",
+    "date": 1795469207194
   },
   "intrinsicValue": 0,
   "cost": 3,
