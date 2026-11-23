@@ -72,7 +72,8 @@
         3.04
       ],
       "weight": 3,
-      "hypothesis": "Agents working in many graphs hit each graph's own status vocabulary; matching schemas and hook wording to it prevents failed writes and lost meaning."
+      "hypothesis": "Agents working in many graphs hit each graph's own status vocabulary; matching schemas and hook wording to it prevents failed writes and lost meaning.",
+      "reflection": "Held: the gap between the advertised and the defined statuses was the failure. Adding on first use closes it for every graph, without a migration and without asking which graphs to touch."
     },
     {
       "ideaId": "4537af0f-7a53-46b2-94ee-425a4e3f3cab",

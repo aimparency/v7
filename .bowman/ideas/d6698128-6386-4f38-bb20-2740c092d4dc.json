@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "ai-proposition",
-    "comment": "Proposed by Claude 2026-11-23 from a cross-repo session (see description).",
-    "date": 1795468097331
+    "state": "implemented",
+    "comment": "Accepted by Felix ('can we work on them?'). The error already named the graph's statuses ('Unknown status X. Known: …', e8ac8883). New: a built-in status that an older graph lacks (human-dependent, ai-proposition, review, …) joins that graph's meta.json statuses the first time it's used, under the meta lock, with its default color. Typos still fail. So the tool schema and the Stop hook's 'human-dependent' instruction are true for every graph, with no blanket migration of graphs that never use it, and the hook text needs no 'if the graph has it'. Evidence: new test 'a built-in status an older project lacks joins its statuses on first use' in backend server.test.ts; all 48 server tests pass (Node 22, the stack's runtime) and backend tsc is clean.",
+    "date": 1795468819079
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -1004,6 +1004,22 @@ test('idea status must be one of the project statuses (or archived)', async () =
   assert.strictEqual(edited.text, 'Edited');
 });
 
+test('a built-in status an older project lacks joins its statuses on first use', async () => {
+  const metaPath = path.join(testProjectPath, 'meta.json');
+  await fs.ensureDir(testProjectPath);
+  await fs.writeJson(metaPath, { name: 'Older project', color: '#007acc', statuses:[{ key: 'open', color: '#ffcc80', ongoing: true }, { key: 'custom', color: '#123456', ongoing: false }] });
+  const idea = await caller.idea.createFloatingIdea({ graph: testProjectPath, idea: { text: 'Waits on a person' } });
+
+  const blocked = await caller.idea.update({ graph: testProjectPath, ideaId: idea.id, idea: { status: { state: 'human-dependent' } } });
+  assert.strictEqual(blocked.status.state, 'human-dependent');
+  const statuses = (await fs.readJson(metaPath)).statuses.map((status: { key: string }) => status.key);
+  assert.deepStrictEqual(statuses, ['open', 'custom', 'human-dependent']);
+  await assert.rejects(
+    caller.idea.update({ graph: testProjectPath, ideaId: idea.id, idea: { status: { state: 'human-dependency' } } }),
+    /Unknown status 'human-dependency'. Known: open, custom, human-dependent, archived/
+  );
+});
+
 test('idea.update - persists custom color', async () => {
   const ideaResult = await caller.idea.createFloatingIdea({
     graph: testProjectPath,

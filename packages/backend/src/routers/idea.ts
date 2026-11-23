@@ -13,7 +13,7 @@ import { IdeaNotFoundError, readIdea, listIdeas, writeIdea, updateIdea, connectI
 import { fetchOpenGithubIssues, parseGithubRepository } from '../github-issues.js';
 import { findSpecTaskFiles, parseSpecTasks, specTaskMarker } from '../spec-tasks.js';
 import { readPhase } from '../storage/phases.js';
-import { readProjectMeta } from '../storage/project.js';
+import { readProjectMeta, updateProjectMeta } from '../storage/project.js';
 import { deleteIdeas, detachIdea, disconnectIdeas } from '../storage/idea-removal.js';
 import { commitIdeaToPhase, removeIdeaFromPhase } from '../storage/commitments.js';
 import { moveIdea } from '../storage/idea-move.js';
@@ -63,10 +63,19 @@ const refreshEmbeddingInBackground = (projectPath: string, idea: Idea) => {
 
 // A state outside the project's statuses (e.g. a typo like 'human-dependency')
 // would silently fall out of every status-based view and rule. 'archived' is
-// the archive mechanism, not a configurable status.
+// the archive mechanism, not a configurable status. A built-in status that an
+// older project predates (agents are told to park ideas as human-dependent)
+// joins its statuses on first use instead of failing.
 async function assertKnownState(projectPath: string, state: string) {
   const statuses = (await readProjectMeta(projectPath)).statuses ?? INITIAL_STATES;
   if (state === 'archived' || statuses.some(status => status.key === state)) return;
+  const builtIn = INITIAL_STATES.find(status => status.key === state);
+  if (builtIn) {
+    await updateProjectMeta(projectPath, meta => meta.statuses?.some(status => status.key === state)
+      ? meta
+      : { ...meta, statuses: [...(meta.statuses ?? INITIAL_STATES), builtIn] });
+    return;
+  }
   throw new Error(`Unknown status '${state}'. Known: ${[...statuses.map(status => status.key), 'archived'].join(', ')}`);
 }
 
