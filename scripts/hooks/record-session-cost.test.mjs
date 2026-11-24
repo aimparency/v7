@@ -44,6 +44,13 @@ test('the ideas a turn changed: committed since the last stop, and in the workin
     const later = new Date(Date.now() + 3_600_000).toISOString();
     fs.writeFileSync(path.join(repo, '.bowman', 'ideas', `${committed}.json`), JSON.stringify({ realizedCostUsd: 0.5 }));
     assert.deepEqual(changedIdeas(repo, later), [uncommitted]);
+    // A reflection on a connection lands in the parent's file; the work was on the child.
+    fs.writeFileSync(path.join(repo, '.bowman', 'ideas', `${committed}.json`), JSON.stringify({ supportingConnections: [{ ideaId: uncommitted, reflection: 'held' }] }));
+    git('add', '.');
+    git('commit', '-q', '-m', 'parent with connection');
+    const afterCommit = new Date(Date.now() + 1000).toISOString();
+    fs.writeFileSync(path.join(repo, '.bowman', 'ideas', `${committed}.json`), JSON.stringify({ supportingConnections: [{ ideaId: uncommitted, reflection: 'did not hold' }] }));
+    assert.deepEqual(changedIdeas(repo, afterCommit), []);
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
   }

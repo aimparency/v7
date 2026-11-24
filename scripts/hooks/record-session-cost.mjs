@@ -68,7 +68,7 @@ const IDEA_FILE = /^\.bowman\/ideas\/([0-9a-f-]{36})\.json$/;
 /**
  * Ideas the turn changed since `since` (ISO time): their files differ from the
  * state at that time, in commits or in the working tree. A change of
- * realizedCostUsd alone is this recorder's own write, not the turn's work.
+ * realizedCostUsd or of a connection's reflection alone is not the turn's work on it.
  */
 export function changedIdeas(repoRoot, since) {
   const git = (...args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -76,10 +76,13 @@ export function changedIdeas(repoRoot, since) {
   const working = git('status', '--porcelain', '--untracked-files=all', '--', '.bowman/ideas').split('\n').map(line => line.slice(3));
   const candidates = [...new Set([...committed, ...working].map(file => file.trim()).filter(file => IDEA_FILE.test(file)))];
   const before = git('rev-list', '-1', `--before=${since}`, 'HEAD').trim();
+  // Neither the recorder's own write nor a reflection on a connection (stored
+  // in the parent's file while the turn worked on the child) is work on the idea.
   const withoutCost = (text) => {
     try {
-      const { realizedCostUsd: _cost, ...rest } = JSON.parse(text);
-      return JSON.stringify(rest);
+      const { realizedCostUsd: _cost, supportingConnections, ...rest } = JSON.parse(text);
+      const connections = (supportingConnections ?? []).map(({ reflection: _reflection, ...connection }) => connection);
+      return JSON.stringify({ ...rest, supportingConnections: connections });
     } catch {
       return text;
     }
