@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
+    "comment": "RESEARCHED 2026-11-24 (claude-api reference, price table cached 2026-11-03; API list prices per million input/output tokens): within each Anthropic tier, each newer, more capable model costs the same or less: Opus 4.6/4.7/4.8/5 $5/$25 → Opus 5.5 $4/$20 (−20%); Sonnet 4.6 $3/$15 → Sonnet 5 and 5.5 $2/$10 (−33%); Fable 5 and 5.1 $10/$50 → Fable 5.2 $8/$40 (−20%); Haiku 4.5 $1/$5 → Haiku 5.5 $0.10/$0.50 (−90%, below 100K tokens); cache reads on Opus 5.5 at 0.05× input vs 0.1× before. INFERRED: the price of a fixed capability falls faster than these per-tier steps, since each step also raises capability. The table has no release dates, so it gives no yearly g; next step as the idea says: keep harness.json prices dated (git history of .bowman/harness.json is the record) and estimate g from same-tier price changes over time. Until then a configurable g is a guess.",
     "date": 1795472024058
   },
   "intrinsicValue": 0,
