@@ -200,8 +200,8 @@ type Entry = {
   find?: { from: string, identity: SpaceIdentity }
   /** The owner's space: the trash deletes it (restorable). */
   remove?: () => void
-  /** What e (or the pencil) copies into the box. */
-  edit: string
+  /** A folder path: e (or the pencil) copies it into the box to change it before opening. */
+  edit?: string
   open: () => void
 }
 type Section = { id: string, title: string, empty?: string, entries: Entry[] }
@@ -220,7 +220,6 @@ const spaceEntry = (space: Space): Entry => ({
   searchable: [space.name.toLowerCase(), space.slug],
   thumbnail: space.slug,
   color: space.color,
-  edit: space.slug,
   remove: space.right === 'owner' ? () => deleteSpace(space.slug) : undefined,
   open: () => emit('open-space', space.slug)
 })
@@ -270,7 +269,6 @@ const deletedEntries = computed<Entry[]>(() => deletedSpaces.value.map(space => 
   searchable: [space.name.toLowerCase(), space.slug],
   thumbnail: space.slug,
   color: space.color,
-  edit: space.slug,
   open: () => restoreSpace(space.slug)
 })))
 
@@ -385,8 +383,8 @@ const onInputDown = (event: KeyboardEvent) => {
 const pendingRemoval = ref('')
 watch(selectedIndex, () => { pendingRemoval.value = '' })
 
-const copyIntoBox = (entry: Entry) => {
-  emit('update:modelValue', entry.edit)
+const copyIntoBox = (path: string) => {
+  emit('update:modelValue', path)
   focusInput()
 }
 
@@ -409,7 +407,7 @@ const onListKeydown = (event: KeyboardEvent) => {
     focusInput()
   } else if (key === 'k' || key === 'ArrowUp' || key === 'Tab') focusResult(selectedIndex.value - 1)
   else if (key === 'e') {
-    if (entry) copyIntoBox(entry)
+    if (entry?.edit) copyIntoBox(entry.edit)
     else focusInput()
   } else return
   event.preventDefault()
@@ -510,13 +508,13 @@ onUnmounted(revokeThumbnails)
               @click.stop="entry.open()"
             ><RotateCcw /></button>
             <button
-              v-else
+              v-else-if="entry.edit"
               type="button"
               class="edit-button"
               tabindex="-1"
               title="Into the box, to change before opening (e)"
               aria-label="Into the box, to change before opening"
-              @click.stop="copyIntoBox(entry)"
+              @click.stop="copyIntoBox(entry.edit)"
             ><Pencil /></button>
             <button
               v-if="entry.find"

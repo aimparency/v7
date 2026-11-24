@@ -211,6 +211,12 @@ describe('ProjectSelectionView on a server with accounts', () => {
     expect(wrapper.emitted('open-space')).toEqual([['hack-the-hub']])
   })
 
+  it('offers no pencil for a server space: there is no path to change before opening', async () => {
+    const wrapper = mountServer('', {}, true)
+    await flushPromises()
+    expect(wrapper.find('[aria-label="Into the box, to change before opening"]').exists()).toBe(false)
+  })
+
   it('shows the recently opened spaces first, with the same keys as on this machine', async () => {
     const wrapper = mount(ProjectSelectionView, {
       attachTo: document.body,

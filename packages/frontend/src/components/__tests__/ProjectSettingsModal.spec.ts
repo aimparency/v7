@@ -4,6 +4,7 @@ import { createTestingPinia } from '@pinia/testing'
 import ProjectSettingsModal from '../ProjectSettingsModal.vue'
 import { useDataStore } from '../../stores/data'
 import { useProjectStore } from '../../stores/project-store'
+import { useUIModalStore } from '../../stores/ui/modal-store'
 
 const { listMock, registerMock, unregisterMock, discoverMock, policy } = vi.hoisted(() => ({
   listMock: vi.fn(),
@@ -158,6 +159,33 @@ describe('ProjectSettingsModal linked repos', () => {
         supervisorGuidancePrefix: 'You can improve this system.'
       })
     )
+  })
+
+  it('saves with Enter in any field, like Edit Idea, and closes', async () => {
+    listMock.mockResolvedValue([])
+    discoverMock.mockResolvedValue({ projects: [], rootsScanned: [] })
+    const { wrapper, dataStore } = mountModal()
+    await flushPromises()
+
+    const subtitle = wrapper.find('input[placeholder="In one line, what this space is about"]')
+    await subtitle.setValue('A garden of ideas')
+    await subtitle.trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(dataStore.updateProjectMeta).toHaveBeenCalledWith(SELF_BOWMAN, expect.objectContaining({ subtitle: 'A garden of ideas' }))
+    expect(useUIModalStore().closeSettingsModal).toHaveBeenCalled()
+  })
+
+  it('keeps Enter for a field\'s own action instead of saving', async () => {
+    listMock.mockResolvedValue([])
+    discoverMock.mockResolvedValue({ projects: [], rootsScanned: [] })
+    const { wrapper, dataStore } = mountModal()
+    await flushPromises()
+
+    await wrapper.find('input[placeholder="owner/repo or github.com URL"]').trigger('keydown', { key: 'Enter' })
+    await flushPromises()
+
+    expect(dataStore.updateProjectMeta).not.toHaveBeenCalled()
   })
 
   it('saves each status\'s prompts-reflection flag as an explicit boolean', async () => {
