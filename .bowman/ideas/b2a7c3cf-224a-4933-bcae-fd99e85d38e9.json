@@ -50,7 +50,7 @@
       ],
       "weight": 15,
       "hypothesis": "Hook-driven sessions are where most work happens today; recording their cost gives the calibration its 30+ pairs within weeks.",
-      "reflection": "Mechanism confirmed 2026-11-24 16:50: the first real Stop after the commit put $0.5448 (2.19M cache reads, 5.4k 1h writes, 3.2k out) on this idea alone. Whether it yields 30+ estimate/actual pairs within weeks is still open: check how many ideas carry realizedCostUsd around 2026-12-08, and how often turns touch many ideas at once (the noise risk)."
+      "reflection": "Mechanism confirmed 2026-11-24 16:50 (first real record, $0.5448). After 16 priced turns: $20.13 API-equivalent, $17.54 attributed to ideas, largest 74a932da $4.89. Noise seen: a reflection on a parent connection is stored in the parent's file, so containers (d4203221 got $1.62) collect cost of their children's turns; for calibration, compare leaves only or skip ideas whose only change in a turn was a reflection. Whether 30+ estimate/actual pairs arrive within weeks: check around 2026-12-08."
     }
   ],
   "supportedIdeas": [
@@ -64,9 +64,9 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "realizedCostUsd": 0.22438,
   "selfWeight": 18.36,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "realizedCostUsd": 0.22438
+  "valueVariance": 0
 }
