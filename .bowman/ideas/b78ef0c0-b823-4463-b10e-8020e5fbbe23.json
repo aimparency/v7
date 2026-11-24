@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Accepted by Felix 2026-11-24; waits for the internal graph→space rename.",
+    "comment": "Accepted by Felix 2026-11-24. The graph→space rename it waited for is done (41579c29), so it can be built now with the new names.",
     "date": 1795532213045
   },
   "intrinsicValue": 0,

@@ -1,0 +1,24 @@
+{
+  "id": "d4ad4c91-7518-41d8-a23a-c3018f3e0b68",
+  "text": "Code says \"space\" for spaces and \"graph\" only for the drawn canvas: internal rename, old MCP names dropped",
+  "description": "Felix 2026-11-24: \"the internal field names... if it's about spaces, name them spaces. Otherwise that's a technical debt that will cause confusion.\" \"The dual meaning of graph in this codebase is why we renamed to space in the first place.\" Also: drop the old MCP names (graph, projectPath) instead of keeping aliases.",
+  "archived": false,
+  "color": "#2e4b6d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "2312d718-e764-4240-976b-74cb533d7eb5"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "41579c29. Inventory + mapping table + script: 229 distinct graph-names classified as space or canvas; bare graph/graphs kept only in canvas files and value-calculation (the flow graph). tRPC field graph → space, routers spaces/space/spaceHealth, registry Space, files graphs/ → spaces/ etc. Kept as graph: the canvas (GraphView, simulation, WebGL renderer, graphUIStore, view mode 'graph'). Offers: offeredSpace. MCP aliases graph/projectPath dropped. Server files migrate once at startup (renameGraphsToSpaces, idempotent): graphs.json, server.json limits, accounts.json rights and token scopes, guest notes offers. .bowman format unchanged. Out of scope: meta/, education/, math/, wrapped-agents benchmarks. Evidence: pnpm check 25/25 (Node 22) incl. new migration test; this record written through the reconnected MCP. Remaining: deploy ideas.entour.fyi and the Commons Hub server together.",
+    "date": 1795537435019
+  },
+  "intrinsicValue": 0,
+  "cost": 3,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
