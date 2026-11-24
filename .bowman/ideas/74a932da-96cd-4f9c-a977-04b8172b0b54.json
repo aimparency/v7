@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Accepted by Felix 2026-11-23 under his condition: one top graph whose normalized total value spreads through repo links to the linked graphs. Largest of the batch.",
-    "date": 1795471937306
+    "state": "partially",
+    "comment": "Rollup done for linked spaces checked out on this machine: linkedRepo.list returns activity {ideas, open (open + partially), lastChange} read by spaces/activity.ts (counts only, never content), or missing: true when the registered folder no longer holds a space. MCP list_linked_repos shows both (missing points to find_spaces_on_disk + register_linked_repo); the project settings' linked-repo chip reads 'checked out · 4 open · 2 days ago' or 'folder moved'. Evidence: backend linked-repos.test new case (2 ideas, 1 open; after moving the folder resolved stays true, missing true, no activity), MCP repo-links test asserts activity, ProjectSettingsModal.spec chip labels; pnpm check 25/25. Not done: (1) the canvas repo node itself showing the rollup — a visual change for Felix to judge, (2) links by host to another server (would need that server's answer), (3) the main part: get_prioritized_ideas descending into linked spaces with value normalized from the top space.",
+    "date": 1795539456937
   },
   "intrinsicValue": 0,
   "cost": 4,

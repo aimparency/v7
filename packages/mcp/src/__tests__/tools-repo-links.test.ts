@@ -53,6 +53,7 @@ test('register -> link -> read -> unlink round-trip over MCP', async () => {
   assert.equal(listed.length, 1);
   assert.equal(listed[0].name, 'Ways of Will');
   assert.equal(listed[0].resolved, true);
+  assert.deepEqual(listed[0].activity, { ideas: 0, open: 0 }, 'how alive it is, counts only');
   const repoId = listed[0].repoId;
 
   await server.callTool('link_repo', {

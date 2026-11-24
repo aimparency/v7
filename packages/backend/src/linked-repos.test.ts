@@ -172,3 +172,17 @@ test('linkHost refuses what is not a space address, and the space itself', async
   const self = await caller.project.getMeta({ space: projectAPath });
   await assert.rejects(caller.linkedRepo.linkHost({ space: projectAPath, host: 'https://hub.example.org/spaces/me', repoId: self.repoId!, name: 'me' }), /itself/);
 });
+
+test('list tells how alive a linked space checked out here is, or that its folder moved away', async () => {
+  await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath });
+  await fs.ensureDir(path.join(projectBPath, 'ideas'));
+  await fs.writeJson(path.join(projectBPath, 'ideas', 'a.json'), { status: { state: 'partially' } });
+  await fs.writeJson(path.join(projectBPath, 'ideas', 'b.json'), { status: { state: 'cancelled' } });
+  const [alive] = await caller.linkedRepo.list({ space: projectAPath });
+  assert.deepEqual([alive!.activity?.ideas, alive!.activity?.open, typeof alive!.activity?.lastChange, alive!.missing], [2, 1, 'string', undefined]);
+
+  await fs.move(path.dirname(projectBPath), `${path.dirname(projectBPath)}-moved`);
+  const [moved] = await caller.linkedRepo.list({ space: projectAPath });
+  assert.deepEqual([moved!.resolved, moved!.missing, moved!.activity], [true, true, undefined]);
+  await fs.move(`${path.dirname(projectBPath)}-moved`, path.dirname(projectBPath));
+});

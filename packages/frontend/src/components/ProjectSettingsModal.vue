@@ -12,6 +12,7 @@ import { Check, X } from 'lucide-vue-next'
 import { hasAccounts } from '../utils/runtime-config'
 import { useViewerStore } from '../stores/viewer'
 import { useModalEscape } from '../composables/useModalEscape'
+import { formatRelativeTime } from '../utils/relative-time'
 
 const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
@@ -43,7 +44,18 @@ const askForHumanOnText = ref('destructive-git, network, api-keys')
 // repo' picker then reads. Register/unregister are applied immediately (their
 // own mutations); the modal's Save merges name/color/statuses and preserves
 // linkedRepos, so there's no clobber.
-type LinkedRepoRow = { repoId: string, name: string, host?: string, url?: string, localPath?: string, access?: string, resolved: boolean }
+type LinkedRepoRow = {
+  repoId: string, name: string, host?: string, url?: string, localPath?: string, access?: string, resolved: boolean,
+  activity?: { ideas: number, open: number, lastChange?: string }, missing?: boolean
+}
+// A checkout: how alive it is (counts only), or that its folder moved away.
+const checkoutLabel = (repo: LinkedRepoRow) => {
+  if (!repo.resolved) return 'not here'
+  if (repo.missing) return 'folder moved'
+  if (!repo.activity) return 'checked out'
+  const changed = repo.activity.lastChange ? ` · ${formatRelativeTime(Date.parse(repo.activity.lastChange))}` : ''
+  return `checked out · ${repo.activity.open} open${changed}`
+}
 const linkedRepos = ref<LinkedRepoRow[]>([])
 const discoveredProjects = ref<Array<{ path: string, bowmanPath: string, sourceRoot: string }>>([])
 const selectedTargetPath = ref('')
@@ -722,8 +734,8 @@ const save = async () => {
               <div v-for="repo in linkedRepos" :key="repo.repoId" class="linked-repo-row">
                 <span class="linked-repo-name">{{ repo.name }}</span>
                 <a v-if="repo.host" class="linked-repo-chip" :href="repo.host" target="_blank" rel="noopener">{{ hostLabel(repo.host) }}</a>
-                <span v-else class="linked-repo-chip" :class="{ unresolved: !repo.resolved }">
-                  {{ repo.resolved ? 'checked out' : 'not here' }}
+                <span v-else class="linked-repo-chip" :class="{ unresolved: !repo.resolved || repo.missing }">
+                  {{ checkoutLabel(repo) }}
                 </span>
                 <button
                   @click="removeLinkedRepo(repo.repoId)"

@@ -25,6 +25,7 @@ import { backfillEmbeddings, ensureEmbeddings } from '../embedding-backfill.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { t, procedure, delayedProcedure } from '../trpc.js';
 import { findSpaceByPath } from '../spaces/registry.js';
+import { readSpaceActivity } from '../spaces/activity.js';
 import { spaceAddress, resolveSpaceAddress } from '../spaces/address.js';
 
 const projectDiscoveryInputSchema = z.object({
@@ -47,31 +48,6 @@ type SpaceOnDisk = {
   ideas?: number, open?: number, lastChange?: string
 };
 type DiscoveryFilter = { repoId?: string, name?: string, limit: number, details?: boolean };
-
-const OPEN_STATES = new Set(['open', 'partially']);
-// Counts of a space's ideas, its open ones, and when an idea last changed.
-const readActivity = async (bowmanPath: string): Promise<Pick<SpaceOnDisk, 'ideas' | 'open' | 'lastChange'>> => {
-  const directory = path.join(bowmanPath, 'ideas');
-  let files: string[];
-  try {
-    files = (await fs.readdir(directory)).filter(file => file.endsWith('.json'));
-  } catch {
-    return { ideas: 0, open: 0 };
-  }
-  let open = 0;
-  let last = 0;
-  for (const file of files) {
-    try {
-      const filePath = path.join(directory, file);
-      const [content, stat] = await Promise.all([fs.readFile(filePath, 'utf8'), fs.stat(filePath)]);
-      if (OPEN_STATES.has((JSON.parse(content) as { status?: { state?: string } }).status?.state ?? '')) open++;
-      last = Math.max(last, stat.mtimeMs);
-    } catch {
-      // An unreadable idea file counts as an idea, not as open.
-    }
-  }
-  return { ideas: files.length, open, ...(last ? { lastChange: new Date(last).toISOString() } : {}) };
-};
 
 const DISCOVERY_IGNORED_DIRS = new Set([
   '.git',
@@ -136,7 +112,7 @@ const discoverProjectsFromRoot = async (
       const found: SpaceOnDisk = { path: dirPath, bowmanPath, sourceRoot: root, ...await readIdentity(bowmanPath) };
       const matchedBy = matchOf(found, filter);
       if (matchedBy !== null) {
-        results.push({ ...found, ...(matchedBy ? { matchedBy } : {}), ...(filter.details ? await readActivity(bowmanPath) : {}) });
+        results.push({ ...found, ...(matchedBy ? { matchedBy } : {}), ...(filter.details ? await readSpaceActivity(bowmanPath) : {}) });
       }
     }
 

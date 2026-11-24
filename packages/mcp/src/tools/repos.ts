@@ -79,7 +79,7 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "list_linked_repos",
-    description: "List the repos this project can link an idea to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
+    description: "List the repos this project can link an idea to: repoId, name, whether the repo is checked out on this machine (resolved), and for a checkout how alive it is (activity: ideas, open, lastChange; counts only) or that its folder moved (missing). Call it to get the repoId that link_repo needs.",
     inputSchema: {
       type: "object",
       properties: {
@@ -102,6 +102,8 @@ export const repoTools: ToolDefinition[] = [
                 ...(r.url ? { url: r.url } : {}),
                 resolved: r.resolved,
                 ...(r.localPath ? { localPath: r.localPath } : {}),
+                ...(r.activity ? { activity: r.activity } : {}),
+                ...(r.missing ? { missing: "its folder holds no space any more: find it with find_spaces_on_disk (repoId), then register_linked_repo targetPath" } : {}),
               })),
               null,
               2

@@ -8,6 +8,7 @@ import { resolveBowmanPath } from '../path-completion.js';
 import { readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { readLinkedRepoRegistry, writeLinkedRepoRegistry, resolveLinkedRepoLocalPath } from '../storage/linked-repos.js';
 import { spaceAddress } from '../spaces/address.js';
+import { readSpaceActivity } from '../spaces/activity.js';
 
 // A portable link plus this machine's resolution status (localPath present ⇒
 // checked out here). Explicit output schemas keep the router's inferred type
@@ -16,6 +17,10 @@ const LinkedRepoStatusSchema = LinkedRepoSchema.extend({
   localPath: z.string().optional(),
   access: z.enum(['read', 'write']).optional(),
   resolved: z.boolean(),
+  // Checked out here: how alive it is (counts, never content), or that its
+  // folder no longer holds a space (moved: find_spaces_on_disk finds it).
+  activity: z.object({ ideas: z.number(), open: z.number(), lastChange: z.string().optional() }).optional(),
+  missing: z.boolean().optional(),
 });
 
 export const linkedRepoRouter = t.router({
@@ -28,15 +33,19 @@ export const linkedRepoRouter = t.router({
       const meta = await readProjectMeta(input.space);
       const registry = await readLinkedRepoRegistry(input.space);
       const localById = new Map(registry.map((r) => [r.repoId, r]));
-      return (meta.linkedRepos ?? []).map((link) => {
+      return Promise.all((meta.linkedRepos ?? []).map(async (link) => {
         const local = localById.get(link.repoId);
+        const bowman = local ? resolveBowmanPath(local.localPath) : null;
+        const present = bowman !== null && await fs.pathExists(bowman);
         return {
           ...link,
           localPath: showPaths ? local?.localPath : undefined,
           access: local?.access,
           resolved: !!local, // false ⇒ linked but not checked out here
+          ...(present ? { activity: await readSpaceActivity(bowman) } : {}),
+          ...(local && !present ? { missing: true } : {}),
         };
-      });
+      }));
     }),
 
   // Register a sibling project as a linked repo: read its stable repoId from its

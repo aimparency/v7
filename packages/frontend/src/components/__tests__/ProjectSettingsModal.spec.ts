@@ -88,6 +88,20 @@ describe('ProjectSettingsModal linked repos', () => {
     expect(optionValues).toEqual([''])
   })
 
+  it('shows how alive a checked-out space is, and when its folder moved', async () => {
+    listMock.mockResolvedValue([
+      { repoId: 'r-1', name: 'Kitchen', resolved: true, activity: { ideas: 9, open: 4 } },
+      { repoId: 'r-2', name: 'Garden', resolved: true, missing: true },
+      { repoId: 'r-3', name: 'Elsewhere', resolved: false }
+    ])
+    discoverMock.mockResolvedValue({ rootsScanned: [], projects: [] })
+    const { wrapper } = mountModal()
+    await flushPromises()
+    const chips = wrapper.findAll('.linked-repo-chip').map(chip => chip.text())
+    expect(chips).toEqual(['checked out · 4 open', 'folder moved', 'not here'])
+    expect(wrapper.findAll('.linked-repo-chip')[1]!.classes()).toContain('unresolved')
+  })
+
   it('registers a selected discovered project on Link', async () => {
     listMock.mockResolvedValue([]) // nothing linked yet
     discoverMock.mockResolvedValue({ projects: [SELF, SIBLING], rootsScanned: ['/test'] })
