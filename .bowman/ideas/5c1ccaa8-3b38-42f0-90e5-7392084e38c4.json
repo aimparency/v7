@@ -12,7 +12,7 @@
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "",
+    "comment": "Design note 2026-11-24 after 675fce29/2b55e8c3: realizedCostUsd is a running nominal sum without dates (git is the history, no arrays in .bowman). Compounding therefore reads the dates from git: each commit that raised an idea's realizedCostUsd gives (commit time, increase), and cost_today = Σ increase · (1 + r)^(days/365) with r = ANNUAL_DISCOUNT_RATE. Increases not yet committed count as today. Cheap to compute per idea with `git log -p --follow` on its file; for the calibration script, once per idea. Ready to build once a few ideas carry realizedCostUsd (the hook records from now on).",
     "date": 1795472023532
   },
   "intrinsicValue": 0,
