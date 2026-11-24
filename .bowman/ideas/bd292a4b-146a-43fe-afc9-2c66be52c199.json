@@ -101,5 +101,6 @@
   "selfWeight": 11.04,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0
+  "valueVariance": 0,
+  "realizedCostUsd": 0.155662
 }
