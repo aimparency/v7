@@ -36,6 +36,8 @@ export type Space = {
   remote?: { url: string; key?: { account: string; id: string } };
   /** The repository's directory on this server (it holds the .bowman). */
   path: string;
+  /** A checkout's space id (its meta.json repoId), to know it again after its folder moved. */
+  repoId?: string;
   /** Account id; null (or an account that is gone) leaves the space to the server admins. */
   owner: string | null;
   /** Account ids that may change the space, next to its owner. */
@@ -97,6 +99,12 @@ export function findSpaceByPath(directory: string): Space | null {
 }
 
 export const spaceBowmanPath = (space: Space) => toBowmanPath(space.path);
+
+/** A checkout whose folder no longer holds a space: moved or removed by its operator. */
+export const isMissing = (space: Space) => space.kind === 'checkout' && !fs.pathExistsSync(spaceBowmanPath(space));
+
+const repoIdAt = async (root: string): Promise<string | undefined> =>
+  (await fs.readJson(path.join(toBowmanPath(root), 'meta.json')).catch(() => null) as { repoId?: unknown } | null)?.repoId as string | undefined;
 
 async function change<T>(update: (spaces: Space[]) => Promise<{ spaces: Space[]; result: T }>): Promise<T> {
   const file = path.join(serverDir(), FILE);
@@ -230,11 +238,34 @@ export async function addCheckout(directory: string, owner: string | null, slug?
   return change(async (spaces) => {
     if (spaces.some(space => space.path === root)) throw new SpaceError(`${root} is a space of this server already.`);
     if (slug && spaces.some(space => slugsOf(space).includes(slug))) throw new SpaceError(`"${slug}" exists already.`);
+    const repoId = await repoIdAt(root);
     const space: Space = {
       slug: slug ?? freeSlug(path.basename(root), spaces),
-      kind: 'checkout', path: root, owner, writers: [], createdAt: new Date().toISOString()
+      kind: 'checkout', path: root, ...(repoId ? { repoId } : {}), owner, writers: [], createdAt: new Date().toISOString()
     };
     return { spaces: [...spaces, space], result: space };
+  });
+}
+
+/**
+ * Points a checkout at where its folder went. Another space there (another
+ * repoId) is taken only with `force`; an entry from before ids were kept takes
+ * the operator's word.
+ */
+export async function relocateCheckout(slug: string, directory: string, { force = false } = {}): Promise<Space> {
+  const root = toProjectRoot(path.resolve(directory));
+  if (!(await fs.pathExists(toBowmanPath(root)))) throw new SpaceError(`No space (.bowman) at ${root}.`);
+  const repoId = await repoIdAt(root);
+  return change(async (spaces) => {
+    const space = spaces.find(candidate => candidate.slug === slug && !candidate.deletedAt);
+    if (!space) throw new SpaceError(`No space "${slug}" on this server.`);
+    if (space.kind !== 'checkout') throw new SpaceError(`"${slug}" lives in the server's own directory, not in a folder of yours.`);
+    if (spaces.some(other => other !== space && other.path === root)) throw new SpaceError(`${root} is a space of this server already.`);
+    if (!force && space.repoId && repoId !== space.repoId) {
+      throw new SpaceError(`${root} holds another space (${repoId ?? 'no id'}, not ${space.repoId}). Add --force to take it anyway.`);
+    }
+    const moved: Space = { ...space, path: root, ...(repoId ? { repoId } : {}) };
+    return { spaces: spaces.map(candidate => candidate === space ? moved : candidate), result: moved };
   });
 }
 

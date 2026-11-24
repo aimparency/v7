@@ -210,10 +210,13 @@ const query = computed(() => typed.value.replace(/\/+$/, '').toLowerCase())
 const matchesQuery = (entry: Entry) => !query.value || entry.searchable.some(text => text.includes(query.value))
 
 type Space = (typeof spaces.value)[number]
+// A checkout whose folder moved shows so; its operator points it at the new
+// folder with `pnpm spaces relocate <slug> <path>`.
 const spaceEntry = (space: Space): Entry => ({
   key: `space:${space.slug}`,
   title: space.name,
-  detail: `${space.owner ?? 'server'} · /spaces/${space.slug}`,
+  detail: `${space.owner ?? 'server'} · /spaces/${space.slug}${space.missing ? ' · folder moved' : ''}`,
+  failed: space.missing,
   searchable: [space.name.toLowerCase(), space.slug],
   thumbnail: space.slug,
   color: space.color,

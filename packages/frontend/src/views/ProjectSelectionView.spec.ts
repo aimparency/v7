@@ -382,3 +382,21 @@ describe('ProjectSelectionView: a recent space that moved', () => {
     wrapper.unmount()
   })
 })
+
+describe('ProjectSelectionView: a server checkout whose folder moved', () => {
+  it('is marked, so its operator knows to relocate it', async () => {
+    accounts.on = true
+    listSpaces.mockResolvedValueOnce([{ slug: 'kitchen', kind: 'checkout', name: 'Kitchen', color: null, owner: null, right: 'owner', missing: true }])
+    const wrapper = mount(ProjectSelectionView, {
+      attachTo: document.body,
+      global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { LoginControl: true } },
+      props: { modelValue: '', projectHistory: [], discoveredProjects: [], scannedRoots: [], isRefreshingDiscoveredProjects: false },
+    })
+    await flushPromises()
+    const item = wrapper.find('.history-item')
+    expect(item.classes()).toContain('failed')
+    expect(item.text()).toContain('folder moved')
+    wrapper.unmount()
+    accounts.on = false
+  })
+})

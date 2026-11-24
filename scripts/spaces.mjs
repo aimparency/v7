@@ -11,6 +11,7 @@ import * as spaces from '../packages/backend/src/spaces/registry.ts';
 //   pnpm spaces owner <slug> <account>
 //   pnpm spaces writers <slug> [<account> ...]                   replaces the list
 //   pnpm spaces remove <slug>          (a space created on the server is deleted; a checkout stays)
+//   pnpm spaces relocate <slug> <path> [--force]   a checkout whose folder moved; --force takes another space there
 //
 // `--server <name>` (anywhere in the command) selects another server of this
 // machine than "local". Accounts create spaces in the browser; adding a repository that is already
@@ -31,6 +32,8 @@ const option = (name) => {
 };
 const slug = option('--slug');
 const owner = option('--owner');
+const forceAt = args.indexOf('--force');
+const force = forceAt >= 0 && args.splice(forceAt, 1).length > 0;
 const [command, target, ...rest] = args;
 
 function accountId(name) {
@@ -44,7 +47,7 @@ async function main() {
     case 'list':
       for (const space of spaces.listSpaces()) {
         const names = [space.owner ? accounts.accountNames([space.owner])[0] ?? '(gone)' : '(server admins)', ...accounts.accountNames(space.writers)];
-        console.log(`${space.slug}\t${space.kind}\t${space.path}\t${names.join(', ')}`);
+        console.log(`${space.slug}\t${space.kind}\t${space.path}${spaces.isMissing(space) ? ' (folder moved)' : ''}\t${names.join(', ')}`);
       }
       return;
     case 'add': {
@@ -62,12 +65,18 @@ async function main() {
       await spaces.setSpaceAccess(target ?? '', { writers: rest.map(accountId) });
       console.log(rest.length ? `${rest.join(', ')} may write ${target}.` : `Only its owner writes ${target} now.`);
       return;
+    case 'relocate': {
+      const directory = path.resolve(process.env.INIT_CWD ?? process.cwd(), rest[0] ?? '');
+      const space = await spaces.relocateCheckout(target ?? '', directory, { force });
+      console.log(`/spaces/${space.slug} is at ${space.path} now.`);
+      return;
+    }
     case 'remove':
       await spaces.removeSpaceEntry(target ?? '');
       console.log(`Removed ${target}.`);
       return;
     default:
-      throw new spaces.SpaceError('Usage: pnpm spaces list | add <path> [--slug <slug>] [--owner <account>] | owner <slug> <account> | writers <slug> [<account> ...] | remove <slug>');
+      throw new spaces.SpaceError('Usage: pnpm spaces list | add <path> [--slug <slug>] [--owner <account>] | owner <slug> <account> | writers <slug> [<account> ...] | remove <slug> | relocate <slug> <path> [--force]');
   }
 }
 

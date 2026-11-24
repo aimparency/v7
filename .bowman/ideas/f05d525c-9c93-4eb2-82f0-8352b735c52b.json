@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Split off 2026-11-24; rare case (admin-added server paths), so not built with the local one.",
-    "date": 1795537994456
+    "state": "implemented",
+    "comment": "Built the config way (operator in the terminal, UI view-only): a checkout entry remembers its space's repoId (from meta.json on add and on relocate); spaces.list marks a checkout whose folder holds no .bowman as missing, and the Spaces page shows it red with 'folder moved'; `pnpm spaces list` adds '(folder moved)'; `pnpm spaces relocate <slug> <path> [--force]` (registry relocateCheckout) points the entry at the new folder, refuses another space there (another repoId) unless --force, refuses a path another entry has, refuses created/remote spaces. Entries from before have no repoId, so for them the operator's word counts. No search on the server: the operator knows where they moved it (find_spaces_on_disk covers the local machine). Evidence: backend relocate.test (missing listed, another space refused, relocated by .bowman path, missing gone, --force takes the other space, no space at a path refused), ProjectSelectionView.spec new case (marked failed, 'folder moved'); pnpm check 25/25.",
+    "date": 1795539774231
   },
   "intrinsicValue": 0,
   "cost": 2,

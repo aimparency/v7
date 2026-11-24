@@ -6,7 +6,7 @@ import { t, delayedProcedure } from '../trpc.js';
 import { mayCreateSpaces, mayRead, readSettingOf, rightOn, viewerFor, type Viewer } from '../auth/access.js';
 import { accountNames, createInvitation, findAccount, listInvitations, removeInvitation } from '../auth/accounts.js';
 import { resolveSpaceAddress } from '../spaces/address.js';
-import { addCheckout, createSpace, spaceBowmanPath, SpaceError, listDeletedSpaces, listSpaces, purgeDate, restoreSpace, setSpaceAccess, setSpaceSlug, slugsOf, type Space } from '../spaces/registry.js';
+import { addCheckout, createSpace, isMissing, spaceBowmanPath, SpaceError, listDeletedSpaces, listSpaces, purgeDate, restoreSpace, setSpaceAccess, setSpaceSlug, slugsOf, type Space } from '../spaces/registry.js';
 import { deleteSpace, purgeDeletedSpaces } from '../spaces/deletion.js';
 import { addRemote, selectRemoteKey } from '../spaces/remote-space.js';
 import { privateKeyFile } from '../spaces/ssh-keys.js';
@@ -59,7 +59,9 @@ export const spacesRouter = t.router({
       return {
         slug: space.slug, kind: space.kind, name: meta?.name ?? space.slug, color: meta?.color ?? null, owner: ownerName(space),
         // What the asker is on this space: the UI offers their own spaces for an MCP client.
-        right: rightOn(space, viewer)
+        right: rightOn(space, viewer),
+        // A checkout whose folder moved: its operator points it at the new one (pnpm spaces relocate).
+        ...(isMissing(space) ? { missing: true as const } : {})
       };
     }));
   }),
