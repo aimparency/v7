@@ -64,5 +64,6 @@
   "dataModelVersion": 9,
   "linkedRepos": [],
   "repoId": "8afbd724-7470-402c-96bd-a5be038a1d03",
-  "costUnit": "satoshi"
+  "costUnit": "satoshi",
+  "subtitle": "An open idea space where people and AI agents pursue ideas together, on the way to ASI"
 }
