@@ -196,4 +196,14 @@ AIMPARENCY_PROJECT="$WORKER_PROJECT" \
 
 node --test "$REPO_DIR/scripts/hooks/record-session-cost.test.mjs" >/dev/null
 
+# A long context: the agent is asked to wrap up for a fresh session.
+mkdir -p "$TARGET/.bowman/runtime"
+echo 300000 >"$TARGET/.bowman/runtime/context-size"
+long_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.decision!=="block" || !x.reason.includes("restart a fresh session") || !x.reason.includes("300k")) process.exit(1)' "$long_output"
+echo 1000 >"$TARGET/.bowman/runtime/context-size"
+short_output="$(printf '{"hook_event_name":"Stop"}\n' | "$HOOK")"
+node -e 'const x=JSON.parse(process.argv[1]); if(x.reason.includes("fresh session")) process.exit(1)' "$short_output"
+rm "$TARGET/.bowman/runtime/context-size"
+
 echo "Aimparency Codex continuation hook contract: PASS"

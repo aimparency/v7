@@ -43,6 +43,18 @@ export function usageByModel(lines) {
   return byModel;
 }
 
+/** The largest context one model call read in these lines (input + cache read + cache write). */
+export function peakContextTokens(lines) {
+  let peak = 0;
+  for (const line of lines) {
+    let entry;
+    try { entry = JSON.parse(line); } catch { continue; }
+    const usage = entry?.type === 'assistant' ? entry.message?.usage : null;
+    if (usage) peak = Math.max(peak, (usage.input_tokens ?? 0) + (usage.cache_read_input_tokens ?? 0) + (usage.cache_creation_input_tokens ?? 0));
+  }
+  return peak;
+}
+
 /** USD of that usage, or the models that have no (complete) price. */
 export function priceUsage(byModel, prices) {
   let usd = 0;
@@ -122,6 +134,8 @@ async function main() {
 
   const byModel = usageByModel(fresh.split('\n'));
   if (Object.keys(byModel).length === 0) return;
+  // The next Stop's hook reads it: a long context makes most of a turn's cost (32b3478a).
+  fs.writeFileSync(path.join(runtime, 'context-size'), `${peakContextTokens(fresh.split('\n'))}\n`);
   const prices = (() => {
     try { return JSON.parse(fs.readFileSync(path.join(repoRoot, '.bowman', 'harness.json'), 'utf8')).prices; } catch { return undefined; }
   })();

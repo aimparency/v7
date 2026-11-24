@@ -13,15 +13,15 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Found from the first cost data; not discussed with Felix yet.",
-    "date": 1795540851827
+    "state": "implemented",
+    "comment": "record-session-cost.mjs writes the last turn's peak context per model call (input + cache read + cache write) to .bowman/runtime/context-size; at the next Stop the hook adds to its block reason, above AIMPARENCY_FRESH_CONTEXT_TOKENS (default 250000): 'This session re-reads about Nk tokens per model call, which makes most of each turn's cost. Finish the current step, commit, write the progress line, then ask the human to restart a fresh session … end with [AIMPARENCY_REQUEST_HUMAN]'. Uses the existing human-wait protocol, no new marker: restarting is a human (or wrapper) action. Evidence: recorder test 'the largest context one call read', hook contract test cases (300000 → note with '300k', 1000 → none) PASS. The measurement (cost per finished idea before/after a restart) is open: this session is the first case.",
+    "date": 1795540912852
   },
   "intrinsicValue": 0,
   "cost": 1,
+  "realizedCostUsd": 0.379018,
   "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "realizedCostUsd": 0.379018
+  "valueVariance": 0
 }

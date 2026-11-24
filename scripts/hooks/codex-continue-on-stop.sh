@@ -82,6 +82,17 @@ if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/continue-hook-log" ]]; t
   log_note=" Progress log for the human: after each finished step append one succinct line to $log_file (idea id and title, what changed, commit hash, or the question it is parked on)."
 fi
 
+# A long context makes most of each turn's cost (every model call re-reads it;
+# 32b3478a). record-session-cost.mjs notes the last turn's peak per call; above
+# the threshold the agent is asked to wrap up so a fresh session continues.
+fresh_threshold="${AIMPARENCY_FRESH_CONTEXT_TOKENS:-250000}"
+if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/context-size" ]]; then
+  context_size="$(head -n 1 "$repo_root/.bowman/runtime/context-size")"
+  if [[ "$context_size" =~ ^[0-9]+$ ]] && (( context_size > fresh_threshold )); then
+    log_note="$log_note This session re-reads about $(( context_size / 1000 ))k tokens per model call, which makes most of each turn's cost. Finish the current step, commit, write the progress line, then ask the human to restart a fresh session (the work lives in the space): end with [AIMPARENCY_REQUEST_HUMAN]."
+  fi
+fi
+
 node -e '
   const fs = require("fs");
   const [state, activeLoop, defaultLoop, logNote] = process.argv.slice(1);

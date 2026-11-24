@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { execFileSync } from 'node:child_process';
-import { changedIdeas, priceUsage, usageByModel } from './record-session-cost.mjs';
+import { changedIdeas, peakContextTokens, priceUsage, usageByModel } from './record-session-cost.mjs';
 
 const assistant = (id, model, usage) => JSON.stringify({ type: 'assistant', message: { id, model, usage } });
 
@@ -65,4 +65,9 @@ test('1-hour cache writes take their own price', () => {
   const byModel = { opus: { input: 0, output: 0, cacheRead: 0, cacheWrite: 1_000_000, cacheWrite1h: 1_000_000 } };
   assert.deepEqual(priceUsage(byModel, { opus: { inputPerMTok: 4, outputPerMTok: 20, cacheWritePerMTok: 5 } }), { usd: 0, unpriced: ['opus'] });
   assert.deepEqual(priceUsage(byModel, { opus: { inputPerMTok: 4, outputPerMTok: 20, cacheWritePerMTok: 5, cacheWrite1hPerMTok: 8 } }), { usd: 13, unpriced: [] });
+});
+
+test('the largest context one call read', () => {
+  const lines = [assistant('m1', 'opus', { input_tokens: 5, cache_read_input_tokens: 100, cache_creation_input_tokens: 10 }), assistant('m2', 'opus', { input_tokens: 1, cache_read_input_tokens: 300 }), '{"type":"user"}'];
+  assert.equal(peakContextTokens(lines), 301);
 });
