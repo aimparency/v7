@@ -109,7 +109,8 @@
         1.45
       ],
       "weight": 6.311428571428573,
-      "hypothesis": "Agents can only link graphs they can find; one discovery call replaces ad-hoc find + scripts and makes cross-graph wiring a routine step."
+      "hypothesis": "Agents can only link graphs they can find; one discovery call replaces ad-hoc find + scripts and makes cross-graph wiring a routine step.",
+      "reflection": "Partly confirmed so far: one call now does what took find + a Python script on 2026-11-23 (path, id, counts, linked). Whether it makes cross-space wiring routine shows only when an agent next wires spaces; not observed yet."
     },
     {
       "ideaId": "7d42d201-9901-463c-bbf0-52e603bd7bc5",
