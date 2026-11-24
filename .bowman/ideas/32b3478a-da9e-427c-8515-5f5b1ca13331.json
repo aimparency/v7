@@ -1,0 +1,26 @@
+{
+  "id": "32b3478a-da9e-427c-8515-5f5b1ca13331",
+  "text": "Hook loop starts fresh when the context grows large: cache reads of a long context are most of a turn's cost",
+  "description": "OBSERVED 2026-11-24 from session-costs.log (2b55e8c3), 20 priced turns of one long Claude Code session driven by the Stop hook: median 2.91M cache-read tokens and 3.4k output tokens per turn, median $0.69 per turn (API-equivalent, claude-opus-5-5 list prices); 82% of the cost is cache reads. Each model call in a turn re-reads the whole context (about 400k tokens late in this session), so cost per turn grows with session length, not with the work.\n\nINFERRED: with a context of ~60k the same turns would read ~1/7 as much, ~$0.20 per turn. The loop keeps its state in the space and git (not in the conversation), so a fresh session loses little.\n\nProposal: the Stop hook (or the recorder, which already reads the usage) notices when the last turn's reads per call pass a threshold (e.g. 250k) and says so in its block reason: commit, write the progress line, then end so the human (or a wrapper) restarts with a fresh session; or the wrapped-agents watchdog restarts it. Measure $/turn before and after.\n\nRefuted if a fresh session spends so much re-orienting (reading the space, code) that cost per finished idea doesn't drop.",
+  "archived": false,
+  "color": "#2e3761",
+  "tags": [
+    "hypothesis"
+  ],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Found from the first cost data; not discussed with Felix yet.",
+    "date": 1795540851827
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
