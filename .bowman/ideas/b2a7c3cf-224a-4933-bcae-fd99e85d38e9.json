@@ -11,7 +11,7 @@
         0.82,
         3.66
       ],
-      "weight": 43.2,
+      "weight": 36.72,
       "hypothesis": "Measured actual cost per idea gives the calibration the 30+ estimate/actual pairs it is waiting for within weeks instead of months.",
       "reflection": "The data path now exists end to end, but 'within weeks' looks unlikely: most work currently runs through Claude Code with the Stop hook, which records no cost. 30+ pairs need either more harness cycles or a cost record for hook-driven sessions."
     },
@@ -21,7 +21,7 @@
         -2.07,
         3.13
       ],
-      "weight": 16.2,
+      "weight": 13.77,
       "hypothesis": "Letting value flow only through living ideas makes the ranking reflect the routes still being pursued; refuted if, after the change, the top of the ranking is no closer to what Felix would pick next."
     },
     {
@@ -30,7 +30,7 @@
         0.77,
         3.67
       ],
-      "weight": 9,
+      "weight": 7.6499999999999995,
       "hypothesis": "Realized costs spread over months only compare fairly with estimates in today's money; without compounding, older work looks too cheap and the calibration is biased toward it."
     },
     {
@@ -39,8 +39,17 @@
         -3.27,
         -1.83
       ],
-      "weight": 10,
+      "weight": 8.5,
       "hypothesis": "Cost estimates that ignore falling AI prices overstate future AI work and understate the gain from waiting; accounting for it changes which AI-heavy ideas rank first."
+    },
+    {
+      "ideaId": "2b55e8c3-5414-4686-8ef7-88e153fe5c6f",
+      "relativePosition": [
+        -1.43,
+        -3.47
+      ],
+      "weight": 15,
+      "hypothesis": "Hook-driven sessions are where most work happens today; recording their cost gives the calibration its 30+ pairs within weeks."
     }
   ],
   "supportedIdeas": [
@@ -54,7 +63,7 @@
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "selfWeight": 21.6,
+  "selfWeight": 18.36,
   "duration": 1,
   "costVariance": 0,
   "valueVariance": 0

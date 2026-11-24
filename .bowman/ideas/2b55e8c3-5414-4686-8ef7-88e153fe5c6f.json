@@ -1,0 +1,24 @@
+{
+  "id": "2b55e8c3-5414-4686-8ef7-88e153fe5c6f",
+  "text": "Record the cost of hook-driven agent sessions on the ideas they worked on (realizedCostUsd from the session transcript)",
+  "description": "Found while settling 675fce29 (2026-11-24): realizedCostUsd only grows from loop-worker harness cycles, but most work on this repo runs through Claude Code (and Codex) sessions driven by the Stop hook, which record nothing. So the calibration (b2a7c3cf) would wait long for 30+ estimate/actual pairs.\n\nProposal: the Stop hook already gets the session's transcript path. Per turn, sum the token usage in the transcript since the last Stop, price it with harness.json prices (or the CLI's own reported cost where it gives one), and attribute it to the ideas the turn changed (the idea ids in the turn's commits or MCP update calls; split evenly if several). Record via idea.addRealizedCost.\n\nHypothesis: hook-driven sessions produce most of the realized-cost data within weeks. Refuted if attributing a turn to ideas is too noisy (many ideas per turn, or none).",
+  "archived": false,
+  "color": "#662d5d",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Found by Claude while settling 675fce29; not yet discussed with Felix.",
+    "date": 1795538628240
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
