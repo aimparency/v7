@@ -42,7 +42,10 @@ fi
 
 # The text the agent gets is a hook loop: the one named in
 # .bowman/runtime/continue-hook-loop (a slug of .bowman/hook-loops/<slug>.md,
-# versioned with the graph), else default-loop.md next to this script. A loop
+# versioned with the graph), else the default. The default is read live from
+# the Aimparency checkout named in .bowman/runtime/continue-hook-default (written
+# on install), so it follows Aimparency updates; default-loop.md next to this
+# script is only the fallback when that checkout is missing. A loop
 # file is "# Title", the work text, and optionally a "## When the agent asks for
 # the human" section with the challenge text (else the default's).
 active_loop=""
@@ -51,6 +54,12 @@ if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/continue-hook-loop" ]]; 
   if [[ "$active_slug" =~ ^[a-z0-9-]+$ && -f "$repo_root/.bowman/hook-loops/$active_slug.md" ]]; then
     active_loop="$repo_root/.bowman/hook-loops/$active_slug.md"
   fi
+fi
+
+default_loop="$hook_dir/default-loop.md"
+if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/continue-hook-default" ]]; then
+  live_default="$(head -n 1 "$repo_root/.bowman/runtime/continue-hook-default")"
+  [[ -f "$live_default" ]] && default_loop="$live_default"
 fi
 
 # enable_continue_hook starts a timestamped progress log and points to it from
@@ -77,4 +86,4 @@ node -e '
     ? active.human ?? fallback.human ?? "Before waiting for a human, re-check the Aimparency MCP for actionable work. If input is still indispensable, restate the blocker and end with [AIMPARENCY_CONFIRM_HUMAN_BLOCK]."
     : active.work ?? fallback.work ?? "Continue working autonomously using the Aimparency MCP. When human input is indispensable, state it and end with [AIMPARENCY_REQUEST_HUMAN].";
   process.stdout.write(JSON.stringify({ decision: "block", reason: text + logNote }) + "\n");
-' "$human_wait_state" "$active_loop" "$hook_dir/default-loop.md" "$log_note"
+' "$human_wait_state" "$active_loop" "$default_loop" "$log_note"

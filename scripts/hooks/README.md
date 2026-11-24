@@ -75,7 +75,10 @@ server admins when agents are on).
 ## Hook loops
 
 What the hook tells the agent is a hook loop. The built-in one is
-`default-loop.md` next to the hook script (install.sh copies it). Saved loops are
+`default-loop.md` in the Aimparency checkout, read live on every Stop: install.sh
+writes its path to `.bowman/runtime/continue-hook-default`, so the default
+follows Aimparency updates in every repo. The copy install.sh puts next to the
+hook script is only the fallback when that checkout is missing. Saved loops are
 versioned with the graph in `.bowman/hook-loops/<slug>.md`:
 
 ```markdown

@@ -26,6 +26,9 @@ const DEFAULT_LOOP_FILE = "default-loop.md";
 // graph; which one runs is machine-local, like the off switch.
 const LOOPS_DIR = path.join(".bowman", "hook-loops");
 const ACTIVE_LOOP = path.join(".bowman", "runtime", "continue-hook-loop");
+// Where the default loop is read from: this checkout's default-loop.md, so the
+// default follows Aimparency updates instead of a copy frozen at install.
+const LIVE_DEFAULT = path.join(".bowman", "runtime", "continue-hook-default");
 const HUMAN_HEADING = "## When the agent asks for the human";
 const RECOGNIZED_HOOK_LINE = "Continue the current Codex conversation through the Aimparency MCP loop.";
 
@@ -86,13 +89,15 @@ function closeProgressLog(repoRoot: string): void {
 
 // Our hook copies are ours to refresh (install.sh overwrites them too): bring a
 // recognized but outdated copy in another repository up to date, with the
-// default loop text it falls back to.
+// default loop text it falls back to, and point it at the live default.
 function upgradeRecognizedHook(repoRoot: string, hooksDir: string): boolean {
   const installed = path.join(repoRoot, HOOK_RELATIVE_PATH);
   const source = path.join(hooksDir, "codex-continue-on-stop.sh");
   if (!fs.existsSync(installed) || path.resolve(installed) === path.resolve(source)) return false;
   const current = fs.readFileSync(installed, "utf8");
   if (!current.includes(RECOGNIZED_HOOK_LINE)) return false;
+  fs.mkdirSync(path.join(repoRoot, path.dirname(LIVE_DEFAULT)), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, LIVE_DEFAULT), `${path.join(hooksDir, DEFAULT_LOOP_FILE)}\n`);
   const defaultCopy = path.join(path.dirname(installed), DEFAULT_LOOP_FILE);
   const defaultSource = path.join(hooksDir, DEFAULT_LOOP_FILE);
   const defaultOutdated = !fs.existsSync(defaultCopy) || fs.readFileSync(defaultCopy, "utf8") !== fs.readFileSync(defaultSource, "utf8");

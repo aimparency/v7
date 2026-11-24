@@ -148,6 +148,10 @@ if [[ "$SCRIPT_DIR/codex-continue-on-stop.sh" != "$HOOK_PATH" ]]; then
 fi
 cp "$config_tmp" "$CONFIG_PATH"
 chmod +x "$HOOK_PATH"
+# The default loop is read live from this checkout, so it follows Aimparency
+# updates; the copy above is the fallback (machine-local, runtime/ is gitignored).
+mkdir -p "$TARGET/.bowman/runtime"
+printf '%s\n' "$SCRIPT_DIR/default-loop.md" >"$TARGET/.bowman/runtime/continue-hook-default"
 
 # Validate the installed contract, including Git-root resolution from a nested cwd.
 node - "$CONFIG_PATH" <<'NODE'

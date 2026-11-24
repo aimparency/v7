@@ -78,7 +78,7 @@ The default loop stops only when the human explicitly told the agent in this ses
 3. If the human really asked, the assistant quotes their words and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
 ### Hook loops
-What the hook tells the agent is a hook loop. The default is \`scripts/hooks/default-loop.md\` (installed next to the hook script). Saved loops are versioned with the graph in \`.bowman/hook-loops/<slug>.md\`: a \`# Title\` line, the text the agent gets when it tries to stop, and optionally a \`## When the agent asks for the human\` section with the challenge text (else the default's). Which loop runs is machine-local (\`.bowman/runtime/continue-hook-loop\`); pick one in the UI's Hook menu or with \`enable_continue_hook\`'s \`loop\`.
+What the hook tells the agent is a hook loop. The default is the Aimparency checkout's \`scripts/hooks/default-loop.md\`, read live on every Stop, so it follows Aimparency updates (a copy next to the installed hook is the fallback). Saved loops are versioned with the graph in \`.bowman/hook-loops/<slug>.md\`: a \`# Title\` line, the text the agent gets when it tries to stop, and optionally a \`## When the agent asks for the human\` section with the challenge text (else the default's). Which loop runs is machine-local (\`.bowman/runtime/continue-hook-loop\`); pick one in the UI's Hook menu or with \`enable_continue_hook\`'s \`loop\`.
 
 ### Enable / Disable
 Use the \`enable_continue_hook\` / \`disable_continue_hook\` tools (or the \`enable-hook\` / \`disable-hook\` prompts) only when the human asks. Disabling writes a machine-local flag (\`.bowman/runtime/continue-hook-disabled\`, gitignored) checked on every Stop — no hook-config reload needed.

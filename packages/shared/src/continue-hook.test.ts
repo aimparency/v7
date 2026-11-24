@@ -160,3 +160,25 @@ test("saved loops: the default is never overwritten, selecting one changes the h
     fs.rmSync(root, { recursive: true, force: true });
   }
 });
+
+test("the default loop follows the Aimparency checkout's default-loop.md, its installed copy is only the fallback", () => {
+  const root = makeProject();
+  const hooksDir = fs.realpathSync(fs.mkdtempSync(path.join(os.tmpdir(), "aimparency-hooks-")));
+  try {
+    const source = path.resolve(import.meta.dirname, "../../../scripts/hooks");
+    for (const file of ["install.sh", "codex-continue-on-stop.sh", "default-loop.md"]) fs.copyFileSync(path.join(source, file), path.join(hooksDir, file));
+    fs.chmodSync(path.join(hooksDir, "install.sh"), 0o755);
+    enableContinueHook(path.join(root, ".bowman"), { agent: "claude", hooksDir });
+
+    // An Aimparency update changes the default: the installed repo gets it at once.
+    fs.writeFileSync(path.join(hooksDir, "default-loop.md"), "# Default\n\nThe updated default.\n");
+    assert.equal(runHook(root).reason.startsWith("The updated default."), true);
+
+    // Without that checkout the copy made at install still works.
+    fs.rmSync(hooksDir, { recursive: true, force: true });
+    assert.match(runHook(root).reason, /get_prioritized_ideas/);
+  } finally {
+    fs.rmSync(root, { recursive: true, force: true });
+    fs.rmSync(hooksDir, { recursive: true, force: true });
+  }
+});
