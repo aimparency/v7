@@ -20,7 +20,8 @@ import { ensureProjectStructure, readProjectMeta, updateProjectMeta } from '../s
 import { listIdeas, scanIdeaFiles } from '../storage/ideas.js';
 import { listPhases } from '../storage/phases.js';
 import { indexIdeas, indexPhases } from '../search.js';
-import { loadVectorStore } from '../embeddings.js';
+import { generateEmbedding, loadVectorStore } from '../embeddings.js';
+import { rankSuggestions, readSelfDescription } from '../spaces/link-suggestions.js';
 import { backfillEmbeddings, ensureEmbeddings } from '../embedding-backfill.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { t, procedure, delayedProcedure } from '../trpc.js';
@@ -209,6 +210,43 @@ export const projectRouter = t.router({
       };
     }),
 
+  // Other spaces of this machine that might support open ideas here, by what
+  // they say about themselves (subtitle, top 3 valued ideas). Spaces linked
+  // already and this one are left out. Only suggests: link_repo links.
+  suggestSpaceLinks: delayedProcedure
+    .input(z.object({
+      space: spaceAddress,
+      roots: z.array(z.string()).optional(),
+      maxDepth: z.number().int().min(0).max(8).optional(),
+      limit: z.number().int().positive().max(100).optional()
+    }))
+    .query(async ({ input }) => {
+      const meta = await readProjectMeta(input.space);
+      const skip = new Set([meta.repoId, ...(meta.linkedRepos ?? []).map(link => link.repoId)].filter(Boolean));
+      const roots = Array.from(new Set((input.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map(root => path.resolve(root))));
+      const found: SpaceOnDisk[] = [];
+      for (const root of roots) await discoverProjectsFromRoot(root, input.maxDepth ?? 3, new Set(), found, { limit: 200 });
+      const spaces = [];
+      for (const candidate of found) {
+        if (candidate.repoId && skip.has(candidate.repoId)) continue;
+        const described = await readSelfDescription(candidate.bowmanPath);
+        if (!described || skip.has(described.repoId)) continue;
+        skip.add(described.repoId);
+        const lines = [];
+        for (const line of described.lines) {
+          const vector = await generateEmbedding(line);
+          if (vector) lines.push({ text: line, vector });
+        }
+        const { lines: _lines, ...space } = described;
+        if (lines.length) spaces.push({ space, lines });
+      }
+      const vectors = await loadVectorStore(input.space);
+      const ideas = (await listIdeas(input.space))
+        .filter(idea => idea.status.state === 'open' || idea.status.state === 'partially')
+        .flatMap(idea => vectors[idea.id] ? [{ id: idea.id, text: idea.text, vector: vectors[idea.id]! }] : []);
+      return { spacesRead: spaces.length, suggestions: rankSuggestions(ideas, spaces, { limit: input.limit ?? 20 }) };
+    }),
+
   inspectPath: delayedProcedure
     .input(z.object({ space: spaceAddress }))
     .query(async ({ input }) => {
@@ -249,6 +287,7 @@ export const projectRouter = t.router({
       space: spaceAddress,
       meta: z.object({
         name: z.string(),
+        subtitle: z.string().max(200).optional(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
         statuses: z.array(z.any()).optional(),
         initialInstructions: z.string().optional(),

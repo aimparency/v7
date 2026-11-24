@@ -13,7 +13,7 @@ export { countIdeaReferences } from "../reconcile.js";
 
 // Tools about this machine's files (directly, or through a backend procedure
 // that only a server without accounts answers): a server with accounts does not offer them.
-const LOCAL_ONLY_TOOLS = new Set(["enable_continue_hook", "disable_continue_hook", "find_spaces_on_disk"]);
+const LOCAL_ONLY_TOOLS = new Set(["enable_continue_hook", "disable_continue_hook", "find_spaces_on_disk", "suggest_space_links"]);
 
 export function availableTools(withAccounts: boolean) {
   return withAccounts ? TOOLS.filter((tool) => !LOCAL_ONLY_TOOLS.has(tool.name)) : TOOLS;

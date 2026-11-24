@@ -78,6 +78,29 @@ export const repoTools: ToolDefinition[] = [
     },
   },
   {
+    name: "suggest_space_links",
+    description: "Which other spaces on this machine might support open ideas of your space: each other space is read only by what it says about itself (its subtitle and its three ideas of highest intrinsic value), matched by meaning against your open ideas. Returns pairs (idea, space, the matched line, score), best first; spaces you link already are left out. It only suggests: link with register_linked_repo (targetPath) and link_repo. A space with no subtitle and no valued idea isn't found; a subtitle is set in the project settings.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        space: SPACE_TOOL_PROPERTY,
+        roots: { type: "array", items: { type: "string" }, description: "Absolute folders to search. Default: the backend's folder, its parent and the home folder" },
+        maxDepth: { type: "number", description: "Folder levels below each root (default 3)" },
+        limit: { type: "number", description: "Most pairs to return (default 20)" },
+      },
+      required: ["space"],
+    },
+    handler: async (args, trpcClient) => {
+      const result = await trpcClient.project.suggestSpaceLinks.query({
+        space: args.space as string,
+        ...(args.roots ? { roots: args.roots as string[] } : {}),
+        ...(args.maxDepth !== undefined ? { maxDepth: args.maxDepth as number } : {}),
+        ...(args.limit !== undefined ? { limit: args.limit as number } : {}),
+      });
+      return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
+    },
+  },
+  {
     name: "list_linked_repos",
     description: "List the repos this project can link an idea to: repoId, name, whether the repo is checked out on this machine (resolved), and for a checkout how alive it is (activity: ideas, open, lastChange; counts only) or that its folder moved (missing). Call it to get the repoId that link_repo needs.",
     inputSchema: {

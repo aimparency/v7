@@ -7,7 +7,7 @@ const processEnv =
 
 // Version of the .bowman storage format, kept in meta.json as dataModelVersion.
 // Bump it together with a new entry in bowman-migration.ts (Node-only).
-export const CURRENT_DATA_MODEL_VERSION = 8;
+export const CURRENT_DATA_MODEL_VERSION = 9;
 
 // Cost the calculation assumes for an idea without an estimate (no cost field),
 // unless the project sets meta.defaultCost. Cost is always positive: everything

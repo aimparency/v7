@@ -40,7 +40,7 @@ export function agentsEnabled(): boolean {
 // The watchdog's runtime state and the agents' Stop hook go to server admins when agents are on.
 const LOCAL_ONLY_ROUTERS = new Set(['loop', 'watchdog', 'continueHook', 'system', 'voice', 'market', 'spinOff']);
 const LOCAL_ONLY = new Set([
-  'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions',
+  'project.openGitUrl', 'project.discoverLocalProjects', 'project.suggestSpaceLinks', 'project.inspectPath', 'project.injectAgentInstructions',
   'linkedRepo.register'
 ]);
 // Nothing of a space: viewer state, or a visitor logging in or out.

@@ -18,6 +18,7 @@ const modalStore = useUIModalStore()
 const projectStore = useProjectStore()
 const dataStore = useDataStore()
 const name = ref('')
+const subtitle = ref('')
 const color = ref('#007acc')
 const initialInstructions = ref('')
 const supervisorGuidancePrefix = ref('')
@@ -417,6 +418,7 @@ onMounted(async () => {
     const meta = dataStore.meta || await trpc.project.getMeta.query({ space: projectStore.projectPath })
     if (meta) {
         name.value = meta.name
+        subtitle.value = meta.subtitle ?? ''
         color.value = meta.color
         initialInstructions.value = meta.initialInstructions || ''
         supervisorGuidancePrefix.value = meta.supervisorGuidancePrefix || ''
@@ -483,6 +485,7 @@ const save = async () => {
     try {
         await dataStore.updateProjectMeta(projectStore.projectPath, {
           name: name.value,
+          subtitle: subtitle.value.trim(),
           color: color.value,
           initialInstructions: initialInstructions.value,
           supervisorGuidancePrefix: supervisorGuidancePrefix.value,
@@ -533,6 +536,16 @@ const save = async () => {
               type="text" 
               placeholder="Name of this space"
             />
+          </div>
+          <div class="form-group">
+            <label>Subtitle</label>
+            <input
+              v-model="subtitle"
+              type="text"
+              maxlength="200"
+              placeholder="In one line, what this space is about"
+            />
+            <p class="hint-text">Other spaces read it, with this space's most valued ideas, to suggest linking to it.</p>
           </div>
           <div class="form-group">
             <label>Color</label>

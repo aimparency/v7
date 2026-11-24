@@ -1,4 +1,4 @@
-# The .bowman format (protocol v0, data model version 8)
+# The .bowman format (protocol v0, data model version 9)
 
 A `.bowman` directory stores an idea graph as plain JSON files inside a Git
 repository. Git is the history: files hold the current state only, and every
@@ -6,7 +6,7 @@ change is a normal commit. Any tool can read and write a project with nothing
 but a JSON parser; Aimparency's backend, MCP server and agents are clients of
 this format, not its owners.
 
-This document is normative for data model version 8. The JSON Schemas in
+This document is normative for data model version 9. The JSON Schemas in
 [`schemas/`](schemas/) are generated from the code that reads the format and
 define the shape of each file; the rules below add what a schema cannot
 express. Check a project with:
@@ -103,13 +103,16 @@ Phases group commitments ("what we do now / next"), not dates.
 
 ## Project meta
 
-- `name`, `color`, and `dataModelVersion`, which must be `8` for this version
+- `name`, `color`, and `dataModelVersion`, which must be `9` for this version
   of the protocol.
 - `statuses` defines the project's states: `key` (`[a-z0-9-]+`), `color`, and
   `promptsReflection` (entering the state asks to reflect on the hypotheses of the idea's links).
   `ongoing` is informational. Without `statuses`, Aimparency's defaults apply:
   open, in-progress, partially, review, implemented, halted, cancelled, failed,
   unclear, human-dependent.
+- `subtitle` (optional, one line, since version 9) says what the space is
+  about. Other spaces may read it (with the space's top ideas by intrinsic
+  value) to suggest links; it is the space's self-description to others.
 - `costUnit` and `defaultCost` define what cost numbers mean.
 - `repoId` identifies this repository for links from other repositories;
   `linkedRepos` lists graphs this one links to: identity (`repoId`), `name`,
@@ -126,6 +129,6 @@ Phases group commitments ("what we do now / next"), not dates.
 `meta.json` `dataModelVersion` names the format version. Aimparency upgrades
 older projects in place through idempotent migrations when it opens them, and
 refuses to write projects with a newer version than it knows. A reader that
-only understands version 8 should reject other versions rather than guess.
+only understands version 9 should reject other versions rather than guess.
 Frozen examples of earlier versions live in
 `packages/shared/fixtures/data-model-<N>/`.

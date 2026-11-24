@@ -87,6 +87,13 @@ export const BOWMAN_MIGRATIONS: BowmanMigration[] = [
     // Ideas gained the optional `realizedCostUsd`. Nothing has it yet, so
     // nothing is rewritten; the version moves so older code only reads.
     run: async () => {}
+  },
+  {
+    version: 9,
+    name: 'a space says in one line what it is about',
+    // meta.json gained the optional `subtitle`. Nothing is rewritten; the
+    // version moves so older code, which would drop it, only reads.
+    run: async () => {}
   }
 ];
 

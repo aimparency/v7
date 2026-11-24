@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Accepted by Felix 2026-11-23 with the shape: subtitle + top 3 ideas by intrinsic value as each graph's self-description.",
-    "date": 1795471937069
+    "state": "partially",
+    "comment": "Built as Felix shaped it: data model 9 adds meta.subtitle (one line, project settings field under the name; no-op migration, frozen data-model-v8 fixture, protocol schemas + README); backend spaces/link-suggestions.ts reads another space only through its self-description (subtitle + up to 3 ideas of highest intrinsic value; none without a repoId or without anything to say) and ranks (open idea, space) pairs by embedding similarity, best line per space, max 3 spaces per idea; project.suggestSpaceLinks (local-only) leaves out this space and those it links; MCP suggest_space_links (local-only). Evidence: link-suggestions.test (self-description reads only subtitle + top 3, ranking/threshold/per-idea cap), tools-with-accounts (local-only), migration tests incl. data-model-v8, verify:migration on v7 and ~/life clean, pnpm check 25/25. EXPERIMENT on this machine for v7 (no space has a subtitle yet, so only top-valued ideas): 6 spaces read; the top pair was right (Plant Aimparency at Commons Hub → an-der-rax, 'commons hub', 0.72), most others were lexical noise (e.g. 'Connect the loop to the outside world' → holophonor 'Web loop station', 0.707) at overlapping scores, so the default threshold went from 0.5 to 0.65. Not yet tested on the life space (the refutation criterion), and suggestions should improve once spaces carry subtitles written to describe what they are for. Hypothesis so far: mechanism works, precision without subtitles is low.",
+    "date": 1795540146355
   },
   "intrinsicValue": 0,
   "cost": 2,
