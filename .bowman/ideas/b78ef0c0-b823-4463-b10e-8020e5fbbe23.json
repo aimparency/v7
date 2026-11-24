@@ -1,0 +1,24 @@
+{
+  "id": "b78ef0c0-b823-4463-b10e-8020e5fbbe23",
+  "text": "Find a missing space on disk: search by its id, or enter the new path by hand",
+  "description": "Felix 2026-11-24. Only spaces with a local path can go missing this way: checkouts (registry kind 'checkout') and the machine-local localPath of linked repos (.bowman/runtime). Created and remote spaces live in the server's spaces dir; if one vanishes that is a server bug, not something to search for.\n- Detection: a checkout whose path no longer holds .bowman/meta.json shows as missing on the Spaces page (and in list_linked_repos as not-checked-out).\n- Search: scan the home folder for .bowman/meta.json (skip node_modules, .git, caches) whose repoId matches; re-point the registry entry to the hit. Name matches are only offered as suggestions, never re-pointed automatically.\n- Manual: a field to enter the new path directly; it is accepted when that folder's .bowman has the same id (or after confirming when it doesn't).\n- Agents: an MCP tool doing the same (search, or take a path).\nBuild after the internal graph→space rename, with the new names.",
+  "archived": false,
+  "color": "#323e69",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Accepted by Felix 2026-11-24; waits for the internal graph→space rename.",
+    "date": 1795532213045
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
