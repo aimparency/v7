@@ -69,6 +69,7 @@ const IDEA_FILE = /^\.bowman\/ideas\/([0-9a-f-]{36})\.json$/;
  * Ideas the turn changed since `since` (ISO time): their files differ from the
  * state at that time, in commits or in the working tree. A change of
  * realizedCostUsd or of a connection's reflection alone is not the turn's work on it.
+ * Ideas the turn's commit messages cite count too (code-only turns).
  */
 export function changedIdeas(repoRoot, since) {
   const git = (...args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
@@ -89,7 +90,15 @@ export function changedIdeas(repoRoot, since) {
   };
   const read = (file) => { try { return fs.readFileSync(path.join(repoRoot, file), 'utf8'); } catch { return ''; } };
   const earlier = (file) => { try { return before ? git('show', `${before}:${file}`) : ''; } catch { return ''; } };
-  return candidates.filter(file => withoutCost(read(file)) !== withoutCost(earlier(file))).map(file => IDEA_FILE.exec(file)[1]);
+  const edited = candidates.filter(file => withoutCost(read(file)) !== withoutCost(earlier(file))).map(file => IDEA_FILE.exec(file)[1]);
+  // Code-only turns: the commits cite the ideas they serve, by id or its first 8 characters.
+  const known = fs.readdirSync(path.join(repoRoot, '.bowman', 'ideas')).map(file => file.replace(/\.json$/, ''));
+  const cited = [...git('log', `--since=${since}`, '--format=%B').matchAll(/\b[0-9a-f]{8}(?:-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})?\b/g)]
+    .flatMap(([reference]) => {
+      const matches = known.filter(id => id.startsWith(reference));
+      return matches.length === 1 ? matches : [];
+    });
+  return [...new Set([...edited, ...cited])];
 }
 
 async function main() {

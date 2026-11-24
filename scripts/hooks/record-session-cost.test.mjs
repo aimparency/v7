@@ -51,6 +51,11 @@ test('the ideas a turn changed: committed since the last stop, and in the workin
     const afterCommit = new Date(Date.now() + 1000).toISOString();
     fs.writeFileSync(path.join(repo, '.bowman', 'ideas', `${committed}.json`), JSON.stringify({ supportingConnections: [{ ideaId: uncommitted, reflection: 'did not hold' }] }));
     assert.deepEqual(changedIdeas(repo, afterCommit), []);
+    // A code-only commit that cites an idea (by its first 8 characters) counts for it.
+    fs.writeFileSync(path.join(repo, 'code.ts'), 'x');
+    git('add', 'code.ts');
+    git('commit', '-q', '-m', `Fix the thing (${uncommitted.slice(0, 8)}), not 99999999`);
+    assert.deepEqual(changedIdeas(repo, new Date(Date.now() - 60_000).toISOString()).includes(uncommitted), true);
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
   }
