@@ -777,7 +777,8 @@ export const ideaRouter = t.router({
     .input(z.object({ space: spaceAddress, ideaId: z.string().uuid(), usd: z.number().finite().positive() }))
     .mutation(async ({ input }) => {
       const updated = await updateIdea(input.space, input.ideaId, (idea) => ({
-        ...idea, realizedCostUsd: (idea.realizedCostUsd ?? 0) + input.usd
+        // Millionths of a dollar: enough for a cycle's cost, without float noise in git.
+        ...idea, realizedCostUsd: Math.round(((idea.realizedCostUsd ?? 0) + input.usd) * 1e6) / 1e6
       }));
       return { realizedCostUsd: updated!.realizedCostUsd! };
     }),
