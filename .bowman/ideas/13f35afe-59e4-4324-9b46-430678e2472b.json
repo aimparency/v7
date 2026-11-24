@@ -1,0 +1,49 @@
+{
+  "id": "13f35afe-59e4-4324-9b46-430678e2472b",
+  "text": "Should a linked space's node on the canvas show how alive it is (open count, last change)?",
+  "description": "Part of 74a932da. The data exists since d3a5c59c (linkedRepo.list activity: ideas, open, lastChange; missing when its folder moved). Today it shows in the project settings chip and for agents, not on the canvas. On the canvas a repo node is drawn with its name only. The options are the children; pick one.",
+  "archived": false,
+  "color": "#336f3d",
+  "tags": [],
+  "supportingConnections": [
+    {
+      "ideaId": "73423fcf-6c17-4db9-aeca-36792411924f",
+      "relativePosition": [
+        -2.22,
+        3.02
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "2686cd31-cbe6-44c1-820a-5139558151e8",
+      "relativePosition": [
+        -1.12,
+        -3.58
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "35b4f36c-0fbc-4b21-b09b-7c7a43b10493",
+      "relativePosition": [
+        -1.5,
+        3.44
+      ],
+      "weight": 1
+    }
+  ],
+  "supportedIdeas": [
+    "74a932da-96cd-4f9c-a977-04b8172b0b54"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "unclear",
+    "comment": "Felix: should the canvas repo node show the rollup? Pick an option (number key in the inbox).",
+    "date": 1795539484155
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -5,7 +5,16 @@
   "archived": false,
   "color": "#336b3c",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "13f35afe-59e4-4324-9b46-430678e2472b",
+      "relativePosition": [
+        2.89,
+        -2.39
+      ],
+      "weight": 10
+    }
+  ],
   "supportedIdeas": [
     "d4203221-939e-44e6-bf3f-b3933c790e6b"
   ],
@@ -17,9 +26,9 @@
   },
   "intrinsicValue": 0,
   "cost": 4,
-  "selfWeight": 1,
+  "realizedCostUsd": 3.044625,
+  "selfWeight": 90,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "realizedCostUsd": 3.044625
+  "valueVariance": 0
 }

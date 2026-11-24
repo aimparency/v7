@@ -1,0 +1,23 @@
+{
+  "id": "73423fcf-6c17-4db9-aeca-36792411924f",
+  "text": "Option: the node's label gets the rollup, e.g. \"Ways of Will · 4 open\", and \"folder moved\" when it is gone",
+  "archived": false,
+  "color": "#386e3c",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "13f35afe-59e4-4324-9b46-430678e2472b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Always visible on the canvas; longer labels.",
+    "date": 1795539495923
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

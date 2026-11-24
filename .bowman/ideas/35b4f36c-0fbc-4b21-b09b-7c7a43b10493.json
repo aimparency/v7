@@ -1,0 +1,23 @@
+{
+  "id": "35b4f36c-0fbc-4b21-b09b-7c7a43b10493",
+  "text": "Option: keep the canvas node as it is; the rollup stays in the settings and for agents",
+  "archived": false,
+  "color": "#366b47",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "13f35afe-59e4-4324-9b46-430678e2472b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "No change.",
+    "date": 1795539502994
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

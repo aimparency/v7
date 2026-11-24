@@ -1,0 +1,23 @@
+{
+  "id": "2686cd31-cbe6-44c1-820a-5139558151e8",
+  "text": "Option: the rollup appears only when the linked space's node is selected (side panel), the label stays the name",
+  "archived": false,
+  "color": "#326642",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "13f35afe-59e4-4324-9b46-430678e2472b"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Quiet canvas; you look when you want to know.",
+    "date": 1795539502912
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
