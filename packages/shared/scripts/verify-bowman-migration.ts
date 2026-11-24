@@ -3,7 +3,7 @@
 //   pnpm verify:migration <repo or .bowman path> [--keep]
 //
 // Copies the .bowman (without secrets.json) to a temp dir, migrates the copy to
-// the current data model and compares the graph before and after: ideas,
+// the current data model and compares the space before and after: ideas,
 // connections, parent links, phase commitments and statuses must match. The
 // original is never touched. Exits non-zero on any difference or conflict.
 // The path may be a repo, its .bowman, or a .bowman-shaped directory (fixtures).
@@ -12,7 +12,7 @@ import { promises as fs } from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { migrateBowman, readDataModelVersion } from '../src/bowman-migration.js';
-import { diffGraphSignatures, readGraphSignature } from '../src/bowman-migrations/graph-signature.js';
+import { diffSpaceSignatures, readSpaceSignature } from '../src/bowman-migrations/space-signature.js';
 import { AIMPARENCY_DIR_NAME, CURRENT_DATA_MODEL_VERSION } from '../src/constants.js';
 import { calculateIdeaValues } from '../src/value-calculation.js';
 import { IdeaSchema } from '../src/types.js';
@@ -30,10 +30,10 @@ const workDir = await fs.mkdtemp(path.join(os.tmpdir(), 'verify-bowman-'));
 const copy = path.join(workDir, AIMPARENCY_DIR_NAME);
 await fs.cp(source, copy, { recursive: true, filter: (file) => path.basename(file) !== 'secrets.json' });
 
-const before = await readGraphSignature(copy);
+const before = await readSpaceSignature(copy);
 const result = await migrateBowman(copy);
-const after = await readGraphSignature(copy);
-const differences = diffGraphSignatures(before, after);
+const after = await readSpaceSignature(copy);
+const differences = diffSpaceSignatures(before, after);
 
 const ideas: any[] = [];
 for (const dir of ['ideas', 'archived-ideas']) {
@@ -55,10 +55,10 @@ console.log(`data model:     ${result.from ?? 'none'} → ${await readDataModelV
 console.log(`applied:        ${result.applied.join('; ') || 'nothing'}${result.newerThanSupported ? ' (project is newer than this code)' : ''}`);
 console.log(`ideas:          ${before.active.length} active, ${before.archived.length} archived`);
 console.log(`connections:    ${before.connections.length}, parent links ${before.parentLinks.length}, phase commitments ${before.commitments.length}`);
-console.log(`graph:          ${differences.length === 0 ? 'unchanged' : `CHANGED in ${differences.join(', ')}`}`);
+console.log(`space:          ${differences.length === 0 ? 'unchanged' : `CHANGED in ${differences.join(', ')}`}`);
 console.log(`conflicts:      ${result.conflicts.length === 0 ? 'none' : result.conflicts.join(', ')}`);
 console.log(`value calc:     ${valueCalculation}`);
-// Not caused by migrating (the graph check above covers that), but ideas failing
+// Not caused by migrating (the space check above covers that), but ideas failing
 // the schema are skipped by the backend's lists, so they are worth knowing about.
 console.log(`unreadable:     ${schemaIssues.length === 0 ? 'none' : `${schemaIssues.length} ideas fail IdeaSchema and are skipped by the backend: ${schemaIssues.slice(0, 5).join(', ')}`}`);
 

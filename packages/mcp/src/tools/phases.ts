@@ -89,7 +89,7 @@ export const phaseTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const phases = await trpcClient.phase.list.query({
-        graph: args.space as string,
+        space: args.space as string,
         parentPhaseId: args.parentPhaseId as string | undefined,
       });
       return {
@@ -116,7 +116,7 @@ export const phaseTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const phases = await trpcClient.phase.search.query({
-        graph: args.space as string,
+        space: args.space as string,
         query: args.query as string,
         parentPhaseId: args.parentPhaseId as string | undefined,
       });
@@ -153,7 +153,7 @@ export const phaseTools: ToolDefinition[] = [
         args.order !== undefined || args.before !== undefined || args.after !== undefined;
       const siblings = hasPlacement
         ? await trpcClient.phase.list.query({
-            graph: args.space as string,
+            space: args.space as string,
             parentPhaseId: parent,
           })
         : [];
@@ -166,7 +166,7 @@ export const phaseTools: ToolDefinition[] = [
         siblings as PhaseSibling[],
       );
       const result = await trpcClient.phase.create.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         phase: {
           name: args.name as string,
           parent,
@@ -211,7 +211,7 @@ export const phaseTools: ToolDefinition[] = [
       if (fields.to !== undefined) updateData.to = fields.to;
 
       await trpcClient.phase.update.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         phaseId: args.phaseId as string,
         phase: updateData,
       });
@@ -238,7 +238,7 @@ export const phaseTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       await trpcClient.phase.delete.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         phaseId: args.phaseId as string,
       });
       return {
@@ -266,7 +266,7 @@ export const phaseTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.commitToPhase.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         ideaId: args.ideaId as string,
         phaseId: args.phaseId as string,
         insertionIndex: args.insertionIndex as number | undefined,
@@ -295,7 +295,7 @@ export const phaseTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.removeFromPhase.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         ideaId: args.ideaId as string,
         phaseId: args.phaseId as string,
       });

@@ -19,16 +19,16 @@ const ideas = () => [
 
 describe('withOwnOffers', () => {
   it('gives the proposer\'s offered space the average weight of its siblings', () => {
-    const { values } = calculateIdeaValues(withOwnOffers(ideas(), [{ ideaId: 'goal', mine: true, space: { repoId: REPO } }]))
+    const { values } = calculateIdeaValues(withOwnOffers(ideas(), [{ ideaId: 'goal', mine: true, offeredSpace: { repoId: REPO } }]))
     // siblings 2 and 1: the offer weighs 1.5 of 4.5
     expect(values.get(REPO)).toBeCloseTo(1.5 / 4.5)
   })
 
   it('leaves others\' offers and accepted spaces as they are', () => {
-    const others = withOwnOffers(ideas(), [{ ideaId: 'goal', mine: false, space: { repoId: REPO } }])
+    const others = withOwnOffers(ideas(), [{ ideaId: 'goal', mine: false, offeredSpace: { repoId: REPO } }])
     expect(others.every(entry => !entry.supportingRepos)).toBe(true)
     const accepted = ideas()
     accepted[0]!.supportingRepos = [{ repoId: REPO, weight: 3, relativePosition: [0, 0] }]
-    expect(withOwnOffers(accepted, [{ ideaId: 'goal', mine: true, space: { repoId: REPO } }])[0]!.supportingRepos).toHaveLength(1)
+    expect(withOwnOffers(accepted, [{ ideaId: 'goal', mine: true, offeredSpace: { repoId: REPO } }])[0]!.supportingRepos).toHaveLength(1)
   })
 })

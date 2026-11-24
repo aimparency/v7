@@ -6,7 +6,7 @@ const toastStore = useToastStore()
 </script>
 
 <template>
-  <!-- Never takes focus: keyboard navigation of the graph and lists keeps working. -->
+  <!-- Never takes focus: keyboard navigation of the space and lists keeps working. -->
   <div id="toast-stack" aria-live="polite">
     <div
       v-for="toast in toastStore.toasts"

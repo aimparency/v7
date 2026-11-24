@@ -34,6 +34,6 @@ export function toolIdeaAccess(toolName: string, args: Record<string, unknown>, 
 export function reportToolActivity(trpcClient: BackendClient, toolName: string, args: Record<string, unknown>, result: CallToolResult) {
   if (typeof args.space !== "string") return;
   for (const access of toolIdeaAccess(toolName, args, result)) {
-    void trpcClient.activity.record.mutate({ graph: args.space, ...access }).catch(() => {});
+    void trpcClient.activity.record.mutate({ space: args.space, ...access }).catch(() => {});
   }
 }

@@ -11,7 +11,7 @@ import * as accounts from './accounts';
 
 let root = '';
 const localServerDir = process.env.AIMPARENCY_SERVER_DIR;
-const publicUrl = 'https://graphs.example.org';
+const publicUrl = 'https://spaces.example.org';
 let addresses = 0;
 
 beforeEach(async () => {
@@ -38,7 +38,7 @@ test('a wallet signs the message this server wrote and is logged in; an unknown 
   const visitor = connection();
   assert.equal((await visitor.auth.me()).signUp.wallet, true);
   const signed = await signIn(visitor, signer);
-  assert.match(signed.message, /^graphs\.example\.org wants you to sign in with your Ethereum account:/);
+  assert.match(signed.message, /^spaces\.example\.org wants you to sign in with your Ethereum account:/);
   await visitor.auth.walletLogin(signed);
   const me = await visitor.auth.me();
   assert.equal(me.name, `${signer.address.slice(0, 6)}…${signer.address.slice(-4)}`);
@@ -63,7 +63,7 @@ test('a signature for another website, or by another wallet, is refused', async 
 
   // The same words under another domain, as a phishing page would show them: this server never wrote that.
   const fresh = await visitor.auth.walletChallenge({ address: signer.address, chainId: 1 });
-  const phished = fresh.message.replace('graphs.example.org wants', 'evil.example wants');
+  const phished = fresh.message.replace('spaces.example.org wants', 'evil.example wants');
   await assert.rejects(visitor.auth.walletLogin({ message: phished, signature: await signer.signMessage({ message: phished }) }), /does not fit/);
   assert.equal(accounts.listAccounts().length, 0);
 });

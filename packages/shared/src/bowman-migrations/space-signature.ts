@@ -1,4 +1,4 @@
-// Layout-independent fingerprint of a .bowman graph, read straight from the
+// Layout-independent fingerprint of a .bowman space, read straight from the
 // files with explicit knowledge of every layout (not through the migrations),
 // so "same signature before and after" is real evidence that a migration kept
 // ideas, connections, phase commitments and statuses intact.
@@ -6,7 +6,7 @@
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
 
-export interface GraphSignature {
+export interface SpaceSignature {
   active: string[];
   archived: string[];
   /** parent>child weight hypothesis relativePosition */
@@ -25,8 +25,8 @@ export interface GraphSignature {
 
 const IDEA_DIRS = { active: ['ideas', 'aims'], archived: ['archived-ideas', 'archived-aims'] };
 
-export async function readGraphSignature(bowmanPath: string): Promise<GraphSignature> {
-  const signature: GraphSignature = {
+export async function readSpaceSignature(bowmanPath: string): Promise<SpaceSignature> {
+  const signature: SpaceSignature = {
     active: [], archived: [], connections: [], parentLinks: [], commitments: [], committedIn: [], states: [], texts: [], phases: []
   };
   for (const [kind, dirs] of Object.entries(IDEA_DIRS) as Array<['active' | 'archived', string[]]>) {
@@ -52,9 +52,9 @@ export async function readGraphSignature(bowmanPath: string): Promise<GraphSigna
   return signature;
 }
 
-/** Names of the signature parts that differ; empty when both graphs match. */
-export function diffGraphSignatures(before: GraphSignature, after: GraphSignature): string[] {
-  return (Object.keys(before) as Array<keyof GraphSignature>)
+/** Names of the signature parts that differ; empty when both spaces match. */
+export function diffSpaceSignatures(before: SpaceSignature, after: SpaceSignature): string[] {
+  return (Object.keys(before) as Array<keyof SpaceSignature>)
     .filter((key) => JSON.stringify(before[key]) !== JSON.stringify(after[key]));
 }
 

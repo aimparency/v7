@@ -21,15 +21,15 @@ async function settle(offer: SpaceOffer, accept: boolean) {
   busy.value = true
   const projectPath = projectStore.projectPath
   try {
-    if (accept) await trpc.notes.acceptOffer.mutate({ graph: projectPath, id: offer.id })
-    else await trpc.notes.remove.mutate({ graph: projectPath, id: offer.id })
+    if (accept) await trpc.notes.acceptOffer.mutate({ space: projectPath, id: offer.id })
+    else await trpc.notes.remove.mutate({ space: projectPath, id: offer.id })
     if (accept) {
       await dataStore.ensureProjectMeta(projectPath, { force: true })
       await dataStore.loadIdeas(projectPath, [offer.ideaId])
     }
     await dataStore.loadOffers(projectPath)
-    const repoId = offer.space?.repoId
-    if (!accept && repoId && !dataStore.offers.some(other => other.space?.repoId === repoId)) delete dataStore.linkedGraphViews[repoId]
+    const repoId = offer.offeredSpace?.repoId
+    if (!accept && repoId && !dataStore.offers.some(other => other.offeredSpace?.repoId === repoId)) delete dataStore.linkedSpaceViews[repoId]
   } catch (error) {
     useToastStore().error(accept ? 'Could not accept the offer' : 'Could not remove the offer', error)
   } finally {

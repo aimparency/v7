@@ -14,10 +14,10 @@ const emit = defineEmits<{ close: []; committed: [] }>()
 const dataStore = useDataStore()
 const projectStore = useProjectStore()
 
-// Code first, then the graph files that go with it.
+// Code first, then the space files that go with it.
 const rows = computed(() => props.changes
   .map(change => ({ ...change, ...describeChange(change.path, dataStore.ideas, dataStore.phases), kind: changeKind(change.code) }))
-  .sort((left, right) => Number(left.isGraph) - Number(right.isGraph) || left.label.localeCompare(right.label)))
+  .sort((left, right) => Number(left.isSpace) - Number(right.isSpace) || left.label.localeCompare(right.label)))
 const chosen = ref(new Set(props.changes.map(change => change.path)))
 const message = ref('')
 // Opened with nothing to commit, it only pushes what is already committed.
@@ -53,12 +53,12 @@ const commit = async () => {
   let committed = pushOnly
   try {
     if (!pushOnly) {
-      const { commit } = await trpc.git.commit.mutate({ graph: projectPath, paths: [...chosen.value], message: message.value })
+      const { commit } = await trpc.git.commit.mutate({ space: projectPath, paths: [...chosen.value], message: message.value })
       committed = true
       useToastStore().info(`Committed ${commit}`)
     }
     if (pushOnly || push.value) {
-      const { pushed } = await trpc.git.push.mutate({ graph: projectPath })
+      const { pushed } = await trpc.git.push.mutate({ space: projectPath })
       useToastStore().info(`Pushed ${pushed} ${pushed === 1 ? 'commit' : 'commits'}`)
     }
     emit('committed')

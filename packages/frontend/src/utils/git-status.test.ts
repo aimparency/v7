@@ -20,10 +20,10 @@ describe('git status', () => {
     const id = '11111111-2222-3333-4444-555555555555'
     const ideas = { [id]: { id, text: 'Commit from the UI' } } as unknown as Record<string, Idea>
     const phases = { [id]: { id, name: 'October' } } as unknown as Record<string, Phase>
-    expect(describeChange(`.bowman/ideas/${id}.json`, ideas, {})).toEqual({ label: 'idea: Commit from the UI', isGraph: true })
-    expect(describeChange(`sub/.bowman/phases/${id}.json`, {}, phases)).toEqual({ label: 'phase: October', isGraph: true })
-    expect(describeChange(`.bowman/ideas/${id}.json`, {}, {})).toEqual({ label: 'idea: 11111111', isGraph: true })
-    expect(describeChange('src/App.vue', ideas, phases)).toEqual({ label: 'src/App.vue', isGraph: false })
+    expect(describeChange(`.bowman/ideas/${id}.json`, ideas, {})).toEqual({ label: 'idea: Commit from the UI', isSpace: true })
+    expect(describeChange(`sub/.bowman/phases/${id}.json`, {}, phases)).toEqual({ label: 'phase: October', isSpace: true })
+    expect(describeChange(`.bowman/ideas/${id}.json`, {}, {})).toEqual({ label: 'idea: 11111111', isSpace: true })
+    expect(describeChange('src/App.vue', ideas, phases)).toEqual({ label: 'src/App.vue', isSpace: false })
     expect([changeKind('??'), changeKind(' D'), changeKind('R '), changeKind(' M')]).toEqual(['new', 'deleted', 'renamed', 'modified'])
   })
 })

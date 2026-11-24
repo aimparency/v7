@@ -22,7 +22,7 @@ export const noteTools: ToolDefinition[] = [
       required: ["space", "ideaId"],
     },
     handler: async (args, trpcClient) => {
-      const { notes } = await trpcClient.notes.list.query({ graph: String(args.space), ideaId: String(args.ideaId) });
+      const { notes } = await trpcClient.notes.list.query({ space: String(args.space), ideaId: String(args.ideaId) });
       const listed = notes.map(({ author, kind, text, createdAt }) => ({ author, kind, text, createdAt }));
       return { content: [{ type: "text", text: `${NOTES_FRAME}\n\n<visitor-notes>\n${JSON.stringify(listed, null, 2)}\n</visitor-notes>` }] };
     },

@@ -47,7 +47,7 @@ at the managed path unless `--force` is supplied.
 
 After installation, restart Codex in the target repository, run `/hooks`, and
 trust `scripts/hooks/codex-continue-on-stop.sh`. Confirm that the Aimparency MCP
-is connected and can access the target's `.bowman` graph.
+is connected and can access the target's `.bowman` space.
 
 Codex project hooks are configured in [`.codex/hooks.json`](../../.codex/hooks.json).
 The hook command resolves through `git rev-parse --show-toplevel`, so starting
@@ -79,7 +79,7 @@ What the hook tells the agent is a hook loop. The built-in one is
 writes its path to `.bowman/runtime/continue-hook-default`, so the default
 follows Aimparency updates in every repo. The copy install.sh puts next to the
 hook script is only the fallback when that checkout is missing. Saved loops are
-versioned with the graph in `.bowman/hook-loops/<slug>.md`:
+versioned with the space in `.bowman/hook-loops/<slug>.md`:
 
 ```markdown
 # Optimize & refactor
@@ -99,7 +99,7 @@ default only as a new loop, and resets a loop's text to the default's.
 ## Continuation contract
 
 On a normal Codex `Stop`, the hook returns valid JSON with
-`decision: "block"`. Its reason instructs Codex to use this graph loop:
+`decision: "block"`. Its reason instructs Codex to use this space loop:
 
 1. call `get_prioritized_ideas`;
 2. orient with `get_idea_context`;
@@ -110,7 +110,7 @@ On a normal Codex `Stop`, the hook returns valid JSON with
 
 The loop has no finished state: when ready work runs out, exploring (research,
 modeling, hypotheses, safe experiments) is the work. Something waiting on the
-human is parked in the graph (unclear or human-dependent, with its step
+human is parked in the space (unclear or human-dependent, with its step
 prepared) and the loop turns elsewhere. The default loop stops only when the
 human explicitly told the agent to stop or wait, in a two-stage protocol: Codex
 says so and ends with `[AIMPARENCY_REQUEST_HUMAN]`. The hook does **not** yield.

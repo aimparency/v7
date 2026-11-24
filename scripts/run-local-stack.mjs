@@ -29,15 +29,15 @@ import { serverDirectory } from '../packages/shared/src/server-directory.mjs';
 //
 // A machine holds any number of servers, each named: `pnpm dev` and `pnpm
 // start` run the one called "local" (no login, for the person at the machine);
-// `pnpm start --server hub` runs another one, with its own accounts, graphs,
+// `pnpm start --server hub` runs another one, with its own accounts, spaces,
 // port and settings, next to it. dev runs a server from source with hot
 // reload, start runs it built, as it is deployed.
 //
 // The first `start` of a server in a terminal asks whether other people use
 // it; the answers go to server.json in its directory. With accounts (`"login":
 // "accounts"`), `start` puts the built UI, the API and the MCP server for all
-// graphs on one port; everyone reads, accounts write the graphs they own or
-// were given (pnpm accounts, pnpm graphs), and agents and loops stay off.
+// spaces on one port; everyone reads, accounts write the spaces they own or
+// were given (pnpm accounts, pnpm spaces), and agents and loops stay off.
 // Under a supervisor that starts it again (systemd, Restart=on-failure), set
 // AIMPARENCY_SUPERVISED=true: server admins then restart it, or pull main and
 // restart it, from the UI. Without accounts (`pnpm dev`, `pnpm start`) the
@@ -90,7 +90,7 @@ const flags = new Set(args.filter((arg) => arg.startsWith('--')));
 const positional = args.filter((arg) => !arg.startsWith('--'));
 
 // The server directory (see packages/shared/src/server-config.ts): settings,
-// accounts, the list of graphs. Read here as plain JSON; the backend validates.
+// accounts, the list of spaces. Read here as plain JSON; the backend validates.
 const serverDir = serverDirectory;
 const serverSettingsFile = () => path.join(serverDir(), 'server.json');
 
@@ -113,7 +113,7 @@ async function saveServerSettings(values, { replace = false } = {}) {
 // wallets sign in only where it is known. Also set later in the UI (Server settings).
 async function askPublicUrl() {
   for (;;) {
-    const answer = (await ask('The address people open (e.g. https://graphs.example.org; empty: none, then MCP clients need a link and wallets cannot log in):', serverSettings().publicUrl ?? '')).trim().replace(/\/+$/, '');
+    const answer = (await ask('The address people open (e.g. https://spaces.example.org; empty: none, then MCP clients need a link and wallets cannot log in):', serverSettings().publicUrl ?? '')).trim().replace(/\/+$/, '');
     if (!answer || /^https?:\/\/[^/\s]+/.test(answer)) return answer;
     console.log('An address starts with https:// (or http://) and a host name.');
   }
@@ -395,7 +395,7 @@ async function askRepository(question, fallback = '') {
 async function setup() {
   console.log(`[local-runtime] Setup of the server "${serverName}". The answers go to ${serverSettingsFile()}; \`pnpm start${serverOption ? ` --server ${serverName}` : ''} --setup\` asks again.`);
   const others = await askYesNo(
-    'Let other people use this server? (everyone reads; accounts create graphs and write the ones they own or were given)',
+    'Let other people use this server? (everyone reads; accounts create spaces and write the ones they own or were given)',
     serverSettings().login === 'accounts',
   );
   if (!others) {
@@ -421,8 +421,8 @@ async function setup() {
     const password = await askNewPassword(name);
     await runCommand(tsx, ['scripts/accounts.mjs', 'add', name, '--admin'], { ...process.env, AIMPARENCY_PASSWORD: password });
   }
-  const checkout = await askRepository('A repository on this machine to add as a graph (a path or a git URL; empty: none, graphs are created in the browser):');
-  if (checkout) await runCommand(tsx, ['scripts/graphs.mjs', 'add', checkout], process.env).catch(() => console.log('Not added; `pnpm graphs add <path>` adds it later.'));
+  const checkout = await askRepository('A repository on this machine to add as a space (a path or a git URL; empty: none, spaces are created in the browser):');
+  if (checkout) await runCommand(tsx, ['scripts/spaces.mjs', 'add', checkout], process.env).catch(() => console.log('Not added; `pnpm spaces add <path>` adds it later.'));
   closeQuestions();
 }
 

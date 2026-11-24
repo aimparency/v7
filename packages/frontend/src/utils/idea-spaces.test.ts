@@ -7,8 +7,8 @@ const remoteCalls = vi.hoisted(() => [] as string[])
 vi.mock('./remote-trpc', async (original) => ({
   ...await original<typeof import('./remote-trpc')>(),
   remoteUntyped: (origin: string) => ({
-    mutation: async (path: string, input: { graph: string }) => { remoteCalls.push(`${origin} ${path} ${input.graph}`); return { id: 'made-there' } },
-    query: async (path: string, input: { graph: string }) => { remoteCalls.push(`${origin} ${path} ${input.graph}`); return [] }
+    mutation: async (path: string, input: { space: string }) => { remoteCalls.push(`${origin} ${path} ${input.space}`); return { id: 'made-there' } },
+    query: async (path: string, input: { space: string }) => { remoteCalls.push(`${origin} ${path} ${input.space}`); return [] }
   })
 }))
 import { clearIdeaSpaces, ideaSpaceLink, onReadOnlySpaceEdit, setIdeaSpace, setSpaceWritable } from './idea-spaces'
@@ -18,7 +18,7 @@ import { readOnlyGuardLink, setProjectAccess } from './read-only'
 function client() {
   const sent: string[] = []
   const backend: TRPCLink<AppRouter> = () => ({ op }) => observable((observer) => {
-    sent.push(`${op.path} ${(op.input as { graph?: string }).graph}`)
+    sent.push(`${op.path} ${(op.input as { space?: string }).space}`)
     observer.next({ result: { type: 'data', data: null } } as never)
     observer.complete()
   })
@@ -37,11 +37,11 @@ describe('ideaSpaceLink', () => {
     setIdeaSpace('mine-1', 'cook-every-friday')
     setIdeaSpace('mine-2', 'cook-every-friday')
 
-    await trpc.idea.update.mutate({ graph: 'host', ideaId: 'mine-1', idea: {} } as never)
-    await trpc.idea.connectIdeas.mutate({ graph: 'host', parentIdeaId: 'mine-1', childIdeaId: 'mine-2' } as never)
-    await trpc.idea.createFloatingIdea.mutate({ graph: 'host', idea: { text: 'Buy a pot' }, inheritColorFrom: 'mine-1' } as never)
-    await trpc.idea.getMany.query({ graph: 'host', ideaIds: ['mine-1', 'mine-2'] } as never)
-    await expect(trpc.idea.update.mutate({ graph: 'host', ideaId: 'theirs', idea: {} } as never)).rejects.toThrow(/read-only/)
+    await trpc.idea.update.mutate({ space: 'host', ideaId: 'mine-1', idea: {} } as never)
+    await trpc.idea.connectIdeas.mutate({ space: 'host', parentIdeaId: 'mine-1', childIdeaId: 'mine-2' } as never)
+    await trpc.idea.createFloatingIdea.mutate({ space: 'host', idea: { text: 'Buy a pot' }, inheritColorFrom: 'mine-1' } as never)
+    await trpc.idea.getMany.query({ space: 'host', ideaIds: ['mine-1', 'mine-2'] } as never)
+    await expect(trpc.idea.update.mutate({ space: 'host', ideaId: 'theirs', idea: {} } as never)).rejects.toThrow(/read-only/)
 
     expect(sent).toEqual([
       'idea.update cook-every-friday',
@@ -54,23 +54,23 @@ describe('ideaSpaceLink', () => {
   it('sends an undo of ideas of a space opened in place to that space', async () => {
     const { sent, trpc } = client()
     setIdeaSpace('mine-1', 'cook-every-friday')
-    await trpc.history.restore.mutate({ graph: 'host', changes: [], ideaIds: ['mine-1'] } as never)
-    await trpc.history.restore.mutate({ graph: 'host', changes: [], ideaIds: [] } as never)
+    await trpc.history.restore.mutate({ space: 'host', changes: [], ideaIds: ['mine-1'] } as never)
+    await trpc.history.restore.mutate({ space: 'host', changes: [], ideaIds: [] } as never)
     expect(sent).toEqual(['history.restore cook-every-friday', 'history.restore host'])
   })
 
   it('refuses to connect ideas of two spaces one by one', async () => {
     const { sent, trpc } = client()
     setIdeaSpace('mine', 'cook-every-friday')
-    await expect(trpc.idea.connectIdeas.mutate({ graph: 'host', parentIdeaId: 'theirs', childIdeaId: 'mine' } as never)).rejects.toThrow(/two spaces/)
+    await expect(trpc.idea.connectIdeas.mutate({ space: 'host', parentIdeaId: 'theirs', childIdeaId: 'mine' } as never)).rejects.toThrow(/two spaces/)
     expect(sent).toEqual([])
   })
 
   it('leaves requests about the open space alone', async () => {
     const { sent, trpc } = client()
     setIdeaSpace('mine', 'cook-every-friday')
-    await trpc.idea.update.mutate({ graph: 'host', ideaId: 'theirs', idea: {} } as never)
-    await trpc.phase.list.query({ graph: 'host' } as never)
+    await trpc.idea.update.mutate({ space: 'host', ideaId: 'theirs', idea: {} } as never)
+    await trpc.phase.list.query({ space: 'host' } as never)
     expect(sent).toEqual(['idea.update host', 'phase.list host'])
   })
 
@@ -80,8 +80,8 @@ describe('ideaSpaceLink', () => {
     setProjectAccess('host', 'This space is open read-only here.')
     setIdeaSpace('far-1', 'https://other.example/spaces/garden')
 
-    const made = await trpc.idea.createFloatingIdea.mutate({ graph: 'host', idea: { text: 'Plant' }, inheritColorFrom: 'far-1' } as never)
-    await trpc.idea.getMany.query({ graph: 'host', ideaIds: ['far-1'] } as never)
+    const made = await trpc.idea.createFloatingIdea.mutate({ space: 'host', idea: { text: 'Plant' }, inheritColorFrom: 'far-1' } as never)
+    await trpc.idea.getMany.query({ space: 'host', ideaIds: ['far-1'] } as never)
 
     expect(made).toEqual({ id: 'made-there' })
     expect(remoteCalls).toEqual(['https://other.example idea.createFloatingIdea garden', 'https://other.example idea.getMany garden'])
@@ -96,8 +96,8 @@ describe('ideaSpaceLink', () => {
     setIdeaSpace('far-1', 'https://other.example/spaces/garden')
     setSpaceWritable('https://other.example/spaces/garden', false)
 
-    await expect(trpc.idea.update.mutate({ graph: 'host', ideaId: 'far-1', idea: {} } as never)).rejects.toThrow(/read-only/)
-    await trpc.idea.get.query({ graph: 'host', ideaId: 'far-1' } as never)
+    await expect(trpc.idea.update.mutate({ space: 'host', ideaId: 'far-1', idea: {} } as never)).rejects.toThrow(/read-only/)
+    await trpc.idea.get.query({ space: 'host', ideaId: 'far-1' } as never)
 
     expect(asked).toEqual(['https://other.example/spaces/garden'])
     expect(remoteCalls).toEqual(['https://other.example idea.get garden'])

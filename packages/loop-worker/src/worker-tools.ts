@@ -21,9 +21,9 @@ import {
   strReplace,
   symbolContext,
   updateExperiment,
-  type GraphTools
+  type SpaceTools
 } from 'agent-tools';
-import { graphCatalogTools } from './graph-catalog-tools.js';
+import { spaceCatalogTools } from './space-catalog-tools.js';
 import { markInstanceStatus, waitForHumanAnswer } from './worker-state.js';
 
 export type WorkerToolContext = {
@@ -31,12 +31,12 @@ export type WorkerToolContext = {
   instanceId: string;
   /** Where coding tools act: the loop's worktree, or the project. */
   executionPath: string;
-  graph: GraphTools;
+  space: SpaceTools;
   signal: AbortSignal;
 };
 
 /** Every tool a stage can be given; stages pick their subset by name (see STAGE_TOOL_NAMES). */
-export function buildWorkerTools({ projectPath, instanceId, executionPath, graph, signal }: WorkerToolContext): Record<string, any> {
+export function buildWorkerTools({ projectPath, instanceId, executionPath, space, signal }: WorkerToolContext): Record<string, any> {
   return {
     status_report: tool({
       description: 'Post a brief user-facing status report about what happened since the last status report. Max 3 sentences.',
@@ -113,7 +113,7 @@ export function buildWorkerTools({ projectPath, instanceId, executionPath, graph
         return { ok: true, evidence: evidence.content };
       }
     }),
-    ...graphCatalogTools(graph, projectPath),
+    ...spaceCatalogTools(space, projectPath),
     experiment: tool({
       description: 'Create, list, or update durable experiments. Define predictions and stop conditions before acting; append evidence and belief updates after observing results.',
       inputSchema: jsonSchema<{

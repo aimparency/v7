@@ -272,7 +272,7 @@ export const useUIStore = defineStore('ui', {
 
       if (projectStore.projectPath) {
         void trpc.phase.setCursor.mutate({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           cursors,
           activeLevel: Math.max(0, markedLevel)
         }).catch(() => {})
@@ -869,7 +869,7 @@ export const useUIStore = defineStore('ui', {
       let mergedCount = 0
       for (const sourceId of others) {
         try {
-          const res = await trpc.idea.merge.mutate({ graph: projectPath, targetId, sourceId })
+          const res = await trpc.idea.merge.mutate({ space: projectPath, targetId, sourceId })
           results.push({ sourceId, ...res })
           mergedCount++
         } catch (e: any) {
@@ -881,7 +881,7 @@ export const useUIStore = defineStore('ui', {
       const dataStore = useDataStore()
       if (mergedCount > 0) {
         // Merge rewires parents, children, phases, and archives sources. Refresh
-        // the complete graph so every affected list/column reflects the result.
+        // the complete space so every affected list/column reflects the result.
         await dataStore.loadAllIdeas(projectPath)
       }
       this.clearMultiSelect()
@@ -909,7 +909,7 @@ export const useUIStore = defineStore('ui', {
         let idea = dataStore.ideas[currentId]
         if (!idea) {
           try {
-            idea = await trpc.idea.get.query({ graph: projectStore.projectPath, ideaId: currentId })
+            idea = await trpc.idea.get.query({ space: projectStore.projectPath, ideaId: currentId })
             dataStore.replaceIdea(idea.id, idea)
           } catch {
             console.error('failed to load idea', currentId)

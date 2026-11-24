@@ -149,7 +149,7 @@ const loadCommitEvidence = async () => {
   if (!props.ideaId || isBulk.value || !projectStore.projectPath) return
   commitEvidenceLoading.value = true
   commitEvidenceError.value = ''
-  const query = { graph: projectStore.projectPath, ideaId: props.ideaId }
+  const query = { space: projectStore.projectPath, ideaId: props.ideaId }
   try {
     ;[commitEvidence.value, contributors.value] = await Promise.all([
       trpc.idea.commitEvidence.query({ ...query, limit: 20 }),
@@ -350,7 +350,7 @@ watch(() => props.show, async (show) => {
     if (idea.value.supportedIdeas && idea.value.supportedIdeas.length > 0) {
       try {
         const parents = await trpc.idea.list.query({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           ids: idea.value.supportedIdeas
         })
         const ideaId = idea.value.id
@@ -370,7 +370,7 @@ watch(() => props.show, async (show) => {
         const phases = await Promise.all(
           idea.value.committedIn.map((phaseId) =>
             trpc.phase.get.query({
-              graph: projectStore.projectPath,
+              space: projectStore.projectPath,
               phaseId
             }).catch(() => null)
           )
@@ -538,11 +538,11 @@ const handleSave = async () => {
   const reposToAdd = currentLinkedRepoIds.filter((repoId) => !originalLinkedRepoIds.value.includes(repoId))
 
   for (const repoId of reposToRemove) {
-    await trpc.idea.unlinkRepo.mutate({ graph: projectStore.projectPath, ideaId: idea.value.id, repoId })
+    await trpc.idea.unlinkRepo.mutate({ space: projectStore.projectPath, ideaId: idea.value.id, repoId })
   }
 
   for (const repoId of reposToAdd) {
-    await trpc.idea.linkRepo.mutate({ graph: projectStore.projectPath, ideaId: idea.value.id, repoId })
+    await trpc.idea.linkRepo.mutate({ space: projectStore.projectPath, ideaId: idea.value.id, repoId })
   }
 
   if (reposToRemove.length > 0 || reposToAdd.length > 0) {

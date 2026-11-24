@@ -2,18 +2,18 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { hasAccounts, serverConfig, updateServerConfig } from 'shared/server-config';
 import { t, delayedProcedure, type Context } from '../trpc.js';
-import { agentsEnabled, mayCreateGraphs, viewerFor } from '../auth/access.js';
+import { agentsEnabled, mayCreateSpaces, viewerFor } from '../auth/access.js';
 import * as accounts from '../auth/accounts.js';
 import { newChallenge, verifyKeyLogin } from '../auth/browser-key.js';
 import { verifyWalletLogin, walletChallenge } from '../auth/wallet.js';
-import { findGraph, grantAccess, GraphError, graphBowmanPath } from '../graphs/registry.js';
+import { findSpace, grantAccess, SpaceError, spaceBowmanPath } from '../spaces/registry.js';
 import { readJsonOrNull } from '../storage/json.js';
 import path from 'node:path';
 import { accountFootprint, discardAccount } from '../auth/discard.js';
 import { withinLimit } from '../rate-limit.js';
 import { restartable, restartServer, updateServer } from '../server-restart.js';
 
-const rights = { serverAdmin: z.boolean().optional(), canCreateGraphs: z.boolean().optional() };
+const rights = { serverAdmin: z.boolean().optional(), canCreateSpaces: z.boolean().optional() };
 
 function assertAccounts() {
   if (!hasAccounts()) throw new TRPCError({ code: 'BAD_REQUEST', message: 'This server has no accounts.' });
@@ -58,9 +58,9 @@ async function logIn(ctx: Context, name: string): Promise<{ token: string; resto
 async function takeGrant(grant: accounts.InvitationGrant | null, accountId: string): Promise<string | null> {
   if (!grant) return null;
   try {
-    return (await grantAccess(grant.graph, accountId, grant.right)).slug;
+    return (await grantAccess(grant.space, accountId, grant.right)).slug;
   } catch (error) {
-    if (error instanceof GraphError) throw new TRPCError({ code: 'NOT_FOUND', message: error.message });
+    if (error instanceof SpaceError) throw new TRPCError({ code: 'NOT_FOUND', message: error.message });
     throw error;
   }
 }
@@ -108,7 +108,7 @@ function loginFailed(name: string, now = Date.now()) {
 
 export const authRouter = t.router({
   // What kind of server this is and who is asking. login 'accounts': the UI
-  // shows a login and the server's graphs instead of this machine's directories.
+  // shows a login and the server's spaces instead of this machine's directories.
   me: delayedProcedure.query(({ ctx }) => {
     const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
     const { login, signUp, publicUrl, guestDefaults } = serverConfig();
@@ -125,7 +125,7 @@ export const authRouter = t.router({
       serverAdmin: viewer.serverAdmin,
       // A server admin may restart it from the UI: a supervisor starts it again.
       restartable: viewer.serverAdmin && restartable(),
-      canCreateGraphs: mayCreateGraphs(viewer),
+      canCreateSpaces: mayCreateSpaces(viewer),
       // False for an account held only by a key in this browser: the UI
       // recommends a name and password, since clearing the browser loses it.
       permanentLogin: viewer.id === null || viewer.permanentLogin
@@ -219,10 +219,10 @@ export const authRouter = t.router({
       } catch {
         return { valid: false, space: null, right: null };
       }
-      const graph = grant ? findGraph(grant.graph) : null;
-      if (grant && !graph) return { valid: false, space: null, right: null };
-      const meta = graph ? await readJsonOrNull(path.join(graphBowmanPath(graph), 'meta.json')) as { name?: string } | null : null;
-      return { valid: true, space: graph ? { slug: graph.slug, name: meta?.name ?? graph.slug } : null, right: grant?.right ?? null };
+      const space = grant ? findSpace(grant.space) : null;
+      if (grant && !space) return { valid: false, space: null, right: null };
+      const meta = space ? await readJsonOrNull(path.join(spaceBowmanPath(space), 'meta.json')) as { name?: string } | null : null;
+      return { valid: true, space: space ? { slug: space.slug, name: meta?.name ?? space.slug } : null, right: grant?.right ?? null };
     }),
 
   // An account that exists takes an invitation to a space.
@@ -300,14 +300,14 @@ export const authRouter = t.router({
     }),
 
   // A token for an MCP client, which acts as this account: everywhere, or
-  // only on the graphs named here.
+  // only on the spaces named here.
   issueToken: delayedProcedure
-    .input(z.object({ label: z.string().min(1).max(100).default('mcp'), graphs: z.array(z.string()).max(200).optional() }))
+    .input(z.object({ label: z.string().min(1).max(100).default('mcp'), spaces: z.array(z.string()).max(200).optional() }))
     .mutation(async ({ ctx, input }) => {
-      for (const slug of input.graphs ?? []) {
-        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
+      for (const slug of input.spaces ?? []) {
+        if (!findSpace(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
       }
-      return { token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), input.label, input.graphs)) };
+      return { token: await run(() => accounts.issueToken(signedIn(ctx.viewer?.name), input.label, input.spaces)) };
     }),
 
   // Another Aimparency website's page (a space there shows a space of this
@@ -372,7 +372,7 @@ export const authRouter = t.router({
       code: await run(() => accounts.createInvitation({
         kind: input.kind,
         serverAdmin: input.serverAdmin,
-        canCreateGraphs: input.canCreateGraphs,
+        canCreateSpaces: input.canCreateSpaces,
         expiresAt: input.days ? new Date(Date.now() + input.days * 24 * 60 * 60_000).toISOString() : undefined
       }))
     })),
@@ -395,8 +395,8 @@ export const authRouter = t.router({
   // the rest (port, host, agents, limits), which stays a matter of the file.
   getServerSettings: delayedProcedure.query(() => {
     assertAccounts();
-    const { publicUrl, graphCreation, signUp, guestDefaults } = serverConfig();
-    return { publicUrl: publicUrl ?? null, graphCreation, signUp, notes: guestDefaults.notes, read: guestDefaults.read };
+    const { publicUrl, spaceCreation, signUp, guestDefaults } = serverConfig();
+    return { publicUrl: publicUrl ?? null, spaceCreation, signUp, notes: guestDefaults.notes, read: guestDefaults.read };
   }),
 
   // Server admins only (every auth mutation not listed in auth/access.ts is).
@@ -407,7 +407,7 @@ export const authRouter = t.router({
     .input(z.object({
       // Empty: the server has no public address (no wallet login, no MCP login by itself).
       publicUrl: z.union([z.literal(''), z.string().url().max(500).refine(url => /^https?:\/\//.test(url), 'An address starts with https:// or http://')]).optional(),
-      graphCreation: z.enum(['everyone', 'selected']).optional(),
+      spaceCreation: z.enum(['everyone', 'selected']).optional(),
       signUp: z.object({ open: z.boolean(), browserKey: z.boolean(), wallet: z.boolean() }).partial().optional(),
       notes: z.enum(['everyone', 'selected', 'nobody']).optional(),
       read: z.enum(['everyone', 'accounts', 'selected']).optional()
@@ -418,7 +418,7 @@ export const authRouter = t.router({
       const publicUrl = input.publicUrl?.replace(/\/+$/, '');
       updateServerConfig({
         ...(publicUrl ? { publicUrl } : {}),
-        ...(input.graphCreation ? { graphCreation: input.graphCreation } : {}),
+        ...(input.spaceCreation ? { spaceCreation: input.spaceCreation } : {}),
         ...(input.signUp ? { signUp: { ...current.signUp, ...input.signUp } } : {}),
         ...(input.notes || input.read ? { guestDefaults: { ...current.guestDefaults, ...(input.notes ? { notes: input.notes } : {}), ...(input.read ? { read: input.read } : {}) } } : {})
       }, input.publicUrl === '' ? ['publicUrl'] : []);

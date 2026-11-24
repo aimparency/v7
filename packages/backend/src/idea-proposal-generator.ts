@@ -138,7 +138,7 @@ export async function generateIdeaProposal(input: {
       'Decompose the human goal into a small contribution tree.',
       'Each child must concretely contribute to its parent; weights express relative contribution.',
       'Return assumptions and genuinely unresolved questions explicitly.',
-      'Do not invent IDs, phases, existing graph objects, execution claims, or completed work.',
+      'Do not invent IDs, phases, existing space objects, execution claims, or completed work.',
       'Prefer 1–7 ideas and depth at most 3. Keep titles concise.'
     ].join(' '),
     prompt: `Human goal:\n${input.transcript}${context}`

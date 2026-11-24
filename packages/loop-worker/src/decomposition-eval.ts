@@ -1,6 +1,6 @@
 import { cosineSimilarity, type Idea } from 'shared';
 
-// Offline evaluation of the decompose stage against the graph's own history:
+// Offline evaluation of the decompose stage against the space's own history:
 // for implemented parents, hide their real children, let the planner propose,
 // and compare proposals with the real children by embedding similarity. A
 // shuffled control (proposals scored against another parent's children) is
@@ -28,7 +28,7 @@ export function selectEvalParents(ideas: Idea[], count: number): Idea[] {
   return Array.from({ length: count }, (_, index) => eligible[Math.floor((index * eligible.length) / count)]!);
 }
 
-/** The graph as the planner would have seen it before the parent was decomposed: open, no children, no outcome comment. */
+/** The space as the planner would have seen it before the parent was decomposed: open, no children, no outcome comment. */
 export function maskChildren(ideaById: Map<string, Idea>, parent: Idea): { masked: Map<string, Idea>; hiddenIds: Set<string> } {
   const hiddenIds = new Set(realChildren(parent, ideaById).map((child) => child.id));
   const masked = new Map(ideaById);

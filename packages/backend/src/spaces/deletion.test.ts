@@ -10,8 +10,8 @@ import { forgetServerFile, updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from '../auth/accounts';
-import { addCheckout, DELETED_DAYS, listDeletedGraphs, listGraphs } from './registry';
-import { purgeDeletedGraphs } from './deletion';
+import { addCheckout, DELETED_DAYS, listDeletedSpaces, listSpaces } from './registry';
+import { purgeDeletedSpaces } from './deletion';
 
 let root = '';
 const localServerDir = process.env.AIMPARENCY_SERVER_DIR;
@@ -24,7 +24,7 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  for (const graph of [...listGraphs(), ...listDeletedGraphs()]) clearIndices(graph.path);
+  for (const space of [...listSpaces(), ...listDeletedSpaces()]) clearIndices(space.path);
   process.env.AIMPARENCY_SERVER_DIR = localServerDir;
   await fs.remove(root);
 });
@@ -36,20 +36,20 @@ const loggedIn = async (name: string) => {
 
 test('a space created here goes with its repository; of a checkout only the server\'s entry goes', async () => {
   const ana = await loggedIn('ana');
-  const created = (await ana.graphs.create({ name: 'Made here' })).slug;
-  const createdDirectory = listGraphs().find(graph => graph.slug === created)!.path;
+  const created = (await ana.spaces.create({ name: 'Made here' })).slug;
+  const createdDirectory = listSpaces().find(space => space.slug === created)!.path;
   const repository = path.join(root, 'operator-repo');
   await fs.outputJson(path.join(repository, '.bowman', 'meta.json'), { name: 'Operator', dataModelVersion: 6, rootPhaseIds: [] });
   await addCheckout(repository, (await accounts.findAccount('ana'))!.id, 'operator');
 
-  await ana.graphs.remove({ graph: created });
-  await ana.graphs.remove({ graph: 'operator' });
+  await ana.spaces.remove({ space: created });
+  await ana.spaces.remove({ space: 'operator' });
   assert.ok(await fs.pathExists(createdDirectory), 'restorable while deleted');
-  await purgeDeletedGraphs(later());
+  await purgeDeletedSpaces(later());
 
   assert.equal(await fs.pathExists(createdDirectory), false);
   assert.ok(await fs.pathExists(path.join(repository, '.bowman', 'meta.json')), 'the operator\'s repository stays');
-  assert.deepEqual([...listGraphs(), ...listDeletedGraphs()], []);
+  assert.deepEqual([...listSpaces(), ...listDeletedSpaces()], []);
   // The repository may be listed again.
   await addCheckout(repository, null, 'operator');
 });
@@ -57,34 +57,34 @@ test('a space created here goes with its repository; of a checkout only the serv
 test('a space gone for good leaves no offer in other spaces and no token naming it', async () => {
   const ana = await loggedIn('ana');
   const ben = await loggedIn('ben');
-  const hub = (await ana.graphs.create({ name: 'Hub' })).slug;
-  const ideaId = (await ana.idea.createFloatingIdea({ graph: hub, idea: { text: 'A shared kitchen' } })).id;
-  const kitchen = (await ben.graphs.create({ name: 'Ben cooks' })).slug;
-  const { repoId } = await ben.project.getMeta({ graph: kitchen });
-  await ben.notes.add({ graph: hub, ideaId, kind: 'offer', text: 'Take it', space: { host: `https://hub.example.org/spaces/${kitchen}/`, repoId: repoId!, name: 'Ben cooks' } });
-  const { token } = await ben.auth.issueToken({ label: 'agent', graphs: [kitchen, hub] });
-  await ben.auth.issueToken({ label: 'only the kitchen', graphs: [kitchen] });
+  const hub = (await ana.spaces.create({ name: 'Hub' })).slug;
+  const ideaId = (await ana.idea.createFloatingIdea({ space: hub, idea: { text: 'A shared kitchen' } })).id;
+  const kitchen = (await ben.spaces.create({ name: 'Ben cooks' })).slug;
+  const { repoId } = await ben.project.getMeta({ space: kitchen });
+  await ben.notes.add({ space: hub, ideaId, kind: 'offer', text: 'Take it', offeredSpace: { host: `https://hub.example.org/spaces/${kitchen}/`, repoId: repoId!, name: 'Ben cooks' } });
+  const { token } = await ben.auth.issueToken({ label: 'agent', spaces: [kitchen, hub] });
+  await ben.auth.issueToken({ label: 'only the kitchen', spaces: [kitchen] });
 
-  await ben.graphs.remove({ graph: kitchen });
-  assert.equal((await ana.notes.list({ graph: hub, ideaId })).notes.filter(note => note.kind === 'offer').length, 1, 'kept while restorable');
-  await purgeDeletedGraphs(later());
+  await ben.spaces.remove({ space: kitchen });
+  assert.equal((await ana.notes.list({ space: hub, ideaId })).notes.filter(note => note.kind === 'offer').length, 1, 'kept while restorable');
+  await purgeDeletedSpaces(later());
 
-  assert.deepEqual((await ana.notes.list({ graph: hub, ideaId })).notes.filter(note => note.kind === 'offer'), []);
-  const tokens = (await ben.auth.listTokens()).filter(entry => entry.graphs);
-  assert.deepEqual(tokens.map(entry => entry.graphs), [[hub]], 'the token limited to the kitchen alone is revoked');
+  assert.deepEqual((await ana.notes.list({ space: hub, ideaId })).notes.filter(note => note.kind === 'offer'), []);
+  const tokens = (await ben.auth.listTokens()).filter(entry => entry.spaces);
+  assert.deepEqual(tokens.map(entry => entry.spaces), [[hub]], 'the token limited to the kitchen alone is revoked');
   // A new space under the old slug is not the old token's.
-  const reused = (await ben.graphs.create({ name: 'Ben cooks' })).slug;
+  const reused = (await ben.spaces.create({ name: 'Ben cooks' })).slug;
   assert.equal(reused, kitchen);
-  await assert.rejects(appRouter.createCaller({ session: { token } }).idea.createFloatingIdea({ graph: reused, idea: { text: 'x' } }), /open read-only|Log in/);
+  await assert.rejects(appRouter.createCaller({ session: { token } }).idea.createFloatingIdea({ space: reused, idea: { text: 'x' } }), /open read-only|Log in/);
 });
 
-test('a directory outside the server\'s own is never removed, whatever graphs.json says', async () => {
+test('a directory outside the server\'s own is never removed, whatever spaces.json says', async () => {
   const outside = path.join(root, 'precious');
   await fs.outputFile(path.join(outside, 'keep.txt'), 'keep');
-  const file = path.join(root, 'server', 'graphs.json');
-  await fs.outputJson(file, { graphs: [{ slug: 'odd', kind: 'created', path: outside, owner: null, writers: [], createdAt: '', deletedAt: new Date(0).toISOString() }] });
-  forgetServerFile('graphs.json');
+  const file = path.join(root, 'server', 'spaces.json');
+  await fs.outputJson(file, { spaces: [{ slug: 'odd', kind: 'created', path: outside, owner: null, writers: [], createdAt: '', deletedAt: new Date(0).toISOString() }] });
+  forgetServerFile('spaces.json');
 
-  await assert.rejects(purgeDeletedGraphs(), /points outside/);
+  await assert.rejects(purgeDeletedSpaces(), /points outside/);
   assert.ok(await fs.pathExists(path.join(outside, 'keep.txt')));
 });

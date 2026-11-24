@@ -18,7 +18,7 @@ const global = {
 }
 
 describe('CommitModal', () => {
-  it('lists code before graph files, names ideas, and commits only the checked paths with the message', async () => {
+  it('lists code before space files, names ideas, and commits only the checked paths with the message', async () => {
     const wrapper = mount(CommitModal, {
       props: {
         changes: [{ path: `.bowman/ideas/${ideaId}.json`, code: '??' }, { path: 'src/a.ts', code: ' M' }, { path: 'src/b.ts', code: ' D' }],
@@ -37,7 +37,7 @@ describe('CommitModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
 
-    expect(mutate).toHaveBeenCalledWith({ graph: '/p', paths: [`.bowman/ideas/${ideaId}.json`, 'src/a.ts'], message: 'feat: commit dialog' })
+    expect(mutate).toHaveBeenCalledWith({ space: '/p', paths: [`.bowman/ideas/${ideaId}.json`, 'src/a.ts'], message: 'feat: commit dialog' })
     expect(pushMutate).not.toHaveBeenCalled()
     expect(wrapper.emitted('committed')).toHaveLength(1)
   })
@@ -50,7 +50,7 @@ describe('CommitModal', () => {
     expect(wrapper.find('button[type=submit]').text()).toBe('Commit 1 file & push')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(pushMutate).toHaveBeenCalledWith({ graph: '/p' })
+    expect(pushMutate).toHaveBeenCalledWith({ space: '/p' })
     expect(wrapper.emitted('committed')).toHaveLength(1)
   })
 
@@ -63,7 +63,7 @@ describe('CommitModal', () => {
     await wrapper.find('form').trigger('submit')
     await flushPromises()
     expect(mutate).not.toHaveBeenCalled()
-    expect(pushMutate).toHaveBeenCalledWith({ graph: '/p' })
+    expect(pushMutate).toHaveBeenCalledWith({ space: '/p' })
     expect(wrapper.emitted('committed')).toHaveLength(1)
   })
 })

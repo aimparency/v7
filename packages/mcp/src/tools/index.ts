@@ -36,13 +36,10 @@ export function toolForSpace(tool: ToolDefinition, space: string | undefined): P
   };
 }
 
-// The space a call works on: the one it names; `graph` and `projectPath`, as the
-// parameter was called before (agents and scripts still send them); else the session's.
+// The space a call works on: the one it names, else the session's.
 export function argumentsWithSpace(given: Record<string, unknown> | undefined, sessionSpace: string | undefined) {
-  if (!given) return given;
-  const { graph, projectPath, ...rest } = given;
-  const space = rest.space ?? graph ?? projectPath ?? sessionSpace;
-  return space === undefined ? rest : { ...rest, space };
+  if (!given || given.space !== undefined || sessionSpace === undefined) return given;
+  return { ...given, space: sessionSpace };
 }
 
 export function registerTools(server: Server, trpcClient: BackendClient, space?: string) {

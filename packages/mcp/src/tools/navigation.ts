@@ -23,11 +23,11 @@ export const navigationTools: ToolDefinition[] = [
       // Fetch all phases once; we need them for both explicit lookup and time-based resolution.
       // parentPhaseId omitted → backend returns all phases
       const allPhases = await trpcClient.phase.list.query({
-        graph: args.space as string,
+        space: args.space as string,
       });
       const phaseById = new Map(allPhases.map((p) => [p.id, p]));
       // Reported once here instead of in every tool description: what cost estimates mean in this project.
-      const projectMeta = await trpcClient.project.getMeta.query({ graph: args.space as string }).catch(() => null);
+      const projectMeta = await trpcClient.project.getMeta.query({ space: args.space as string }).catch(() => null);
 
       const targetPhase = resolveWorkPhase(allPhases, args.phaseId as string | undefined);
       if (!targetPhase) {
@@ -40,7 +40,7 @@ export const navigationTools: ToolDefinition[] = [
       // intrinsicValue/cost ignores the space and is near-useless when most
       // intrinsic value sits at the top.
       const allIdeas = await trpcClient.idea.list.query({
-        graph: args.space as string,
+        space: args.space as string,
       });
       const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas, defaultIdeaCost(projectMeta));
       const {
@@ -184,7 +184,7 @@ export const navigationTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.phase.getActivePath.query({
-        graph: args.space as string,
+        space: args.space as string,
       });
       return {
         content: [{
@@ -216,7 +216,7 @@ export const navigationTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const ideas = await trpcClient.idea.list.query({
-        graph: args.space as string,
+        space: args.space as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
         floating: args.floating as boolean | undefined,
@@ -244,13 +244,13 @@ export const navigationTools: ToolDefinition[] = [
     handler: async (args, trpcClient) => {
         // 1. Get all ideas (cache them)
         const allIdeas = await trpcClient.idea.list.query({
-            graph: args.space as string,
+            space: args.space as string,
         });
         const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
 
         // 2. Fetch the target phase directly
         const phase = await trpcClient.phase.get.query({
-            graph: args.space as string,
+            space: args.space as string,
             phaseId: args.phaseId as string,
         });
 
@@ -323,13 +323,13 @@ export const navigationTools: ToolDefinition[] = [
       required: ["space", "change"],
     },
     handler: async (args, trpcClient) => {
-      const graph = args.space as string;
+      const space = args.space as string;
       const change: WhatIfChange = args.change === "remove"
         ? { kind: "remove", ideaIds: [String(args.ideaId ?? "")] }
         : { kind: "weight", parentId: String(args.parentId ?? ""), childId: String(args.childId ?? ""), weight: Number(args.weight) };
       const [ideas, meta] = await Promise.all([
-        trpcClient.idea.list.query({ graph }),
-        trpcClient.project.getMeta.query({ graph }).catch(() => null)
+        trpcClient.idea.list.query({ space }),
+        trpcClient.project.getMeta.query({ space }).catch(() => null)
       ]);
       if (change.kind === "remove" && !ideas.some((idea) => idea.id === change.ideaIds[0])) throw new Error(`No idea ${change.ideaIds[0]}.`);
       if (change.kind === "weight" && !(change.weight > 0)) throw new Error("weight must be positive.");

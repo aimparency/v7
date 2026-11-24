@@ -40,7 +40,7 @@ export type WorkSelectionScope = 'phase-commitments' | 'connected-uncommitted-le
  * What an agent should work on in a phase. Only open leaves are actionable: an
  * idea with an ongoing child (open, in progress, in review, waiting on a human…)
  * is a container whose work lives in that child. Committed leaves come first;
- * without any, open leaves that serve a parent anywhere in the graph are equally
+ * without any, open leaves that serve a parent anywhere in the space are equally
  * valid work. With neither, the phase's open containers are returned only as
  * context for exploration.
  */

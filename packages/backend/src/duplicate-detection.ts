@@ -2,7 +2,7 @@ import type { Idea } from 'shared';
 import { cosineSimilarity } from 'shared';
 
 // Pure core of the duplicate-detection maintenance tooling, shared by
-// graphHealth.findDuplicates (ranked pair report) and graphHealth.graphHygiene
+// spaceHealth.findDuplicates (ranked pair report) and spaceHealth.spaceHygiene
 // (union-find clusters). Kept dependency-free (inject vectors + ideaMap) so the
 // precision behaviour — especially the parent-child exclusion — is unit-testable
 // without disk, embeddings, or a tRPC caller.
@@ -11,8 +11,8 @@ import { cosineSimilarity } from 'shared';
  * A high-cosine parent<->child pair is almost always an intentional
  * summary/detail split, not an accidental duplicate to merge. Both the duplicate
  * report and the hygiene clusters exclude these; collapsing a *finished* nesting
- * is surfaced separately (merge_ideas + graph_hygiene's collapseCandidates).
- * Adjacency is checked from x's side via either link array (the graph keeps both
+ * is surfaced separately (merge_ideas + space_hygiene's collapseCandidates).
+ * Adjacency is checked from x's side via either link array (the space keeps both
  * directions consistent, so one side suffices).
  */
 export function isDirectParentChild(ideaMap: Map<string, Idea>, x: string, y: string): boolean {
@@ -27,7 +27,7 @@ export interface DuplicatePair { aId: string; bId: string; score: number; }
 /**
  * All-pairs cosine over the given (id, vector) list, returning the pairs at or
  * above `threshold` — excluding direct parent-child pairs — sorted by score
- * descending. O(n²/2); negligible at graph scale.
+ * descending. O(n²/2); negligible at space scale.
  */
 export function findDuplicatePairs(
   indexed: Array<{ id: string; vector: number[] }>,

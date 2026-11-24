@@ -9,7 +9,7 @@ import { IDEA_DEFAULTS } from '../../constants/ideaDefaults'
 type UIStore = ReturnType<typeof useUIStore>
 
 // Puts a new idea, or links an existing one, where the idea modal was opened:
-// the graph, a phase list, or a sub-idea list (as a child of the selected
+// the space, a phase list, or a sub-idea list (as a child of the selected
 // idea), then selects it and offers the follow-up prompts (parent, phase,
 // connection details). Exactly one of existingIdeaId / ideaAttributes is set.
 export async function placeIdea(
@@ -41,7 +41,7 @@ export async function placeIdea(
     if (path.phase) {
       if (isExistingIdea) {
         await trpc.idea.commitToPhase.mutate({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           ideaId: existingIdeaId!,
           phaseId: path.phase.id,
           insertionIndex: 0
@@ -74,7 +74,7 @@ export async function placeIdea(
     if (insertsAsFirstChild(currentIdea, currentIdeaState, modalStore.ideaModalInsertPosition)) {
       if (isExistingIdea) {
         await trpc.idea.connectIdeas.mutate({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           parentIdeaId: currentIdea.id,
           childIdeaId: existingIdeaId!,
           parentIncomingIndex: 0,
@@ -83,7 +83,7 @@ export async function placeIdea(
         newIdeaId = existingIdeaId!
 
         const updatedParent = await trpc.idea.get.query({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           ideaId: currentIdea.id
         })
         dataStore.replaceIdea(currentIdea.id, updatedParent)
@@ -107,7 +107,7 @@ export async function placeIdea(
 
         if (isExistingIdea) {
           await trpc.idea.connectIdeas.mutate({
-            graph: projectStore.projectPath,
+            space: projectStore.projectPath,
             parentIdeaId: parentIdea.id,
             childIdeaId: existingIdeaId!,
             parentIncomingIndex: insertionIndex,
@@ -116,7 +116,7 @@ export async function placeIdea(
           newIdeaId = existingIdeaId!
 
           const updatedParent = await trpc.idea.get.query({
-            graph: projectStore.projectPath,
+            space: projectStore.projectPath,
             ideaId: parentIdea.id
           })
           dataStore.replaceIdea(parentIdea.id, updatedParent)
@@ -136,7 +136,7 @@ export async function placeIdea(
 
       if (isExistingIdea) {
         await trpc.idea.commitToPhase.mutate({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           ideaId: existingIdeaId!,
           phaseId: path.phase.id,
           insertionIndex
@@ -144,7 +144,7 @@ export async function placeIdea(
         newIdeaId = existingIdeaId!
 
         const updatedPhase = await trpc.phase.get.query({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           phaseId: path.phase.id
         })
         dataStore.replacePhase(path.phase.id, updatedPhase)
@@ -190,7 +190,7 @@ export async function placeIdea(
             additionalOptions: [{
               id: 'skip-phase',
               label: 'Skip (leave uncommitted)',
-              description: 'Keep this new graph idea uncommitted to any phase.',
+              description: 'Keep this new space idea uncommitted to any phase.',
               showWhenQueryEmptyOnly: true,
               actsAsEscape: true
             }]
@@ -251,7 +251,7 @@ export async function placeIdea(
       additionalOptions: [{
         id: 'skip-phase',
         label: 'Skip (leave uncommitted)',
-        description: 'Keep this new graph idea uncommitted to any phase.',
+        description: 'Keep this new space idea uncommitted to any phase.',
         showWhenQueryEmptyOnly: true,
         actsAsEscape: true
       }]
@@ -261,7 +261,7 @@ export async function placeIdea(
 
 const connectToParent = async (parentId: string, childId: string) => {
   const projectPath = useProjectStore().projectPath
-  await trpc.idea.connectIdeas.mutate({ graph: projectPath, parentIdeaId: parentId, childIdeaId: childId })
+  await trpc.idea.connectIdeas.mutate({ space: projectPath, parentIdeaId: parentId, childIdeaId: childId })
   await useDataStore().loadIdeas(projectPath, [parentId, childId])
 }
 

@@ -20,17 +20,17 @@ import {
   spawnLoopWorker,
   enqueueLoopHumanMessage,
 } from '../loop-runtime.js';
-import { graphAddress } from '../graphs/address.js';
+import { spaceAddress } from '../spaces/address.js';
 
 export const loopRouter = t.router({
   getConfig: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ input }) => {
       const [config, secrets] = await Promise.all([
-        readLoopConfig(input.graph),
-        readLoopSecrets(input.graph)
+        readLoopConfig(input.space),
+        readLoopSecrets(input.space)
       ]);
 
       return {
@@ -45,22 +45,22 @@ export const loopRouter = t.router({
 
   updateConfig: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       config: loopConfigSchema.partial()
     }))
     .mutation(async ({ input }) => {
-      const existing = await readLoopConfig(input.graph);
+      const existing = await readLoopConfig(input.space);
       const parsed = loopConfigSchema.parse({
         ...existing,
         ...input.config
       });
-      await writeLoopConfig(input.graph, parsed);
+      await writeLoopConfig(input.space, parsed);
       return parsed;
     }),
 
   updateSecrets: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       secrets: z.object({
         NVIDIA_API_KEY: z.string().optional(),
         OPENROUTER_API_KEY: z.string().optional(),
@@ -68,7 +68,7 @@ export const loopRouter = t.router({
       })
     }))
     .mutation(async ({ input }) => {
-      const existing = await readLoopSecrets(input.graph);
+      const existing = await readLoopSecrets(input.space);
       const next = { ...existing };
       for (const key of ['NVIDIA_API_KEY', 'OPENROUTER_API_KEY', 'LOOP_API_KEY'] as const) {
         if (input.secrets[key] !== undefined) {
@@ -77,7 +77,7 @@ export const loopRouter = t.router({
           else delete next[key];
         }
       }
-      await writeLoopSecrets(input.graph, next);
+      await writeLoopSecrets(input.space, next);
       return {
         NVIDIA_API_KEY: Boolean(next.NVIDIA_API_KEY),
         OPENROUTER_API_KEY: Boolean(next.OPENROUTER_API_KEY),
@@ -87,21 +87,21 @@ export const loopRouter = t.router({
 
   getState: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ input }) => {
-      return refreshLoopProcessStates(input.graph);
+      return refreshLoopProcessStates(input.space);
     }),
 
   create: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       name: z.string().optional()
     }))
     .mutation(async ({ input }) => {
       const now = Date.now();
       const loopId = uuidv4();
-      return mutateLoopRuntimeState(input.graph, (state) => {
+      return mutateLoopRuntimeState(input.space, (state) => {
         state.loops.push({
           id: loopId,
           name: input.name?.trim() || 'New loop',
@@ -124,7 +124,7 @@ export const loopRouter = t.router({
 
   update: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       loopId: z.string(),
       name: z.string().optional(),
       systemPrompt: z.string().optional(),
@@ -150,7 +150,7 @@ export const loopRouter = t.router({
           throw new Error(`Worktree path is not a Git working tree: ${resolvedWorktreePath}`);
         }
       }
-      return mutateLoopRuntimeState(input.graph, (state) => {
+      return mutateLoopRuntimeState(input.space, (state) => {
         const loop = state.loops.find((candidate) => candidate.id === input.loopId);
         if (!loop) return;
         if (input.name !== undefined) loop.name = input.name;
@@ -170,13 +170,13 @@ export const loopRouter = t.router({
 
   duplicate: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       loopId: z.string()
     }))
     .mutation(async ({ input }) => {
       const now = Date.now();
       const loopId = uuidv4();
-      return mutateLoopRuntimeState(input.graph, (state) => {
+      return mutateLoopRuntimeState(input.space, (state) => {
         const source = state.loops.find((candidate) => candidate.id === input.loopId);
         if (!source) return;
         state.loops.push({
@@ -193,11 +193,11 @@ export const loopRouter = t.router({
 
   delete: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       loopId: z.string()
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       const runtime = await readLoopRuntimeState(projectPath);
       for (const instance of runtime.instances.filter((candidate) => candidate.loopId === input.loopId)) {
         await killLoopWorker(projectPath, instance.id);
@@ -214,15 +214,15 @@ export const loopRouter = t.router({
 
   createInstance: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       loopId: z.string(),
       name: z.string().optional()
     }))
     .mutation(async ({ input }) => {
       const now = Date.now();
       const instanceId = uuidv4();
-      const target = await pickDefaultLoopTarget(input.graph);
-      return mutateLoopRuntimeState(input.graph, (state) => {
+      const target = await pickDefaultLoopTarget(input.space);
+      return mutateLoopRuntimeState(input.space, (state) => {
         state.instances.push({
           id: instanceId,
           loopId: input.loopId,
@@ -243,7 +243,7 @@ export const loopRouter = t.router({
 
   updateInstance: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       instanceId: z.string(),
       name: z.string().optional(),
       targetPhaseId: z.string().nullable().optional(),
@@ -252,9 +252,9 @@ export const loopRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const defaultTarget = input.targetPhaseId && input.targetIdeaId === undefined
-        ? await pickDefaultLoopTarget(input.graph, input.targetPhaseId)
+        ? await pickDefaultLoopTarget(input.space, input.targetPhaseId)
         : null;
-      return mutateLoopRuntimeState(input.graph, (state) => {
+      return mutateLoopRuntimeState(input.space, (state) => {
         const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
         if (!instance) return;
         if (input.name !== undefined) instance.name = input.name.trim() || instance.name;
@@ -270,11 +270,11 @@ export const loopRouter = t.router({
 
   deleteInstance: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       await killLoopWorker(projectPath, input.instanceId);
       return mutateLoopRuntimeState(projectPath, (state) => {
         state.instances = state.instances.filter((instance) => instance.id !== input.instanceId);
@@ -286,11 +286,11 @@ export const loopRouter = t.router({
 
   startInstance: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       await mutateLoopRuntimeState(projectPath, (state) => {
         const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
         if (!instance) return;
@@ -304,11 +304,11 @@ export const loopRouter = t.router({
 
   stopInstance: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       await killLoopWorker(projectPath, input.instanceId);
       return mutateLoopRuntimeState(projectPath, (state) => {
         const instance = state.instances.find((candidate) => candidate.id === input.instanceId);
@@ -321,11 +321,11 @@ export const loopRouter = t.router({
 
   restartInstance: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       instanceId: z.string()
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       await killLoopWorker(projectPath, input.instanceId);
       await fs.remove(getLoopInstanceDir(projectPath, input.instanceId));
       await mutateLoopRuntimeState(projectPath, (state) => {
@@ -342,13 +342,13 @@ export const loopRouter = t.router({
 
   sendHumanMessage: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       instanceId: z.string(),
       content: z.string().min(1),
       replyToRequestId: z.string().optional()
     }))
     .mutation(async ({ input }) => {
-      await enqueueLoopHumanMessage(input.graph, input.instanceId, input.content, input.replyToRequestId);
-      return refreshLoopProcessStates(input.graph);
+      await enqueueLoopHumanMessage(input.space, input.instanceId, input.content, input.replyToRequestId);
+      return refreshLoopProcessStates(input.space);
     })
 });

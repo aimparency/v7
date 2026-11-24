@@ -2,11 +2,11 @@ import fs from 'fs-extra';
 import path from 'path';
 import {
   appendLoopEvent,
-  connectGraph,
+  connectSpace,
   normalizeBowmanPath,
   patchWorkerState,
   readWorkerState,
-  type GraphTools,
+  type SpaceTools,
   type LoopDefinition,
   type LoopInstance
 } from 'agent-tools';
@@ -40,7 +40,7 @@ async function readSecrets(projectPath: string): Promise<Record<string, string |
   }
 }
 
-async function evaluateStopPolicy(graph: GraphTools, instance: LoopInstance) {
+async function evaluateStopPolicy(space: SpaceTools, instance: LoopInstance) {
   if (instance.stopPolicy === 'never') return null;
   if (instance.stopPolicy === 'asap') {
     return { status: 'stopped' as const, message: null };
@@ -48,7 +48,7 @@ async function evaluateStopPolicy(graph: GraphTools, instance: LoopInstance) {
 
   if (instance.stopPolicy === 'target_halted') {
     if (!instance.targetIdeaId) return null;
-    const ideas = await graph.listIdeas();
+    const ideas = await space.listIdeas();
     const idea = ideas.find((candidate) => candidate.id === instance.targetIdeaId);
     if (idea?.status.state === 'halted') {
       return { status: 'done' as const, message: `Target idea halted: ${idea.text}` };
@@ -57,7 +57,7 @@ async function evaluateStopPolicy(graph: GraphTools, instance: LoopInstance) {
   }
 
   if (!instance.targetPhaseId) return null;
-  const [ideas, phases] = await Promise.all([graph.listIdeas(), graph.listPhases()]);
+  const [ideas, phases] = await Promise.all([space.listIdeas(), space.listPhases()]);
   const phase = phases.find((candidate) => candidate.id === instance.targetPhaseId);
   if (!phase || (phase.commitments ?? []).length === 0) return null;
   const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
@@ -70,14 +70,14 @@ async function evaluateStopPolicy(graph: GraphTools, instance: LoopInstance) {
   return null;
 }
 
-async function waitForNextCycle(projectPath: string, instanceId: string, loop: LoopDefinition, graph: GraphTools, signal: AbortSignal) {
+async function waitForNextCycle(projectPath: string, instanceId: string, loop: LoopDefinition, space: SpaceTools, signal: AbortSignal) {
   await markLoopPhase(projectPath, instanceId, `cooldown (${loop.intervalSeconds}s)`);
   const until = Date.now() + loop.intervalSeconds * 1000;
   while (!signal.aborted && Date.now() < until) {
     const workerState = await readWorkerState(projectPath, instanceId);
     if (workerState?.stopRequested) break;
     const { instance } = await readLoopAndInstance(projectPath, instanceId);
-    const stopDecision = await evaluateStopPolicy(graph, instance);
+    const stopDecision = await evaluateStopPolicy(space, instance);
     if (stopDecision) return stopDecision;
     await sleep(Math.min(1000, Math.max(0, until - Date.now())), signal);
   }
@@ -86,7 +86,7 @@ async function waitForNextCycle(projectPath: string, instanceId: string, loop: L
 
 async function main() {
   const { projectPath, instanceId } = parseArgs();
-  const graph = connectGraph(projectPath);
+  const space = connectSpace(projectPath);
   const abortController = new AbortController();
   let stopping = false;
   let finalStatus: LoopInstance['status'] = 'stopped';
@@ -134,7 +134,7 @@ async function main() {
       const { loop, instance } = await readLoopAndInstance(projectPath, instanceId);
       if (instance.status === 'stopped') break;
       await markLoopPhase(projectPath, instanceId, 'checking stop policy');
-      const stopDecision = await evaluateStopPolicy(graph, instance);
+      const stopDecision = await evaluateStopPolicy(space, instance);
       if (stopDecision) {
         finalStatus = stopDecision.status;
         finalMessage = stopDecision.message;
@@ -145,11 +145,11 @@ async function main() {
       }
       await markLoopPhase(projectPath, instanceId, 'running cycle');
       const models = createRoleModels(loop, await readSecrets(projectPath));
-      await runCycle({ projectPath, instanceId, loop, graph, signal: abortController.signal, models });
+      await runCycle({ projectPath, instanceId, loop, space, signal: abortController.signal, models });
       const nextState = await readWorkerState(projectPath, instanceId);
       if (nextState?.stopRequested || abortController.signal.aborted) break;
       const { instance: refreshedInstance } = await readLoopAndInstance(projectPath, instanceId);
-      const postCycleStopDecision = await evaluateStopPolicy(graph, refreshedInstance);
+      const postCycleStopDecision = await evaluateStopPolicy(space, refreshedInstance);
       if (postCycleStopDecision) {
         finalStatus = postCycleStopDecision.status;
         finalMessage = postCycleStopDecision.message;
@@ -160,7 +160,7 @@ async function main() {
         kind: 'event',
         content: `Cycle complete. Waiting ${loop.intervalSeconds}s.`
       });
-      const waitStopDecision = await waitForNextCycle(projectPath, instanceId, loop, graph, abortController.signal);
+      const waitStopDecision = await waitForNextCycle(projectPath, instanceId, loop, space, abortController.signal);
       if (waitStopDecision) {
         finalStatus = waitStopDecision.status;
         finalMessage = waitStopDecision.message;
@@ -189,7 +189,7 @@ async function main() {
     if (!abortController.signal.aborted) process.exitCode = 1;
   } finally {
     clearInterval(heartbeat);
-    graph.close();
+    space.close();
   }
 }
 

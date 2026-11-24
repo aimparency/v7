@@ -1,5 +1,5 @@
 export * from './loop-state.js';
-export * from './graph-tools.js';
+export * from './space-tools.js';
 export * from './coding-tools.js';
 export * from './association-tools.js';
 export * from './experiment-state.js';

@@ -12,7 +12,7 @@ import {
   readDataModelVersion,
   type BowmanMigration
 } from './bowman-migration.js';
-import { diffGraphSignatures, readGraphSignature } from './bowman-migrations/graph-signature.js';
+import { diffSpaceSignatures, readSpaceSignature } from './bowman-migrations/space-signature.js';
 import { CURRENT_DATA_MODEL_VERSION } from './constants.js';
 import { IdeaSchema, LinkedRepoSchema, PhaseSchema } from './types.js';
 
@@ -34,9 +34,9 @@ test('the registry ends at the current data model version, in order', () => {
 });
 
 for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-model-v4', 'data-model-v5', 'data-model-v6']) {
-  test(`${fixture} migrates to the current version with an unchanged graph`, async () => {
+  test(`${fixture} migrates to the current version with an unchanged space`, async () => {
     const bowman = await copyFixture(fixture);
-    const before = await readGraphSignature(bowman);
+    const before = await readSpaceSignature(bowman);
 
     const result = await migrateBowman(bowman);
     assert.equal(result.to, CURRENT_DATA_MODEL_VERSION);
@@ -52,10 +52,10 @@ for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-
     if (fixture !== 'data-model-v6') {
       assert.ok(result.applied.some((step) => step.startsWith('6:')), 'the self weight migration ran');
     }
-    assert.ok(result.applied.some((step) => step.startsWith('7:')), 'the version moved to graph links with a host');
+    assert.ok(result.applied.some((step) => step.startsWith('7:')), 'the version moved to space links with a host');
     assert.deepStrictEqual(result.conflicts, []);
 
-    assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), []);
+    assert.deepStrictEqual(diffSpaceSignatures(before, await readSpaceSignature(bowman)), []);
     assert.equal(await exists(path.join(bowman, 'aims')), false);
     assert.equal(await exists(path.join(bowman, '.migration-lock')), false, 'the lock is released');
     for (const dir of ['ideas', 'archived-ideas']) {
@@ -77,10 +77,10 @@ for (const fixture of ['data-model-v1', 'data-model-v2', 'data-model-v3', 'data-
 
 test('concurrent openers migrate once and agree on the result', async () => {
   const bowman = await copyFixture('data-model-v1');
-  const before = await readGraphSignature(bowman);
+  const before = await readSpaceSignature(bowman);
   const results = await Promise.all(Array.from({ length: 5 }, () => migrateBowman(bowman)));
   assert.equal(results.filter((result) => result.applied.length > 0).length, 1, 'exactly one process applied migrations');
-  assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), []);
+  assert.deepStrictEqual(diffSpaceSignatures(before, await readSpaceSignature(bowman)), []);
   assert.equal(await readDataModelVersion(bowman), CURRENT_DATA_MODEL_VERSION);
 });
 
@@ -140,16 +140,16 @@ test('a stale lock from a crashed process does not block migrations forever', as
   assert.equal(result.to, CURRENT_DATA_MODEL_VERSION);
 });
 
-test('the graph signature notices a lost connection or a changed status', async () => {
+test('the space signature notices a lost connection or a changed status', async () => {
   const bowman = await copyFixture('data-model-v1');
-  const before = await readGraphSignature(bowman);
+  const before = await readSpaceSignature(bowman);
   const rootFile = path.join(bowman, 'aims', '11111111-1111-4111-8111-111111111111.json');
   const root = await readJson(rootFile);
   await fs.writeFile(rootFile, JSON.stringify({ ...root, supportingConnections: root.supportingConnections.slice(1), status: { ...root.status, state: 'review' } }));
-  assert.deepStrictEqual(diffGraphSignatures(before, await readGraphSignature(bowman)), ['connections', 'states']);
+  assert.deepStrictEqual(diffSpaceSignatures(before, await readSpaceSignature(bowman)), ['connections', 'states']);
 });
 
-test('a link to another graph from before data model 7 stays as it was and still parses', async () => {
+test('a link to another space from before data model 7 stays as it was and still parses', async () => {
   const bowman = await copyFixture('data-model-v6');
   const before = await readJson(path.join(bowman, 'meta.json'));
   await migrateBowman(bowman);

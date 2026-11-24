@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 import { Ajv, type ValidateFunction } from 'ajv';
 import addFormatsModule from 'ajv-formats';
 import { CURRENT_DATA_MODEL_VERSION, INITIAL_STATES } from './constants.js';
-import { checkGraphConsistency } from './graph-consistency.js';
+import { checkSpaceConsistency } from './space-consistency.js';
 import type { Idea, Phase, ProjectMeta } from './types.js';
 
 export const PROTOCOL_SCHEMA_DIR = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../protocol/schemas');
@@ -104,7 +104,7 @@ export function validateBowman(bowmanDir: string): BowmanValidationReport {
 
   // Schema failures are already reported; links to those files are not dangling.
   const unreadable = new Set([...ideas.unreadableIds, ...archivedIdeas.unreadableIds]);
-  for (const issue of checkGraphConsistency(allIdeas, phases.valid, unreadable)) errors.push(issue.message);
+  for (const issue of checkSpaceConsistency(allIdeas, phases.valid, unreadable)) errors.push(issue.message);
 
   return {
     errors,

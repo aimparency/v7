@@ -2,7 +2,7 @@ import type { Idea, IdeaContext } from '../data'
 import { useUIModalStore } from './modal-store'
 
 // The dialogs before removing ideas. Every removal that could take more than
-// the ideas themselves, or that could take an idea out of the graph although
+// the ideas themselves, or that could take an idea out of the space although
 // only its list membership was meant, asks first (r / x / Esc).
 
 type RemovalDataStore = {
@@ -11,7 +11,7 @@ type RemovalDataStore = {
   detachIdea(projectPath: string, ideaId: string, from: IdeaContext): Promise<void>
 }
 
-// Deletes ideas outside of any list (graph, bulk selection). If sub-ideas would
+// Deletes ideas outside of any list (space, bulk selection). If sub-ideas would
 // go along, asks whether to delete only these ideas or their subtrees too.
 // Returns false when cancelled.
 export async function deleteIdeasAsking(dataStore: RemovalDataStore, projectPath: string, ideaIds: string[]): Promise<boolean> {

@@ -74,7 +74,7 @@ export const BOWMAN_MIGRATIONS: BowmanMigration[] = [
   },
   {
     version: 7,
-    name: 'a link to another graph carries the address of its Aimparency server',
+    name: 'a link to another space carries the address of its Aimparency server',
     // meta.linkedRepos entries gained `host`. Existing links stay as they are
     // (they have none and resolve through a local checkout as before), so
     // nothing is rewritten. The version still moves: code from before would
@@ -122,7 +122,7 @@ export class ReadOnlyProjectError extends Error {
   }
 }
 
-/** Why the graph of this project must not be changed, or null when it may. */
+/** Why the space of this project must not be changed, or null when it may. */
 export async function bowmanWriteBlocker(bowmanPath: string, supported = CURRENT_DATA_MODEL_VERSION): Promise<Error | null> {
   if (await fs.access(path.join(bowmanPath, READ_ONLY_MARKER)).then(() => true, () => false)) return new ReadOnlyProjectError();
   const version = await readDataModelVersion(bowmanPath);
@@ -130,7 +130,7 @@ export async function bowmanWriteBlocker(bowmanPath: string, supported = CURRENT
   return null;
 }
 
-/** The one guard every graph write passes. Aimparency's own caches and migrations are not graph writes. */
+/** The one guard every space write passes. Aimparency's own caches and migrations are not space writes. */
 export async function assertWritableBowman(bowmanPath: string, supported = CURRENT_DATA_MODEL_VERSION): Promise<void> {
   const blocker = await bowmanWriteBlocker(bowmanPath, supported);
   if (blocker) throw blocker;

@@ -23,7 +23,7 @@ const LOG_DIR = path.join(".bowman", "runtime", "continue-logs");
 const LEGACY_FLAG_NAME = "aimparency-continue-disabled";
 const DEFAULT_LOOP_FILE = "default-loop.md";
 // Hook loops: what the hook tells the agent. Saved ones are versioned with the
-// graph; which one runs is machine-local, like the off switch.
+// space; which one runs is machine-local, like the off switch.
 const LOOPS_DIR = path.join(".bowman", "hook-loops");
 const ACTIVE_LOOP = path.join(".bowman", "runtime", "continue-hook-loop");
 // Where the default loop is read from: this checkout's default-loop.md, so the
@@ -157,7 +157,7 @@ export function defaultHookLoop(hooksDir = HOOKS_DIR): HookLoop {
   return parseHookLoop(DEFAULT_LOOP, fs.readFileSync(path.join(hooksDir, DEFAULT_LOOP_FILE), "utf8"));
 }
 
-/** The default first, then the graph's saved loops by title. */
+/** The default first, then the space's saved loops by title. */
 export function listHookLoops(projectPath: string, hooksDir = HOOKS_DIR): HookLoop[] {
   const repoRoot = resolveRepoRoot(projectPath);
   const dir = loopsDir(repoRoot);

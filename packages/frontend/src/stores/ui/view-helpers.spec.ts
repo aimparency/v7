@@ -33,7 +33,7 @@ describe('view helpers', () => {
     expect(navigateToIdea).toHaveBeenCalledWith('a2')
   })
 
-  it('updates graph display options and resets state', () => {
+  it('updates space display options and resets state', () => {
     const graphState = { graphColorMode: 'status' as GraphColorMode, graphPanelWidth: 300, graphShowLabels: true }
     setGraphColorMode(graphState, 'priority')
     expect(graphState.graphColorMode).toBe('priority')

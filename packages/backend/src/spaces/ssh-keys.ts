@@ -1,4 +1,4 @@
-// SSH keys an account keeps on this server, to push a graph to its remote. The
+// SSH keys an account keeps on this server, to push a space to its remote. The
 // server makes the pair and only ever shows the public half, which the account
 // adds on the remote (on GitHub: a deploy key of that one repository, with
 // write access). So a private key is never uploaded and never leaves the

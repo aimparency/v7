@@ -1,5 +1,5 @@
 // An MCP client's own login: it registers, asks, a person approves in the UI
-// for chosen graphs, and the client exchanges a one-time code for a token.
+// for chosen spaces, and the client exchanges a one-time code for a token.
 import { test, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert';
 import fs from 'fs-extra';
@@ -8,7 +8,7 @@ import path from 'node:path';
 import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
-import { listGraphs } from '../graphs/registry';
+import { listSpaces } from '../spaces/registry';
 import * as accounts from './accounts';
 
 let root = '';
@@ -24,16 +24,16 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  for (const graph of listGraphs()) clearIndices(graph.path);
+  for (const space of listSpaces()) clearIndices(space.path);
   process.env.AIMPARENCY_SERVER_DIR = localServerDir;
   await fs.remove(root);
 });
 
-test('a person approves a client for chosen graphs, and the client gets a token for exactly those', async () => {
+test('a person approves a client for chosen spaces, and the client gets a token for exactly those', async () => {
   await accounts.createAccount('ana', 'ana password');
   const ana = appRouter.createCaller({ session: { token: (await accounts.login('ana', 'ana password'))! } });
-  const first = (await ana.graphs.create({ name: 'First' })).slug;
-  const second = (await ana.graphs.create({ name: 'Second' })).slug;
+  const first = (await ana.spaces.create({ name: 'First' })).slug;
+  const second = (await ana.spaces.create({ name: 'Second' })).slug;
 
   await assert.rejects(mcpServer().mcpAuth.begin(request), /not registered/);
   assert.deepEqual(await mcpServer().mcpAuth.registerClient({ client }), client);
@@ -42,8 +42,8 @@ test('a person approves a client for chosen graphs, and the client gets a token 
   assert.deepEqual(await ana.mcpAuth.pending({ requestId }), { clientName: 'Coding agent', redirectHost: 'localhost:7777' });
 
   await assert.rejects(mcpServer().mcpAuth.approve({ requestId }), /Log in first/);
-  await assert.rejects(ana.mcpAuth.approve({ requestId, graphs: ['unknown'] }), /No space "unknown"/);
-  const redirect = new URL((await ana.mcpAuth.approve({ requestId, graphs: [first] })).redirectTo);
+  await assert.rejects(ana.mcpAuth.approve({ requestId, spaces: ['unknown'] }), /No space "unknown"/);
+  const redirect = new URL((await ana.mcpAuth.approve({ requestId, spaces: [first] })).redirectTo);
   assert.equal(redirect.origin + redirect.pathname, 'http://localhost:7777/callback');
   assert.equal(redirect.searchParams.get('state'), 'xyz');
   const code = redirect.searchParams.get('code')!;
@@ -56,10 +56,10 @@ test('a person approves a client for chosen graphs, and the client gets a token 
   await assert.rejects(mcpServer().mcpAuth.exchange({ clientId: 'client-1', code }), /not valid/);
 
   const agent = appRouter.createCaller({ session: { token } });
-  assert.deepEqual(await agent.mcpAuth.tokenInfo(), { account: 'ana', graphs: [first] });
-  await agent.idea.createFloatingIdea({ graph: first, idea: { text: 'From the agent' } });
-  await assert.rejects(agent.idea.createFloatingIdea({ graph: second, idea: { text: 'Not chosen' } }), /log in to edit/);
-  assert.deepEqual((await ana.auth.listTokens()).map(({ label, graphs }) => ({ label, graphs })).at(-1), { label: 'Coding agent', graphs: [first] });
+  assert.deepEqual(await agent.mcpAuth.tokenInfo(), { account: 'ana', spaces: [first] });
+  await agent.idea.createFloatingIdea({ space: first, idea: { text: 'From the agent' } });
+  await assert.rejects(agent.idea.createFloatingIdea({ space: second, idea: { text: 'Not chosen' } }), /log in to edit/);
+  assert.deepEqual((await ana.auth.listTokens()).map(({ label, spaces }) => ({ label, spaces })).at(-1), { label: 'Coding agent', spaces: [first] });
   assert.equal(await mcpServer().mcpAuth.tokenInfo(), null);
 });
 

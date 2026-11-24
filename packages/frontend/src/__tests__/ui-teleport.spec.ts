@@ -106,7 +106,7 @@ describe('UI teleport cut/paste', () => {
     await uiStore.handleIdeaNavigationKeys(keyEvent('p'), dataStore)
 
     expect(mockTrpc.idea.move.mutate).toHaveBeenCalledWith({
-      graph: '/tmp/project',
+      space: '/tmp/project',
       ideaId: 'idea-2',
       from: { phaseId: 'phase-1' },
       to: { phaseId: 'phase-1' },
@@ -182,7 +182,7 @@ describe('UI teleport cut/paste', () => {
 
     expect(mockTrpc.idea.move.mutate).toHaveBeenCalledTimes(1)
     expect(mockTrpc.idea.move.mutate).toHaveBeenCalledWith({
-      graph: '/tmp/project',
+      space: '/tmp/project',
       ideaId: 'child',
       from: { parentId: 'parent-a' },
       to: { parentId: 'parent-b' },
@@ -225,7 +225,7 @@ describe('UI teleport cut/paste', () => {
 
     await uiStore.moveIdeaDown()
 
-    expect(mockTrpc.idea.getMany.query).toHaveBeenCalledWith({ graph: '/tmp/project', ideaIds: ['idea-1'] })
+    expect(mockTrpc.idea.getMany.query).toHaveBeenCalledWith({ space: '/tmp/project', ideaIds: ['idea-1'] })
     expect(dataStore.phases['phase-1']!.commitments).toEqual(['idea-1', 'idea-2'])
     expect(consoleError).toHaveBeenCalled()
     consoleError.mockRestore()

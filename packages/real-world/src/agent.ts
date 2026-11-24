@@ -39,7 +39,7 @@ async function main() {
   }
   console.log(`\nacting on: ${target.idea.text}\n`);
 
-  // LIST mode: verify the idea-graph read half of the loop without any LLM/Composio call.
+  // LIST mode: verify the idea-space read half of the loop without any LLM/Composio call.
   if (process.env.REAL_WORLD_LIST === "1") {
     console.log("(list mode — no agent run)");
     return;
@@ -54,8 +54,8 @@ async function main() {
   const stream = streamText({
     model,
     system: [
-      "You are the real-world arm of aimparency, a goal-graph system.",
-      "You receive the single highest-priority idea from the graph's economic model",
+      "You are the real-world arm of aimparency, a idea-space system.",
+      "You receive the single highest-priority idea from the space's economic model",
       "and make concrete progress on it using the available tools (email, GitHub,",
       "calendar, social, etc. via Composio).",
       act

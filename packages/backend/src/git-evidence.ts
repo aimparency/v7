@@ -133,7 +133,7 @@ export function parseCommitPatch(stdout: string): CommitFileDiff[] {
 }
 
 // `onlyWithin` (a directory in the repository) limits the diff to files there,
-// e.g. a hosted instance shows its readers changes to the graph, not the code.
+// e.g. a hosted instance shows its readers changes to the space, not the code.
 export async function getCommitDiff(anyPathInRepository: string, hash: string, onlyWithin?: string): Promise<CommitFileDiff[]> {
   if (!/^[0-9a-f]{7,40}$/i.test(hash)) throw new Error('Invalid commit hash');
   const repositoryPath = await getRepositoryRoot(anyPathInRepository);

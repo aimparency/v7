@@ -7,7 +7,7 @@ import {
   runCommand,
   maybeFindAssociation,
   readLoopRuntimeState,
-  type GraphTools,
+  type SpaceTools,
   type LoopDefinition,
   type PrioritizedIdea
 } from 'agent-tools';
@@ -15,7 +15,7 @@ import { calculateIdeaValues, missionPathsToRoot, type Idea } from 'shared';
 import { loadHarnessConfig, type HarnessConfig } from 'shared/harness-config';
 import { compileContext, type ContextInput } from './context.js';
 import { filterToolsByCapabilities } from './capabilities.js';
-import { applyDecomposition, applyReflections, applyStatus } from './graph-writes.js';
+import { applyDecomposition, applyReflections, applyStatus } from './space-writes.js';
 import { selectCycleTarget } from './runtime-policy.js';
 import { runStage, type StageTrace, type StageUsage } from './stage-runner.js';
 import { writeCycleTrace } from './traces.js';
@@ -45,13 +45,13 @@ import { buildWorkerTools } from './worker-tools.js';
 import type { RoleModels } from './models.js';
 import { errorMessage, markLoopPhase } from './worker-state.js';
 
-/** Which of the worker tools each model stage gets. Graph writes are never among them: the harness applies results. */
-const READ_GRAPH = ['get_idea_context', 'search_ideas_semantic'];
+/** Which of the worker tools each model stage gets. Space writes are never among them: the harness applies results. */
+const READ_SPACE = ['get_idea_context', 'search_ideas_semantic'];
 const READ_CODE = ['list_files', 'search_files', 'read_file', 'git_status', 'git_diff', 'code_intelligence'];
 export const STAGE_TOOL_NAMES = {
-  decompose: [...READ_GRAPH, ...READ_CODE],
+  decompose: [...READ_SPACE, ...READ_CODE],
   execute: [
-    ...READ_GRAPH, ...READ_CODE,
+    ...READ_SPACE, ...READ_CODE,
     'run_command', 'propose_patch', 'apply_patch', 'str_replace', 'line_replace',
     'experiment', 'status_report', 'human_action_required', 'external_action_required'
   ],
@@ -64,16 +64,16 @@ type CycleContext = {
   projectPath: string;
   instanceId: string;
   loop: LoopDefinition;
-  graph: GraphTools;
+  space: SpaceTools;
   signal: AbortSignal;
   models: RoleModels;
 };
 
 export async function runCycle(ctx: CycleContext) {
-  const { projectPath, instanceId, loop, graph, signal } = ctx;
+  const { projectPath, instanceId, loop, space, signal } = ctx;
   const executionPath = loop.worktreePath || projectPath;
   const allTools = filterToolsByCapabilities(
-    buildWorkerTools({ projectPath, instanceId, executionPath, graph, signal }),
+    buildWorkerTools({ projectPath, instanceId, executionPath, space, signal }),
     loop.capabilities
   );
   const toolsFor = (stage: keyof typeof STAGE_TOOL_NAMES) =>
@@ -99,9 +99,9 @@ export async function runCycle(ctx: CycleContext) {
   // orient
   await markLoopPhase(projectPath, instanceId, 'orient: picking an idea');
   const instance = (await readLoopRuntimeState(projectPath)).instances.find((candidate) => candidate.id === instanceId);
-  const ideas = await graph.listIdeas();
+  const ideas = await space.listIdeas();
   const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
-  const prioritized = await graph.getPrioritizedIdeas(instance?.targetIdeaId ? Number.MAX_SAFE_INTEGER : 5, instance?.targetPhaseId);
+  const prioritized = await space.getPrioritizedIdeas(instance?.targetIdeaId ? Number.MAX_SAFE_INTEGER : 5, instance?.targetPhaseId);
   const target = selectCycleTarget(prioritized, instance?.targetIdeaId, ideaById);
   if (!target) throw new Error('No open prioritized idea found in the active phase.');
   const idea = target.idea;
@@ -148,7 +148,7 @@ export async function runCycle(ctx: CycleContext) {
       decomposition = run.result;
       decomposed = true;
       if (decomposition && decomposition.children.length > 0) {
-        const applied = await applyDecomposition(graph, projectPath, idea.id, { ...decomposition, children: decomposition.children.slice(0, config.decomposition.maxChildren) }, gathered.linkableIds, config.decomposition.landingState);
+        const applied = await applyDecomposition(space, projectPath, idea.id, { ...decomposition, children: decomposition.children.slice(0, config.decomposition.maxChildren) }, gathered.linkableIds, config.decomposition.landingState);
         notes.push(`decomposed into ${applied.created.length} new and ${applied.linked.length} linked children`);
       } else {
         notes.push(decomposition ? `no decomposition: ${decomposition.rationale}` : 'decompose stage submitted nothing');
@@ -223,7 +223,7 @@ export async function runCycle(ctx: CycleContext) {
         addUsage(run.usage);
         stageTraces.push(run.trace);
         const written = run.result
-          ? await applyReflections(graph, projectPath, idea.id, run.result, new Set(parentEdges.map((edge) => edge.parentId)))
+          ? await applyReflections(space, projectPath, idea.id, run.result, new Set(parentEdges.map((edge) => edge.parentId)))
           : 0;
         notes.push(`reflect: ${written} parent edge(s)`);
       }
@@ -236,7 +236,7 @@ export async function runCycle(ctx: CycleContext) {
 
   // record
   const change = statusAfter(execution, verification);
-  if (change && !signal.aborted) await applyStatus(graph, projectPath, idea.id, change);
+  if (change && !signal.aborted) await applyStatus(space, projectPath, idea.id, change);
   const costUsd = cycleCostUsd(stageTraces, config.prices);
   const unpriced = unpricedModels(stageTraces, config.prices);
   const tracePath = await writeCycleTrace(projectPath, {
@@ -299,14 +299,14 @@ async function logStage(ctx: CycleContext, content: string) {
 
 /** What the context compiler needs, gathered once per cycle. */
 async function gatherContextInput(ctx: CycleContext, target: PrioritizedIdea, ideas: Idea[], ideaById: Map<string, Idea>) {
-  const { projectPath, instanceId, loop, graph } = ctx;
+  const { projectPath, instanceId, loop, space } = ctx;
   const idea = target.idea;
-  const similar = (await graph.searchIdeas(`${idea.text} ${idea.description ?? ''}`, 12)).filter((candidate) => candidate.id !== idea.id);
+  const similar = (await space.searchIdeas(`${idea.text} ${idea.description ?? ''}`, 12)).filter((candidate) => candidate.id !== idea.id);
   const humanMessages = await drainInbox(projectPath, instanceId);
   const instance = (await readLoopRuntimeState(projectPath)).instances.find((candidate) => candidate.id === instanceId);
   const recentEvents = (instance?.messages ?? []).filter((message) => message.kind !== 'text').slice(-12)
     .map((message) => `${message.kind}: ${message.content.split('\n')[0]!.slice(0, 300)}`);
-  const association = await maybeFindAssociation(projectPath, graph.listIdeas, recentEvents.join('\n'), loop.associationChance ?? 0.1, [idea.id]);
+  const association = await maybeFindAssociation(projectPath, space.listIdeas, recentEvents.join('\n'), loop.associationChance ?? 0.1, [idea.id]);
   const { pathToRoot } = missionPathsToRoot(ideaById, idea, calculateIdeaValues(ideas).flowValues);
 
   const ancestors = ancestorIds(idea.id, ideaById);

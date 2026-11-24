@@ -109,7 +109,7 @@ export function useWebGLGraphRenderer(
     const now = Date.now()
 
     // A space's node is drawn as a wobbly ring in the SVG overlay, like the
-    // outline of a space opened in place (useLinkedGraphOutlines).
+    // outline of a space opened in place (useLinkedSpaceOutlines).
     return graphNodes.filter(node => !node.isRepo).map(node => {
       const x = node.renderPos[0]
       const y = node.renderPos[1]

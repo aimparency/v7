@@ -11,7 +11,7 @@ const { mockTrpc } = vi.hoisted(() => {
         onAccess: { subscribe: vi.fn(() => ({ unsubscribe: vi.fn() })) },
         snapshot: { query: vi.fn().mockResolvedValue({}) },
       },
-      graphHealth: {
+      spaceHealth: {
         checkConsistency: { query: vi.fn().mockResolvedValue({ valid: true, errors: [] }) },
       },
       project: {

@@ -6,7 +6,7 @@ import { useViewerStore } from '../stores/viewer'
 import { formatRelativeTime } from '../utils/relative-time'
 import FormModalShell from './FormModalShell.vue'
 
-// Recent notes of other people on the graphs this account owns or writes: the
+// Recent notes of other people on the spaces this account owns or writes: the
 // number in the header counts those that came since the list was last opened.
 const emit = defineEmits<{ open: [slug: string, ideaId: string] }>()
 
@@ -68,7 +68,7 @@ onUnmounted(() => {
         <span class="by">{{ note.author }} · {{ formatRelativeTime(Date.parse(note.createdAt)) }}</span>
         <span class="text">
           <em v-if="note.kind === 'interest'">would like to work on this</em>
-          <em v-else-if="note.kind === 'offer'">offers the space {{ note.space?.name }}{{ note.text ? ':' : '' }}</em>
+          <em v-else-if="note.kind === 'offer'">offers the space {{ note.offeredSpace?.name }}{{ note.text ? ':' : '' }}</em>
           {{ note.text }}
         </span>
       </button>

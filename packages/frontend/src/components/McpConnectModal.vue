@@ -4,16 +4,16 @@ import { trpc } from '../trpc'
 import { formatRelativeTime } from '../utils/relative-time'
 import { useViewerStore } from '../stores/viewer'
 import FormModalShell from './FormModalShell.vue'
-import GraphScopeChoice from './GraphScopeChoice.vue'
+import SpaceScopeChoice from './SpaceScopeChoice.vue'
 import AgentCommands from './AgentCommands.vue'
 
 // Connecting an MCP client (a coding agent) to this server: it acts as this
-// account, on all its graphs or only on the ones chosen here. The link carries
+// account, on all its spaces or only on the ones chosen here. The link carries
 // the login, so it is shown once and handled like a password.
 const emit = defineEmits<{ close: [] }>()
 
 // With a public address an agent logs in by itself: one command, then the
-// person approves it in the browser and chooses its graphs there.
+// person approves it in the browser and chooses its spaces there.
 const viewer = useViewerStore()
 const loginUrl = computed(() => viewer.publicUrl ? `${viewer.publicUrl}/mcp/login/sse` : null)
 const showLinkForm = ref(false)
@@ -42,10 +42,10 @@ const load = () => run(async () => {
 onMounted(load)
 
 const create = () => run(async () => {
-  const graphs = scope.value ?? undefined
-  const { token } = await trpc.auth.issueToken.mutate({ label: label.value.trim() || 'mcp', graphs })
-  // One graph: its own address, where the client's tools need no graph name.
-  const base = graphs?.length === 1 ? `${window.location.origin}/spaces/${graphs[0]}` : window.location.origin
+  const spaces = scope.value ?? undefined
+  const { token } = await trpc.auth.issueToken.mutate({ label: label.value.trim() || 'mcp', spaces })
+  // One space: its own address, where the client's tools need no space name.
+  const base = spaces?.length === 1 ? `${window.location.origin}/spaces/${spaces[0]}` : window.location.origin
   link.value = `${base}/mcp/sse?token=${token}`
   await load()
 })
@@ -70,7 +70,7 @@ const revoke = (id: string) => run(async () => {
 
       <template v-if="!loginUrl || showLinkForm">
         <h4 class="section-title">{{ loginUrl ? 'A link with a token' : 'Make a link for your agent' }}</h4>
-        <GraphScopeChoice v-model="scope" />
+        <SpaceScopeChoice v-model="scope" />
         <form class="row" @submit.prevent="create">
           <input v-model="label" placeholder="A name for this agent, e.g. the machine it runs on" />
           <button class="btn-primary" type="submit" :disabled="scope?.length === 0">Create link</button>
@@ -86,7 +86,7 @@ const revoke = (id: string) => run(async () => {
       <template v-if="clients.length > 0">
         <h4 class="section-title">Connected agents and websites</h4>
         <div v-for="token in clients" :key="token.id" class="row">
-          <span class="grow">{{ token.label }} · {{ token.site ? 'writes what you write, from there only' : token.graphs ? token.graphs.join(', ') : 'all graphs' }} · {{ formatRelativeTime(Date.parse(token.createdAt)) }}</span>
+          <span class="grow">{{ token.label }} · {{ token.site ? 'writes what you write, from there only' : token.spaces ? token.spaces.join(', ') : 'all spaces' }} · {{ formatRelativeTime(Date.parse(token.createdAt)) }}</span>
           <button class="btn-secondary" @click="revoke(token.id)">Revoke</button>
         </div>
       </template>

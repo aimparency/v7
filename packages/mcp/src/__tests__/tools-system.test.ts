@@ -38,7 +38,7 @@ test('MCP Tools - Consistency', async () => {
     JSON.parse((await server.callTool(name, { space: ctx.projectPath })).content[0].text);
 
   const idea = await caller.idea.createFloatingIdea({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     idea: { text: 'Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
@@ -68,7 +68,7 @@ test('MCP Tools - major_hypothesis_loop lists ongoing major ideas with the resea
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
   const create = (text: string, state: string, intrinsicValue: number) => caller.idea.createFloatingIdea({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     idea: { text, intrinsicValue, status: { state, comment: '', date: Date.now() } }
   });
   await create('Valued mission', 'open', 5);

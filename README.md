@@ -1,13 +1,13 @@
 # Aimparency
 
-Aimparency is an open-source, local-first interface for communicating human intention to AI systems. It runs as a browser app on your machine and keeps a graph of ideas in a `.bowman` directory inside the repository it describes, versioned by git like the code.
+Aimparency is an open-source, local-first interface for communicating human intention to AI systems. It runs as a browser app on your machine and keeps a space of ideas in a `.bowman` directory inside the repository it describes, versioned by git like the code.
 
 ## What it is for
 
 Aimparency pursues two aims.
 
-1. **An interface for human intention.** People state what they want as ideas. A connection says how one idea serves another and carries a hypothesis that can turn out wrong. Value flows down the graph, so priorities follow from what people care about rather than from a schedule. AI systems read the graph to know what matters and why. They propose new ideas, which wait for a human to accept them, and they report back with evidence.
-2. **An open-ended experiment.** Let AI venture into the future in an endless loop: pick the most valuable idea, break it down, work on it, verify the result, reflect on whether the hypotheses held, and form new hypotheses and ideas of its own. The graph is the loop's memory and the record of the experiment.
+1. **An interface for human intention.** People state what they want as ideas. A connection says how one idea serves another and carries a hypothesis that can turn out wrong. Value flows down the space, so priorities follow from what people care about rather than from a schedule. AI systems read the space to know what matters and why. They propose new ideas, which wait for a human to accept them, and they report back with evidence.
+2. **An open-ended experiment.** Let AI venture into the future in an endless loop: pick the most valuable idea, break it down, work on it, verify the result, reflect on whether the hypotheses held, and form new hypotheses and ideas of its own. The space is the loop's memory and the record of the experiment.
 
 Git is a large part of why this works:
 
@@ -33,7 +33,7 @@ pnpm install
 pnpm dev
 ```
 
-Then open `http://localhost:4000` and enter the path of this repository (the folder, not its `.bowman`). Its graph is not sample data: it holds the goals, hypotheses and reflections that shaped Aimparency itself.
+Then open `http://localhost:4000` and enter the path of this repository (the folder, not its `.bowman`). Its space is not sample data: it holds the goals, hypotheses and reflections that shaped Aimparency itself.
 
 To work on your own repository, pass its path: `pnpm dev ~/code/my-repo` prints a link that opens it directly and creates its `.bowman` on first open. A Git URL instead of a path opens that repository read-only.
 
@@ -47,7 +47,7 @@ Agent sessions run the coding-agent CLI you pick for them (Claude Code, Codex, G
 | `pnpm dev:full` | Also the MCP server over SSE, the broker inspector and the voice bridge |
 | `pnpm dev:host` | Like `dev`, but reachable from `LAN_BIND_HOST` (or the Tailscale IP) instead of loopback only |
 | `pnpm start` | Builds, then runs the built bundles; uses exactly the configured ports (`--port <n>` for one run) |
-| `pnpm start --server <name>` | Another server of this machine, with its own accounts, graphs and port, next to the default one (`local`); also with `pnpm dev` |
+| `pnpm start --server <name>` | Another server of this machine, with its own accounts, spaces and port, next to the default one (`local`); also with `pnpm dev` |
 | `pnpm start:fast` | `start` without rebuilding |
 | `pnpm build` / `pnpm build:optional` | Build the core packages / also the MCP server and voice bridge |
 
@@ -57,18 +57,18 @@ Backend, broker and agent sessions listen on `127.0.0.1` only and answer only pa
 
 ## The Loop
 
-The loop is the second aim in code: a model-agnostic harness in `packages/loop-worker` that works through the graph on its own. Each cycle orients on the highest-priority idea, decomposes it if it is too large, executes it if it is a leaf, has a model from a different family verify the claimed result, writes reflections on the connections it served, and records the cost.
+The loop is the second aim in code: a model-agnostic harness in `packages/loop-worker` that works through the space on its own. Each cycle orients on the highest-priority idea, decomposes it if it is too large, executes it if it is a leaf, has a model from a different family verify the claimed result, writes reflections on the connections it served, and records the cost.
 
 - Models per role (planner, executor, verifier, reflector) are set in `.bowman/runtime/loops.json`; providers are NVIDIA, OpenRouter, Anthropic and any OpenAI-compatible endpoint.
 - API keys go in `.bowman/secrets.json` (gitignored), e.g. `NVIDIA_API_KEY`, `OPENROUTER_API_KEY`, `ANTHROPIC_API_KEY`.
-- Stages, budgets and the executor backend (built-in tools, or Claude Code / Codex as a headless CLI) are set in `.bowman/harness.json`, which is versioned with the graph.
+- Stages, budgets and the executor backend (built-in tools, or Claude Code / Codex as a headless CLI) are set in `.bowman/harness.json`, which is versioned with the space.
 - The built-in file search uses ripgrep (`rg`).
 
 Start and watch loops from the Loop panel in the UI.
 
 ## Agents and MCP
 
-Coding agents read and change the graph through the Aimparency MCP server: ideas, priorities, context paths, hypotheses and reflections, phases. See [`packages/mcp/README.md`](packages/mcp/README.md) for connecting Claude Code, Codex or another MCP client.
+Coding agents read and change the space through the Aimparency MCP server: ideas, priorities, context paths, hypotheses and reflections, phases. See [`packages/mcp/README.md`](packages/mcp/README.md) for connecting Claude Code, Codex or another MCP client.
 
 ## `.bowman` Layout
 
@@ -100,7 +100,7 @@ One feature writes outside `.bowman`: injecting agent instructions updates `CLAU
 
 To begin with what a project already tracks, import its open GitHub issues: they become ideas under one parent idea, and re-running only adds new ones. Agents can do this with the MCP tool `import_github_issues` (`owner/repo` or a github.com URL; set `GITHUB_TOKEN` for private repositories). Specs written for coding agents work the same way: `import_spec_tasks` turns the `tasks.md` checklists of GitHub spec-kit or spec-workflow-mcp into one parent idea per spec with its tasks as children, checked tasks as implemented; re-running it adds new tasks and moves newly ticked ones forward.
 
-## Viewing Someone Else's Graph
+## Viewing Someone Else's Space
 
 Paste a Git URL into the project picker, or open a link like
 
@@ -112,8 +112,8 @@ Aimparency clones only that repository's `.bowman` into `~/.cache/aimparency/rep
 
 ## Hosting It for a Group
 
-One server holds many graphs for many people: anyone may read every graph,
-people with an account create graphs and write the ones they own or were given
+One server holds many spaces for many people: anyone may read every space,
+people with an account create spaces and write the ones they own or were given
 write access to, and server admins manage the accounts. On the server (Node.js
 22.13+ and git; an https clone needs no GitHub account):
 
@@ -134,71 +134,71 @@ pnpm start
 3. whether visitors get an account without asking, and whether anyone may sign up;
 4. whether server admins may run wrapped agents (a shell on the server);
 5. the first server admin's name and password;
-6. optionally a repository on the machine to add as a graph.
+6. optionally a repository on the machine to add as a space.
 
 From then on `pnpm start` (for example from a systemd unit) serves everything on
 that one port: the UI, the API under `/trpc`, and an MCP server under
-`/mcp/sse`. A graph has the address `https://<host>/spaces/<slug>`.
+`/mcp/sse`. A space has the address `https://<host>/spaces/<slug>`.
 
 - **The server directory.** What the server owns lives in one directory
   (`~/.local/share/aimparency/local`, or `AIMPARENCY_SERVER_DIR`), never in a
-  graph's `.bowman`: `server.json` (the settings), `accounts.json`, `graphs.json`
-  (the list of graphs with owner and writers), `spaces/<slug>/`, the git
-  repositories of graphs created on the server (and, by default, of
+  space's `.bowman`: `server.json` (the settings), `accounts.json`, `spaces.json`
+  (the list of spaces with owner and writers), `spaces/<slug>/`, the git
+  repositories of spaces created on the server (and, by default, of
   spin-offs; `"spacesDir"` in `server.json` puts them elsewhere), `remotes/<slug>/`, the clones
-  of graphs added from a Git URL, and `keys/`, the accounts' SSH keys. `server.json` is edited as a
+  of spaces added from a Git URL, and `keys/`, the accounts' SSH keys. `server.json` is edited as a
   file and re-read when it changes:
 
   ```json
-  { "login": "accounts", "port": 4000, "host": "127.0.0.1", "agents": false, "graphCreation": "everyone" }
+  { "login": "accounts", "port": 4000, "host": "127.0.0.1", "agents": false, "spaceCreation": "everyone" }
   ```
 
   `"login": "none"` (or no file) is the local server: no login, the person at
-  the machine may do everything. `"graphCreation": "selected"` lets only
-  accounts marked "creates graphs" create graphs.
+  the machine may do everything. `"spaceCreation": "selected"` lets only
+  accounts marked "creates spaces" create spaces.
 - **Several servers on one machine.** A server has a name; `local` is the one
   every command works on. `--server <name>` selects another one, in
   `~/.local/share/aimparency/<name>`: `pnpm start --server hub` runs it,
-  `pnpm accounts --server hub list` and `pnpm graphs --server hub add <path>`
+  `pnpm accounts --server hub list` and `pnpm spaces --server hub add <path>`
   manage it. Give each a different `"port"` and they run side by side, for
   example your own local server and one you prepare for other people.
   `pnpm dev --server hub` runs that server from source with hot reload.
-- **Graphs.** An account creates a graph in the browser in one step and owns
+- **Spaces.** An account creates a space in the browser in one step and owns
   it; it gets a git repository of its own on the server. The owner gives other
-  accounts write access in the graph's settings. `pnpm graphs add <path>` (or, as server admin, "Add a repository on this server" in the browser) lists
-  a repository that is already on the machine, `pnpm graphs list|owner|writers|remove`
+  accounts write access in the space's settings. `pnpm spaces add <path>` (or, as server admin, "Add a repository on this server" in the browser) lists
+  a repository that is already on the machine, `pnpm spaces list|owner|writers|remove`
   manage the list from the terminal.
-- **Graphs from a Git URL.** Any account adds a repository that has a
+- **Spaces from a Git URL.** Any account adds a repository that has a
   `.bowman` by its https or ssh URL; the server clones only the `.bowman` and
   follows the remote. It is read-only on the server until its owner selects an
-  SSH key in the graph's settings: the server makes the key pair and shows
+  SSH key in the space's settings: the server makes the key pair and shows
   only the public key, to add on the remote with write access (on GitHub: a
-  deploy key of that repository). From then on the graph is edited on the
+  deploy key of that repository). From then on the space is edited on the
   server, committed in the UI and pushed back. For these URLs the server uses
   nothing of its own user's git setup (no credentials, no SSH agent), never
   fetches from its own network, and runs nothing from the repository.
-- **Notes from visitors.** An account without rights on a graph leaves notes
+- **Notes from visitors.** An account without rights on a space leaves notes
   on its ideas: an idea, a question, or "I'd like to work on this". Notes are
-  kept on the server (`guest/<slug>/notes.json`), never in the graph's
-  repository; the graph's owner and writers see new ones in the header and
+  kept on the server (`guest/<slug>/notes.json`), never in the space's
+  repository; the space's owner and writers see new ones in the header and
   turn what they want into ideas. The owner sets who may leave notes (every
   account, selected accounts, nobody); `"guestDefaults": { "notes": … }` in
-  `server.json` is the default for graphs that set nothing. Agents get notes
+  `server.json` is the default for spaces that set nothing. Agents get notes
   only through the MCP tool `list_notes`, marked as visitors' text.
 - **Other websites.** Pages of other websites may read a server with accounts
-  (the API answers them, so a graph can be shown from anywhere); they never
+  (the API answers them, so a space can be shown from anywhere); they never
   write, also not with a valid login. A login is a token the browser keeps
   for this server's own pages; no cookie carries it.
-- **Rights.** Reading needs no account. On a graph, its owner and the accounts
+- **Rights.** Reading needs no account. On a space, its owner and the accounts
   with write access change everything, including its settings and committing;
-  only the owner changes who may write and removes the graph. A server admin
-  may do all of that on every graph and manages accounts.
+  only the owner changes who may write and removes the space. A server admin
+  may do all of that on every space and manages accounts.
 - **Getting an account.** Three ways besides the server admin making one,
   set in `server.json`:
 
   ```json
   { "signUp": { "open": true, "browserKey": true },
-    "limits": { "accountsPerAddressPerHour": 100, "graphsPerAccount": 20, "graphMegabytes": 50 } }
+    "limits": { "accountsPerAddressPerHour": 100, "spacesPerAccount": 20, "spaceMegabytes": 50 } }
   ```
 
   `open` lets anyone choose a name and a password. `"wallet": true` in
@@ -211,10 +211,10 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   held by a key in their browser, and the UI recommends a name and password
   ("Keep account"), since clearing the browser loses it. Invitations work
   either way: links for one person or for anyone, optionally with an end date,
-  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-graphs]`.
+  made in the Accounts dialog or with `pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-spaces]`.
 - **Accounts.** Server admins add people in the UI (Accounts), or on the
-  server with `pnpm accounts add <name> [--admin] [--creates-graphs]`,
-  `pnpm accounts admin|creates-graphs <name> on|off`,
+  server with `pnpm accounts add <name> [--admin] [--creates-spaces]`,
+  `pnpm accounts admin|creates-spaces <name> on|off`,
   `pnpm accounts password|remove <name>` and `pnpm accounts list`. Passwords
   are stored as scrypt hashes, login tokens as hashes.
 - **Agents.** Loops stay off on a server with accounts. Wrapped agents (the
@@ -226,30 +226,30 @@ that one port: the UI, the API under `/trpc`, and an MCP server under
   Accounts dialog warn about this. The broker and the agent sessions listen on
   `127.0.0.1`; the one port lets a request through to them only with a server
   admin's login and from the server's own origin. The agents' own Aimparency
-  MCP edits graphs as the account `wrapped-agents`, whose token is replaced on
-  every start; it writes the graphs it was given write access to.
-- **Commits.** Edits change the files in a graph's repository; its owner and
+  MCP edits spaces as the account `wrapped-agents`, whose token is replaced on
+  every start; it writes the spaces it was given write access to.
+- **Commits.** Edits change the files in a space's repository; its owner and
   writers commit them in the UI (the header's commit button). The author is
   git's configured identity, or `"gitAuthor": { "name": …, "email": … }` from
   `server.json` when git has none.
-- **Pulling.** Every 5 minutes the server fast-forwards each graph that has an
+- **Pulling.** Every 5 minutes the server fast-forwards each space that has an
   upstream to what was pushed there, and open browsers update. It waits while
-  a graph's `.bowman` has uncommitted edits and never merges diverged history
+  a space's `.bowman` has uncommitted edits and never merges diverged history
   (the log says why it is not pulling). `AIMPARENCY_PULL_SECONDS` sets the
   interval; `0` turns it off. A private repository needs fetch credentials for
   the server's user.
 - **MCP.** "MCP" in the account corner connects an MCP client, such as a
-  coding agent, as that account: on all its graphs, or only on the graphs
+  coding agent, as that account: on all its spaces, or only on the spaces
   chosen there. The link contains a login, so it is shown once and handled
   like a password; the dialog lists the connected clients and revokes them. A
-  client limited to graphs is nobody elsewhere: it reads other graphs like any
-  visitor and cannot manage accounts or create graphs. Tools take the graph's
-  slug as `graph`; a link for one graph is that graph's own address
-  (`https://<host>/spaces/<slug>/mcp/sse`), where tools need no `graph`.
+  client limited to spaces is nobody elsewhere: it reads other spaces like any
+  visitor and cannot manage accounts or create spaces. Tools take the space's
+  slug as `space`; a link for one space is that space's own address
+  (`https://<host>/spaces/<slug>/mcp/sse`), where tools need no `space`.
   Without a token the MCP can only read. With `"publicUrl"` set in
   `server.json`, a client can also log in by itself (OAuth, as the MCP
   specification describes it) at `https://<host>/mcp/login/sse`: it opens the
-  server's page in a browser, the person logs in, chooses the graphs and
+  server's page in a browser, the person logs in, chooses the spaces and
   approves, and the client gets a token for exactly that.
 
 To keep it running, a systemd unit such as `/etc/systemd/system/aimparency.service`
@@ -303,7 +303,7 @@ location / {
 - `packages/backend`: tRPC backend and `.bowman` persistence
 - `packages/shared`: types, the value model and the data model migrations
 - `packages/loop-worker`: the loop harness
-- `packages/agent-tools`: graph and coding tools the loop's models use
+- `packages/agent-tools`: space and coding tools the loop's models use
 - `packages/mcp`: the MCP server
 - `packages/wrapped-agents`: the broker and one session package per agent CLI; `client` is a dev-only broker inspector
 - `packages/voice-bridge`: optional voice integration

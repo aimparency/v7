@@ -6,7 +6,7 @@ import { SPACE_PROMPT_ARGUMENT } from "./constants.js";
 const DEFAULT_PROJECT_PATH = "the current repository's .bowman directory (absolute path)";
 
 function hookTogglePrompt(name: "enable-hook" | "disable-hook", args: Record<string, string> | undefined) {
-  const target = (args?.space ?? args?.graph ?? args?.projectPath)?.trim() || DEFAULT_PROJECT_PATH;
+  const target = args?.space?.trim() || DEFAULT_PROJECT_PATH;
   const agent = args?.agent?.trim();
   const text = name === "disable-hook"
     ? `The human explicitly asks to disable the Aimparency continuation hook. Call the aimparency MCP tool disable_continue_hook with space = ${target}, report its result in one line, and then stop.`
@@ -19,7 +19,7 @@ function hookTogglePrompt(name: "enable-hook" | "disable-hook", args: Record<str
 
 // A human-led session: the human gives feedback and ideas, the agent records them in the space.
 function ideaSessionPrompt(args: Record<string, string> | undefined) {
-  const target = (args?.space ?? args?.graph ?? args?.projectPath)?.trim() || DEFAULT_PROJECT_PATH;
+  const target = args?.space?.trim() || DEFAULT_PROJECT_PATH;
   const topic = args?.topic?.trim();
   const text = `Start an Aimparency feedback and ideation session.
 
@@ -50,7 +50,7 @@ After each change, report in one or two lines what you recorded (idea, short id,
 
 // Tidy the space: health checks, duplicates, structure and stale statuses. Merges stay human decisions.
 function consolidatePrompt(args: Record<string, string> | undefined) {
-  const target = (args?.space ?? args?.graph ?? args?.projectPath)?.trim() || DEFAULT_PROJECT_PATH;
+  const target = args?.space?.trim() || DEFAULT_PROJECT_PATH;
   const focus = args?.focus?.trim();
   const writeBack = args?.writeBack?.trim().toLowerCase() === "true";
   const text = `Consolidate the Aimparency idea space.
@@ -94,7 +94,7 @@ Report compactly, by section: what you found, what you ${writeBack ? "changed" :
 // "What can I do today?": a person asks the space for a few ideas that fit them. Read-only,
 // so it works for guest accounts of a shared instance (Commons Hub) as well.
 function todayPrompt(args: Record<string, string> | undefined) {
-  const target = (args?.space ?? args?.graph ?? args?.projectPath)?.trim() || DEFAULT_PROJECT_PATH;
+  const target = args?.space?.trim() || DEFAULT_PROJECT_PATH;
   const interests = args?.interests?.trim();
   const time = args?.time?.trim();
   const known = [interests && `Interests: ${interests}`, time && `Time available: ${time}`].filter(Boolean).join("\n");
@@ -197,14 +197,14 @@ export function registerPrompts(server: Server, caller: BackendClient) {
     if (name === "today") return todayPrompt(args);
     if (name !== "dream") throw new Error(`Unknown prompt: ${name}`);
 
-    const projectPath = ((args?.space ?? args?.graph ?? args?.projectPath) as string | undefined)?.trim();
+    const projectPath = (args?.space as string | undefined)?.trim();
     const focus = (args?.focus as string | undefined)?.trim() || "the whole project";
     const requestedWildness = (args?.wildness as string | undefined)?.toLowerCase();
     const wildness = ["grounded", "strange", "unbounded"].includes(requestedWildness ?? "")
       ? requestedWildness
       : "strange";
     const writeBack = (args?.writeBack as string | undefined)?.toLowerCase() === "true";
-    const ideaCount = projectPath ? (await caller.idea.list.query({ graph: projectPath })).length : undefined;
+    const ideaCount = projectPath ? (await caller.idea.list.query({ space: projectPath })).length : undefined;
     const memory = ideaCount === undefined ? "" : ` using ${ideaCount} ideas as waking memory`;
 
     return {

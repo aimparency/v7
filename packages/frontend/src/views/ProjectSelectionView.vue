@@ -42,7 +42,7 @@ const emit = defineEmits<{
   (event: 'remove-from-history', path: string): void
   (event: 'refresh-discovered-projects'): void
   (event: 'open-discovered-project', path: string): void
-  (event: 'open-graph', slug: string): void
+  (event: 'open-space', slug: string): void
 }>()
 
 // With accounts the server's spaces are all there is to open: the directories
@@ -50,10 +50,10 @@ const emit = defineEmits<{
 const accounts = hasAccounts()
 const viewer = useViewerStore()
 const toast = useToastStore()
-const spaces = ref<Awaited<ReturnType<typeof trpc.graphs.list.query>>>([])
-const deletedSpaces = ref<Awaited<ReturnType<typeof trpc.graphs.listDeleted.query>>>([])
+const spaces = ref<Awaited<ReturnType<typeof trpc.spaces.list.query>>>([])
+const deletedSpaces = ref<Awaited<ReturnType<typeof trpc.spaces.listDeleted.query>>>([])
 const loadSpaces = async () => {
-  const [listed, deleted] = await Promise.all([trpc.graphs.list.query(), trpc.graphs.listDeleted.query()])
+  const [listed, deleted] = await Promise.all([trpc.spaces.list.query(), trpc.spaces.listDeleted.query()])
   spaces.value = listed
   deletedSpaces.value = deleted
 }
@@ -65,8 +65,8 @@ const changeSpace = async (failure: string, action: () => Promise<unknown>) => {
     toast.error(failure, error)
   }
 }
-const deleteSpace = (slug: string) => changeSpace('Could not delete the space', () => trpc.graphs.remove.mutate({ graph: slug }))
-const restoreSpace = (slug: string) => changeSpace('Could not restore the space', () => trpc.graphs.restore.mutate({ slug }))
+const deleteSpace = (slug: string) => changeSpace('Could not delete the space', () => trpc.spaces.remove.mutate({ space: slug }))
+const restoreSpace = (slug: string) => changeSpace('Could not restore the space', () => trpc.spaces.restore.mutate({ slug }))
 const listSpaces = () => loadSpaces().catch(error => toast.error('Could not list the spaces of this server', error))
 onMounted(listSpaces)
 // Which spaces one may read depends on who is logged in.
@@ -81,16 +81,16 @@ const act = async (failure: string, action: () => Promise<{ slug: string }>, nee
   try {
     const { slug } = await action()
     emit('update:modelValue', '')
-    emit('open-graph', slug)
+    emit('open-space', slug)
   } catch (error) {
     toast.error(failure, error)
   } finally {
     busy.value = false
   }
 }
-const createSpace = () => act('Could not create the space', () => trpc.graphs.create.mutate({ name: typed.value }))
+const createSpace = () => act('Could not create the space', () => trpc.spaces.create.mutate({ name: typed.value }))
 // A space that lives in a repository elsewhere: the server clones its .bowman.
-const addRemote = () => act('Could not add the repository', () => trpc.graphs.addRemote.mutate({ url: typed.value }))
+const addRemote = () => act('Could not add the repository', () => trpc.spaces.addRemote.mutate({ url: typed.value }))
 // A private repository: cloned with a deploy key the server makes (DeployKeyModal).
 const deployKeyUrl = ref('')
 const offersDeployKey = computed(() => accounts && mayAddRemote.value && !!gitRepositoryLocation(typed.value))
@@ -101,12 +101,12 @@ const addedWithKey = (slug: string, pushError: string | null) => {
   deployKeyUrl.value = ''
   if (pushError) toast.error('The space was started here, but pushing it to the repository failed (does the deploy key have write access?)', pushError)
   emit('update:modelValue', '')
-  emit('open-graph', slug)
+  emit('open-space', slug)
 }
 // A repository already on this machine, by its path: server admins only.
-const addCheckout = () => act('Could not add the repository', () => trpc.graphs.addCheckout.mutate({ path: typed.value }), false)
+const addCheckout = () => act('Could not add the repository', () => trpc.spaces.addCheckout.mutate({ path: typed.value }), false)
 
-const mayCreate = computed(() => viewer.canCreateGraphs || viewer.getsAccountAutomatically)
+const mayCreate = computed(() => viewer.canCreateSpaces || viewer.getsAccountAutomatically)
 const mayAddRemote = computed(() => !!viewer.name || viewer.getsAccountAutomatically)
 
 // Without accounts: what the typed folder is (has a .bowman or not), and the
@@ -127,7 +127,7 @@ watch(() => props.modelValue, (value) => {
   if (accounts || !path || gitRepositoryLocation(path)) return
   inspectionTimer = setTimeout(async () => {
     try {
-      const result = await trpc.project.inspectPath.query({ graph: path })
+      const result = await trpc.project.inspectPath.query({ space: path })
       if (revision !== inspectionRevision) return
       inspectedPath.value = path
       bowmanExists.value = result.bowmanExists
@@ -191,7 +191,7 @@ const spaceEntry = (space: Space): Entry => ({
   color: space.color,
   edit: space.slug,
   remove: space.right === 'owner' ? () => deleteSpace(space.slug) : undefined,
-  open: () => emit('open-graph', space.slug)
+  open: () => emit('open-space', space.slug)
 })
 const pathSearchable = (path: string) => [path.toLowerCase(), path.toLowerCase().split('/').pop() ?? '']
 // A recent space of the server looks like its entry below, with when it was opened.

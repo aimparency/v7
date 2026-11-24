@@ -47,7 +47,7 @@ const performSearch = async (query: string) => {
   loading.value = true
   try {
     const results = await trpc.phase.search.query({
-      graph: projectStore.projectPath,
+      space: projectStore.projectPath,
       query,
       placingPhaseId: props.placingPhaseId ?? undefined
     })

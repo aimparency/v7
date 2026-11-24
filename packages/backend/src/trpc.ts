@@ -3,9 +3,9 @@ import { isAllowedBrowserOrigin } from 'shared';
 import type { IncomingMessage } from 'node:http';
 import { runWithOrigin } from './change-origin.js';
 import { hasAccounts } from 'shared/server-config';
-import { assertAllowed, graphOf, viewerFor, type Viewer } from './auth/access.js';
+import { assertAllowed, spaceOf, viewerFor, type Viewer } from './auth/access.js';
 import { touchAccount } from './auth/accounts.js';
-import { assertGraphMayGrow, GraphTooLargeError } from './graphs/size-limit.js';
+import { assertSpaceMayGrow, SpaceTooLargeError } from './spaces/size-limit.js';
 
 // `session` is one object per connection: logging in sets its token, so the
 // same WebSocket goes on as that account without reconnecting.
@@ -38,7 +38,7 @@ function clientAddress(req: IncomingMessage | undefined): string | undefined {
 
 // A page of another website: its Origin is neither this server's own address
 // nor a page on the visitor's own machine (the dev frontend on its own port).
-// Such pages may read a server with accounts, so that a graph can be shown
+// Such pages may read a server with accounts, so that a space can be shown
 // from anywhere; they never write.
 function foreignOrigin(req: IncomingMessage | undefined): boolean {
   const origin = req?.headers.origin;
@@ -87,15 +87,15 @@ export const t = initTRPC.context<Context>().create({
 // Pages of other websites read; they write only as an account that granted
 // that very website a login here (auth.grantSite).
 const accessMiddleware = t.middleware(async ({ ctx, path, type, getRawInput, next }) => {
-  const graph = graphOf(await getRawInput());
-  const viewer = viewerFor(ctx.session?.token, graph, ctx.origin);
+  const space = spaceOf(await getRawInput());
+  const viewer = viewerFor(ctx.session?.token, space, ctx.origin);
   if (ctx.foreignOrigin && type === 'mutation' && hasAccounts() && !mayWriteFromAfar(viewer, path)) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Other websites may read this server; they write only with a login you give them here.' });
   }
-  assertAllowed(path, type, viewer, graph);
-  if (graph && type === 'mutation') {
-    await assertGraphMayGrow(graph, path).catch((error) => {
-      throw error instanceof GraphTooLargeError ? new TRPCError({ code: 'PAYLOAD_TOO_LARGE', message: error.message }) : error;
+  assertAllowed(path, type, viewer, space);
+  if (space && type === 'mutation') {
+    await assertSpaceMayGrow(space, path).catch((error) => {
+      throw error instanceof SpaceTooLargeError ? new TRPCError({ code: 'PAYLOAD_TOO_LARGE', message: error.message }) : error;
     });
   }
   // When it was last used decides when an automatic account is discarded (auth/discard.ts).

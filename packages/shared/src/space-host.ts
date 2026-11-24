@@ -1,17 +1,17 @@
-// The address of a graph on the Aimparency server that hosts it:
+// The address of a space on the Aimparency server that hosts it:
 // <origin>/spaces/<slug>, the same URL a person opens in the browser. A link to
-// another graph stores it, so following the link needs no checkout and no
+// another space stores it, so following the link needs no checkout and no
 // path on this machine. Whoever follows a link (the browser, an MCP client)
-// talks to that server itself; the server of the linking graph never fetches
-// foreign graphs.
+// talks to that server itself; the server of the linking space never fetches
+// foreign spaces.
 
-import { isGraphSlug } from './project-path.js';
+import { isSpaceSlug } from './project-path.js';
 import { IdeaSchema, type Idea } from './types.js';
 
-export type GraphHost = { origin: string; slug: string };
+export type SpaceHost = { origin: string; slug: string };
 
-/** Reads `https://hub.example.org/spaces/commons-hub` (trailing slash, query and hash ignored); null when it is no graph address. */
-export function parseGraphHost(address: string): GraphHost | null {
+/** Reads `https://hub.example.org/spaces/commons-hub` (trailing slash, query and hash ignored); null when it is no space address. */
+export function parseSpaceHost(address: string): SpaceHost | null {
   let url: URL;
   try {
     url = new URL(address.trim());
@@ -20,22 +20,22 @@ export function parseGraphHost(address: string): GraphHost | null {
   }
   if (url.protocol !== 'https:' && url.protocol !== 'http:') return null;
   const match = /^\/spaces\/([^/]+)\/?$/.exec(url.pathname);
-  if (!match || !isGraphSlug(match[1]!)) return null;
+  if (!match || !isSpaceSlug(match[1]!)) return null;
   return { origin: url.origin, slug: match[1]! };
 }
 
-export function graphHostUrl(host: GraphHost): string {
+export function spaceHostUrl(host: SpaceHost): string {
   return `${host.origin}/spaces/${host.slug}`;
 }
 
-/** What a server says about one of its graphs: enough to store a link to it, and its color. */
-export type GraphAtHost = { host: string; repoId: string; name: string; color?: string };
+/** What a server says about one of its spaces: enough to store a link to it, and its color. */
+export type SpaceAtHost = { host: string; repoId: string; name: string; color?: string };
 
 // One read query of the hosting server's API, as any visitor's page makes it.
-async function queryAtHost(address: string, procedure: string, fetchImpl: typeof fetch): Promise<{ host: GraphHost; data: unknown }> {
-  const host = parseGraphHost(address);
+async function queryAtHost(address: string, procedure: string, fetchImpl: typeof fetch): Promise<{ host: SpaceHost; data: unknown }> {
+  const host = parseSpaceHost(address);
   if (!host) throw new Error(`"${address}" is not the address of a space; it looks like https://<server>/spaces/<space>.`);
-  const input = encodeURIComponent(JSON.stringify({ graph: host.slug }));
+  const input = encodeURIComponent(JSON.stringify({ space: host.slug }));
   let response: Response;
   try {
     response = await fetchImpl(`${host.origin}/trpc/${procedure}?input=${input}`);
@@ -46,20 +46,20 @@ async function queryAtHost(address: string, procedure: string, fetchImpl: typeof
   return { host, data: (await response.json() as { result?: { data?: unknown } }).result?.data };
 }
 
-/** Asks the server hosting the graph for its identity and name, through its public API. */
-export async function fetchGraphAtHost(address: string, fetchImpl: typeof fetch = fetch): Promise<GraphAtHost> {
+/** Asks the server hosting the space for its identity and name, through its public API. */
+export async function fetchSpaceAtHost(address: string, fetchImpl: typeof fetch = fetch): Promise<SpaceAtHost> {
   const { host, data } = await queryAtHost(address, 'project.getMeta', fetchImpl);
   const meta = data as { repoId?: unknown; name?: unknown; color?: unknown } | undefined;
   if (typeof meta?.repoId !== 'string') throw new Error(`${host.origin} did not name space "${host.slug}".`);
   return {
-    host: graphHostUrl(host),
+    host: spaceHostUrl(host),
     repoId: meta.repoId,
     name: typeof meta.name === 'string' ? meta.name : host.slug,
     ...(typeof meta.color === 'string' ? { color: meta.color } : {})
   };
 }
 
-/** The ideas of the graph at its host; ideas that do not parse are left out. */
+/** The ideas of the space at its host; ideas that do not parse are left out. */
 export async function fetchIdeasAtHost(address: string, fetchImpl: typeof fetch = fetch): Promise<Idea[]> {
   const { host, data } = await queryAtHost(address, 'project.loadIdeas', fetchImpl);
   const ideas = (data as { ideas?: unknown } | undefined)?.ideas;
@@ -71,9 +71,9 @@ export async function fetchIdeasAtHost(address: string, fetchImpl: typeof fetch 
 }
 
 /**
- * The value a linked graph receives, spread over its ideas. The inflow takes
- * the place of the graph's whole intrinsic value: shared out in proportion to
- * its intrinsic values, then flowing along its own connections. The graph's
+ * The value a linked space receives, spread over its ideas. The inflow takes
+ * the place of the space's whole intrinsic value: shared out in proportion to
+ * its intrinsic values, then flowing along its own connections. The space's
  * own values (calculateIdeaValues) are normalized to a total intrinsic of 1,
  * so each idea holds inflow × its own value.
  */
@@ -82,8 +82,8 @@ export function spreadInflow(inflow: number, ownValues: Map<string, number>): Ma
 }
 
 /**
- * Where the inflow enters a linked graph: its ideas with intrinsic value, each
- * taking its share of the graph's whole intrinsic value. A graph without any
+ * Where the inflow enters a linked space: its ideas with intrinsic value, each
+ * taking its share of the space's whole intrinsic value. A space without any
  * intrinsic value takes it in at its top ideas, equally.
  */
 export function intrinsicShares(ideas: Idea[]): Array<[string, number]> {

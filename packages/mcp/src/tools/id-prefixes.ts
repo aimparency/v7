@@ -34,11 +34,11 @@ function walk(value: unknown, key: string, visit: Visit): unknown {
 export class IdPrefixError extends Error {}
 
 /** The arguments with every id beginning replaced by the full id; throws when one matches no id or several. */
-export async function expandIdPrefixes<T extends Record<string, unknown>>(args: T, client: Pick<BackendClient, "graph">): Promise<T> {
+export async function expandIdPrefixes<T extends Record<string, unknown>>(args: T, client: Pick<BackendClient, "space">): Promise<T> {
   const found = new Set<string>();
   walk(args, "", (value) => { found.add(value); return value; });
   if (found.size === 0 || typeof args.space !== "string") return args;
-  const matches = await client.graph.idsBeginningWith.query({ graph: args.space, prefixes: [...found] });
+  const matches = await client.space.idsBeginningWith.query({ space: args.space, prefixes: [...found] });
   for (const prefix of found) {
     const ids = matches[prefix] ?? [];
     if (ids.length === 0) throw new IdPrefixError(`No idea or phase id begins with "${prefix}".`);

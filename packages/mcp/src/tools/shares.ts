@@ -114,12 +114,12 @@ export function shareUpdate(idea: ShareParent, request: ShareRequest) {
 }
 
 // Each idea's split in percent, for the agent to judge a share against its siblings.
-export async function describeSplits(trpcClient: BackendClient, graph: string, ideaIds: string[], focusId?: string): Promise<string> {
+export async function describeSplits(trpcClient: BackendClient, space: string, ideaIds: string[], focusId?: string): Promise<string> {
   if (ideaIds.length === 0) return "";
-  const ideas = await trpcClient.idea.getMany.query({ graph, ideaIds: [...new Set(ideaIds)] });
+  const ideas = await trpcClient.idea.getMany.query({ space, ideaIds: [...new Set(ideaIds)] });
   const childIds = [...new Set(ideas.flatMap((idea) => idea.supportingConnections.map((conn) => conn.ideaId)))];
-  const children = await trpcClient.idea.getMany.query({ graph, ideaIds: childIds });
-  const repos = ideas.some((idea) => idea.supportingRepos?.length) ? await trpcClient.linkedRepo.list.query({ graph }) : [];
+  const children = await trpcClient.idea.getMany.query({ space, ideaIds: childIds });
+  const repos = ideas.some((idea) => idea.supportingRepos?.length) ? await trpcClient.linkedRepo.list.query({ space }) : [];
   const names = new Map([...children.map((child) => [child.id, child.text] as const), ...repos.map((repo) => [repo.repoId, repo.name] as const)]);
   return ideas.map((idea) => describeShares(idea, names, focusId)).join("\n\n");
 }

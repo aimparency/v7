@@ -82,7 +82,7 @@ describe('IdeaCreationModal', () => {
     expect(columnsWrapper.text()).toContain('Columns parent')
   })
 
-  it('does not prefill a columns parent when opened from the graph', async () => {
+  it('does not prefill a columns parent when opened from the space', async () => {
     const graphWrapper = mountWithSelectedSubIdea('graph')
     await graphWrapper.vm.$nextTick()
     expect(graphWrapper.text()).not.toContain('Columns parent')

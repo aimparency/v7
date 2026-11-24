@@ -2,7 +2,7 @@ import { defineStore } from 'pinia'
 import type { inferRouterOutputs } from '@trpc/server'
 import type { AppRouter } from 'backend'
 import type { Phase as BasePhase, Idea as BaseIdea, Connection } from 'shared'
-import { calculateIdeaValues, defaultIdeaCost, fetchGraphAtHost, fetchIdeasAtHost, INITIAL_STATES, intrinsicShares, spreadInflow, toProjectRoot } from 'shared'
+import { calculateIdeaValues, defaultIdeaCost, fetchSpaceAtHost, fetchIdeasAtHost, INITIAL_STATES, intrinsicShares, spreadInflow, toProjectRoot } from 'shared'
 import { trpc } from '../trpc'
 import { followIdeaActivity } from '../utils/idea-activity-feed'
 import { backendConnection } from '../utils/backend-connection'
@@ -17,7 +17,7 @@ import { setProjectAccess } from '../utils/read-only'
 import { hasAccounts } from '../utils/runtime-config'
 import { clearIdeaSpaces, onReadOnlySpaceEdit, setIdeaSpace, setSpaceWritable } from '../utils/idea-spaces'
 import { useUIModalStore } from './ui/modal-store'
-import { graphHostUrl, parseGraphHost } from 'shared'
+import { spaceHostUrl, parseSpaceHost } from 'shared'
 import { remoteSpace, remoteTrpc } from '../utils/remote-trpc'
 import { serverLogin } from '../utils/server-logins'
 import { roundOffset } from '../utils/autolayout'
@@ -25,7 +25,7 @@ import { withOwnOffers } from '../utils/own-offers'
 import { keepIdeaSelection } from './ui/selection-anchor'
 
 type RouterOutputs = inferRouterOutputs<AppRouter>
-type ConsistencyIssue = RouterOutputs['graphHealth']['checkConsistency']['issues'][number]
+type ConsistencyIssue = RouterOutputs['spaceHealth']['checkConsistency']['issues'][number]
 type UnreadableIdea = RouterOutputs['project']['loadIdeas']['unreadable'][number]
 export type ConnectionPositionChange = { parentId: string, childId: string, relativePosition: [number, number] }
 
@@ -53,15 +53,15 @@ const isMissingFileError = (error: unknown) => {
 // meta color, when checked out, is a later refinement.)
 const REPO_NODE_COLOR = '#9e9e9e'
 
-// A linked graph opened in place. Its ideas join the store's ideas (ideaSpaces
+// A linked space opened in place. Its ideas join the store's ideas (ideaSpaces
 // says whose they are), and the UI treats them like the open space's own:
-// `inPlace.graph` is where requests about them go (its slug here, or its
+// `inPlace.space` is where requests about them go (its slug here, or its
 // address on its own server), `inPlace.writable` whether the viewer may change
 // them. Only when its server cannot be talked to that way are its ideas just
-// loaded from its host, apart (`ideas`, with the values the graph gives them).
-type LinkedGraphView =
+// loaded from its host, apart (`ideas`, with the values the space gives them).
+type LinkedSpaceView =
   | { state: 'loading' }
-  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string; inPlace?: { graph: string; writable: boolean } }
+  | { state: 'shown'; ideas: BaseIdea[]; ownValues: Map<string, number>; color?: string; inPlace?: { space: string; writable: boolean } }
   | { state: 'unavailable' }
 
 // The subscriptions of the editable spaces opened in place, by repoId.
@@ -77,11 +77,11 @@ function isHere(origin: string): boolean {
 // Where requests about a space go, from its host address: this server (by its
 // slug), or its own server (by its whole address), with the login this page
 // holds there if any.
-function spaceAt(host: string): { client: typeof trpc; graph: string; address: string } | null {
-  const parsed = parseGraphHost(host)
+function spaceAt(host: string): { client: typeof trpc; space: string; address: string } | null {
+  const parsed = parseSpaceHost(host)
   if (!parsed) return null
-  if (isHere(parsed.origin)) return { client: trpc, graph: parsed.slug, address: parsed.slug }
-  return { client: remoteTrpc(parsed.origin) as unknown as typeof trpc, graph: parsed.slug, address: graphHostUrl(parsed) }
+  if (isHere(parsed.origin)) return { client: trpc, space: parsed.slug, address: parsed.slug }
+  return { client: remoteTrpc(parsed.origin) as unknown as typeof trpc, space: parsed.slug, address: spaceHostUrl(parsed) }
 }
 
 // A server that does not answer soon (down, or not one to talk to this way) is null.
@@ -93,7 +93,7 @@ function answered<T>(request: Promise<T>, ms = 8000): Promise<T | null> {
 // proposer and to those who write this space, as an unconfirmed supporter.
 export type SpaceOffer = inferRouterOutputs<AppRouter>['notes']['offers'][number]
 
-// Ideas of an opened linked graph get ids of their own in this graph.
+// Ideas of an opened linked space get ids of their own in this space.
 export const linkedIdeaNodeId = (repoId: string, ideaId: string) => `${repoId}:${ideaId}`
 const UNREADABLE_NODE_COLOR = '#f85149'
 
@@ -276,8 +276,8 @@ export const useDataStore = defineStore('data', {
     // Floating ideas
     floatingIdeasIds: [] as string[],
 
-    // Linked graphs opened in place, by repoId.
-    linkedGraphViews: {} as Record<string, LinkedGraphView>,
+    // Linked spaces opened in place, by repoId.
+    linkedSpaceViews: {} as Record<string, LinkedSpaceView>,
     offers: [] as SpaceOffer[],
     // Ideas of spaces opened in place: their space's repoId.
     ideaSpaces: {} as Record<string, string>,
@@ -311,7 +311,7 @@ export const useDataStore = defineStore('data', {
 
     // Project Meta
     meta: null as BaseIdea['status'] | any | null, // ProjectMeta
-    // Whether the open project's graph may be changed here, and by whom
+    // Whether the open project's space may be changed here, and by whom
     // (project.getAccess; user is the account on a server with accounts)
     access: unrestrictedAccess(),
   }),
@@ -455,8 +455,8 @@ export const useDataStore = defineStore('data', {
         fy: null as number | null,
         value: state.calculatedValues.get(idea.id) || 0, // Add value here for graph
         isRepo: false, // real idea node (vs. a black-box linked-repo node, below)
-        host: undefined as string | undefined, // a linked graph's address on its server (repo nodes, below)
-        linked: false, // an idea of a linked graph opened in place (read-only, below)
+        host: undefined as string | undefined, // a linked space's address on its server (repo nodes, below)
+        linked: false, // an idea of a linked space opened in place (read-only, below)
         spawnNear: undefined as string | undefined, // node a new node first appears next to
         unreadable: undefined as string | undefined, // load error of a warning node (below)
         pending: false, // a space offered and not accepted yet (below)
@@ -531,18 +531,18 @@ export const useDataStore = defineStore('data', {
       const linkedRepoById = new Map(linkedRepos.map(repo => [repo.repoId, repo]))
       // Offered spaces join as unconfirmed supporters: drawn like a linked
       // space; value flows to them only for their proposer (withOwnOffers).
-      const offeredById = new Map(state.offers.flatMap(offer => offer.space ? [[offer.space.repoId, offer.space] as const] : []))
+      const offeredById = new Map(state.offers.flatMap(offer => offer.offeredSpace ? [[offer.offeredSpace.repoId, offer.offeredSpace] as const] : []))
       for (const [repoId, space] of offeredById) if (!linkedRepoById.has(repoId)) linkedRepoById.set(repoId, space)
       const repoNodeIds = new Set<string>()
       // The ideas of a space opened in place: the store's own, or as loaded
       // apart from its host.
-      const ideasInPlace = (repoId: string, view: LinkedGraphView & { state: 'shown' }) => view.inPlace
+      const ideasInPlace = (repoId: string, view: LinkedSpaceView & { state: 'shown' }) => view.inPlace
         ? Object.values(state.ideas).filter(idea => state.ideaSpaces[idea.id] === repoId)
         : view.ideas
       ideas.forEach(idea => {
         const offered = state.offers
-          .filter(offer => offer.ideaId === idea.id && offer.space && !idea.supportingRepos?.some(edge => edge.repoId === offer.space!.repoId))
-          .map(offer => ({ repoId: offer.space!.repoId, relativePosition: offer.relativePosition ?? [0, 1.5], weight: 1, pending: true }))
+          .filter(offer => offer.ideaId === idea.id && offer.offeredSpace && !idea.supportingRepos?.some(edge => edge.repoId === offer.offeredSpace!.repoId))
+          .map(offer => ({ repoId: offer.offeredSpace!.repoId, relativePosition: offer.relativePosition ?? [0, 1.5], weight: 1, pending: true }))
         const edges = [...(idea.supportingRepos ?? []).map(edge => ({ ...edge, pending: false })), ...offered]
         edges.forEach(edge => {
           const repoId = edge.repoId
@@ -551,7 +551,7 @@ export const useDataStore = defineStore('data', {
           if (!repoNodeIds.has(repoId)) {
             repoNodeIds.add(repoId)
             const linked = linkedRepoById.get(repoId)
-            const view = state.linkedGraphViews[repoId]
+            const view = state.linkedSpaceViews[repoId]
             if (view?.state !== 'shown') {
               const name = linked?.name ?? `repo:${repoId.slice(0, 8)}`
               const pending = offeredById.has(repoId) && !linkedRepos.some(repo => repo.repoId === repoId)
@@ -583,11 +583,11 @@ export const useDataStore = defineStore('data', {
           const flowValue = state.flowValues.get(`${idea.id}->${repoId}`) || 0
           const relativePosition: [number, number] = [edge.relativePosition?.[0] ?? 0, edge.relativePosition?.[1] ?? 0]
           const attributionShare = state.attributionShares.get(`${idea.id}->${repoId}`) || 0
-          // One connection in the data. While the graph is open in place it
+          // One connection in the data. While the space is open in place it
           // is drawn from each of its ideas with intrinsic value, each with
           // its part of the flow.
           // An offered space is attached the same way as an accepted one.
-          const view = state.linkedGraphViews[repoId]
+          const view = state.linkedSpaceViews[repoId]
           const shown = view?.state === 'shown' ? view : undefined
           const contributors = shown ? intrinsicShares(ideasInPlace(repoId, shown) as Idea[]) : [[repoId, 1] as const]
           for (const [contributor, part] of contributors) {
@@ -605,11 +605,11 @@ export const useDataStore = defineStore('data', {
         })
       })
 
-      // Linked graphs opened in place: their ideas take the graph's node's
+      // Linked spaces opened in place: their ideas take the space's node's
       // place and share out the value flowing into it. They are the store's
       // own, by their ids, connected as they are in their space; loaded apart,
       // they are read-only nodes of their own.
-      for (const [repoId, view] of Object.entries(state.linkedGraphViews)) {
+      for (const [repoId, view] of Object.entries(state.linkedSpaceViews)) {
         if (view.state !== 'shown' || !repoNodeIds.has(repoId)) continue
         const editable = !!view.inPlace
         const viewIdeas = ideasInPlace(repoId, view)
@@ -665,24 +665,24 @@ export const useDataStore = defineStore('data', {
   },
 
   actions: {
-    // Opens a linked graph in place, or closes it again. The browser loads it
+    // Opens a linked space in place, or closes it again. The browser loads it
     // from the server hosting it; that server may be down.
-    async toggleLinkedGraph(repoId: string) {
-      if (this.linkedGraphViews[repoId]?.state === 'shown') {
+    async toggleLinkedSpace(repoId: string) {
+      if (this.linkedSpaceViews[repoId]?.state === 'shown') {
         this.closeSpaceInPlace(repoId)
-        delete this.linkedGraphViews[repoId]
+        delete this.linkedSpaceViews[repoId]
         return
       }
       const host = this.hostOfSpace(repoId)
-      if (!host || this.linkedGraphViews[repoId]?.state === 'loading') return
-      this.linkedGraphViews[repoId] = { state: 'loading' }
+      if (!host || this.linkedSpaceViews[repoId]?.state === 'loading') return
+      this.linkedSpaceViews[repoId] = { state: 'loading' }
       try {
         if (await this.openSpaceInPlace(repoId, host)) return
-        // Its server cannot be talked to: read once from its host. Its color only tints the outline, so the graph opens without it.
-        const [ideas, graph] = await Promise.all([fetchIdeasAtHost(host), fetchGraphAtHost(host).catch(() => undefined)])
-        this.linkedGraphViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values, color: graph?.color }
+        // Its server cannot be talked to: read once from its host. Its color only tints the outline, so the space opens without it.
+        const [ideas, space] = await Promise.all([fetchIdeasAtHost(host), fetchSpaceAtHost(host).catch(() => undefined)])
+        this.linkedSpaceViews[repoId] = { state: 'shown', ideas, ownValues: calculateIdeaValues(ideas).values, color: space?.color }
       } catch (error) {
-        this.linkedGraphViews[repoId] = { state: 'unavailable' }
+        this.linkedSpaceViews[repoId] = { state: 'unavailable' }
         useToastStore().warning(`Not available: ${error instanceof Error ? error.message : String(error)}`)
       }
     },
@@ -694,13 +694,13 @@ export const useDataStore = defineStore('data', {
     // for a login there (askToEditSpace). False when its server does not
     // answer that way: it is read once from its host instead.
     async openSpaceInPlace(repoId: string, host: string): Promise<boolean> {
-      const space = spaceAt(host)
-      if (!space) return false
-      const { client, graph, address } = space
-      const access = await answered(client.project.getAccess.query({ graph }))
+      const target = spaceAt(host)
+      if (!target) return false
+      const { client, space, address } = target
+      const access = await answered(client.project.getAccess.query({ space }))
       if (!access) return false
       const writable = access.writable
-      const [scan, meta] = await Promise.all([client.project.loadIdeas.query({ graph }), client.project.getMeta.query({ graph })])
+      const [scan, meta] = await Promise.all([client.project.loadIdeas.query({ space }), client.project.getMeta.query({ space })])
       if (meta.repoId && meta.repoId !== repoId) throw new Error(`${host} is another space now.`)
       for (const idea of scan.ideas) {
         this.ideaSpaces[idea.id] = repoId
@@ -708,17 +708,17 @@ export const useDataStore = defineStore('data', {
         this.ideas[idea.id] = idea
       }
       setSpaceWritable(address, writable)
-      this.linkedGraphViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, inPlace: { graph: address, writable } }
+      this.linkedSpaceViews[repoId] = { state: 'shown', ideas: [], ownValues: new Map(), color: meta.color, inPlace: { space: address, writable } }
       spaceSubscriptions.get(repoId)?.unsubscribe()
-      spaceSubscriptions.set(repoId, client.project.onUpdate.subscribe({ graph }, {
+      spaceSubscriptions.set(repoId, client.project.onUpdate.subscribe({ space }, {
         onData: async (data: ProjectUpdate) => {
-          if (data.type !== 'idea' || this.linkedGraphViews[repoId]?.state !== 'shown') return
+          if (data.type !== 'idea' || this.linkedSpaceViews[repoId]?.state !== 'shown') return
           useHistoryStore().recordChange({ ...data, space: address }) // its edits here are undone like the open space's
           if (data.deleted) {
             this.removeIdeaLocally(data.id)
             return
           }
-          const idea = (data.entity as BaseIdea | undefined) ?? await client.idea.get.query({ graph, ideaId: data.id })
+          const idea = (data.entity as BaseIdea | undefined) ?? await client.idea.get.query({ space, ideaId: data.id })
           this.ideaSpaces[idea.id] = repoId
           setIdeaSpace(idea.id, address)
           this.replaceIdea(idea.id, idea)
@@ -731,20 +731,20 @@ export const useDataStore = defineStore('data', {
     // A login at a space's server came or went: opened in place, the space
     // opens again, editable or read-only as that login may.
     async reopenSpacesAt(origin: string) {
-      for (const [repoId, view] of Object.entries(this.linkedGraphViews)) {
+      for (const [repoId, view] of Object.entries(this.linkedSpaceViews)) {
         if (view.state !== 'shown') continue
         const host = this.hostOfSpace(repoId)
-        if (!host || parseGraphHost(host)?.origin !== origin) continue
+        if (!host || parseSpaceHost(host)?.origin !== origin) continue
         this.closeSpaceInPlace(repoId)
-        delete this.linkedGraphViews[repoId]
-        await this.toggleLinkedGraph(repoId)
+        delete this.linkedSpaceViews[repoId]
+        await this.toggleLinkedSpace(repoId)
       }
     },
 
     /** The address of a linked or offered space at its host. */
     hostOfSpace(repoId: string): string | undefined {
       return this.meta?.linkedRepos?.find((link: { repoId: string; host?: string }) => link.repoId === repoId)?.host
-        ?? this.offers.find(offer => offer.space?.repoId === repoId)?.space?.host
+        ?? this.offers.find(offer => offer.offeredSpace?.repoId === repoId)?.offeredSpace?.host
     },
 
     // Closing a space opened in place takes its ideas out of the store.
@@ -769,7 +769,7 @@ export const useDataStore = defineStore('data', {
     mayEditIdea(ideaId: string): boolean {
       const space = this.ideaSpaces[ideaId]
       if (space === undefined) return this.access.writable
-      const view = this.linkedGraphViews[space]
+      const view = this.linkedSpaceViews[space]
       return view?.state === 'shown' && view.inPlace?.writable === true
     },
 
@@ -778,9 +778,9 @@ export const useDataStore = defineStore('data', {
     // is asked for (ConnectServerModal); otherwise the reason shows.
     askToEditSpace(repoId: string) {
       const host = this.hostOfSpace(repoId)
-      const origin = host ? parseGraphHost(host)?.origin : undefined
+      const origin = host ? parseSpaceHost(host)?.origin : undefined
       const name = this.meta?.linkedRepos?.find((link: { repoId: string; name?: string }) => link.repoId === repoId)?.name
-        ?? this.offers.find(offer => offer.space?.repoId === repoId)?.space?.name
+        ?? this.offers.find(offer => offer.offeredSpace?.repoId === repoId)?.offeredSpace?.name
       const toast = useToastStore()
       if (!host || !origin) return toast.info('This space is open read-only here.')
       if (isHere(origin)) return toast.info(`${name ? `“${name}”` : 'This space'} is open read-only for you: ask its owner for write access.`)
@@ -795,7 +795,7 @@ export const useDataStore = defineStore('data', {
         return this.meta
       }
 
-      const meta = await trpc.project.getMeta.query({ graph: projectPath })
+      const meta = await trpc.project.getMeta.query({ space: projectPath })
       this.meta = meta
       return meta
     },
@@ -807,7 +807,7 @@ export const useDataStore = defineStore('data', {
       // Only phases known before the request can be stale: one that arrived
       // through the subscription meanwhile is newer than the list.
       const knownPhaseIds = Object.keys(this.phases)
-      this.applyPhaseList(await trpc.phase.list.query({ graph: projectPath }), knownPhaseIds)
+      this.applyPhaseList(await trpc.phase.list.query({ space: projectPath }), knownPhaseIds)
     },
 
     applyPhaseList(phases: BasePhase[], knownPhaseIds: string[]) {
@@ -828,7 +828,7 @@ export const useDataStore = defineStore('data', {
 
       const revision = this.beginPhaseSync(phaseId)
       try {
-        const phase = await trpc.phase.get.query({ graph: projectPath, phaseId })
+        const phase = await trpc.phase.get.query({ space: projectPath, phaseId })
         this.replacePhaseIfCurrent(phase.id, phase, revision)
         return this.phases[phase.id] ?? null
       } catch (error) {
@@ -862,7 +862,7 @@ export const useDataStore = defineStore('data', {
       if (!projectPath) return;
       
       // The subscription applies the new phase and its owner before the mutation resolves.
-      const { id: newPhaseId } = await trpc.phase.create.mutate({ graph: projectPath, phase: phaseData });
+      const { id: newPhaseId } = await trpc.phase.create.mutate({ space: projectPath, phase: phaseData });
 
       const uiStore = useUIStore();
       const newEntries = this.getSelectableColumnEntries(columnIndex);
@@ -958,7 +958,7 @@ export const useDataStore = defineStore('data', {
     async createFloatingIdea(projectPath: string, idea: IdeaCreationParams, inheritColorFrom?: string): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createFloatingIdea.mutate({
-          graph: projectPath,
+          space: projectPath,
           idea,
           inheritColorFrom
         })
@@ -968,7 +968,7 @@ export const useDataStore = defineStore('data', {
         const space = inheritColorFrom ? this.ideaSpaces[inheritColorFrom] : undefined
         if (space) {
           this.ideaSpaces[newIdea.id] = space
-          setIdeaSpace(newIdea.id, (this.linkedGraphViews[space] as { inPlace?: { graph: string } } | undefined)?.inPlace?.graph ?? null)
+          setIdeaSpace(newIdea.id, (this.linkedSpaceViews[space] as { inPlace?: { space: string } } | undefined)?.inPlace?.space ?? null)
           return newIdea
         }
 
@@ -992,7 +992,7 @@ export const useDataStore = defineStore('data', {
     async createSubIdea(projectPath: string, parentIdeaId: string, idea: IdeaCreationParams, positionInParent?: number, weight: number = 1): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createSubIdea.mutate({
-          graph: projectPath,
+          space: projectPath,
           parentIdeaId,
           idea,
           positionInParent,
@@ -1000,14 +1000,14 @@ export const useDataStore = defineStore('data', {
         })
 
         // Reload parent idea to get updated connections
-        const parentIdea = await trpc.idea.get.query({ graph: projectPath, ideaId: parentIdeaId })
+        const parentIdea = await trpc.idea.get.query({ space: projectPath, ideaId: parentIdeaId })
         if (parentIdea) {
           this.replaceIdea(parentIdeaId, parentIdea)
         }
 
         // Reload child idea to get updated supportedIdeas array
         // This ensures it doesn't appear in floating ideas
-        const updatedChildIdea = await trpc.idea.get.query({ graph: projectPath, ideaId: newIdea.id })
+        const updatedChildIdea = await trpc.idea.get.query({ space: projectPath, ideaId: newIdea.id })
         if (updatedChildIdea) {
           this.replaceIdea(newIdea.id, updatedChildIdea)
         }
@@ -1024,7 +1024,7 @@ export const useDataStore = defineStore('data', {
     async createCommittedIdea(projectPath: string, phaseId: string, idea: IdeaCreationParams, insertionIndex?: number): Promise<{id: string}> {
       try {
         const newIdea = await trpc.idea.createIdeaInPhase.mutate({
-          graph: projectPath,
+          space: projectPath,
           phaseId,
           idea,
           insertionIndex
@@ -1044,7 +1044,7 @@ export const useDataStore = defineStore('data', {
       const revision = this.beginIdeaSync(ideaId)
       try {
         const updatedIdea = await trpc.idea.update.mutate({
-          graph: projectPath,
+          space: projectPath,
           ideaId,
           idea: updates
         })
@@ -1079,7 +1079,7 @@ export const useDataStore = defineStore('data', {
 
       try {
         const updatedParent = await trpc.idea.update.mutate({
-          graph: projectPath,
+          space: projectPath,
           ideaId: parentId,
           idea: { supportingConnections: updatedConnections }
         })
@@ -1107,7 +1107,7 @@ export const useDataStore = defineStore('data', {
 
       try {
         // The change events bring the persisted state of both ideas.
-        await trpc.idea.disconnect.mutate({ graph: projectPath, parentIdeaId: parentId, childIdeaId: childId })
+        await trpc.idea.disconnect.mutate({ space: projectPath, parentIdeaId: parentId, childIdeaId: childId })
       } catch (error) {
         this.replaceIdea(parentId, originalParent)
         this.replaceIdea(childId, originalChild)
@@ -1178,19 +1178,19 @@ export const useDataStore = defineStore('data', {
       // Each space saves its own: the open one, and those opened in place.
       const bySpace = new Map<string, ConnectionPositionChange[]>()
       for (const change of changes) {
-        const space = this.ideaSpaces[change.parentId]
-        const view = space ? this.linkedGraphViews[space] : undefined
+        const repoId = this.ideaSpaces[change.parentId]
+        const view = repoId ? this.linkedSpaceViews[repoId] : undefined
         // A space the viewer may not change keeps its positions; they move here only.
-        if (space && !(view?.state === 'shown' && view.inPlace?.writable)) continue
-        const graph = (view?.state === 'shown' && view.inPlace?.graph) || projectPath
-        bySpace.set(graph, [...(bySpace.get(graph) ?? []), change])
+        if (repoId && !(view?.state === 'shown' && view.inPlace?.writable)) continue
+        const space = (view?.state === 'shown' && view.inPlace?.space) || projectPath
+        bySpace.set(space, [...(bySpace.get(space) ?? []), change])
       }
       try {
         await Promise.all([...bySpace].map(([address, part]) => {
           const remote = remoteSpace(address)
           return remote
-            ? remoteTrpc(remote.origin).idea.setConnectionPositions.mutate({ graph: remote.graph, changes: part })
-            : trpc.idea.setConnectionPositions.mutate({ graph: address, changes: part })
+            ? remoteTrpc(remote.origin).idea.setConnectionPositions.mutate({ space: remote.space, changes: part })
+            : trpc.idea.setConnectionPositions.mutate({ space: address, changes: part })
         }))
       } catch (e) {
         useToastStore().error('Failed to save positions', e)
@@ -1201,20 +1201,20 @@ export const useDataStore = defineStore('data', {
       try {
         // Use the new backend endpoint that maintains bidirectional relationship
         await trpc.idea.commitToPhase.mutate({
-          graph: projectPath,
+          space: projectPath,
           ideaId,
           phaseId,
           insertionIndex
         })
 
         // Update local state - reload the specific phase to get updated commitments
-        const phase = await trpc.phase.get.query({ graph: projectPath, phaseId })
+        const phase = await trpc.phase.get.query({ space: projectPath, phaseId })
         if (phase) {
           this.replacePhase(phaseId, phase)
         }
 
         // Reload the idea to get updated committedIn field
-        const idea = await trpc.idea.get.query({ graph: projectPath, ideaId })
+        const idea = await trpc.idea.get.query({ space: projectPath, ideaId })
         if (idea) {
           this.replaceIdea(ideaId, idea)
         }
@@ -1251,20 +1251,20 @@ export const useDataStore = defineStore('data', {
 
     // With cascade, descendants that no other parent or phase anchors go too.
     async deleteIdeas(projectPath: string, ideaIds: string[], { cascade }: { cascade: boolean }): Promise<string[]> {
-      const { deletedIds } = await trpc.idea.delete.mutate({ graph: projectPath, ideaIds, cascade })
+      const { deletedIds } = await trpc.idea.delete.mutate({ space: projectPath, ideaIds, cascade })
       this.forgetDeletedIdeas(deletedIds)
       return deletedIds
     },
 
     // What a cascading delete of these ideas would take, without deleting.
     async previewCascadingDelete(projectPath: string, ideaIds: string[]): Promise<string[]> {
-      const { deletedIds } = await trpc.idea.delete.mutate({ graph: projectPath, ideaIds, cascade: true, dryRun: true })
+      const { deletedIds } = await trpc.idea.delete.mutate({ space: projectPath, ideaIds, cascade: true, dryRun: true })
       return deletedIds
     },
 
     // Takes the idea out of one parent or phase; it stays, floating if nothing else anchors it.
     async detachIdea(projectPath: string, ideaId: string, from: IdeaContext): Promise<void> {
-      await trpc.idea.detach.mutate({ graph: projectPath, ideaId, from })
+      await trpc.idea.detach.mutate({ space: projectPath, ideaId, from })
     },
 
     // The change events remove them too; doing it now keeps the caller's
@@ -1279,7 +1279,7 @@ export const useDataStore = defineStore('data', {
     async removeIdeaFromPhase(projectPath: string, ideaId: string, phaseId: string) {
       try {
         await trpc.idea.removeFromPhase.mutate({
-          graph: projectPath,
+          space: projectPath,
           ideaId,
           phaseId
         })
@@ -1295,7 +1295,7 @@ export const useDataStore = defineStore('data', {
     async loadAllIdeas(projectPath: string) {
       if (!projectPath) return;
       try {
-        this.applyIdeaScan(await trpc.project.loadIdeas.query({ graph: projectPath }));
+        this.applyIdeaScan(await trpc.project.loadIdeas.query({ space: projectPath }));
       } catch (error) {
         console.error('Failed to load all ideas:', error);
       }
@@ -1323,10 +1323,10 @@ export const useDataStore = defineStore('data', {
         followIdeaActivity(projectPath);
         const knownPhaseIds = Object.keys(this.phases);
         const [meta, access, phases, ideaScan] = await Promise.all([
-          trpc.project.getMeta.query({ graph: projectPath }),
-          trpc.project.getAccess.query({ graph: projectPath }),
-          trpc.phase.list.query({ graph: projectPath }),
-          trpc.project.loadIdeas.query({ graph: projectPath })
+          trpc.project.getMeta.query({ space: projectPath }),
+          trpc.project.getAccess.query({ space: projectPath }),
+          trpc.phase.list.query({ space: projectPath }),
+          trpc.project.loadIdeas.query({ space: projectPath })
         ]);
         if (projectStore.projectPath !== projectPath) return;
         this.meta = meta;
@@ -1340,9 +1340,9 @@ export const useDataStore = defineStore('data', {
       }
     },
 
-    // After logging in or out: what this viewer may do on the open graph.
+    // After logging in or out: what this viewer may do on the open space.
     async refreshAccess(projectPath: string) {
-      this.applyAccess(projectPath, await trpc.project.getAccess.query({ graph: projectPath }))
+      this.applyAccess(projectPath, await trpc.project.getAccess.query({ space: projectPath }))
       await this.loadOffers(projectPath)
     },
 
@@ -1351,15 +1351,15 @@ export const useDataStore = defineStore('data', {
     async loadOffers(projectPath: string) {
       if (!hasAccounts()) return
       try {
-        this.offers = await trpc.notes.offers.query({ graph: projectPath })
+        this.offers = await trpc.notes.offers.query({ space: projectPath })
       } catch (error) {
         console.warn('Could not load the offers', error)
         return
       }
       this.recalculateValues()
       for (const offer of this.offers) {
-        const repoId = offer.space?.repoId
-        if (offer.mine && repoId && !this.linkedGraphViews[repoId]) void this.toggleLinkedGraph(repoId)
+        const repoId = offer.offeredSpace?.repoId
+        if (offer.mine && repoId && !this.linkedSpaceViews[repoId]) void this.toggleLinkedSpace(repoId)
       }
     },
 
@@ -1383,7 +1383,7 @@ export const useDataStore = defineStore('data', {
       this.unreadableIdeas = [];
       this.floatingIdeasIds = [];
       this.calculatedValues = new Map();
-      this.linkedGraphViews = {};
+      this.linkedSpaceViews = {};
       this.offers = [];
       this.closeSpacesInPlace();
       this.calculatedCosts = new Map();
@@ -1420,8 +1420,8 @@ export const useDataStore = defineStore('data', {
         return value;
       });
       const [meta, access] = await Promise.all([
-        reporting(trpc.project.getMeta.query({ graph: projectPath })),
-        reporting(trpc.project.getAccess.query({ graph: projectPath }))
+        reporting(trpc.project.getMeta.query({ space: projectPath })),
+        reporting(trpc.project.getAccess.query({ space: projectPath }))
       ]);
       if (!isCurrent()) return false;
 
@@ -1429,8 +1429,8 @@ export const useDataStore = defineStore('data', {
       // ideas); the subscription keeps it live afterwards.
       await onProgress?.('reading');
       const [phases, ideaScan] = await Promise.all([
-        trpc.phase.list.query({ graph: projectPath }),
-        trpc.project.loadIdeas.query({ graph: projectPath })
+        trpc.phase.list.query({ space: projectPath }),
+        trpc.project.loadIdeas.query({ space: projectPath })
       ]);
       if (!isCurrent()) return false;
 
@@ -1464,7 +1464,7 @@ export const useDataStore = defineStore('data', {
           ...meta
         }
         const updated = await trpc.project.updateMeta.mutate({
-          graph: projectPath,
+          space: projectPath,
           meta: nextMeta
         });
         this.meta = updated;
@@ -1481,7 +1481,7 @@ export const useDataStore = defineStore('data', {
       this.subscription?.unsubscribe();
 
       let held: ProjectUpdate[] | null = hold ? [] : null;
-      this.subscription = trpc.project.onUpdate.subscribe({ graph: projectPath }, {
+      this.subscription = trpc.project.onUpdate.subscribe({ space: projectPath }, {
         onData: async (data: ProjectUpdate) => {
           if (toProjectRoot(data.projectPath) !== toProjectRoot(projectPath)) return;
           if (held) held.push(data);
@@ -1504,13 +1504,13 @@ export const useDataStore = defineStore('data', {
         const applyEntity = (apply: () => void) => keepIdeaSelection(useUIStore(), apply)
 
         if (data.type === 'project') {
-          this.meta = data.entity ?? await trpc.project.getMeta.query({ graph: projectPath })
+          this.meta = data.entity ?? await trpc.project.getMeta.query({ space: projectPath })
         } else if (data.type === 'idea') {
           if (data.deleted) {
             applyRemoteIdeaUpdate(() => applyEntity(() => this.removeIdeaLocally(data.id)))
           } else if (!this.deletedIdeas.has(data.id)) {
             const revision = this.beginIdeaSync(data.id)
-            const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ graph: projectPath, ideaId: data.id })
+            const idea = data.entity as BaseIdea ?? await trpc.idea.get.query({ space: projectPath, ideaId: data.id })
             applyRemoteIdeaUpdate(() => applyEntity(() => {
               if (this.replaceIdeaIfCurrent(idea.id, idea, revision)) this.syncFloatingIdea(idea)
             }))
@@ -1533,7 +1533,7 @@ export const useDataStore = defineStore('data', {
         // One mutation: the backend moves child phases into the deleted phase's
         // slot, so the column isn't re-rendered through intermediate states.
         await trpc.phase.delete.mutate({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           phaseId: phaseId
         });
       } catch (error) {
@@ -1547,7 +1547,7 @@ export const useDataStore = defineStore('data', {
 
       try {
         const ideas = await trpc.idea.getMany.query({
-          graph: projectPath,
+          space: projectPath,
           ideaIds
         });
         if (projectStore.projectPath !== projectPath) return;
@@ -1566,13 +1566,13 @@ export const useDataStore = defineStore('data', {
     async reorderPhaseIdea(projectPath: string, phaseId: string, ideaId: string, newIndex: number) {
       try {
         await trpc.idea.commitToPhase.mutate({
-          graph: projectPath,
+          space: projectPath,
           ideaId,
           phaseId,
           insertionIndex: newIndex
         });
         
-        const phase = await trpc.phase.get.query({ graph: projectPath, phaseId });
+        const phase = await trpc.phase.get.query({ space: projectPath, phaseId });
         if (phase) this.replacePhase(phaseId, phase);
       } catch (error) {
         console.error('Failed to reorder phase idea:', error);
@@ -1585,14 +1585,14 @@ export const useDataStore = defineStore('data', {
         const childSupportedIdeasIndex = childIdea?.supportedIdeas.indexOf(parentIdeaId) ?? 0;
 
         await trpc.idea.connectIdeas.mutate({
-          graph: projectPath,
+          space: projectPath,
           parentIdeaId,
           childIdeaId: childIdeaId,
           parentIncomingIndex: newIndex,
           childSupportedIdeasIndex: childSupportedIdeasIndex !== -1 ? childSupportedIdeasIndex : undefined
         });
 
-        const parentIdea = await trpc.idea.get.query({ graph: projectPath, ideaId: parentIdeaId });
+        const parentIdea = await trpc.idea.get.query({ space: projectPath, ideaId: parentIdeaId });
         if (parentIdea) this.replaceIdea(parentIdeaId, parentIdea);
         this.recalculateValues();
       } catch (error) {
@@ -1606,7 +1606,7 @@ export const useDataStore = defineStore('data', {
         if (!phase) return
 
         await trpc.phase.reorder.mutate({
-          graph: projectPath,
+          space: projectPath,
           phaseId,
           newIndex
         })
@@ -1628,7 +1628,7 @@ export const useDataStore = defineStore('data', {
 
         const revision = this.beginPhaseSync(phaseId)
         const updatedPhase = await trpc.phase.update.mutate({
-          graph: projectPath,
+          space: projectPath,
           phaseId,
           phase: { parent: parentId },
           insertionIndex: newIndex
@@ -1646,7 +1646,7 @@ export const useDataStore = defineStore('data', {
         const startedAt = performance.now();
         perfLog('data.checkConsistency:start', { projectPath });
         try {
-            const result = await trpc.graphHealth.checkConsistency.query({ graph: projectPath });
+            const result = await trpc.spaceHealth.checkConsistency.query({ space: projectPath });
             this.consistencyErrors = result.errors;
             this.consistencyIssues = result.issues ?? result.errors.map((message) => ({
                 code: 'legacy',
@@ -1662,7 +1662,7 @@ export const useDataStore = defineStore('data', {
     async fixConsistency(projectPath: string) {
         if (!projectPath) return;
         try {
-            const result = await trpc.graphHealth.fixConsistency.mutate({ graph: projectPath });
+            const result = await trpc.spaceHealth.fixConsistency.mutate({ space: projectPath });
             // Reload everything after fix
             await this.resyncProject(projectPath);
             this.consistencyErrors = [];
@@ -1680,6 +1680,6 @@ export const useDataStore = defineStore('data', {
 // way out (utils/idea-spaces.ts): ask for a login there, or say why.
 onReadOnlySpaceEdit((address) => {
   const store = useDataStore()
-  const repoId = Object.entries(store.linkedGraphViews).find(([, view]) => view.state === 'shown' && view.inPlace?.graph === address)?.[0]
+  const repoId = Object.entries(store.linkedSpaceViews).find(([, view]) => view.state === 'shown' && view.inPlace?.space === address)?.[0]
   if (repoId) store.askToEditSpace(repoId)
 })

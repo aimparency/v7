@@ -37,8 +37,8 @@ export interface GraphNode {
   freezeCounter?: number
   loadable?: boolean
   isRepo?: boolean // black-box linked-repo node (read-only, not a real idea)
-  host?: string // a linked graph's address on its server
-  linked?: boolean // an idea of a linked graph opened in place: read-only here
+  host?: string // a linked space's address on its server
+  linked?: boolean // an idea of a linked space opened in place: read-only here
   pending?: boolean // a space offered and not accepted yet
   space?: string // the space opened in place this node's idea belongs to (its repoId)
   unreadable?: string // load error of an idea file the backend cannot read (read-only warning node)
@@ -159,14 +159,14 @@ export function useGraphSimulation() {
       visibleSet = new Set(filter.visibleIds)
       loadableSet = new Set(filter.loadableIds)
       const allowedIds = new Set([...filter.visibleIds, ...filter.loadableIds])
-      // Repo, unreadable and opened linked-graph nodes belong to no phase, so
+      // Repo, unreadable and opened linked-space nodes belong to no phase, so
       // they'd be filtered out by id. Keep their links to visible ideas, and
-      // let them ride along; a linked graph's ideas hang on its node.
+      // let them ride along; a linked space's ideas hang on its node.
       const unphasedIds = new Set(allRawNodes.filter(n => n.isRepo || n.unreadable || n.linked || n.space).map(n => n.id))
-      const linkedGraphIds = new Set(allRawNodes.filter(n => n.linked || n.space).map(n => n.id))
+      const linkedSpaceIds = new Set(allRawNodes.filter(n => n.linked || n.space).map(n => n.id))
       const kept = (id: string) => allowedIds.has(id) || unphasedIds.has(id)
       rawLinks = allRawLinks.filter(l =>
-        kept(l.source) && kept(l.target) && (allowedIds.has(l.source) || allowedIds.has(l.target) || linkedGraphIds.has(l.source))
+        kept(l.source) && kept(l.target) && (allowedIds.has(l.source) || allowedIds.has(l.target) || linkedSpaceIds.has(l.source))
       )
       const linkedIds = new Set(rawLinks.flatMap(l => [l.source, l.target]))
       rawNodes = allRawNodes.filter(n => allowedIds.has(n.id) || (unphasedIds.has(n.id) && linkedIds.has(n.id)))

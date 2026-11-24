@@ -20,7 +20,7 @@ const refresh = async () => {
   const projectPath = projectStore.projectPath
   let next = NO_HOOK_STATE
   try {
-    if (projectPath) next = await trpc.continueHook.get.query({ graph: projectPath })
+    if (projectPath) next = await trpc.continueHook.get.query({ space: projectPath })
   } catch {
     // stays off
   }
@@ -38,7 +38,7 @@ const label = computed(() => {
 const select = async (loop: string, agent?: HookAgent) => {
   menuOpen.value = false
   try {
-    state.value = await trpc.continueHook.select.mutate({ graph: projectStore.projectPath, loop, agent })
+    state.value = await trpc.continueHook.select.mutate({ space: projectStore.projectPath, loop, agent })
   } catch (failure) {
     useToastStore().error('Could not change the hook', failure)
   }

@@ -26,18 +26,18 @@ afterEach(async () => {
 });
 
 async function makeIdea(text: string): Promise<string> {
-  return (await caller.idea.createFloatingIdea({ graph: projectPath, idea: { text } })).id;
+  return (await caller.idea.createFloatingIdea({ space: projectPath, idea: { text } })).id;
 }
 
 async function connect(parentIdeaId: string, childIdeaId: string) {
-  await caller.idea.connectIdeas({ graph: projectPath, parentIdeaId, childIdeaId });
+  await caller.idea.connectIdeas({ space: projectPath, parentIdeaId, childIdeaId });
 }
 
 async function makePhase(): Promise<string> {
-  return (await caller.phase.create({ graph: projectPath, phase: { name: 'April', parent: null, commitments: [] } })).id;
+  return (await caller.phase.create({ space: projectPath, phase: { name: 'April', parent: null, commitments: [] } })).id;
 }
 
-const get = (ideaId: string) => caller.idea.get({ graph: projectPath, ideaId });
+const get = (ideaId: string) => caller.idea.get({ space: projectPath, ideaId });
 const children = async (ideaId: string) => (await get(ideaId)).supportingConnections.map((c) => c.ideaId);
 
 test('moves between parents, keeping the parent slot and returning both parents', async () => {
@@ -51,7 +51,7 @@ test('moves between parents, keeping the parent slot and returning both parents'
   await connect(first, moved);
 
   const result = await caller.idea.move({
-    graph: projectPath,
+    space: projectPath,
     ideaId: moved,
     from: { parentId: oldParent },
     to: { parentId: newParent },
@@ -72,7 +72,7 @@ test('reorders within the same parent without detaching', async () => {
   for (const child of [a, b, c]) await connect(parent, child);
   await connect(otherParent, a);
 
-  await caller.idea.move({ graph: projectPath, ideaId: a, from: { parentId: parent }, to: { parentId: parent }, index: 2 });
+  await caller.idea.move({ space: projectPath, ideaId: a, from: { parentId: parent }, to: { parentId: parent }, index: 2 });
 
   assert.deepEqual(await children(parent), [b, c, a]);
   assert.deepEqual((await get(a)).supportedIdeas, [parent, otherParent]);
@@ -81,14 +81,14 @@ test('reorders within the same parent without detaching', async () => {
 test('moves from a phase to a parent and from a parent into a phase', async () => {
   const phase = await makePhase();
   const parent = await makeIdea('Parent');
-  const moved = (await caller.idea.createIdeaInPhase({ graph: projectPath, phaseId: phase, idea: { text: 'Moved' } })).id;
+  const moved = (await caller.idea.createIdeaInPhase({ space: projectPath, phaseId: phase, idea: { text: 'Moved' } })).id;
 
-  const toParent = await caller.idea.move({ graph: projectPath, ideaId: moved, from: { phaseId: phase }, to: { parentId: parent } });
+  const toParent = await caller.idea.move({ space: projectPath, ideaId: moved, from: { phaseId: phase }, to: { parentId: parent } });
   assert.deepEqual(toParent.phases[0]!.commitments, []);
   assert.deepEqual(await children(parent), [moved]);
   assert.deepEqual((await get(moved)).committedIn, []);
 
-  const toPhase = await caller.idea.move({ graph: projectPath, ideaId: moved, from: { parentId: parent }, to: { phaseId: phase }, index: 0 });
+  const toPhase = await caller.idea.move({ space: projectPath, ideaId: moved, from: { parentId: parent }, to: { phaseId: phase }, index: 0 });
   assert.deepEqual(toPhase.phases[0]!.commitments, [moved]);
   assert.deepEqual(await children(parent), []);
   assert.deepEqual((await get(moved)).committedIn, [phase]);
@@ -100,10 +100,10 @@ test('without from it only attaches, without to it only detaches', async () => {
   const idea = await makeIdea('Idea');
   await connect(keep, idea);
 
-  await caller.idea.move({ graph: projectPath, ideaId: idea, to: { parentId: other } });
+  await caller.idea.move({ space: projectPath, ideaId: idea, to: { parentId: other } });
   assert.deepEqual((await get(idea)).supportedIdeas, [keep, other]);
 
-  await caller.idea.move({ graph: projectPath, ideaId: idea, from: { parentId: other } });
+  await caller.idea.move({ space: projectPath, ideaId: idea, from: { parentId: other } });
   assert.deepEqual((await get(idea)).supportedIdeas, [keep]);
   assert.deepEqual(await children(other), []);
 });

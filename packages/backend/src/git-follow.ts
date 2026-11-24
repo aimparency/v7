@@ -5,13 +5,13 @@ import fs from 'fs-extra';
 import { emitChange, type ChangeEvent } from './change-events.js';
 import { readWorkingTreeStatus } from './git-working-tree.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { graphBowmanPath, listGraphs, type Graph } from './graphs/registry.js';
-import { graphGitEnv } from './graphs/remote-git.js';
+import { spaceBowmanPath, listSpaces, type Space } from './spaces/registry.js';
+import { spaceGitEnv } from './spaces/remote-git.js';
 import { refreshBowmanClone } from './git-repository-cache.js';
 
-// A server for other people follows the git remotes of its graphs: what is
+// A server for other people follows the git remotes of its spaces: what is
 // pushed shows up without anyone logging in to the server. It only
-// fast-forwards, never commits or pushes, and waits while a graph's .bowman has
+// fast-forwards, never commits or pushes, and waits while a space's .bowman has
 // uncommitted edits (they are committed in the UI).
 
 const execFileAsync = promisify(execFile);
@@ -78,31 +78,31 @@ export function followGitRemotes(intervalSeconds: number): () => void {
   if (intervalSeconds <= 0) return () => {};
   const lastStates = new Map<string, string>();
   let running = false;
-  const follow = async (graph: Graph) => {
-    const bowmanPath = graphBowmanPath(graph);
-    const env = await graphGitEnv(graph);
-    // A remote graph without a key is edited by nobody here: it takes whatever the remote holds.
-    const outcome: PullOutcome = graph.remote && !graph.remote.key
-      ? await refreshBowmanClone(graph.path, env).then(
+  const follow = async (space: Space) => {
+    const bowmanPath = spaceBowmanPath(space);
+    const env = await spaceGitEnv(space);
+    // A remote space without a key is edited by nobody here: it takes whatever the remote holds.
+    const outcome: PullOutcome = space.remote && !space.remote.key
+      ? await refreshBowmanClone(space.path, env).then(
         (changedPaths): PullOutcome => changedPaths.length ? { state: 'updated', from: '', to: '', changedPaths } : { state: 'unchanged' },
         (error): PullOutcome => ({ state: 'failed', reason: error instanceof Error ? error.message.split('\n')[0]! : String(error) }))
       : await pullFastForward(bowmanPath, env);
     if (outcome.state === 'updated') {
       forgetProjectChecks(); // a pulled newer data model gets migrated on next use
       for (const event of await changeEventsFor(bowmanPath, outcome.changedPaths)) emitChange(event);
-      console.log(`[git-sync] ${graph.slug}: pulled ${outcome.changedPaths.length} graph files`);
-    } else if (outcome.state !== lastStates.get(graph.slug) && outcome.state !== 'unchanged' && outcome.state !== 'no-upstream') {
-      console.log(`[git-sync] ${graph.slug}: not pulling: ${outcome.state === 'failed' ? outcome.reason : outcome.state}`);
+      console.log(`[git-sync] ${space.slug}: pulled ${outcome.changedPaths.length} space files`);
+    } else if (outcome.state !== lastStates.get(space.slug) && outcome.state !== 'unchanged' && outcome.state !== 'no-upstream') {
+      console.log(`[git-sync] ${space.slug}: not pulling: ${outcome.state === 'failed' ? outcome.reason : outcome.state}`);
     }
-    lastStates.set(graph.slug, outcome.state);
+    lastStates.set(space.slug, outcome.state);
   };
   const tick = async () => {
     if (running) return;
     running = true;
     try {
-      // One after the other: a server holds many graphs, and none is urgent.
-      for (const graph of listGraphs()) {
-        await follow(graph).catch(error => console.warn(`[git-sync] ${graph.slug}:`, error instanceof Error ? error.message : error));
+      // One after the other: a server holds many spaces, and none is urgent.
+      for (const space of listSpaces()) {
+        await follow(space).catch(error => console.warn(`[git-sync] ${space.slug}:`, error instanceof Error ? error.message : error));
       }
     } finally {
       running = false;

@@ -216,10 +216,10 @@ export const useHistoryStore = defineStore('history', {
         const ideaIds = changes.filter((change) => change.type === 'idea').map((change) => change.id)
         if (space) for (const id of ideaIds) setIdeaSpace(id, space)
         result = await trpc.history.restore.mutate({
-          graph: useProjectStore().projectPath,
+          space: useProjectStore().projectPath,
           changes,
           ideaIds
-        } as { graph: string; changes: typeof changes })
+        } as { space: string; changes: typeof changes })
       } catch (error: any) {
         this.showMessage(`${direction === 'undo' ? 'Undo' : 'Redo'} failed: ${error?.message ?? error}`)
         return

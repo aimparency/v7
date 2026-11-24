@@ -36,7 +36,7 @@ const availablePaths = ref<(IdeaPath & { label: string })[]>([])
 const labelPaths = (paths: MergedPath[], dropLast: boolean) => Promise.all(paths.map(async ({ path, shownIdeas, merged }) => {
   let phase = path.phaseId ? dataStore.phases[path.phaseId] : undefined
   if (path.phaseId && !phase) {
-    phase = await trpc.phase.get.query({ graph: projectStore.projectPath, phaseId: path.phaseId }).catch(() => undefined)
+    phase = await trpc.phase.get.query({ space: projectStore.projectPath, phaseId: path.phaseId }).catch(() => undefined)
   }
   const steps = (dropLast ? shownIdeas.slice(0, -1) : shownIdeas).map(step => step.text)
   const label = [path.phaseId ? phase?.name ?? 'Unknown Phase' : 'Floating', ...(merged ? ['…'] : []), ...steps].join(' > ')
@@ -78,7 +78,7 @@ const handleKeydown = (event: KeyboardEvent) => {
 const selectIdea = async (idea: Idea, keepOpen = false) => {
   if (modalStore.ideaSearchMode === 'pick') {
     try {
-      const fullIdea = await trpc.idea.get.query({ graph: projectStore.projectPath, ideaId: idea.id })
+      const fullIdea = await trpc.idea.get.query({ space: projectStore.projectPath, ideaId: idea.id })
       emit('select', keepOpen ? { type: 'idea', data: fullIdea, keepOpen } : { type: 'idea', data: fullIdea })
     } catch (error) {
       console.error('Failed to load idea for selection', error)
@@ -94,7 +94,7 @@ const selectIdea = async (idea: Idea, keepOpen = false) => {
 
   if (projectStore.currentView === 'graph') {
     try {
-      const fullIdea = await trpc.idea.get.query({ graph: projectStore.projectPath, ideaId: idea.id })
+      const fullIdea = await trpc.idea.get.query({ space: projectStore.projectPath, ideaId: idea.id })
       emit('select', { type: 'idea', data: fullIdea })
     } catch (error) {
       console.error('Failed to load idea for graph navigation', error)
@@ -210,7 +210,7 @@ onMounted(async () => {
     const ideaId = modalStore.ideaSearchInitialIdeaId
     loading.value = true
     try {
-      const idea = await trpc.idea.get.query({ graph: projectStore.projectPath, ideaId })
+      const idea = await trpc.idea.get.query({ space: projectStore.projectPath, ideaId })
 
       if (!idea.supportedIdeas || idea.supportedIdeas.length === 0) {
         loading.value = false
@@ -242,7 +242,7 @@ onMounted(async () => {
     loading.value = true
     try {
       const idea = await trpc.idea.get.query({
-        graph: projectStore.projectPath,
+        space: projectStore.projectPath,
         ideaId: modalStore.ideaSearchInitialIdeaId
       })
       await selectIdea(idea)

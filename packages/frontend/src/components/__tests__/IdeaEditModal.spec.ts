@@ -664,10 +664,10 @@ describe('IdeaEditModal linked repos', () => {
     await wrapper.vm.$nextTick()
 
     expect(trpc.idea.linkRepo.mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ graph: '/test/project', ideaId: 'idea-1', repoId: R2 })
+      expect.objectContaining({ space: '/test/project', ideaId: 'idea-1', repoId: R2 })
     )
     expect(trpc.idea.unlinkRepo.mutate).toHaveBeenCalledWith(
-      expect.objectContaining({ graph: '/test/project', ideaId: 'idea-1', repoId: R1 })
+      expect.objectContaining({ space: '/test/project', ideaId: 'idea-1', repoId: R1 })
     )
   })
 })

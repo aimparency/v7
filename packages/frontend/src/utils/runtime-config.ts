@@ -11,7 +11,7 @@ const DEFAULT_RUNTIME_CONFIG = {
   // Everything on the page's own origin (the one-port server of `pnpm start`),
   // instead of one port per service.
   sameOrigin: false,
-  // 'accounts': other people use this server; they log in, and graphs are the
+  // 'accounts': other people use this server; they log in, and spaces are the
   // server's (not directories of this machine).
   login: 'none' as 'none' | 'accounts',
   // With accounts: server admins may run wrapped agents (a shell on the server).
@@ -137,7 +137,7 @@ export function sessionSocketTarget(port: number): { url: string, path?: string 
   return { url: buildHttpUrl(port) }
 }
 
-/** Other people use this server: accounts, the server's graphs, no local tools. */
+/** Other people use this server: accounts, the server's spaces, no local tools. */
 export function hasAccounts(): boolean {
   return runtimeConfig.login === 'accounts'
 }

@@ -1,6 +1,6 @@
 import { createTRPCProxyClient, createWSClient, getUntypedClient, wsLink } from '@trpc/client'
 import type { AppRouter } from 'backend'
-import { parseGraphHost } from 'shared'
+import { parseSpaceHost } from 'shared'
 import { clientId } from './mutation-activity'
 import { mutationTrackingLink } from './mutation-tracking-link'
 import { onServerLoginChange, serverLogin, serverLogins, storeServerLogin } from './server-logins'
@@ -41,9 +41,9 @@ onServerLoginChange((origin) => {
 })
 
 /** Where a space opened in place lives: its address here (a slug), or its address on another server. */
-export function remoteSpace(address: string): { origin: string; graph: string } | null {
-  const host = parseGraphHost(address)
-  return host ? { origin: host.origin, graph: host.slug } : null
+export function remoteSpace(address: string): { origin: string; space: string } | null {
+  const host = parseSpaceHost(address)
+  return host ? { origin: host.origin, space: host.slug } : null
 }
 
 export function remoteUntyped(origin: string) {

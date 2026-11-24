@@ -140,7 +140,7 @@ export const makeDefaultLoopRuntimeState = () => {
       name: 'Default loop',
       systemPrompt: [
         'Continuously advance the highest-value mission through its best actionable ideas.',
-        'Verify and record real outcomes, then return to the graph and improve the strategy.',
+        'Verify and record real outcomes, then return to the space and improve the strategy.',
         'Keep status reports brief.'
       ].join('\n'),
       provider: 'nvidia',
@@ -292,7 +292,7 @@ export const killLoopWorker = async (rawProjectPath: string, instanceId: string)
   activeLoopWorkers.delete(key);
 };
 
-/** Stops every loop worker this backend runs on the project: its space is going (graphs/deletion.ts). */
+/** Stops every loop worker this backend runs on the project: its space is going (spaces/deletion.ts). */
 export const stopLoopWorkersOf = async (rawProjectPath: string) => {
   const prefix = loopWorkerKey(rawProjectPath, '');
   const keys = [...activeLoopWorkers.keys()].filter(key => key.startsWith(prefix));

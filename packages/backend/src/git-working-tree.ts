@@ -84,7 +84,7 @@ export async function commitPaths(directory: string, paths: string[], message: s
 
 // Pushes the branch to its upstream: the whole branch, so also commits made
 // outside this dialog. Never prompts for credentials: `env` carries what git
-// may use (a graph added by URL: only its owner's key, see graphs/remote-git).
+// may use (a space added by URL: only its owner's key, see spaces/remote-git).
 export async function pushToUpstream(directory: string, env: NodeJS.ProcessEnv = { ...process.env, GIT_TERMINAL_PROMPT: '0' }): Promise<number> {
   const status = await readWorkingTreeStatus(directory);
   if (!status.isRepository) throw new Error('Not a git repository');

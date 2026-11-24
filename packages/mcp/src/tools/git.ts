@@ -13,7 +13,7 @@ import * as path from "path";
 // gracefully and never breaks prioritization.
 // `pathspec` (git pathspec args, e.g. ['--', '.', ':(exclude).bowman']) restricts
 // to commits that touched matching files. Reconciliation passes a code-only
-// pathspec so pure space-bookkeeping commits (chore(graph)/chore(bowman) that
+// pathspec so pure space-bookkeeping commits (chore(space)/chore(bowman) that
 // merely cite idea ids while triaging/reframing the space) don't masquerade as
 // "this idea was implemented" — they touch only .bowman/.
 export function getRepoCommitMessages(projectPath: string, maxCommits = 2000, pathspec: string[] = []): string[] {

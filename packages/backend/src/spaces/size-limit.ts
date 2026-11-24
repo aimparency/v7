@@ -1,11 +1,11 @@
 // How large a space may grow on a server with accounts (server.json
-// limits.graphMegabytes): a graph cloned from a URL is measured once, one
+// limits.spaceMegabytes): a space cloned from a URL is measured once, one
 // created here is measured as people write to it.
 
 import fs from 'fs-extra';
 import path from 'node:path';
 import { serverConfig } from 'shared/server-config';
-import { graphBowmanPath, type Graph } from './registry.js';
+import { spaceBowmanPath, type Space } from './registry.js';
 
 export async function directoryBytes(directory: string, skip: string[] = []): Promise<number> {
   let bytes = 0;
@@ -17,11 +17,11 @@ export async function directoryBytes(directory: string, skip: string[] = []): Pr
   return bytes;
 }
 
-export const graphLimitBytes = () => serverConfig().limits.graphMegabytes * 1024 * 1024;
+export const spaceLimitBytes = () => serverConfig().limits.spaceMegabytes * 1024 * 1024;
 
-export class GraphTooLargeError extends Error {
+export class SpaceTooLargeError extends Error {
   constructor() {
-    super(`This space is larger than the ${serverConfig().limits.graphMegabytes} MB a space may have on this server.`);
+    super(`This space is larger than the ${serverConfig().limits.spaceMegabytes} MB a space may have on this server.`);
   }
 }
 
@@ -31,7 +31,7 @@ export class GraphTooLargeError extends Error {
  * (gitignored, rebuilt as needed) do not count. Removing (delete…, remove…) stays possible:
  * that is how it gets small again.
  */
-export async function assertGraphMayGrow(graph: Graph, procedurePath: string): Promise<void> {
+export async function assertSpaceMayGrow(space: Space, procedurePath: string): Promise<void> {
   if (/^(delete|remove)/i.test(procedurePath.slice(procedurePath.lastIndexOf('.') + 1))) return;
-  if (await directoryBytes(graphBowmanPath(graph), ['cache', 'runtime']) > graphLimitBytes()) throw new GraphTooLargeError();
+  if (await directoryBytes(spaceBowmanPath(space), ['cache', 'runtime']) > spaceLimitBytes()) throw new SpaceTooLargeError();
 }

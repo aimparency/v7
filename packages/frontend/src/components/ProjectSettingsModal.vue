@@ -6,7 +6,7 @@ import { useDataStore } from '../stores/data'
 import { useProjectLoadStore } from '../stores/project-load'
 import { trpc } from '../trpc'
 import { useToastStore } from '../stores/toast'
-import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost, fetchGraphAtHost } from 'shared'
+import { DEFAULT_IDEA_COST, INITIAL_STATES, defaultIdeaCost, fetchSpaceAtHost } from 'shared'
 import type { AgentType } from '../stores/watchdog'
 import { Check, X } from 'lucide-vue-next'
 import { hasAccounts } from '../utils/runtime-config'
@@ -64,32 +64,32 @@ const projectLabel = (p: { path: string }) => p.path.split('/').filter(Boolean).
 
 async function loadLinkedRepos() {
   if (!projectStore.projectPath) return
-  linkedRepos.value = await trpc.linkedRepo.list.query({ graph: projectStore.projectPath })
+  linkedRepos.value = await trpc.linkedRepo.list.query({ space: projectStore.projectPath })
 }
 
 // With accounts other people use this server: no directories of the machine,
 // no agents, so the sections about them are left out.
 const accounts = hasAccounts()
 
-// Who may use this graph. Its owner names the accounts that may also change it,
+// Who may use this space. Its owner names the accounts that may also change it,
 // and who else reads it: everyone, every account, or the accounts named.
-const graphAccess = ref<Awaited<ReturnType<typeof trpc.graphs.getAccess.query>>>(null)
+const spaceAccess = ref<Awaited<ReturnType<typeof trpc.spaces.getAccess.query>>>(null)
 // owner: everything; manage: who else writes and reads, invitations too; the
 // owner alone chooses the managers, who reads at all, the address and the key.
 const isOwner = computed(() => dataStore.access.role === 'owner')
 const mayManageAccess = computed(() => dataStore.access.role === 'owner' || dataStore.access.role === 'manage')
 
-async function loadGraphAccess() {
-  if (accounts) graphAccess.value = await trpc.graphs.getAccess.query({ graph: projectStore.projectPath })
-  slug.value = graphAccess.value?.slug ?? ''
+async function loadSpaceAccess() {
+  if (accounts) spaceAccess.value = await trpc.spaces.getAccess.query({ space: projectStore.projectPath })
+  slug.value = spaceAccess.value?.slug ?? ''
 }
 
-type AccessChange = Omit<Parameters<typeof trpc.graphs.setAccess.mutate>[0], 'graph'>
+type AccessChange = Omit<Parameters<typeof trpc.spaces.setAccess.mutate>[0], 'space'>
 async function setAccess(change: AccessChange) {
   try {
-    await trpc.graphs.setAccess.mutate({ graph: projectStore.projectPath, ...change })
+    await trpc.spaces.setAccess.mutate({ space: projectStore.projectPath, ...change })
     newPerson.value = newNoteWriter.value = ''
-    await loadGraphAccess()
+    await loadSpaceAccess()
   } catch (e) {
     useToastStore().error('Could not change who may use this space', e)
   }
@@ -102,7 +102,7 @@ type Role = 'manage' | 'write' | 'read'
 const ROLE_LABELS: Record<Role, string> = { manage: 'manages', write: 'writes', read: 'reads' }
 const ROLE_LISTS = { manage: 'managers', write: 'writers', read: 'readers' } as const
 const people = computed(() => {
-  const access = graphAccess.value
+  const access = spaceAccess.value
   if (!access) return []
   const roles = new Map<string, Role>()
   for (const name of access.readers) roles.set(name, 'read')
@@ -124,7 +124,7 @@ async function removePerson(name: string, invitationId?: string) {
 // The owner hands the space over to someone of it, and stays in it as a manager.
 const newOwner = ref('')
 async function handOver() {
-  const access = graphAccess.value
+  const access = spaceAccess.value
   if (!access || !newOwner.value) return
   if (!window.confirm(`Hand this space over to ${newOwner.value}? They decide everything about it from then on; you stay in it as a manager.`)) return
   const next = newOwner.value
@@ -141,7 +141,7 @@ async function handOver() {
 
 // Out of every list, then into the one of the role (null: out of the space).
 function setRole(name: string, role: Role | null) {
-  const access = graphAccess.value
+  const access = spaceAccess.value
   if (!access || !name.trim()) return
   const change: AccessChange = {}
   for (const [listRole, list] of Object.entries(ROLE_LISTS) as [Role, typeof ROLE_LISTS[Role]][]) {
@@ -154,17 +154,17 @@ function setRole(name: string, role: Role | null) {
 
 // Inviting someone to this space: a link for one person, who takes it with a
 // new account or the one they have.
-const spaceInvitations = ref<Awaited<ReturnType<typeof trpc.graphs.invitations.query>>>([])
+const spaceInvitations = ref<Awaited<ReturnType<typeof trpc.spaces.invitations.query>>>([])
 const inviteRight = ref<Role>('write')
 const inviteLink = ref('')
 const inviteCopied = ref(false)
 async function loadSpaceInvitations() {
   if (!accounts || !mayManageAccess.value) return
-  spaceInvitations.value = await trpc.graphs.invitations.query({ graph: projectStore.projectPath }).catch(() => [])
+  spaceInvitations.value = await trpc.spaces.invitations.query({ space: projectStore.projectPath }).catch(() => [])
 }
 async function inviteSomeone() {
   try {
-    const { code } = await trpc.graphs.invite.mutate({ graph: projectStore.projectPath, right: inviteRight.value })
+    const { code } = await trpc.spaces.invite.mutate({ space: projectStore.projectPath, right: inviteRight.value })
     inviteLink.value = `${useViewerStore().publicUrl ?? window.location.origin}/?invitation=${code}`
     inviteCopied.value = await navigator.clipboard.writeText(inviteLink.value).then(() => true, () => false)
     await loadSpaceInvitations()
@@ -174,7 +174,7 @@ async function inviteSomeone() {
 }
 async function removeSpaceInvitation(id: string) {
   try {
-    await trpc.graphs.removeInvitation.mutate({ graph: projectStore.projectPath, id })
+    await trpc.spaces.removeInvitation.mutate({ space: projectStore.projectPath, id })
     await loadSpaceInvitations()
   } catch (e) {
     useToastStore().error('Could not take the invitation back', e)
@@ -193,19 +193,19 @@ const READ_SENTENCES = {
   selected: 'Only the people below read this space.'
 } as const
 
-// A graph from a remote URL is pushed back with one of its owner's SSH keys.
+// A space from a remote URL is pushed back with one of its owner's SSH keys.
 // The server makes the key and shows only its public half, to add on the remote.
 const myKeys = ref<Awaited<ReturnType<typeof trpc.keys.list.query>>>([])
-const selectedKey = computed(() => myKeys.value.find(key => key.id === graphAccess.value?.remote?.key))
+const selectedKey = computed(() => myKeys.value.find(key => key.id === spaceAccess.value?.remote?.key))
 
 async function loadKeys() {
-  if (graphAccess.value?.remote && isOwner.value) myKeys.value = await trpc.keys.list.query()
+  if (spaceAccess.value?.remote && isOwner.value) myKeys.value = await trpc.keys.list.query()
 }
 
 async function selectKey(id: string | null) {
   try {
-    await trpc.graphs.setRemoteKey.mutate({ graph: projectStore.projectPath, key: id })
-    await loadGraphAccess()
+    await trpc.spaces.setRemoteKey.mutate({ space: projectStore.projectPath, key: id })
+    await loadSpaceAccess()
     await dataStore.refreshAccess(projectStore.projectPath)
   } catch (e) {
     useToastStore().error('Could not select the key', e)
@@ -227,10 +227,10 @@ const slug = ref('')
 const slugBusy = ref(false)
 async function changeSlug() {
   const next = slug.value.trim()
-  if (!graphAccess.value || next === graphAccess.value.slug) return
+  if (!spaceAccess.value || next === spaceAccess.value.slug) return
   slugBusy.value = true
   try {
-    const result = await trpc.graphs.setSlug.mutate({ graph: projectStore.projectPath, slug: next })
+    const result = await trpc.spaces.setSlug.mutate({ space: projectStore.projectPath, slug: next })
     modalStore.closeSettingsModal()
     await useProjectLoadStore().open(result.slug)
   } catch (e) {
@@ -240,16 +240,16 @@ async function changeSlug() {
   }
 }
 
-async function removeGraph() {
-  // What goes for good depends on where the space came from (backend graphs/registry.ts removeFiles).
-  const access = graphAccess.value
+async function removeSpaceEntry() {
+  // What goes for good depends on where the space came from (backend spaces/registry.ts removeFiles).
+  const access = spaceAccess.value
   const afterwards = access?.kind === 'checkout' ? 'then it leaves this server\'s list; its repository stays where it is.'
     : access?.kind === 'remote' ? `then this server's copy is deleted; the repository${access.remote ? ` at ${access.remote.url}` : ''} stays.`
     : access?.kind === 'created' ? 'then it is deleted with its history.'
     : 'then a space created on this server is deleted with its history; a repository added to it stays.'
   if (!window.confirm(`Delete the space "${name.value}"? For 30 days its owner can restore it from the start page; ${afterwards}`)) return
   try {
-    await trpc.graphs.remove.mutate({ graph: projectStore.projectPath })
+    await trpc.spaces.remove.mutate({ space: projectStore.projectPath })
     modalStore.closeSettingsModal()
     projectStore.setProjectPath('')
   } catch (e) {
@@ -272,7 +272,7 @@ async function addLinkedRepo() {
   if (!selectedTargetPath.value || repoBusy.value) return
   repoBusy.value = true
   try {
-    await trpc.linkedRepo.register.mutate({ graph: projectStore.projectPath, targetPath: selectedTargetPath.value })
+    await trpc.linkedRepo.register.mutate({ space: projectStore.projectPath, targetPath: selectedTargetPath.value })
     selectedTargetPath.value = ''
     await loadLinkedRepos()
     // Refresh the store's meta so the idea-edit 'link a whole repo' picker sees it.
@@ -284,8 +284,8 @@ async function addLinkedRepo() {
   }
 }
 
-// Link a graph by its address on its server. The browser asks that server
-// itself; this graph's server never fetches foreign graphs.
+// Link a space by its address on its server. The browser asks that server
+// itself; this space's server never fetches foreign spaces.
 const hostAddress = ref('')
 const hostLabel = (host: string) => host.replace(/^https?:\/\//, '')
 const hostError = ref('')
@@ -294,8 +294,8 @@ async function linkByHost() {
   repoBusy.value = true
   hostError.value = ''
   try {
-    const target = await fetchGraphAtHost(hostAddress.value)
-    await trpc.linkedRepo.linkHost.mutate({ graph: projectStore.projectPath, ...target })
+    const target = await fetchSpaceAtHost(hostAddress.value)
+    await trpc.linkedRepo.linkHost.mutate({ space: projectStore.projectPath, ...target })
     hostAddress.value = ''
     await loadLinkedRepos()
     await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
@@ -314,7 +314,7 @@ async function removeLinkedRepo(repoId: string) {
   confirmUnlinkRepoId.value = null
   repoBusy.value = true
   try {
-    await trpc.linkedRepo.unregister.mutate({ graph: projectStore.projectPath, repoId })
+    await trpc.linkedRepo.unregister.mutate({ space: projectStore.projectPath, repoId })
     await loadLinkedRepos()
     await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
   } catch (e) {
@@ -372,8 +372,8 @@ async function loadAutonomyState() {
   if (!projectStore.projectPath || accounts) return
 
   const [watchdogRuntime, policy] = await Promise.all([
-    trpc.watchdog.getRuntimeState.query({ graph: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
-    trpc.watchdog.getAutonomyPolicy.query({ graph: projectStore.projectPath }) as Promise<{
+    trpc.watchdog.getRuntimeState.query({ space: projectStore.projectPath }) as Promise<WatchdogRuntimeState>,
+    trpc.watchdog.getAutonomyPolicy.query({ space: projectStore.projectPath }) as Promise<{
       autonomyMode: 'manual' | 'supervised' | 'autonomous'
       preferredAgentType: AgentType | null
       sessionLeaseMinutes: number
@@ -402,7 +402,7 @@ onMounted(async () => {
   // Load data
   loading.value = true
   try {
-    const meta = dataStore.meta || await trpc.project.getMeta.query({ graph: projectStore.projectPath })
+    const meta = dataStore.meta || await trpc.project.getMeta.query({ space: projectStore.projectPath })
     if (meta) {
         name.value = meta.name
         color.value = meta.color
@@ -415,7 +415,7 @@ onMounted(async () => {
     await loadAutonomyState()
     await loadLinkedRepos()
     await loadDiscoveredProjects()
-    await loadGraphAccess()
+    await loadSpaceAccess()
     await loadKeys()
     await loadSpaceInvitations()
   } catch (e) {
@@ -440,7 +440,7 @@ const updateInstructions = async () => {
     isUpdatingInstructions.value = true
     updateResults.value = []
     try {
-        const res = await trpc.project.injectAgentInstructions.mutate({ graph: projectStore.projectPath })
+        const res = await trpc.project.injectAgentInstructions.mutate({ space: projectStore.projectPath })
         updateResults.value = res.results
     } catch (e: any) {
         updateResults.value = [`Error: ${e.message}`]
@@ -453,7 +453,7 @@ const importIssues = async () => {
     isImportingIssues.value = true
     issueImportResult.value = ''
     try {
-        const { imported, alreadyImported } = await trpc.idea.importGithubIssues.mutate({ graph: projectStore.projectPath, repository: issueRepository.value })
+        const { imported, alreadyImported } = await trpc.idea.importGithubIssues.mutate({ space: projectStore.projectPath, repository: issueRepository.value })
         issueImportResult.value = `Imported ${imported} issue${imported === 1 ? '' : 's'}${alreadyImported ? `, ${alreadyImported} already there` : ''}.`
     } catch (error) {
         useToastStore().error('Issue import failed', error)
@@ -480,7 +480,7 @@ const save = async () => {
           statuses: statuses.value.map((status) => ({ ...status, promptsReflection: !!status.promptsReflection }))
         })
         if (!accounts) await trpc.watchdog.updateAutonomyPolicy.mutate({
-          graph: projectStore.projectPath,
+          space: projectStore.projectPath,
           policy: {
             autonomyMode: autonomyMode.value,
             preferredAgentType: preferredAgentType.value || null,
@@ -580,31 +580,31 @@ const save = async () => {
           </div>
         </fieldset>
 
-        <template v-if="graphAccess">
+        <template v-if="spaceAccess">
           <fieldset class="settings-section">
             <legend>Access</legend>
             <div v-if="isOwner" class="field-row">
               <span class="row-label">Address</span>
               <span class="address-prefix">/spaces/</span>
               <input v-model="slug" type="text" spellcheck="false" placeholder="address" @keydown.enter="changeSlug" />
-              <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === graphAccess.slug" @click="changeSlug">Change</button>
+              <button class="action-btn add-repo-btn" :disabled="slugBusy || !slug.trim() || slug.trim() === spaceAccess.slug" @click="changeSlug">Change</button>
             </div>
             <p v-if="isOwner" class="hint-text">Lower-case letters, digits and hyphens. Links to the old address keep working.</p>
             <div v-if="isOwner" class="field-row">
               <span class="row-label">Who reads it</span>
-              <select :value="graphAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof graphAccess.read })">
+              <select :value="spaceAccess.read" @change="setAccess({ read: ($event.target as HTMLSelectElement).value as typeof spaceAccess.read })">
                 <option value="everyone">everyone, without logging in</option>
                 <option value="accounts">every logged-in account</option>
                 <option value="selected">only the people of this space</option>
               </select>
             </div>
-            <p class="hint-text">{{ READ_SENTENCES[graphAccess.read] }}</p>
+            <p class="hint-text">{{ READ_SENTENCES[spaceAccess.read] }}</p>
 
             <fieldset class="settings-subsection">
               <legend>People</legend>
               <div class="status-list">
                 <div class="linked-repo-row">
-                  <span class="linked-repo-name">{{ graphAccess.owner ?? 'The server admins' }}</span>
+                  <span class="linked-repo-name">{{ spaceAccess.owner ?? 'The server admins' }}</span>
                   <span class="role-text">owns it</span>
                 </div>
                 <div v-for="person in people" :key="person.name" class="linked-repo-row">
@@ -629,7 +629,7 @@ const save = async () => {
                 </div>
               </div>
               <p v-if="people.length === 0" class="hint-text">Nobody else is in this space yet.</p>
-              <p v-if="people.some(person => person.role === 'read') && graphAccess.read !== 'selected'" class="hint-text">Who reads only matters while only the people of this space read it.</p>
+              <p v-if="people.some(person => person.role === 'read') && spaceAccess.read !== 'selected'" class="hint-text">Who reads only matters while only the people of this space read it.</p>
               <div v-if="mayManageAccess" class="field-row">
                 <input v-model="newPerson" type="text" placeholder="Account name" @keydown.enter="setRole(newPerson, newPersonRole)" />
                 <select v-model="newPersonRole" class="role-select">
@@ -678,26 +678,26 @@ const save = async () => {
             <fieldset v-if="isOwner" class="settings-subsection">
               <legend>Notes from visitors</legend>
               <div class="field-row">
-                <select :value="graphAccess.notes" @change="setAccess({ notes: ($event.target as HTMLSelectElement).value as typeof graphAccess.notes })">
+                <select :value="spaceAccess.notes" @change="setAccess({ notes: ($event.target as HTMLSelectElement).value as typeof spaceAccess.notes })">
                   <option value="everyone">every account may leave notes</option>
                   <option value="selected">only the accounts named here</option>
                   <option value="nobody">nobody</option>
                 </select>
               </div>
-              <div v-if="graphAccess.notes === 'selected'" class="field-row">
-                <span class="linked-repo-name">{{ graphAccess.noteWriters.join(', ') || 'Nobody named yet' }}</span>
-                <input v-model="newNoteWriter" type="text" placeholder="Account name" @keydown.enter="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })" />
-                <button class="action-btn add-repo-btn" :disabled="!newNoteWriter.trim()" @click="setAccess({ noteWriters: [...graphAccess.noteWriters, newNoteWriter.trim()] })">Add</button>
-                <button class="action-btn add-repo-btn" :disabled="graphAccess.noteWriters.length === 0" @click="setAccess({ noteWriters: [] })">Clear</button>
+              <div v-if="spaceAccess.notes === 'selected'" class="field-row">
+                <span class="linked-repo-name">{{ spaceAccess.noteWriters.join(', ') || 'Nobody named yet' }}</span>
+                <input v-model="newNoteWriter" type="text" placeholder="Account name" @keydown.enter="setAccess({ noteWriters: [...spaceAccess.noteWriters, newNoteWriter.trim()] })" />
+                <button class="action-btn add-repo-btn" :disabled="!newNoteWriter.trim()" @click="setAccess({ noteWriters: [...spaceAccess.noteWriters, newNoteWriter.trim()] })">Add</button>
+                <button class="action-btn add-repo-btn" :disabled="spaceAccess.noteWriters.length === 0" @click="setAccess({ noteWriters: [] })">Clear</button>
               </div>
             </fieldset>
           </fieldset>
 
-          <fieldset v-if="graphAccess.remote" class="settings-section">
+          <fieldset v-if="spaceAccess.remote" class="settings-section">
             <legend>Repository</legend>
               <p class="hint-text">
-                Follows <code>{{ graphAccess.remote!.url }}</code>.
-                {{ graphAccess.remote!.key ? `Edited here and pushed back with a key of ${graphAccess.remote!.keyOwner ?? 'a removed account'}.` : 'Read-only here until its owner selects a key to push with.' }}
+                Follows <code>{{ spaceAccess.remote!.url }}</code>.
+                {{ spaceAccess.remote!.key ? `Edited here and pushed back with a key of ${spaceAccess.remote!.keyOwner ?? 'a removed account'}.` : 'Read-only here until its owner selects a key to push with.' }}
               </p>
               <div v-if="isOwner" class="add-repo-row">
                 <select :value="selectedKey?.id ?? ''" @change="selectKey(($event.target as HTMLSelectElement).value || null)">
@@ -889,7 +889,7 @@ const save = async () => {
         </fieldset>
 
 
-        <fieldset v-if="graphAccess && isOwner" class="settings-section danger">
+        <fieldset v-if="spaceAccess && isOwner" class="settings-section danger">
           <legend>Danger zone</legend>
           <div v-if="people.length > 0" class="field-row">
             <span class="row-label">Hand over ownership to</span>
@@ -901,7 +901,7 @@ const save = async () => {
           </div>
           <p v-if="people.length > 0" class="hint-text">You stay in the space as a manager.</p>
           <div class="field-row">
-            <button class="action-btn danger-btn" @click="removeGraph">Delete this space</button>
+            <button class="action-btn danger-btn" @click="removeSpaceEntry">Delete this space</button>
           </div>
         </fieldset>
       </div>

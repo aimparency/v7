@@ -54,7 +54,7 @@ describe('list store phase selection', () => {
     expect(uiStore.multiSelectedIdeaIds).toEqual([])
   })
 
-  it('merges selected sources into the target and refreshes the local graph', async () => {
+  it('merges selected sources into the target and refreshes the local space', async () => {
     const dataStore = useDataStore()
     const uiStore = useUIStore()
     const projectStore = useProjectStore()
@@ -71,7 +71,7 @@ describe('list store phase selection', () => {
     const result = await uiStore.mergeSelectedInto('target')
 
     expect(mockTrpc.idea.merge.mutate).toHaveBeenCalledWith({
-      graph: '/tmp/project',
+      space: '/tmp/project',
       targetId: 'target',
       sourceId: 'source'
     })
@@ -368,7 +368,7 @@ describe('list store phase selection', () => {
 
     expect(uiStore.currentPhaseIdByLevel).toEqual({ 0: 'root-b', 1: 'child-b' })
     expect(mockTrpc.phase.setCursor.mutate).toHaveBeenCalledWith({
-      graph: '/tmp/project',
+      space: '/tmp/project',
       cursors: { 0: 'root-b', 1: 'child-b' },
       activeLevel: 1
     })

@@ -12,7 +12,7 @@ export const CURRENT_DATA_MODEL_VERSION = 7;
 // Cost the calculation assumes for an idea without an estimate (no cost field),
 // unless the project sets meta.defaultCost. Cost is always positive: everything
 // costs something. The default is never written into ideas, so a missing
-// estimate stays visible (graph_hygiene lists them).
+// estimate stays visible (space_hygiene lists them).
 export const DEFAULT_IDEA_COST = 1;
 
 // Search text is scanned or embedded per request, so the search procedures

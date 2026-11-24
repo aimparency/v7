@@ -41,7 +41,7 @@ afterEach(async () => {
   await fs.remove(root);
 });
 
-test('fast-forwards to pushed commits and reports the changed graph files as change events', async () => {
+test('fast-forwards to pushed commits and reports the changed space files as change events', async () => {
   assert.deepEqual(await pullFastForward(serverBowman()), { state: 'unchanged' });
 
   await fs.remove(path.join(author, '.bowman', 'ideas', 'gone.json'));
@@ -66,7 +66,7 @@ test('fast-forwards to pushed commits and reports the changed graph files as cha
   );
 });
 
-test('waits while the server has uncommitted graph edits, and pulls once they are committed', async () => {
+test('waits while the server has uncommitted space edits, and pulls once they are committed', async () => {
   await fs.outputJson(path.join(serverBowman(), 'ideas', 'local.json'), { id: 'local' });
   await push('ideas/new.json', { id: 'new' });
 

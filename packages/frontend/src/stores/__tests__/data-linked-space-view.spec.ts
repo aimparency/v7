@@ -22,7 +22,7 @@ const mkIdea = (partial: Partial<Idea> & { id: string }): Idea => ({
   costVariance: 0, valueVariance: 0, ...partial
 } as Idea)
 
-// The linked graph as its server sends it: one top idea with one child.
+// The linked space as its server sends it: one top idea with one child.
 const remote = [
   mkIdea({ id: '22222222-2222-4222-8222-222222222222', text: 'Garden', intrinsicValue: 1, supportingConnections: [{ ideaId: '33333333-3333-4333-8333-333333333333', weight: 1, relativePosition: [0, 0] }] as Idea['supportingConnections'] }),
   mkIdea({ id: '33333333-3333-4333-8333-333333333333', text: 'Compost', intrinsicValue: 1, supportedIdeas: ['22222222-2222-4222-8222-222222222222'] })
@@ -36,7 +36,7 @@ function storeWithLink() {
   return store
 }
 
-describe('a linked graph opened in place', () => {
+describe('a linked space opened in place', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     vi.unstubAllGlobals()
@@ -54,7 +54,7 @@ describe('a linked graph opened in place', () => {
     }
     const store = storeWithLink()
 
-    await store.toggleLinkedGraph(REPO_ID)
+    await store.toggleLinkedSpace(REPO_ID)
 
     const garden = store.graphData.nodes.find(n => n.id === remote[0]!.id)!
     expect([garden.linked, garden.space]).toEqual([false, REPO_ID])
@@ -66,7 +66,7 @@ describe('a linked graph opened in place', () => {
     const { useUIModalStore } = await import('../ui/modal-store')
     expect(useUIModalStore().connectServer).toEqual({ host: HOST, spaceName: 'Commons Hub' })
 
-    await store.toggleLinkedGraph(REPO_ID) // closes it again: its ideas leave the store
+    await store.toggleLinkedSpace(REPO_ID) // closes it again: its ideas leave the store
     expect(store.ideas[remote[1]!.id]).toBeUndefined()
   })
 
@@ -75,7 +75,7 @@ describe('a linked graph opened in place', () => {
     vi.stubGlobal('fetch', fetchMock)
     const store = storeWithLink()
 
-    await store.toggleLinkedGraph(REPO_ID)
+    await store.toggleLinkedSpace(REPO_ID)
     expect(String((fetchMock.mock.calls[0] as unknown[])[0])).toContain('https://hub.example.org/trpc/project.loadIdeas')
 
     const { nodes, links } = store.graphData
@@ -86,25 +86,25 @@ describe('a linked graph opened in place', () => {
     // garden's half flows on to the compost supporting it.
     expect(garden.value).toBeCloseTo(0.2)
     expect(compost.value).toBeCloseTo(0.4)
-    // Open, the graph has no node of its own: its outline and ideas take its place.
+    // Open, the space has no node of its own: its outline and ideas take its place.
     expect(nodes.some(n => n.id === REPO_ID)).toBe(false)
     expect(links.some(l => l.target === REPO_ID || l.source === REPO_ID)).toBe(false)
     expect(links).toContainEqual(expect.objectContaining({ source: compost.id, target: garden.id }))
-    // The one connection idea-1 ← graph is drawn from each idea with intrinsic
-    // value, each carrying its share; none from the graph's node any more.
+    // The one connection idea-1 ← space is drawn from each idea with intrinsic
+    // value, each carrying its share; none from the space's node any more.
     const intoIdea = links.filter(link => link.target === 'idea-1')
     expect(intoIdea.map(link => [link.source, link.weight])).toEqual([[garden.id, 0.5], [compost.id, 0.5]])
 
-    await store.toggleLinkedGraph(REPO_ID) // closes it again
+    await store.toggleLinkedSpace(REPO_ID) // closes it again
     expect(store.graphData.nodes.some(n => n.linked)).toBe(false)
     expect(store.graphData.nodes.some(n => n.id === REPO_ID)).toBe(true)
   })
 
-  it('keeps the node of a graph that cannot be reached and says it is not available', async () => {
+  it('keeps the node of a space that cannot be reached and says it is not available', async () => {
     vi.stubGlobal('fetch', vi.fn(async () => { throw new TypeError('fetch failed') }))
     const store = storeWithLink()
 
-    await store.toggleLinkedGraph(REPO_ID)
+    await store.toggleLinkedSpace(REPO_ID)
 
     const repoNode = store.graphData.nodes.find(n => n.id === REPO_ID)!
     expect(repoNode.text).toBe('Commons Hub (not available)')

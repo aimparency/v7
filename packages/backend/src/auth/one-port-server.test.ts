@@ -57,13 +57,13 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
 
   const me = await (await fetch(`${base}/trpc/auth.me`)).json() as any;
   assert.deepEqual(me.result.data, {
-    login: 'accounts', read: 'everyone', publicUrl: null, agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: false, restartable: false, canCreateGraphs: false, permanentLogin: true
+    login: 'accounts', read: 'everyone', publicUrl: null, agents: false, signUp: { open: false, browserKey: false, wallet: false }, name: null, serverAdmin: false, restartable: false, canCreateSpaces: false, permanentLogin: true
   });
 
   // No MCP server listens on its port here: the proxy says so instead of hanging.
   const mcp = await fetch(`${base}/mcp/sse`);
   assert.equal(mcp.status, 502);
-  // A graph's own MCP address goes to the same MCP server, not to the UI.
+  // A space's own MCP address goes to the same MCP server, not to the UI.
   assert.equal((await fetch(`${base}/spaces/hack-the-hub/mcp/sse?token=x`)).status, 502);
   // So does what an MCP client's own login needs at the server's root; other paths stay the UI's.
   for (const path of ['/authorize?client_id=x', '/token', '/register', '/.well-known/oauth-authorization-server']) {
@@ -72,21 +72,21 @@ test('one port serves the runtime config, the API and the MCP proxy', async () =
   assert.notEqual((await fetch(`${base}/tokens`)).status, 502);
 });
 
-test('sign in, create a graph, write it with the bearer token; no token only reads', async () => {
+test('sign in, create a space, write it with the bearer token; no token only reads', async () => {
   await start('accounts');
   await accounts.createAccount('ada', 'ada password');
   const { body: login } = await call('auth.login', { name: 'ada', password: 'ada password' });
   const token = login.result.data.token;
-  const { body: graph } = await call('graphs.create', { name: 'Hack the Hub' }, token);
-  const projectPath = graph.result.data.slug;
+  const { body: space } = await call('spaces.create', { name: 'Hack the Hub' }, token);
+  const projectPath = space.result.data.slug;
   assert.equal(projectPath, 'hack-the-hub');
 
-  const anonymous = await call('idea.createFloatingIdea', { graph: projectPath, idea: { text: 'Anonymous' } });
+  const anonymous = await call('idea.createFloatingIdea', { space: projectPath, idea: { text: 'Anonymous' } });
   assert.equal(anonymous.status, 403);
   assert.match(anonymous.body.error.message, /log in to edit/);
-  assert.equal((await call('idea.createFloatingIdea', { graph: projectPath, idea: { text: 'Shared' } }, token)).status, 200);
+  assert.equal((await call('idea.createFloatingIdea', { space: projectPath, idea: { text: 'Shared' } }, token)).status, 200);
 
-  const input = encodeURIComponent(JSON.stringify({ graph: projectPath }));
+  const input = encodeURIComponent(JSON.stringify({ space: projectPath }));
   const ideas = await (await fetch(`${base}/trpc/idea.list?input=${input}`)).json() as any;
   assert.deepEqual(ideas.result.data.map((idea: { text: string }) => idea.text), ['Shared']);
   // Nothing a visitor gets names a directory of the server.
@@ -99,10 +99,10 @@ test('the WebSocket carries the token in its connection params', () => {
 
 test('errors carry no server stack trace', async () => {
   await start('accounts');
-  const refused = await call('graphs.create', { name: 'Anonymous' });
+  const refused = await call('spaces.create', { name: 'Anonymous' });
   assert.equal(refused.status, 401);
   assert.equal(refused.body.error.data.stack, undefined);
-  const input = encodeURIComponent(JSON.stringify({ graph: '/etc' }));
+  const input = encodeURIComponent(JSON.stringify({ space: '/etc' }));
   const path = await fetch(`${base}/trpc/idea.list?input=${input}`);
   assert.equal(path.status, 403);
   assert.equal((await path.json() as any).error.data.stack, undefined);
@@ -112,11 +112,11 @@ test('other websites read a server with accounts, and none of them writes', asyn
   await start('accounts');
   await accounts.createAccount('ada', 'ada password');
   const token = (await accounts.login('ada', 'ada password'))!;
-  const { body: graph } = await call('graphs.create', { name: 'Open' }, token);
-  const projectPath = graph.result.data.slug;
+  const { body: space } = await call('spaces.create', { name: 'Open' }, token);
+  const projectPath = space.result.data.slug;
   const elsewhere = 'https://another-aimparency.example';
 
-  const input = encodeURIComponent(JSON.stringify({ graph: projectPath }));
+  const input = encodeURIComponent(JSON.stringify({ space: projectPath }));
   const read = await fetch(`${base}/trpc/idea.list?input=${input}`, { headers: { origin: elsewhere } });
   assert.equal(read.status, 200);
   assert.equal(read.headers.get('access-control-allow-origin'), '*');
@@ -127,7 +127,7 @@ test('other websites read a server with accounts, and none of them writes', asyn
   assert.match(preflight.headers.get('access-control-allow-headers')!, /authorization/);
 
   // Even holding a valid token, a page of another website does not write.
-  const idea = { graph: projectPath, idea: { text: 'From elsewhere' } };
+  const idea = { space: projectPath, idea: { text: 'From elsewhere' } };
   const written = await call('idea.createFloatingIdea', idea, token, elsewhere);
   assert.equal(written.status, 403);
   assert.match(written.body.error.message, /Other websites may read this server/);
@@ -141,7 +141,7 @@ test('without login only pages of this machine reach the API', async () => {
   await start('none');
   const repository = path.join(root, 'repo');
   await fs.ensureDir(repository);
-  const idea = { graph: repository, idea: { text: 'Mine' } };
+  const idea = { space: repository, idea: { text: 'Mine' } };
   assert.equal((await call('idea.createFloatingIdea', idea, undefined, 'http://localhost:4000')).status, 200);
   assert.equal((await call('idea.createFloatingIdea', idea)).status, 200, 'a local program sends no Origin');
   const foreign = await fetch(`${base}/trpc/auth.me`, { headers: { origin: 'https://evil.example' } });

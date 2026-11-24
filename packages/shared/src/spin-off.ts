@@ -44,7 +44,7 @@ export interface RemappedSpinOff {
 }
 
 /**
- * Make a copied branch safe to insert into an existing graph.
+ * Make a copied branch safe to insert into an existing space.
  *
  * Existing target ideas are never changed. Colliding ids are replaced throughout
  * the copied branch, while its internal contribution structure is preserved.
@@ -154,7 +154,7 @@ export interface SpinOffOptions {
 
 /**
  * For each copied idea, the value that flowed into it from parents *outside* the
- * copy set in the original graph. Dropping those seam edges would otherwise
+ * copy set in the original space. Dropping those seam edges would otherwise
  * silently zero this contribution in the isolated spin-off.
  */
 function externalInflowByIdea(ideas: Idea[], copySet: Set<string>, byId: Map<string, Idea>): Map<string, number> {
@@ -167,7 +167,7 @@ function externalInflowByIdea(ideas: Idea[], copySet: Set<string>, byId: Map<str
     if (!a) continue;
     let lost = 0;
     for (const parentId of a.supportedIdeas ?? []) {
-      if (copySet.has(parentId)) continue; // internal edge: recomputed in the new graph
+      if (copySet.has(parentId)) continue; // internal edge: recomputed in the new space
       // flowValues are normalized (sum to 1); scale back to intrinsic units.
       lost += (flowValues.get(`${parentId}->${id}`) ?? 0) * totalIntrinsic;
     }

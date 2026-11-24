@@ -91,7 +91,7 @@ export async function openProject(page: import('@playwright/test').Page, project
 
 // Creating an idea can open follow-up prompts: "Connect to Supported Idea" for
 // new phase commitments, "Connection details" for new sub-ideas, and "Commit to
-// Phase" for new graph ideas (possibly one after another). Waits for the Add Idea
+// Phase" for new space ideas (possibly one after another). Waits for the Add Idea
 // modal to close, then skips each prompt until none is left.
 export async function finishIdeaCreation(page: import('@playwright/test').Page) {
   const addIdeaTitle = page.locator('.modal-panel .modal-header h2', { hasText: 'Add Idea' });

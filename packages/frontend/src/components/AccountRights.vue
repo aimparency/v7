@@ -4,7 +4,7 @@ import { ADMIN_SHELL_WARNING } from 'shared'
 // The server-wide rights of an account, or of the accounts an invitation makes.
 // Making someone server admin hands out a shell on the server: asked every time.
 // Afterwards the boxes show `rights` again, also when declined or refused.
-export type Rights = { serverAdmin: boolean, canCreateGraphs: boolean }
+export type Rights = { serverAdmin: boolean, canCreateSpaces: boolean }
 type Right = keyof Rights
 
 const props = defineProps<{
@@ -27,7 +27,7 @@ const toggle = async (right: Right, box: HTMLInputElement) => {
 
 <template>
   <span class="account-rights">
-    <label class="check"><input type="checkbox" :checked="rights.canCreateGraphs" @change="toggle('canCreateGraphs', $event.target as HTMLInputElement)" /> creates spaces</label>
+    <label class="check"><input type="checkbox" :checked="rights.canCreateSpaces" @change="toggle('canCreateSpaces', $event.target as HTMLInputElement)" /> creates spaces</label>
     <label class="check" :title="adminUnavailable"><input type="checkbox" :checked="rights.serverAdmin" :disabled="!!adminUnavailable" @change="toggle('serverAdmin', $event.target as HTMLInputElement)" /> server admin</label>
   </span>
 </template>

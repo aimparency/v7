@@ -149,7 +149,7 @@ Read ideas://all?space=/home/user/my-project to see all ideas
 
 ### Tools (Actions)
 
-Tools allow the LLM to modify state. All tools take `space` (it was called `graph` until 2026-11 and `projectPath` before that; both names are still accepted).
+Tools allow the LLM to modify state. All tools take `space`.
 
 **Idea Operations:**
 - `create-idea` - Create new idea with text, status, relationships

@@ -55,7 +55,7 @@ const copy = async () => {
 }
 
 const add = () => run(async () => {
-  const { slug, pushError } = await trpc.graphs.addRemote.mutate({ url: props.url, key: keyId.value })
+  const { slug, pushError } = await trpc.spaces.addRemote.mutate({ url: props.url, key: keyId.value })
   emit('added', slug, pushError)
 })
 </script>

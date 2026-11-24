@@ -9,8 +9,8 @@ import { addIdeaToIndex, updateIdeaInIndex } from '../search.js';
 import { deleteIdeaCompletely, listIdeas, writeIdea } from '../storage/ideas.js';
 import { ensureProjectStructure, readProjectMeta, writeProjectMeta } from '../storage/project.js';
 import { cleanupCommitments } from '../storage/commitments.js';
-import { graphAddress } from '../graphs/address.js';
-import { addSpinOff } from '../graphs/registry.js';
+import { spaceAddress } from '../spaces/address.js';
+import { addSpinOff } from '../spaces/registry.js';
 import { spacesDir } from 'shared/server-config';
 import { toProjectRoot } from 'shared';
 
@@ -20,7 +20,7 @@ export const spinOffRouter = t.router({
 
   // Tab-completion for the target path chooser: given a partial path (supporting
   // `~/` and absolute `/`), return matching child directory names and whether the
-  // resolved path already holds a .bowman graph (so the UI can warn).
+  // resolved path already holds a .bowman space (so the UI can warn).
   completePath: delayedProcedure
     .input(z.object({ partial: z.string() }))
     .query(async ({ input }) => {
@@ -31,15 +31,15 @@ export const spinOffRouter = t.router({
     }),
 
   // Dry-run: classify ideas into kept (green) / overlap (orange) / spun-off (red)
-  // for the graph preview, plus a warning if the target already has a graph.
+  // for the space preview, plus a warning if the target already has a space.
   preview: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string().optional(),
     }))
     .query(async ({ input }) => {
-      const ideas = await listIdeas(normalizeProjectPath(input.graph));
+      const ideas = await listIdeas(normalizeProjectPath(input.space));
       const plan = planSpinOff(ideas, input.rootIds);
       return {
         ...plan,
@@ -57,14 +57,14 @@ export const spinOffRouter = t.router({
   // the selection exclusively, keeping shared ideas (overlap). Conservative.
   execute: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       rootIds: z.array(z.string().uuid()).min(1),
       targetPath: z.string(),
       removeFromSource: z.boolean().default(true),
       preserveInflow: z.boolean().default(true),
     }))
     .mutation(async ({ input }) => {
-      const source = normalizeProjectPath(input.graph);
+      const source = normalizeProjectPath(input.space);
       const target = resolveBowmanPath(input.targetPath);
       if (path.resolve(source) === path.resolve(target)) {
         throw new Error('The spin-off target must be a different .bowman space from the source.');
@@ -75,7 +75,7 @@ export const spinOffRouter = t.router({
       const { plan, spinOffIdeas, sourceIdeasToRewrite, sourceIdeaIdsToDelete } =
         computeSpinOff(ideas, input.rootIds, { preserveInflow: input.preserveInflow });
 
-      // For an existing graph, retain all target metadata and remap only ids that
+      // For an existing space, retain all target metadata and remap only ids that
       // collide. Internal branch edges follow the remap; no edge is added to an
       // existing target idea, leaving the imported root(s) free for re-parenting.
       let ideasToWrite = spinOffIdeas;
@@ -94,8 +94,8 @@ export const spinOffRouter = t.router({
         remappedIds = remapped.idMap;
       }
 
-      // Write the branch. A fresh graph inherits source presentation metadata;
-      // an existing graph remains authoritative for its own settings and phases.
+      // Write the branch. A fresh space inherits source presentation metadata;
+      // an existing space remains authoritative for its own settings and phases.
       await ensureProjectStructure(target);
       const name = path.basename(path.dirname(target)) || 'spin-off';
       if (!integrateIntoExisting) {

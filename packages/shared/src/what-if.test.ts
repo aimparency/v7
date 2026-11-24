@@ -10,7 +10,7 @@ const idea = (id: string, partial: Partial<Idea> = {}): Idea => ({
 } as Idea);
 
 // root (100) splits between a and b; b has one child c.
-const graph = () => [
+const space = () => [
   idea('root', { intrinsicValue: 100, supportingConnections: [{ ideaId: 'a', weight: 1 }, { ideaId: 'b', weight: 1 }] as Idea['supportingConnections'] }),
   idea('a', { supportedIdeas: ['root'] }),
   idea('b', { supportedIdeas: ['root'], supportingConnections: [{ ideaId: 'c', weight: 1 }] as Idea['supportingConnections'] }),
@@ -18,19 +18,19 @@ const graph = () => [
 ];
 
 test('removing an idea takes its connections with it and moves value to its siblings', () => {
-  const changed = applyWhatIf(graph(), { kind: 'remove', ideaIds: ['b'] });
+  const changed = applyWhatIf(space(), { kind: 'remove', ideaIds: ['b'] });
   assert.deepEqual(changed.map(i => i.id), ['root', 'a', 'c']);
   assert.deepEqual(changed.find(i => i.id === 'root')!.supportingConnections.map(c => c.ideaId), ['a']);
   assert.deepEqual(changed.find(i => i.id === 'c')!.supportedIdeas, []);
 
-  const { shifts } = whatIf(graph(), { kind: 'remove', ideaIds: ['b'] });
+  const { shifts } = whatIf(space(), { kind: 'remove', ideaIds: ['b'] });
   const a = shifts.find(s => s.id === 'a')!;
   assert.ok(a.valueAfter > a.valueBefore, 'a takes what b had');
   assert.equal(shifts.find(s => s.id === 'b')!.valueAfter, 0);
 });
 
 test('a heavier connection moves value toward that child; the input is left alone', () => {
-  const ideas = graph();
+  const ideas = space();
   const { shifts, topAfter } = whatIf(ideas, { kind: 'weight', parentId: 'root', childId: 'a', weight: 3 });
   const a = shifts.find(s => s.id === 'a')!;
   const b = shifts.find(s => s.id === 'b')!;

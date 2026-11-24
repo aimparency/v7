@@ -6,7 +6,7 @@ import FormModalShell from './FormModalShell.vue'
 import AccountRights, { type Rights } from './AccountRights.vue'
 
 // The server admin manages the accounts of this server. What an account may do
-// on a graph is set on that graph, by its owner.
+// on a space is set on that space, by its owner.
 defineProps<{ me: string | null }>()
 const emit = defineEmits<{ close: [] }>()
 
@@ -45,7 +45,7 @@ const invitationOnce = ref(true)
 const invitationDays = ref<number | null>(null)
 const invitationLink = ref('')
 // The rights of the accounts made with the next invitation, as for an existing account.
-const invitationRights = reactive<Rights>({ serverAdmin: false, canCreateGraphs: false })
+const invitationRights = reactive<Rights>({ serverAdmin: false, canCreateSpaces: false })
 const setInvitationRights = (change: Partial<Rights>) => Object.assign(invitationRights, change)
 const invitationAdminUnavailable = computed(() =>
   invitationOnce.value ? undefined : 'Only an invitation for one person can make a server admin.')
@@ -57,7 +57,7 @@ const invite = () => run(async () => {
     kind: invitationOnce.value ? 'once' : 'permanent',
     days: invitationDays.value || undefined,
     ...(invitationRights.serverAdmin && invitationOnce.value ? { serverAdmin: true } : {}),
-    ...(invitationRights.canCreateGraphs ? { canCreateGraphs: true } : {})
+    ...(invitationRights.canCreateSpaces ? { canCreateSpaces: true } : {})
   })
   invitationLink.value = `${window.location.origin}/?invitation=${code}`
   await loadInvitations()
@@ -71,8 +71,8 @@ const describeInvitation = (invitation: (typeof invitations.value)[number]) => [
   invitation.redeemedBy ? `used by ${invitation.redeemedBy}`
     : invitation.expiresAt ? `until ${new Date(invitation.expiresAt).toLocaleDateString()}` : 'no end',
   ...(invitation.serverAdmin ? ['server admin'] : []),
-  ...(invitation.canCreateGraphs ? ['creates spaces'] : []),
-  ...(invitation.grant ? [`${({ manage: 'manages', write: 'works on', read: 'reads' } as const)[invitation.grant.right]} the space ${invitation.grant.graph}${invitation.invitedBy ? `, from ${invitation.invitedBy}` : ''}`] : [])
+  ...(invitation.canCreateSpaces ? ['creates spaces'] : []),
+  ...(invitation.grant ? [`${({ manage: 'manages', write: 'works on', read: 'reads' } as const)[invitation.grant.right]} the space ${invitation.grant.space}${invitation.invitedBy ? `, from ${invitation.invitedBy}` : ''}`] : [])
 ].join(' · ')
 
 const resetPassword = (account: string) => {

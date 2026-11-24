@@ -13,12 +13,12 @@ import { phaseRouter } from './routers/phase.js';
 import { systemRouter } from './routers/system.js';
 import { continueHookRouter } from './routers/continue-hook.js';
 import { voiceRouter } from './routers/voice.js';
-import { graphRouter } from './routers/graph.js';
+import { spaceRouter } from './routers/space.js';
 import { marketRouter } from './routers/market.js';
 import { projectRouter } from './routers/project.js';
 import { loopRouter } from './routers/loop.js';
 import { watchdogRouter } from './routers/watchdog.js';
-import { graphHealthRouter } from './routers/graph-health.js';
+import { spaceHealthRouter } from './routers/space-health.js';
 import { historyRouter } from './routers/history.js';
 import { spinOffRouter } from './routers/spin-off.js';
 import { linkedRepoRouter } from './routers/linked-repo.js';
@@ -26,7 +26,7 @@ import { gitRouter } from './routers/git.js';
 import { authRouter } from './routers/auth.js';
 import { activityRouter } from './routers/activity.js';
 import { forgetProjectChecks } from './storage/project.js';
-import { graphsRouter } from './routers/graphs.js';
+import { spacesRouter } from './routers/spaces.js';
 import { keysRouter } from './routers/keys.js';
 import { notesRouter } from './routers/notes.js';
 import { discardIdleAccounts } from './auth/discard.js';
@@ -43,19 +43,19 @@ const appRouter = t.router({
   system: systemRouter,
   continueHook: continueHookRouter,
   voice: voiceRouter,
-  graph: graphRouter,
+  space: spaceRouter,
   market: marketRouter,
   project: projectRouter,
   loop: loopRouter,
   watchdog: watchdogRouter,
-  graphHealth: graphHealthRouter,
+  spaceHealth: spaceHealthRouter,
   spinOff: spinOffRouter,
   linkedRepo: linkedRepoRouter,
   history: historyRouter,
   git: gitRouter,
   activity: activityRouter,
   auth: authRouter,
-  graphs: graphsRouter,
+  spaces: spacesRouter,
   keys: keysRouter,
   notes: notesRouter,
   mcpAuth: mcpAuthRouter,
@@ -80,7 +80,7 @@ function allowedOrigin(req: http.IncomingMessage) {
   return hasAccounts() || isAllowedClientOrigin(req.headers.origin, BIND_HOST);
 }
 
-// With accounts every graph is public reading: a page of any website may ask
+// With accounts every space is public reading: a page of any website may ask
 // (the browser lets it see the answer only with these headers). No cookie
 // carries a login to this API, so nothing rides along with such a request;
 // writing from another website is refused in trpc.ts. True when the request
@@ -150,10 +150,10 @@ function startOnePortServer() {
     const route = agents ? agentRoute(url, agentPorts) : null;
     if (route) return await isAdminRequest(req) ? proxyAgentRequest(req, res, route) : refuse(res, 'Agents are for server admins.');
     if (agents && url === '/auth/agent-cookie') return issueAgentCookie(req, res);
-    // <host>/spaces/<slug>/mcp/...: the MCP server for that one graph.
-    const graphMcp = /^\/spaces\/([a-z0-9-]+)(\/mcp\/[^?]*)(\?.*)?$/.exec(url);
-    if (graphMcp) {
-      req.url = `${graphMcp[2]}${graphMcp[3] ? `${graphMcp[3]}&` : '?'}space=${graphMcp[1]}`;
+    // <host>/spaces/<slug>/mcp/...: the MCP server for that one space.
+    const spaceMcp = /^\/spaces\/([a-z0-9-]+)(\/mcp\/[^?]*)(\?.*)?$/.exec(url);
+    if (spaceMcp) {
+      req.url = `${spaceMcp[2]}${spaceMcp[3] ? `${spaceMcp[3]}&` : '?'}space=${spaceMcp[1]}`;
       return proxy(req, res, mcpPort);
     }
     // /mcp and what an MCP client's own login needs at the server's root

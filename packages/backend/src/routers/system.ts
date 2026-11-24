@@ -4,7 +4,7 @@ import { z } from 'zod';
 import { hasAccounts } from 'shared/server-config';
 import { t, delayedProcedure } from '../trpc.js';
 import { readSystemStatus, writeSystemStatus } from '../storage/project.js';
-import { graphAddress } from '../graphs/address.js';
+import { spaceAddress } from '../spaces/address.js';
 
 // Without accounts an agent starts the MCP server itself, over stdio: the
 // command with this checkout's absolute paths works from any directory. The
@@ -22,38 +22,38 @@ export const systemRouter = t.router({
 
   getStatus: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ input }) => {
-      return await readSystemStatus(input.graph);
+      return await readSystemStatus(input.space);
     }),
 
   updateStatus: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       status: z.object({
         computeCredits: z.number().optional(),
         funds: z.number().optional()
       })
     }))
     .mutation(async ({ input }) => {
-      const current = await readSystemStatus(input.graph);
+      const current = await readSystemStatus(input.space);
       const updated = {
           ...current,
           ...(input.status.computeCredits !== undefined ? { computeCredits: input.status.computeCredits } : {}),
           ...(input.status.funds !== undefined ? { funds: input.status.funds } : {})
       };
-      await writeSystemStatus(input.graph, updated);
+      await writeSystemStatus(input.space, updated);
       return updated;
     }),
 
   performWork: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       workType: z.enum(['mining', 'freelance']).optional()
     }))
     .mutation(async ({ input }) => {
-      const current = await readSystemStatus(input.graph);
+      const current = await readSystemStatus(input.space);
 
       // Simulate work logic
       const earnedCredits = Math.floor(Math.random() * 5) + 5; // 5-10 credits
@@ -64,7 +64,7 @@ export const systemRouter = t.router({
         funds: current.funds + earnedFunds
       };
 
-      await writeSystemStatus(input.graph, updated);
+      await writeSystemStatus(input.space, updated);
 
       return {
         ...updated,

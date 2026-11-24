@@ -1,5 +1,5 @@
-// Evaluates the harness decompose stage on this graph's history (see
-// src/decomposition-eval.ts). Read-only on the graph; costs one planner call
+// Evaluates the harness decompose stage on this space's history (see
+// src/decomposition-eval.ts). Read-only on the space; costs one planner call
 // per sampled parent. Needs the backend running and a key for the planner role.
 //
 //   npx tsx scripts/eval-decomposition.ts [--project <repo>] [--samples 8] [--model <id>] [--resume <proposals.jsonl>]
@@ -10,7 +10,7 @@ import fs from 'fs-extra';
 import path from 'path';
 import { calculateIdeaValues, missionPathsToRoot, toBowmanPath } from 'shared';
 import { loadHarnessConfig } from 'shared/harness-config';
-import { connectGraph, embedDocuments, readLoopRuntimeState } from 'agent-tools';
+import { connectSpace, embedDocuments, readLoopRuntimeState } from 'agent-tools';
 import { compileContext } from '../src/context.js';
 import {
   compareChildren,
@@ -34,7 +34,7 @@ const samples = Number(argument('samples', '8'));
 const instanceId = 'eval-decomposition';
 const THRESHOLDS = [0.8, 0.85, 0.9];
 
-const graph = connectGraph(projectPath);
+const space = connectSpace(projectPath);
 try {
   const { config, version } = loadHarnessConfig(projectPath);
   const configuredLoop = (await readLoopRuntimeState(projectPath)).loops[0];
@@ -44,7 +44,7 @@ try {
   const secrets = await fs.readJson(path.join(projectPath, 'secrets.json')).catch(() => ({}));
   const planner = createRoleModels(loop, secrets).planner;
 
-  const ideas = await graph.listIdeas();
+  const ideas = await space.listIdeas();
   const ideaById = new Map(ideas.map((idea) => [idea.id, idea]));
   const { flowValues } = calculateIdeaValues(ideas);
   const parents = selectEvalParents(ideas, samples);
@@ -70,7 +70,7 @@ try {
     }
     const { masked, hiddenIds } = maskChildren(ideaById, parent);
     const maskedParent = masked.get(parent.id)!;
-    const similar = (await graph.searchIdeas(`${parent.text} ${parent.description ?? ''}`, 16))
+    const similar = (await space.searchIdeas(`${parent.text} ${parent.description ?? ''}`, 16))
       .filter((candidate) => candidate.id !== parent.id && !hiddenIds.has(candidate.id))
       .slice(0, 12);
     const { pathToRoot } = missionPathsToRoot(masked, maskedParent, flowValues);
@@ -84,7 +84,7 @@ try {
       facts: {}
     }, 'decompose', config.contextBudgetChars).text;
 
-    // No tools: graph tools would reveal the hidden children.
+    // No tools: space tools would reveal the hidden children.
     const run = await runStage({
       stage: 'decompose (eval)',
       model: planner.model,
@@ -137,5 +137,5 @@ try {
   console.log(JSON.stringify(summary, null, 2));
   console.log(`Written: ${outFile}`);
 } finally {
-  graph.close();
+  space.close();
 }

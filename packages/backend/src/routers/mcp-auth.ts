@@ -4,7 +4,7 @@ import { hasAccounts } from 'shared/server-config';
 import { t, delayedProcedure } from '../trpc.js';
 import { issueToken, resolveToken } from '../auth/accounts.js';
 import * as clients from '../auth/mcp-clients.js';
-import { findGraph } from '../graphs/registry.js';
+import { findSpace } from '../spaces/registry.js';
 
 // The steps of an MCP client's own login (auth/mcp-clients.ts). Most are open
 // by nature: they are the protocol, called by the MCP server for whatever
@@ -52,16 +52,16 @@ export const mcpAuthRouter = t.router({
       return request && { clientName: request.client.client_name ?? 'An MCP client', redirectHost: new URL(request.redirectUri).host };
     }),
 
-  // The logged-in person lets the client act as them: everywhere, or on the graphs named.
+  // The logged-in person lets the client act as them: everywhere, or on the spaces named.
   approve: delayedProcedure
-    .input(z.object({ requestId: z.string().max(100), graphs: z.array(z.string()).max(200).optional() }))
+    .input(z.object({ requestId: z.string().max(100), spaces: z.array(z.string()).max(200).optional() }))
     .mutation(({ ctx, input }) => run(() => {
       const account = ctx.viewer?.name;
       if (!account) throw new TRPCError({ code: 'UNAUTHORIZED', message: 'Log in first.' });
-      for (const slug of input.graphs ?? []) {
-        if (!findGraph(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
+      for (const slug of input.spaces ?? []) {
+        if (!findSpace(slug)) throw new TRPCError({ code: 'BAD_REQUEST', message: `No space "${slug}" on this server.` });
       }
-      return { redirectTo: clients.approveRequest(input.requestId, account, input.graphs) };
+      return { redirectTo: clients.approveRequest(input.requestId, account, input.spaces) };
     })),
 
   deny: delayedProcedure
@@ -72,17 +72,17 @@ export const mcpAuthRouter = t.router({
     .input(z.object({ clientId: z.string().max(200), code: z.string().max(200) }))
     .query(({ input }) => run(() => ({ codeChallenge: clients.codeChallenge(input.clientId, input.code) }))),
 
-  // The code becomes a login token, limited to the graphs the person chose.
+  // The code becomes a login token, limited to the spaces the person chose.
   exchange: delayedProcedure
     .input(z.object({ clientId: z.string().max(200), code: z.string().max(200), redirectUri: z.string().max(2000).optional() }))
     .mutation(({ input }) => run(async () => {
-      const { account, graphs, clientName } = clients.redeemCode(input.clientId, input.code, input.redirectUri);
-      return { token: await issueToken(account, clientName.slice(0, 100), graphs) };
+      const { account, spaces, clientName } = clients.redeemCode(input.clientId, input.code, input.redirectUri);
+      return { token: await issueToken(account, clientName.slice(0, 100), spaces) };
     })),
 
-  // Whether the caller's token is a login at all (one limited to graphs is nobody to auth.me).
+  // Whether the caller's token is a login at all (one limited to spaces is nobody to auth.me).
   tokenInfo: delayedProcedure.query(({ ctx }) => {
     const account = resolveToken(ctx.session?.token);
-    return account && { account: account.name, graphs: account.scope };
+    return account && { account: account.name, spaces: account.scope };
   })
 });

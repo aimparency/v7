@@ -44,10 +44,10 @@ test('logging in makes the same connection that account, logging out ends it', a
   await accounts.createAccount('ada', 'ada password');
   const visitor = connection();
   assert.equal((await visitor.auth.me()).name, null);
-  await assert.rejects(visitor.graphs.create({ name: 'Too early' }), /Log in first/);
+  await assert.rejects(visitor.spaces.create({ name: 'Too early' }), /Log in first/);
   const { token } = await visitor.auth.login({ name: 'ada', password: 'ada password' });
   assert.equal((await visitor.auth.me()).name, 'ada');
-  assert.equal((await visitor.graphs.create({ name: 'Mine' })).slug, 'mine');
+  assert.equal((await visitor.spaces.create({ name: 'Mine' })).slug, 'mine');
   await visitor.auth.logout();
   assert.equal((await visitor.auth.me()).name, null);
   assert.equal(accounts.resolveToken(token), null, 'the token is gone, not only forgotten by the connection');
@@ -71,21 +71,21 @@ test('an invitation lets its holder in: once, or until it ends', async () => {
   await admin.auth.login({ name: 'admin', password: 'admin password' });
   await assert.rejects(connection().auth.createInvitation({ kind: 'once' }), /server admins/);
 
-  const { code: once } = await admin.auth.createInvitation({ kind: 'once', canCreateGraphs: true });
+  const { code: once } = await admin.auth.createInvitation({ kind: 'once', canCreateSpaces: true });
   const { code: permanent } = await admin.auth.createInvitation({ kind: 'permanent', days: 7 });
   assert.ok(!(await fs.readFile(accounts.accountsFile(), 'utf8')).includes(once), 'only the hash of a code is stored');
 
   await connection().auth.signUp({ name: 'ben', password: 'ben password', invitation: once });
-  assert.equal(accounts.findAccount('ben')?.canCreateGraphs, true);
+  assert.equal(accounts.findAccount('ben')?.canCreateSpaces, true);
   await assert.rejects(connection().auth.signUp({ name: 'cleo', password: 'cleo password', invitation: once }), /not valid any more/);
   await assert.rejects(connection().auth.signUp({ name: 'cleo', password: 'cleo password', invitation: 'made-up' }), /not valid any more/);
 
   await connection().auth.signUp({ name: 'cleo', password: 'cleo password', invitation: permanent });
   await connection().auth.signUp({ name: 'dan', password: 'dan password', invitation: permanent });
   const listed = await admin.auth.listInvitations();
-  assert.deepEqual(listed.map(({ kind, redeemedBy, canCreateGraphs }) => ({ kind, redeemedBy, canCreateGraphs })), [
-    { kind: 'once', redeemedBy: 'ben', canCreateGraphs: true },
-    { kind: 'permanent', redeemedBy: null, canCreateGraphs: false }
+  assert.deepEqual(listed.map(({ kind, redeemedBy, canCreateSpaces }) => ({ kind, redeemedBy, canCreateSpaces })), [
+    { kind: 'once', redeemedBy: 'ben', canCreateSpaces: true },
+    { kind: 'permanent', redeemedBy: null, canCreateSpaces: false }
   ]);
   assert.ok(Date.parse(listed[1]!.expiresAt!) > Date.now() + 6 * 24 * 60 * 60_000);
 
@@ -107,7 +107,7 @@ test('an invitation gives the rights of an account: server admin only for one pe
   assert.equal(listed!.serverAdmin, true);
   await connection().auth.signUp({ name: 'fay', password: 'fay password', invitation: code });
   assert.equal(accounts.findAccount('fay')?.serverAdmin, true);
-  assert.notEqual(accounts.findAccount('fay')?.canCreateGraphs, true);
+  assert.notEqual(accounts.findAccount('fay')?.canCreateSpaces, true);
 });
 
 test('a visitor gets an account from the key in their browser, and later makes it permanent', async () => {
@@ -120,7 +120,7 @@ test('a visitor gets an account from the key in their browser, and later makes i
   const me = await visitor.auth.me();
   assert.match(me.name!, /^guest-[0-9a-f]{6}$/);
   assert.equal(me.permanentLogin, false);
-  assert.equal((await visitor.graphs.create({ name: 'My idea' })).slug, 'my-idea');
+  assert.equal((await visitor.spaces.create({ name: 'My idea' })).slug, 'my-idea');
 
   // A signed challenge works once.
   await assert.rejects(connection().auth.keyLogin({ publicKey: key.publicKey, nonce, signature }), /did not answer the challenge/);
@@ -139,7 +139,7 @@ test('a visitor gets an account from the key in their browser, and later makes i
   await visitor.auth.makePermanent({ name: 'Ana', password: 'ana password' });
   assert.deepEqual(await visitor.auth.me().then(({ name, permanentLogin }) => ({ name, permanentLogin })), { name: 'Ana', permanentLogin: true });
   assert.equal(accounts.resolveToken(token)?.name, 'Ana', 'the browser stays logged in');
-  assert.equal((await as(token).graphs.list())[0]!.owner, 'Ana', 'what the account owned stays its own');
+  assert.equal((await as(token).spaces.list())[0]!.owner, 'Ana', 'what the account owned stays its own');
   await connection().auth.login({ name: 'Ana', password: 'ana password' });
   await assert.rejects(visitor.auth.makePermanent({ name: 'Ana', password: 'another password' }), /has a password already/);
 });
@@ -152,8 +152,8 @@ test('a key gets no account where the server does not offer that', async () => {
   assert.equal(accounts.listAccounts().length, 0);
 });
 
-test('one address makes only so many accounts an hour, one account only so many graphs', async () => {
-  updateServerConfig({ signUp: { open: true, browserKey: true }, limits: { accountsPerAddressPerHour: 2, graphsPerAccount: 1 } });
+test('one address makes only so many accounts an hour, one account only so many spaces', async () => {
+  updateServerConfig({ signUp: { open: true, browserKey: true }, limits: { accountsPerAddressPerHour: 2, spacesPerAccount: 1 } });
   const room = () => connection('192.0.2.7');
   const ben = room();
   await ben.auth.signUp({ name: 'ben', password: 'ben password' });
@@ -167,6 +167,6 @@ test('one address makes only so many accounts an hour, one account only so many 
   const next = await back.auth.keyChallenge();
   await back.auth.keyLogin({ publicKey: key.publicKey, nonce: next.nonce, signature: await key.sign(next.nonce) });
 
-  await ben.graphs.create({ name: 'First' });
-  await assert.rejects(ben.graphs.create({ name: 'Second' }), /at most 1 spaces/);
+  await ben.spaces.create({ name: 'First' });
+  await assert.rejects(ben.spaces.create({ name: 'Second' }), /at most 1 spaces/);
 });

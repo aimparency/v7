@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { fetchGraphAtHost } from 'shared'
+import { fetchSpaceAtHost } from 'shared'
 import { trpc } from '../trpc'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
@@ -30,12 +30,12 @@ const busy = ref(false)
 const error = ref('')
 
 // The visitor's spaces on this server, but not the one they propose to.
-type Listed = Awaited<ReturnType<typeof trpc.graphs.list.query>>[number]
+type Listed = Awaited<ReturnType<typeof trpc.spaces.list.query>>[number]
 const mine = ref<Listed[]>([])
 const chosen = ref('')
 onMounted(async () => {
   if (viewer.name === null) return
-  const all = await trpc.graphs.list.query().catch(() => [] as Listed[])
+  const all = await trpc.spaces.list.query().catch(() => [] as Listed[])
   mine.value = all.filter(space => space.right !== 'read' && space.slug !== projectStore.projectPath)
   chosen.value = mine.value[0]?.slug ?? ''
 })
@@ -51,19 +51,19 @@ const here = (slug: string) => `${viewer.publicUrl ?? window.location.origin}/sp
 // A new space is its central aim: one idea that holds all its intrinsic
 // value, named like the space, and the offer's title at the same time.
 async function createSpace(aim: string): Promise<string> {
-  const { slug } = await trpc.graphs.create.mutate({ name: aim })
-  await trpc.idea.createFloatingIdea.mutate({ graph: slug, idea: { text: aim, intrinsicValue: 1 } })
+  const { slug } = await trpc.spaces.create.mutate({ name: aim })
+  await trpc.idea.createFloatingIdea.mutate({ space: slug, idea: { text: aim, intrinsicValue: 1 } })
   return slug
 }
 
 // The offered space as its own server describes it.
 async function offeredSpace(): Promise<{ host: string; repoId: string; name: string }> {
   if (source.value === 'elsewhere') {
-    const { host, repoId, name } = await fetchGraphAtHost(address.value)
+    const { host, repoId, name } = await fetchSpaceAtHost(address.value)
     return { host, repoId, name }
   }
   const slug = source.value === 'new' ? await createSpace(name.value.trim()) : chosen.value
-  const meta = await trpc.project.getMeta.query({ graph: slug })
+  const meta = await trpc.project.getMeta.query({ space: slug })
   if (!meta.repoId) throw new Error(`Space "${slug}" has no identity yet.`)
   return { host: here(slug), repoId: meta.repoId, name: meta.name ?? slug }
 }
@@ -75,12 +75,12 @@ async function offer() {
   try {
     // Where the server gives accounts automatically, the visitor gets theirs now.
     if (!await viewer.ensureAccount()) return
-    const space = await offeredSpace()
+    const offered = await offeredSpace()
     await trpc.notes.add.mutate({
-      graph: projectStore.projectPath, ideaId: props.ideaId, kind: 'offer', text: pitch.value, space,
+      space: projectStore.projectPath, ideaId: props.ideaId, kind: 'offer', text: pitch.value, offeredSpace: offered,
       ...(props.relativePosition ? { relativePosition: props.relativePosition } : {})
     })
-    toast.info(`Offered ${space.name}: the owner of this space decides.`)
+    toast.info(`Offered ${offered.name}: the owner of this space decides.`)
     emit('close')
     // It shows at once, opened in place, where it was dropped.
     await dataStore.loadOffers(projectStore.projectPath)
@@ -106,7 +106,7 @@ async function offer() {
       </label>
       <template v-if="source === 'new'">
         <input v-model="name" class="indented" placeholder="Its central aim, e.g. what you will do for this idea" autofocus @keydown.stop />
-        <p class="hint indented">The space's name and its first idea, which holds its value. You build it from there, right here in the graph.</p>
+        <p class="hint indented">The space's name and its first idea, which holds its value. You build it from there, right here in the space.</p>
       </template>
 
       <label v-if="mine.length > 0" class="choice">

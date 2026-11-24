@@ -34,7 +34,7 @@ vi.mock('../../utils/browser-key', () => ({ signLoginChallenge, forgetBrowserKey
 
 const me = (values: object) => ({
   login: 'accounts', agents: false, signUp: { open: false, browserKey: false, wallet: false },
-  name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: true, ...values
+  name: null, serverAdmin: false, canCreateSpaces: false, permanentLogin: true, ...values
 })
 
 const mountControl = async (answer: object) => {
@@ -193,7 +193,7 @@ describe('LoginControl', () => {
     auth.keyChallenge.mutate.mockResolvedValue({ nonce: 'the-nonce' })
     signLoginChallenge.mockResolvedValue({ publicKey: 'the-key', signature: 'the-signature' })
     auth.keyLogin.mutate.mockResolvedValue({ token: 'key-token' })
-    auth.me.query.mockResolvedValue(me({ name: 'guest-1a2b3c', permanentLogin: false, canCreateGraphs: true }))
+    auth.me.query.mockResolvedValue(me({ name: 'guest-1a2b3c', permanentLogin: false, canCreateSpaces: true }))
     expect(await viewer.ensureAccount()).toBe(true)
     expect(auth.keyLogin.mutate).toHaveBeenCalledWith({ nonce: 'the-nonce', publicKey: 'the-key', signature: 'the-signature' })
     expect(localStorage.getItem('aimparency-token')).toBe('key-token')

@@ -26,9 +26,9 @@ function setup() {
   const nodes = ref([host, repo, remote])
   const simulation = { nodes, links: ref([]), nodeMap: new Map(nodes.value.map(n => [n.id, n])), freezings: new Map(), onTick: () => {}, trigger: ref(0) }
   const element = ref({ getBoundingClientRect: () => ({ left: 0, top: 0 }) } as unknown as HTMLElement)
-  // The outline of the opened graph reaches from x = 500 to x = 1000.
-  const graphAt = (pos: readonly number[]) => (pos[0]! > 500 && pos[0]! < 1000 ? REPO_ID : undefined)
-  const interaction = useGraphInteraction(element, ref(800), ref(800), simulation as any, graphAt)
+  // The outline of the opened space reaches from x = 500 to x = 1000.
+  const spaceAt = (pos: readonly number[]) => (pos[0]! > 500 && pos[0]! < 1000 ? REPO_ID : undefined)
+  const interaction = useGraphInteraction(element, ref(800), ref(800), simulation as any, spaceAt)
   const mapStore = useMapStore()
   mapStore.halfSide = 400
   mapStore.startConnecting(host)
@@ -36,7 +36,7 @@ function setup() {
   return { interaction, mapStore }
 }
 
-describe('dragging a connection from an idea toward a linked graph', () => {
+describe('dragging a connection from an idea toward a linked space', () => {
   beforeEach(() => {
     setActivePinia(createPinia())
     linkRepo.mockClear()
@@ -47,13 +47,13 @@ describe('dragging a connection from an idea toward a linked graph', () => {
   it('links the graph to the idea when released inside its outline', async () => {
     const { interaction, mapStore } = setup()
     interaction.onMouseMove(client(900, 300))
-    expect(mapStore.connectDrop).toEqual({ kind: 'graph', repoId: REPO_ID })
+    expect(mapStore.connectDrop).toEqual({ kind: 'space', repoId: REPO_ID })
     interaction.onMouseUp()
     await vi.waitFor(() => expect(linkRepo).toHaveBeenCalledWith(expect.objectContaining({ ideaId: 'host', repoId: REPO_ID })))
     expect(mapStore.connectDrop).toEqual({ kind: 'new' })
   })
 
-  it('turns blocked over an idea of the linked graph, and releasing there links nothing', async () => {
+  it('turns blocked over an idea of the linked space, and releasing there links nothing', async () => {
     const { interaction, mapStore } = setup()
     interaction.onMouseMove(client(800, 10))
     expect(mapStore.connectDrop).toEqual({ kind: 'blocked' })

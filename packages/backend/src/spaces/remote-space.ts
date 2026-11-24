@@ -1,4 +1,4 @@
-// A graph added from a Git URL: its .bowman is cloned into the server
+// A space added from a Git URL: its .bowman is cloned into the server
 // directory, through the closed git environment of remote-git.ts. Without a
 // key it only follows its remote (read-only here); with one of its owner's keys
 // it is edited here, committed in the UI and pushed back.
@@ -12,18 +12,18 @@ import { READ_ONLY_MARKER } from 'shared/bowman-migration';
 import { cloneBowman } from '../git-repository-cache.js';
 import { commitPaths, pushToUpstream, readWorkingTreeStatus } from '../git-working-tree.js';
 import { updateProjectMeta } from '../storage/project.js';
-import { addRemoteGraph, graphBowmanPath, GraphError, setRemoteKey, type Graph } from './registry.js';
-import { graphGitEnv, remoteGitEnv } from './remote-git.js';
+import { addRemoteSpace, spaceBowmanPath, SpaceError, setRemoteKey, type Space } from './registry.js';
+import { spaceGitEnv, remoteGitEnv } from './remote-git.js';
 import { privateKeyFile } from './ssh-keys.js';
-import { directoryBytes, graphLimitBytes, GraphTooLargeError } from './size-limit.js';
+import { directoryBytes, spaceLimitBytes, SpaceTooLargeError } from './size-limit.js';
 
 const execFileAsync = promisify(execFile);
 
 // What was cloned from a stranger's URL must not fill the disk.
 async function assertFitsLimit(directory: string) {
-  if (await directoryBytes(directory) <= graphLimitBytes()) return;
+  if (await directoryBytes(directory) <= spaceLimitBytes()) return;
   await fs.remove(directory);
-  throw new GraphTooLargeError();
+  throw new SpaceTooLargeError();
 }
 
 /**
@@ -38,7 +38,7 @@ export function sshUrlOf(url: string): string {
   return `git@${parsed.hostname}:${repository}.git`;
 }
 
-export type AddedRemote = Graph & {
+export type AddedRemote = Space & {
   /** The repository had no .bowman: the space was started in it and committed. */
   started?: boolean;
   /** Why pushing that start failed (e.g. a deploy key without write access); it waits to be pushed. */
@@ -59,15 +59,15 @@ export async function addRemote(
 ): Promise<AddedRemote> {
   const key = options.key;
   const keyFile = key ? await privateKeyFile(key.account, key.id) : null;
-  if (key && !keyFile) throw new GraphError('Select one of your own keys.');
+  if (key && !keyFile) throw new SpaceError('Select one of your own keys.');
   const remoteUrl = key ? sshUrlOf(url) : url;
   let started = false;
-  const graph: AddedRemote = await addRemoteGraph(remoteUrl, owner, async (directory) => {
+  const space: AddedRemote = await addRemoteSpace(remoteUrl, owner, async (directory) => {
     try {
       await cloneBowman(remoteUrl, directory, await remoteGitEnv(remoteUrl, keyFile), { allowMissing: !!key });
       await assertFitsLimit(directory);
     } catch (error) {
-      throw new GraphError(error instanceof Error ? error.message : String(error));
+      throw new SpaceError(error instanceof Error ? error.message : String(error));
     }
     if (!key) {
       await fs.ensureFile(path.join(toBowmanPath(directory), READ_ONLY_MARKER));
@@ -83,19 +83,19 @@ export async function addRemote(
       started = true;
     }
   }, options);
-  if (!started) return graph;
+  if (!started) return space;
   // An empty repository has no branch to follow yet: the first push makes it.
   try {
-    const env = await graphGitEnv(graph);
-    const status = await readWorkingTreeStatus(graphBowmanPath(graph));
+    const env = await spaceGitEnv(space);
+    const status = await readWorkingTreeStatus(spaceBowmanPath(space));
     if (status.isRepository && status.ahead === null) {
-      await execGit(['-C', graph.path, 'push', '--quiet', '-u', 'origin', 'HEAD'], env);
+      await execGit(['-C', space.path, 'push', '--quiet', '-u', 'origin', 'HEAD'], env);
     } else {
-      await pushToUpstream(graphBowmanPath(graph), env);
+      await pushToUpstream(spaceBowmanPath(space), env);
     }
-    return { ...graph, started };
+    return { ...space, started };
   } catch (error) {
-    return { ...graph, started, pushError: error instanceof Error ? error.message : String(error) };
+    return { ...space, started, pushError: error instanceof Error ? error.message : String(error) };
   }
 }
 
@@ -108,9 +108,9 @@ async function execGit(args: string[], env: NodeJS.ProcessEnv) {
   }
 }
 
-export async function selectRemoteKey(graph: Graph, key: { account: string; id: string } | null): Promise<void> {
-  await setRemoteKey(graph.slug, key);
-  const marker = path.join(graphBowmanPath(graph), READ_ONLY_MARKER);
+export async function selectRemoteKey(space: Space, key: { account: string; id: string } | null): Promise<void> {
+  await setRemoteKey(space.slug, key);
+  const marker = path.join(spaceBowmanPath(space), READ_ONLY_MARKER);
   if (key) await fs.remove(marker);
   else await fs.ensureFile(marker);
 }

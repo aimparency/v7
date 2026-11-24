@@ -3,7 +3,7 @@ import { graphOutline, outlineContains, outlinePath } from '../graph-outline'
 
 const circles = [{ x: 0, y: 0, r: 30 }, { x: 200, y: 40, r: 10 }, { x: 80, y: -150, r: 50 }]
 
-describe('the string around a linked graph', () => {
+describe('the string around a linked space', () => {
   it('encloses every idea whole, however it wobbles', () => {
     for (const time of [0, 0.7, 2.1, 5]) {
       const outline = graphOutline(circles, 20, time)!

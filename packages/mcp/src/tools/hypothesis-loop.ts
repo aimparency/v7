@@ -53,7 +53,7 @@ export const hypothesisLoopTools: ToolDefinition[] = [
       required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const ideas = await trpcClient.idea.list.query({ graph: args.space as string });
+      const ideas = await trpcClient.idea.list.query({ space: args.space as string });
       const major = selectMajorIdeas(ideas);
       const listing = major.length
         ? major.map((idea) => `- ${idea.id} ${idea.text} (intrinsic value ${idea.intrinsicValue}, ${idea.status.state}, ${idea.supportingConnections.length} sub ideas${idea.supportedIdeas.length ? "" : ", root"})`).join("\n")

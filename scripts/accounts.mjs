@@ -9,12 +9,12 @@ import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 // Accounts of this server, from its terminal (run through tsx):
 //
 //   pnpm accounts list
-//   pnpm accounts add <name> [--admin] [--creates-graphs]
+//   pnpm accounts add <name> [--admin] [--creates-spaces]
 //   pnpm accounts admin <name> on|off
-//   pnpm accounts creates-graphs <name> on|off
+//   pnpm accounts creates-spaces <name> on|off
 //   pnpm accounts password <name>
 //   pnpm accounts remove <name>
-//   pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-graphs]   (prints the link's path)
+//   pnpm accounts invite [--once] [--days <n>] [--admin] [--creates-spaces]   (prints the link's path)
 //   pnpm accounts invitations
 //   pnpm accounts uninvite <id>
 //   pnpm accounts agent-token   (prints a fresh token of the wrapped agents' account)
@@ -22,7 +22,7 @@ import { ADMIN_SHELL_WARNING } from '../packages/shared/src/admin-role.ts';
 // They live in the server directory; `--server <name>` (anywhere in the
 // command) selects another server of this machine than "local". A
 // password comes from AIMPARENCY_PASSWORD when set (the setup passes it so),
-// else it is asked. What an account may do on a graph: `pnpm graphs`.
+// else it is asked. What an account may do on a space: `pnpm spaces`.
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const envFile = path.join(repoRoot, '.env');
@@ -38,7 +38,7 @@ const flag = (name) => {
   return index >= 0;
 };
 const admin = flag('--admin');
-const createsGraphs = flag('--creates-graphs');
+const createsSpaces = flag('--creates-spaces');
 const once = flag('--once');
 const daysAt = args.indexOf('--days');
 const days = daysAt >= 0 ? Number(args.splice(daysAt, 2)[1]) : undefined;
@@ -51,8 +51,8 @@ function onOff(text) {
   return text === 'on';
 }
 
-const describe = ({ serverAdmin, canCreateGraphs }) =>
-  [serverAdmin && 'server admin', canCreateGraphs && 'creates graphs'].filter(Boolean).join(', ');
+const describe = ({ serverAdmin, canCreateSpaces }) =>
+  [serverAdmin && 'server admin', canCreateSpaces && 'creates spaces'].filter(Boolean).join(', ');
 
 async function main() {
   switch (command) {
@@ -60,7 +60,7 @@ async function main() {
       for (const account of accounts.listAccounts()) console.log(`${account.name}\t${describe(account)}`);
       return;
     case 'add':
-      await accounts.createAccount(name ?? '', await password(name), { serverAdmin: admin, canCreateGraphs: createsGraphs });
+      await accounts.createAccount(name ?? '', await password(name), { serverAdmin: admin, canCreateSpaces: createsSpaces });
       console.log(`Added ${name}${admin ? ' (server admin)' : ''} in ${serverDir()}.`);
       if (admin) console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
       return;
@@ -69,9 +69,9 @@ async function main() {
       console.log(`${name} is ${value === 'on' ? 'a server admin now' : 'no server admin any more'}.`);
       if (value === 'on') console.warn(`Warning: ${ADMIN_SHELL_WARNING}`);
       return;
-    case 'creates-graphs':
-      await accounts.setRights(name ?? '', { canCreateGraphs: onOff(value) });
-      console.log(`${name} ${value === 'on' ? 'may create graphs' : 'is no longer selected to create graphs'}.`);
+    case 'creates-spaces':
+      await accounts.setRights(name ?? '', { canCreateSpaces: onOff(value) });
+      console.log(`${name} ${value === 'on' ? 'may create spaces' : 'is no longer selected to create spaces'}.`);
       return;
     case 'password':
       await accounts.setPassword(name ?? '', await password(name));
@@ -82,7 +82,7 @@ async function main() {
       const code = await accounts.createInvitation({
         kind: once ? 'once' : 'permanent',
         serverAdmin: admin,
-        canCreateGraphs: createsGraphs,
+        canCreateSpaces: createsSpaces,
         expiresAt: days ? new Date(Date.now() + days * 24 * 60 * 60_000).toISOString() : undefined,
       });
       console.log(`Append this to the server's address; it is shown only now:\n/?invitation=${code}`);
@@ -91,7 +91,7 @@ async function main() {
     case 'invitations':
       for (const invitation of accounts.listInvitations()) {
         const state = invitation.redeemedBy ? `used by ${invitation.redeemedBy}` : invitation.expiresAt ? `until ${invitation.expiresAt}` : 'no end';
-        console.log(`${invitation.id}\t${invitation.kind}\t${state}${invitation.serverAdmin ? '\tserver admin' : ''}${invitation.canCreateGraphs ? '\tcreates graphs' : ''}`);
+        console.log(`${invitation.id}\t${invitation.kind}\t${state}${invitation.serverAdmin ? '\tserver admin' : ''}${invitation.canCreateSpaces ? '\tcreates spaces' : ''}`);
       }
       return;
     case 'uninvite':
@@ -107,7 +107,7 @@ async function main() {
       console.log(`Removed ${name}.`);
       return;
     default:
-      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-graphs] | admin <name> on|off | creates-graphs <name> on|off | password <name> | remove <name> | invite [--once] [--days <n>] [--admin] [--creates-graphs] | invitations | uninvite <id>');
+      throw new accounts.AccountError('Usage: pnpm accounts list | add <name> [--admin] [--creates-spaces] | admin <name> on|off | creates-spaces <name> on|off | password <name> | remove <name> | invite [--once] [--days <n>] [--admin] [--creates-spaces] | invitations | uninvite <id>');
   }
 }
 

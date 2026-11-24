@@ -1,9 +1,9 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { t, delayedProcedure, type Context } from '../trpc.js';
-import { createKey, KeyError, listKeys, removeKey } from '../graphs/ssh-keys.js';
+import { createKey, KeyError, listKeys, removeKey } from '../spaces/ssh-keys.js';
 
-// The caller's own SSH keys on this server (graphs/ssh-keys.ts). Only public
+// The caller's own SSH keys on this server (spaces/ssh-keys.ts). Only public
 // halves ever leave it; no procedure returns a private key.
 function accountId(ctx: Context): string {
   const id = ctx.viewer?.id;

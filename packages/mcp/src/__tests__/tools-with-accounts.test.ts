@@ -22,10 +22,8 @@ test('a session for one space needs no space in its tool calls', () => {
   assert.deepEqual(tool.inputSchema.required, ['space', 'ideaId'], 'the shared definition is untouched');
 });
 
-test('a call names its space with `space`; the former `graph` and `projectPath` still work', () => {
+test('a call names its space with `space`, else it works on the session\'s', () => {
   assert.deepEqual(argumentsWithSpace({ space: 'mine', ideaId: 'x' }, undefined), { space: 'mine', ideaId: 'x' });
-  assert.deepEqual(argumentsWithSpace({ graph: '/old', ideaId: 'x' }, undefined), { ideaId: 'x', space: '/old' });
-  assert.deepEqual(argumentsWithSpace({ projectPath: '/repo', ideaId: 'x' }, undefined), { ideaId: 'x', space: '/repo' });
   assert.deepEqual(argumentsWithSpace({ ideaId: 'x' }, 'hack-the-hub'), { ideaId: 'x', space: 'hack-the-hub' });
   assert.deepEqual(argumentsWithSpace({ space: 'other', ideaId: 'x' }, 'hack-the-hub'), { space: 'other', ideaId: 'x' });
   assert.deepEqual(argumentsWithSpace({ agent: 'claude' }, undefined), { agent: 'claude' });

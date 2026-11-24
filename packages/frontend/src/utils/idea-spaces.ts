@@ -11,8 +11,8 @@ import { remoteSpace, remoteUntyped } from './remote-trpc'
 // itself; the open space's own ideas are not in it.
 const spaces = new Map<string, string>()
 
-export function setIdeaSpace(ideaId: string, graph: string | null) {
-  if (graph) spaces.set(ideaId, graph)
+export function setIdeaSpace(ideaId: string, space: string | null) {
+  if (space) spaces.set(ideaId, space)
   else spaces.delete(ideaId)
 }
 
@@ -72,7 +72,7 @@ export function spaceOfIdeas(ids: string[]): string | null | undefined {
 
 export const ideaSpaceLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
   const input = op.input as Record<string, unknown> | undefined
-  if (op.type === 'subscription' || !input || typeof input !== 'object' || typeof input.graph !== 'string' || spaces.size === 0) return next(op)
+  if (op.type === 'subscription' || !input || typeof input !== 'object' || typeof input.space !== 'string' || spaces.size === 0) return next(op)
   const target = spaceOfIdeas(ideaIdsOf(input))
   if (target === undefined) {
     return observable((observer) => {
@@ -87,12 +87,12 @@ export const ideaSpaceLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
     })
   }
   const remote = remoteSpace(target)
-  if (!remote) return next({ ...op, input: { ...input, graph: target } })
+  if (!remote) return next({ ...op, input: { ...input, space: target } })
   return observable((observer) => {
     const client = remoteUntyped(remote.origin)
     const request = op.type === 'mutation'
-      ? client.mutation(op.path, { ...input, graph: remote.graph })
-      : client.query(op.path, { ...input, graph: remote.graph })
+      ? client.mutation(op.path, { ...input, space: remote.space })
+      : client.query(op.path, { ...input, space: remote.space })
     request.then(
       (data) => { observer.next({ result: { type: 'data', data } } as never); observer.complete() },
       (error) => observer.error(error)

@@ -1,5 +1,5 @@
 // MCP clients that ask for a login themselves: the client opens this server's
-// page in a browser, the person logs in, chooses the graphs and approves, and
+// page in a browser, the person logs in, chooses the spaces and approves, and
 // the client gets a token for exactly that (OAuth 2.1 authorization code with
 // PKCE, as the MCP specification asks). The MCP server speaks the protocol
 // (packages/mcp/src/oauth.ts, on the SDK's router); what has to be remembered
@@ -45,7 +45,7 @@ export async function registerClient(client: McpClient): Promise<McpClient> {
 }
 
 type Request = { clientId: string; redirectUri: string; codeChallenge: string; state?: string; expires: number };
-type Code = { clientId: string; redirectUri: string; codeChallenge: string; account: string; graphs?: string[]; expires: number };
+type Code = { clientId: string; redirectUri: string; codeChallenge: string; account: string; spaces?: string[]; expires: number };
 const requests = new Map<string, Request>();
 const codes = new Map<string, Code>();
 
@@ -78,13 +78,13 @@ function redirect(request: Request, values: Record<string, string>): string {
 }
 
 /** The person approved: where to send their browser, carrying a code the client exchanges for a token. */
-export function approveRequest(id: string, account: string, graphs: string[] | undefined, now = Date.now()): string {
+export function approveRequest(id: string, account: string, spaces: string[] | undefined, now = Date.now()): string {
   const request = pendingRequest(id, now);
   if (!request) throw new McpAuthError('This request is not waiting any more: start again from the MCP client.');
   requests.delete(id);
   prune(codes, now);
   const code = crypto.randomBytes(32).toString('base64url');
-  codes.set(code, { clientId: request.clientId, redirectUri: request.redirectUri, codeChallenge: request.codeChallenge, account, graphs, expires: now + CODE_MS });
+  codes.set(code, { clientId: request.clientId, redirectUri: request.redirectUri, codeChallenge: request.codeChallenge, account, spaces, expires: now + CODE_MS });
   return redirect(request, { code });
 }
 
@@ -102,12 +102,12 @@ export function codeChallenge(clientId: string, code: string, now = Date.now()):
   return entry.codeChallenge;
 }
 
-/** Uses the code up: who approved, and for which graphs. */
-export function redeemCode(clientId: string, code: string, redirectUri: string | undefined, now = Date.now()): { account: string; graphs?: string[]; clientName: string } {
+/** Uses the code up: who approved, and for which spaces. */
+export function redeemCode(clientId: string, code: string, redirectUri: string | undefined, now = Date.now()): { account: string; spaces?: string[]; clientName: string } {
   const entry = codes.get(code);
   codes.delete(code);
   if (!entry || entry.expires < now || entry.clientId !== clientId || (redirectUri !== undefined && redirectUri !== entry.redirectUri)) {
     throw new McpAuthError('This code is not valid.');
   }
-  return { account: entry.account, graphs: entry.graphs, clientName: findClient(clientId)?.client_name ?? 'MCP client' };
+  return { account: entry.account, spaces: entry.spaces, clientName: findClient(clientId)?.client_name ?? 'MCP client' };
 }

@@ -10,7 +10,7 @@ import {
 import { normalizeProjectPath } from '../project-path.js';
 import { ensureProjectStructure } from '../storage/project.js';
 import { t, delayedProcedure } from '../trpc.js';
-import { graphAddress } from '../graphs/address.js';
+import { spaceAddress } from '../spaces/address.js';
 
 const autonomyPolicySchema = z.object({
   version: z.number().default(1),
@@ -83,15 +83,15 @@ const writeAutonomyPolicy = async (rawProjectPath: string, policy: z.infer<typeo
 export const watchdogRouter = t.router({
   getRuntimeState: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ input }) => {
-      return readWatchdogRuntimeState(input.graph);
+      return readWatchdogRuntimeState(input.space);
     }),
 
   updateRuntimeState: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       preferredAgentType: watchdogAgentTypeSchema.nullable().optional(),
       agentState: z.object({
         agentType: watchdogAgentTypeSchema,
@@ -102,7 +102,7 @@ export const watchdogRouter = t.router({
     }))
     .mutation(async ({ input }) => {
       const agentType = input.agentState?.agentType as z.infer<typeof watchdogAgentTypeSchema> | undefined;
-      const existing = await readWatchdogRuntimeState(input.graph);
+      const existing = await readWatchdogRuntimeState(input.space);
       const nextState = {
         ...existing,
         updatedAt: Date.now(),
@@ -127,30 +127,30 @@ export const watchdogRouter = t.router({
       }
 
       const parsed = watchdogRuntimeStateSchema.parse(nextState);
-      await writeWatchdogRuntimeState(input.graph, parsed);
+      await writeWatchdogRuntimeState(input.space, parsed);
       return parsed;
     }),
 
   getAutonomyPolicy: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ input }) => {
-      return readAutonomyPolicy(input.graph);
+      return readAutonomyPolicy(input.space);
     }),
 
   updateAutonomyPolicy: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       policy: autonomyPolicySchema.partial()
     }))
     .mutation(async ({ input }) => {
-      const existing = await readAutonomyPolicy(input.graph);
+      const existing = await readAutonomyPolicy(input.space);
       const merged = autonomyPolicySchema.parse({
         ...existing,
         ...input.policy
       });
-      await writeAutonomyPolicy(input.graph, merged);
+      await writeAutonomyPolicy(input.space, merged);
       return merged;
     })
 });

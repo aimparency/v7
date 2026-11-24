@@ -32,7 +32,7 @@ test('masking hides the real children and the outcome, so the planner cannot cop
   assert.equal(masked.get('parent')!.status.state, 'open');
   assert.equal(masked.get('parent')!.status.comment, '');
   assert.deepEqual(masked.get('parent')!.supportingConnections, []);
-  assert.equal(byId.get('parent')!.status.state, 'implemented', 'the real graph is untouched');
+  assert.equal(byId.get('parent')!.status.state, 'implemented', 'the real space is untouched');
 });
 
 test('each real child scores its closest proposal; coverage counts real children above a threshold', () => {

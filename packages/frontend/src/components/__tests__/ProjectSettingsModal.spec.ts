@@ -104,7 +104,7 @@ describe('ProjectSettingsModal linked repos', () => {
     await row.find('.add-repo-btn').trigger('click')
     await flushPromises()
 
-    expect(registerMock).toHaveBeenCalledWith({ graph: SELF_BOWMAN, targetPath: SIBLING.path })
+    expect(registerMock).toHaveBeenCalledWith({ space: SELF_BOWMAN, targetPath: SIBLING.path })
   })
 
   it('loads initial instructions from meta and persists edits on Save', async () => {
@@ -187,6 +187,6 @@ describe('ProjectSettingsModal linked repos', () => {
     await removeBtn.trigger('click') // second click confirms
     await flushPromises()
 
-    expect(unregisterMock).toHaveBeenCalledWith({ graph: SELF_BOWMAN, repoId: 'r-sib' })
+    expect(unregisterMock).toHaveBeenCalledWith({ space: SELF_BOWMAN, repoId: 'r-sib' })
   })
 })

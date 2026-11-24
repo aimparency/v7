@@ -28,7 +28,7 @@ const { mockTrpc, updates } = vi.hoisted(() => {
           })
         }
       },
-      graphHealth: { fixConsistency: { mutate: vi.fn().mockResolvedValue({ fixes: [] }) } }
+      spaceHealth: { fixConsistency: { mutate: vi.fn().mockResolvedValue({ fixes: [] }) } }
     }
   }
 })
@@ -129,7 +129,7 @@ describe('project load', () => {
     expect(load.stepLabel).toBe('Laying out lists')
   })
 
-  it('shows a new visitor the graph, colored by custom colors', async () => {
+  it('shows a new visitor the space, colored by custom colors', async () => {
     const load = useProjectLoadStore()
     void load.open('/p/one')
     await vi.waitFor(() => expect(load.viewsMayMount).toBe(true))

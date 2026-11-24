@@ -1,5 +1,5 @@
-// Live activity on ideas, for watching agents work on the graph. Each kind of
-// access fades with its own half-life and glows in its own color; the graph's
+// Live activity on ideas, for watching agents work on the space. Each kind of
+// access fades with its own half-life and glows in its own color; the space's
 // Activity color mode blends them. Accesses add up: an idea read five times in
 // a minute glows brighter than one read once.
 

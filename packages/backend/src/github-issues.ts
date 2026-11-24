@@ -1,4 +1,4 @@
-// Reading a repository's open GitHub issues, to start its graph from them.
+// Reading a repository's open GitHub issues, to start its space from them.
 // Public REST API: no token needed for public repositories (60 requests per
 // hour); GITHUB_TOKEN, when set, raises that limit and reaches private ones.
 import { gitRepositoryLocation } from 'shared';

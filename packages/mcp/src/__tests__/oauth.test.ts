@@ -41,7 +41,7 @@ function standInBackend() {
           tokens.set(issued, entry.account);
           return { token: issued };
         } },
-        tokenInfo: { query: async () => token && tokens.has(token) ? { account: tokens.get(token)!, graphs: null } : null },
+        tokenInfo: { query: async () => token && tokens.has(token) ? { account: tokens.get(token)!, spaces: null } : null },
       },
     },
   })) as unknown as typeof createBackendClient;

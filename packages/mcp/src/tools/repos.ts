@@ -1,5 +1,5 @@
 import { SPACE_TOOL_PROPERTY } from "../constants.js";
-import { fetchGraphAtHost } from "shared";
+import { fetchSpaceAtHost } from "shared";
 import type { ToolDefinition } from "./types.js";
 import { applyShares, describeSplits, shareUpdate, splitsSection, validatePercent } from "./shares.js";
 
@@ -17,7 +17,7 @@ export const repoTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.importGithubIssues.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         repository: args.repository as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -36,7 +36,7 @@ export const repoTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.importSpecTasks.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         specPath: args.specPath as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -54,7 +54,7 @@ export const repoTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const repos = await trpcClient.linkedRepo.list.query({
-        graph: args.space as string,
+        space: args.space as string,
       });
       return {
         content: [
@@ -93,25 +93,25 @@ export const repoTools: ToolDefinition[] = [
       required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const graph = args.space as string;
+      const space = args.space as string;
       const name = typeof args.name === "string" ? args.name : undefined;
       if (typeof args.host === "string") {
-        const target = await fetchGraphAtHost(args.host);
-        let link = await trpcClient.linkedRepo.linkHost.mutate({ graph, ...target });
-        if (name) link = await trpcClient.linkedRepo.rename.mutate({ graph, repoId: link.repoId, name });
+        const target = await fetchSpaceAtHost(args.host);
+        let link = await trpcClient.linkedRepo.linkHost.mutate({ space, ...target });
+        if (name) link = await trpcClient.linkedRepo.rename.mutate({ space, repoId: link.repoId, name });
         return {
           content: [{ type: "text", text: `Linked space "${link.name}" at ${link.host} (${link.repoId}). Use link_repo with that repoId to attach it to an idea.` }],
         };
       }
       if (typeof args.targetPath !== "string") {
         if (typeof args.repoId === "string" && name) {
-          const link = await trpcClient.linkedRepo.rename.mutate({ graph, repoId: args.repoId, name });
+          const link = await trpcClient.linkedRepo.rename.mutate({ space, repoId: args.repoId, name });
           return { content: [{ type: "text", text: `Linked repo ${link.repoId} is now shown as "${link.name}".` }] };
         }
         throw new Error("Give host (https://<server>/spaces/<space>) or targetPath, or repoId and name to rename a link.");
       }
       const repo = await trpcClient.linkedRepo.register.mutate({
-        graph,
+        space,
         targetPath: args.targetPath as string,
         url: args.url as string | undefined,
         access: (args.access as "read" | "write" | undefined) ?? "read",
@@ -149,7 +149,7 @@ export const repoTools: ToolDefinition[] = [
       // Fail loudly on an unregistered repoId: idea.linkRepo would happily
       // store an edge pointing at nothing, which renders as a nameless
       // black box and silently drains value into a dead sink.
-      const repos = await trpcClient.linkedRepo.list.query({ graph: projectPath });
+      const repos = await trpcClient.linkedRepo.list.query({ space: projectPath });
       const repo = repos.find((r) => r.repoId === repoId);
       if (!repo) {
         const known = repos.map((r) => `${r.repoId} (${r.name})`).join(", ") || "none";
@@ -162,7 +162,7 @@ export const repoTools: ToolDefinition[] = [
       const share = args.share === undefined ? undefined : validatePercent(args.share, "share", false);
       if (share !== undefined) {
         // Check the share against the idea with the link in place before writing anything.
-        const idea = await trpcClient.idea.get.query({ graph: projectPath, ideaId });
+        const idea = await trpcClient.idea.get.query({ space: projectPath, ideaId });
         const linked = idea.supportingRepos?.some((link) => link.repoId === repoId);
         applyShares(
           linked ? idea : { ...idea, supportingRepos: [...(idea.supportingRepos ?? []), { repoId, weight: 1, relativePosition: [0, 0] }] },
@@ -170,15 +170,15 @@ export const repoTools: ToolDefinition[] = [
         );
       }
       await trpcClient.idea.linkRepo.mutate({
-        graph: projectPath,
+        space: projectPath,
         ideaId,
         repoId,
         weight: args.weight as number | undefined,
         hypothesis: args.hypothesis as string | undefined,
       });
       if (share !== undefined) {
-        const idea = await trpcClient.idea.get.query({ graph: projectPath, ideaId });
-        await trpcClient.idea.update.mutate({ graph: projectPath, ideaId, idea: shareUpdate(idea, { shares: new Map([[repoId, share]]) }) });
+        const idea = await trpcClient.idea.get.query({ space: projectPath, ideaId });
+        await trpcClient.idea.update.mutate({ space: projectPath, ideaId, idea: shareUpdate(idea, { shares: new Map([[repoId, share]]) }) });
       }
       return {
         content: [
@@ -205,7 +205,7 @@ export const repoTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.unlinkRepo.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         ideaId: args.ideaId as string,
         repoId: args.repoId as string,
       });

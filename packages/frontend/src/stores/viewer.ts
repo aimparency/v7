@@ -15,7 +15,7 @@ export const useViewerStore = defineStore('viewer', {
   state: () => ({
     name: null as string | null,
     serverAdmin: !hasAccounts(),
-    canCreateGraphs: !hasAccounts(),
+    canCreateSpaces: !hasAccounts(),
     // A server admin restarts the server from the UI (a supervisor starts it again).
     restartable: false,
     // False for an account held only by this browser's key.
@@ -39,15 +39,15 @@ export const useViewerStore = defineStore('viewer', {
     // Never rejects: until the server answers, the defaults above hold.
     async load() {
       try {
-        const { name, serverAdmin, restartable, canCreateGraphs, permanentLogin, signUp, publicUrl, read } = await trpc.auth.me.query()
-        Object.assign(this, { name, serverAdmin, restartable, canCreateGraphs, permanentLogin, signUp, publicUrl, read })
+        const { name, serverAdmin, restartable, canCreateSpaces, permanentLogin, signUp, publicUrl, read } = await trpc.auth.me.query()
+        Object.assign(this, { name, serverAdmin, restartable, canCreateSpaces, permanentLogin, signUp, publicUrl, read })
       } catch (error) {
         useToastStore().error('Could not ask the server who you are', error)
       }
     },
 
     // After the server logged this connection in or out: keep the token for the
-    // next connection and ask again who we are, here and on the open graph.
+    // next connection and ask again who we are, here and on the open space.
     async loginChanged(token: string | null) {
       storeLoginToken(token)
       await this.load()

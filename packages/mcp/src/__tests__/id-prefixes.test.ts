@@ -8,7 +8,7 @@ const IDS = [
   "d4203221-939e-44e6-bf3f-b3933c790e6b",
 ];
 const client = {
-  graph: {
+  space: {
     idsBeginningWith: {
       query: async ({ prefixes }: { prefixes: string[] }) =>
         Object.fromEntries(prefixes.map((prefix) => [prefix, IDS.filter((id) => id.startsWith(prefix.toLowerCase()))])),
@@ -41,6 +41,6 @@ describe("ids named by their beginning", () => {
 
   it("leave full ids alone without asking", async () => {
     const args = { space: "g", ideaId: IDS[0] };
-    assert.equal(await expandIdPrefixes(args, { graph: { idsBeginningWith: { query: async () => { throw new Error("asked") } } } } as never), args);
+    assert.equal(await expandIdPrefixes(args, { space: { idsBeginningWith: { query: async () => { throw new Error("asked") } } } } as never), args);
   });
 });

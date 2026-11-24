@@ -28,7 +28,7 @@ export async function getTopIdeas(
   projectPath: string,
   limit = 3
 ): Promise<PrioritizedIdea[]> {
-  const allPhases = (await trpc.phase.list.query({ graph: projectPath })) as Phase[];
+  const allPhases = (await trpc.phase.list.query({ space: projectPath })) as Phase[];
   const phaseById = new Map(allPhases.map((p) => [p.id, p]));
 
   const now = Date.now();
@@ -61,8 +61,8 @@ export async function getTopIdeas(
   if (!targetPhase) throw new Error("No active phase with commitments found.");
 
   const [allIdeas, meta] = await Promise.all([
-    trpc.idea.list.query({ graph: projectPath }) as Promise<Idea[]>,
-    trpc.project.getMeta.query({ graph: projectPath }).catch(() => null),
+    trpc.idea.list.query({ space: projectPath }) as Promise<Idea[]>,
+    trpc.project.getMeta.query({ space: projectPath }).catch(() => null),
   ]);
   const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas, defaultIdeaCost(meta));
 
@@ -91,5 +91,5 @@ export async function getTopIdeas(
 }
 
 export async function recordRunOutcome(projectPath: string, ideaId: string, comment: string): Promise<void> {
-  await trpc.idea.update.mutate({ graph: projectPath, ideaId, idea: { status: { comment } } });
+  await trpc.idea.update.mutate({ space: projectPath, ideaId, idea: { status: { comment } } });
 }

@@ -1,4 +1,4 @@
-// What a change would do to the graph's values and priorities, before it is
+// What a change would do to the space's values and priorities, before it is
 // made: the value model run on a changed copy, compared with the current one.
 // Nothing is written.
 
@@ -8,7 +8,7 @@ import { DEFAULT_IDEA_COST } from './constants.js';
 import { isOngoingState } from './work-selection.js';
 
 export type WhatIfChange =
-  /** The ideas leave the graph with their connections, as if deleted. */
+  /** The ideas leave the space with their connections, as if deleted. */
   | { kind: 'remove'; ideaIds: string[] }
   /** The connection parent → child carries this weight. */
   | { kind: 'weight'; parentId: string; childId: string; weight: number };
@@ -38,7 +38,7 @@ export function applyWhatIf(ideas: Idea[], change: WhatIfChange): Idea[] {
 
 /**
  * The ideas whose value or priority the change moves, largest relative move
- * first; values in the graph's absolute units (share × total intrinsic value).
+ * first; values in the space's absolute units (share × total intrinsic value).
  */
 export function whatIf(ideas: Idea[], change: WhatIfChange, defaultCost = DEFAULT_IDEA_COST): { shifts: WhatIfShift[]; topBefore: string[]; topAfter: string[] } {
   const before = calculateIdeaValues(ideas, defaultCost);

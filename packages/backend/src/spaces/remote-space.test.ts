@@ -1,4 +1,4 @@
-// Graphs added from a Git URL: cloned through a closed git environment,
+// Spaces added from a Git URL: cloned through a closed git environment,
 // read-only until their owner selects one of their own keys, then pushed back.
 import { test, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert';
@@ -11,10 +11,10 @@ import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from '../auth/accounts';
 import { pullFastForward } from '../git-follow';
-import { DELETED_DAYS, listGraphs } from './registry';
-import { purgeDeletedGraphs } from './deletion';
-import { addRemote } from './remote-graph';
-import { graphGitEnv, isInternalAddress, remoteGitEnv } from './remote-git';
+import { DELETED_DAYS, listSpaces } from './registry';
+import { purgeDeletedSpaces } from './deletion';
+import { addRemote } from './remote-space';
+import { spaceGitEnv, isInternalAddress, remoteGitEnv } from './remote-git';
 
 let root = '';
 let upstream = '';
@@ -41,24 +41,24 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
-  for (const graph of listGraphs()) clearIndices(graph.path);
+  for (const space of listSpaces()) clearIndices(space.path);
   process.env.AIMPARENCY_SERVER_DIR = localServerDir;
   await fs.remove(root);
 });
 
 const loggedIn = async (name: string) => appRouter.createCaller({ session: { token: (await accounts.login(name, `${name} password`))! } });
 
-test('a remote graph is read-only until its owner selects a key, then commits are pushed back', async () => {
+test('a remote space is read-only until its owner selects a key, then commits are pushed back', async () => {
   const ana = await accounts.createAccount('ana', 'ana password');
   await accounts.createAccount('ben', 'ben password');
-  const graph = await addRemote(url, ana.id, { allowFileUrls: true });
-  assert.equal(graph.slug, 'plans');
-  assert.equal(await fs.pathExists(path.join(graph.path, 'src', 'code.ts')), false, 'only the .bowman is cloned');
+  const space = await addRemote(url, ana.id, { allowFileUrls: true });
+  assert.equal(space.slug, 'plans');
+  assert.equal(await fs.pathExists(path.join(space.path, 'src', 'code.ts')), false, 'only the .bowman is cloned');
 
   const caller = await loggedIn('ana');
-  const idea = { graph: 'plans', idea: { text: 'From the server' } };
+  const idea = { space: 'plans', idea: { text: 'From the server' } };
   await assert.rejects(caller.idea.createFloatingIdea(idea), /open read-only/);
-  assert.deepEqual(await caller.project.getAccess({ graph: 'plans' }).then(({ writable, role }) => ({ writable, role })), { writable: false, role: 'owner' });
+  assert.deepEqual(await caller.project.getAccess({ space: 'plans' }).then(({ writable, role }) => ({ writable, role })), { writable: false, role: 'owner' });
 
   // Only public halves leave the server, and a key is its account's alone.
   const key = await caller.keys.create({ label: 'plans on GitHub' });
@@ -66,54 +66,54 @@ test('a remote graph is read-only until its owner selects a key, then commits ar
   assert.deepEqual(await caller.keys.list(), [key]);
   const ben = await loggedIn('ben');
   assert.deepEqual(await ben.keys.list(), []);
-  await assert.rejects(ben.graphs.setRemoteKey({ graph: 'plans', key: key.id }), /open read-only for ben/);
+  await assert.rejects(ben.spaces.setRemoteKey({ space: 'plans', key: key.id }), /open read-only for ben/);
   const benKey = await ben.keys.create({ label: 'mine' });
-  await assert.rejects(caller.graphs.setRemoteKey({ graph: 'plans', key: benKey.id }), /one of your own keys/);
-  await assert.rejects(caller.graphs.setRemoteKey({ graph: 'plans', key: '../../etc' }), /one of your own keys/);
+  await assert.rejects(caller.spaces.setRemoteKey({ space: 'plans', key: benKey.id }), /one of your own keys/);
+  await assert.rejects(caller.spaces.setRemoteKey({ space: 'plans', key: '../../etc' }), /one of your own keys/);
 
-  await caller.graphs.setRemoteKey({ graph: 'plans', key: key.id });
-  assert.deepEqual((await caller.graphs.getAccess({ graph: 'plans' }))?.remote, { url, key: key.id, keyOwner: 'ana' });
-  const stored = JSON.stringify(await caller.graphs.getAccess({ graph: 'plans' })) + JSON.stringify(await caller.keys.list());
+  await caller.spaces.setRemoteKey({ space: 'plans', key: key.id });
+  assert.deepEqual((await caller.spaces.getAccess({ space: 'plans' }))?.remote, { url, key: key.id, keyOwner: 'ana' });
+  const stored = JSON.stringify(await caller.spaces.getAccess({ space: 'plans' })) + JSON.stringify(await caller.keys.list());
   assert.ok(!stored.includes('PRIVATE KEY') && !stored.includes(path.join(root, 'server')), 'neither the private key nor its file is shown');
 
   await caller.idea.createFloatingIdea(idea);
-  const status = await caller.git.status({ graph: 'plans' });
+  const status = await caller.git.status({ space: 'plans' });
   const changed = status.isRepository ? status.changes.map(change => change.path) : [];
-  await caller.git.commit({ graph: 'plans', paths: changed, message: 'An idea from the server' });
-  assert.deepEqual(await caller.git.push({ graph: 'plans' }), { pushed: 1 });
+  await caller.git.commit({ space: 'plans', paths: changed, message: 'An idea from the server' });
+  assert.deepEqual(await caller.git.push({ space: 'plans' }), { pushed: 1 });
   assert.equal(git(upstream, 'log', '-1', '--format=%s', 'main'), 'An idea from the server');
 
-  // What is pushed elsewhere arrives here, through the graph's own git environment.
+  // What is pushed elsewhere arrives here, through the space's own git environment.
   git(author, 'pull', '-q', 'origin', 'main');
   await fs.outputJson(path.join(author, '.bowman', 'meta.json'), { name: 'Renamed upstream', color: '#336699', dataModelVersion: 6, rootPhaseIds: [] });
   git(author, 'commit', '-qam', 'rename');
   git(author, 'push', '-q', 'origin', 'HEAD:main');
-  const current = listGraphs()[0]!;
-  assert.equal((await pullFastForward(path.join(current.path, '.bowman'), await graphGitEnv(current))).state, 'updated');
-  assert.equal((await caller.project.getMeta({ graph: 'plans' })).name, 'Renamed upstream');
+  const current = listSpaces()[0]!;
+  assert.equal((await pullFastForward(path.join(current.path, '.bowman'), await spaceGitEnv(current))).state, 'updated');
+  assert.equal((await caller.project.getMeta({ space: 'plans' })).name, 'Renamed upstream');
 
   // Without the key it follows its remote again and nobody edits it here.
-  await caller.graphs.setRemoteKey({ graph: 'plans', key: null });
+  await caller.spaces.setRemoteKey({ space: 'plans', key: null });
   await assert.rejects(caller.idea.createFloatingIdea(idea), /open read-only/);
   await caller.keys.remove({ id: key.id });
   assert.deepEqual(await caller.keys.list(), []);
 
-  await caller.graphs.remove({ graph: 'plans' });
-  await purgeDeletedGraphs(Date.now() + DELETED_DAYS * 86_400_000);
+  await caller.spaces.remove({ space: 'plans' });
+  await purgeDeletedSpaces(Date.now() + DELETED_DAYS * 86_400_000);
   assert.equal(await fs.pathExists(current.path), false);
 });
 
 test('what a visitor enters is fetched only from public https and ssh addresses', async () => {
   await accounts.createAccount('ana', 'ana password');
   const caller = await loggedIn('ana');
-  await assert.rejects(appRouter.createCaller({ session: {} }).graphs.addRemote({ url: 'https://github.com/aimparency/v7.git' }), /Log in first/);
+  await assert.rejects(appRouter.createCaller({ session: {} }).spaces.addRemote({ url: 'https://github.com/aimparency/v7.git' }), /Log in first/);
   for (const refused of [url, '/etc', 'ext::sh -c id', 'http://example.org/repo.git']) {
-    await assert.rejects(caller.graphs.addRemote({ url: refused }), /Not a Git URL|Only https and ssh/, refused);
+    await assert.rejects(caller.spaces.addRemote({ url: refused }), /Not a Git URL|Only https and ssh/, refused);
   }
   for (const internal of ['https://127.0.0.1/repo.git', 'https://localhost/repo.git', 'ssh://git@192.168.1.10/repo.git', 'https://[::1]/repo.git', 'git@10.0.0.5:team/repo.git']) {
-    await assert.rejects(caller.graphs.addRemote({ url: internal }), /not a public address/, internal);
+    await assert.rejects(caller.spaces.addRemote({ url: internal }), /not a public address/, internal);
   }
-  assert.deepEqual(listGraphs(), []);
+  assert.deepEqual(listSpaces(), []);
   for (const address of ['10.1.2.3', '172.20.0.1', '169.254.169.254', '100.100.100.100', '::1', 'fd00::1', 'fe80::1', '::ffff:127.0.0.1']) {
     assert.ok(isInternalAddress(address), address);
   }
@@ -140,19 +140,19 @@ test('git for a remote uses nothing of the server user: no agent, no config, onl
   }
 });
 
-test('a graph larger than the server allows is not kept', async () => {
+test('a space larger than the server allows is not kept', async () => {
   const ana = await accounts.createAccount('ana', 'ana password');
-  updateServerConfig({ limits: { graphMegabytes: 0.001 } });
+  updateServerConfig({ limits: { spaceMegabytes: 0.001 } });
   await fs.outputFile(path.join(author, '.bowman', 'ideas', 'big.json'), 'x'.repeat(5000));
   git(author, 'add', '-A');
   git(author, 'commit', '-qm', 'big');
   git(author, 'push', '-q', 'origin', 'HEAD:main');
   await assert.rejects(addRemote(url, ana.id, { allowFileUrls: true }), /larger than the 0.001 MB/);
-  assert.deepEqual(listGraphs(), []);
+  assert.deepEqual(listSpaces(), []);
   assert.equal(await fs.pathExists(path.join(root, 'server', 'remotes', 'plans')), false);
 });
 
-test('with a deploy key a remote graph is writable from the start, and a repository without a .bowman gets a new space', async () => {
+test('with a deploy key a remote space is writable from the start, and a repository without a .bowman gets a new space', async () => {
   await accounts.createAccount('ana', 'ana password');
   const ana = await loggedIn('ana');
   const key = await ana.keys.create({ label: 'game deploy key' });
@@ -169,26 +169,26 @@ test('with a deploy key a remote graph is writable from the start, and a reposit
   const anaAccount = accounts.findAccount('ana')!;
   await assert.rejects(addRemote(`file://${game}`, anaAccount.id, { allowFileUrls: true }), /no \.bowman/);
 
-  const graph = await addRemote(`file://${game}`, anaAccount.id, { allowFileUrls: true, key: { account: anaAccount.id, id: key.id } });
-  assert.equal(graph.started, true);
-  assert.equal(graph.pushError, undefined);
-  assert.deepEqual(graph.remote, { url: `file://${game}`, key: { account: anaAccount.id, id: key.id } });
+  const space = await addRemote(`file://${game}`, anaAccount.id, { allowFileUrls: true, key: { account: anaAccount.id, id: key.id } });
+  assert.equal(space.started, true);
+  assert.equal(space.pushError, undefined);
+  assert.deepEqual(space.remote, { url: `file://${game}`, key: { account: anaAccount.id, id: key.id } });
   // Pushed: the repository now holds the space, its code untouched.
   git(gameAuthor, 'pull', '-q', 'origin', 'main');
   assert.equal((await fs.readJson(path.join(gameAuthor, '.bowman', 'meta.json'))).name, 'game');
   assert.ok(await fs.pathExists(path.join(gameAuthor, 'src', 'main.ts')));
 
   // Writable at once.
-  await ana.idea.createFloatingIdea({ graph: graph.slug, idea: { text: 'Level one' } });
+  await ana.idea.createFloatingIdea({ space: space.slug, idea: { text: 'Level one' } });
 
   // Someone else's key is refused.
   await accounts.createAccount('ben', 'ben password');
   const ben = await loggedIn('ben');
-  await assert.rejects(ben.graphs.addRemote({ url: 'https://github.com/someone/repo', key: key.id }), /one of your own keys/);
+  await assert.rejects(ben.spaces.addRemote({ url: 'https://github.com/someone/repo', key: key.id }), /one of your own keys/);
 });
 
 test('an https address becomes its SSH address when a key is used', async () => {
-  const { sshUrlOf } = await import('./remote-graph');
+  const { sshUrlOf } = await import('./remote-space');
   assert.equal(sshUrlOf('https://github.com/aimparency/game'), 'git@github.com:aimparency/game.git');
   assert.equal(sshUrlOf('https://github.com/aimparency/game.git/'), 'git@github.com:aimparency/game.git');
   assert.equal(sshUrlOf('git@github.com:aimparency/game.git'), 'git@github.com:aimparency/game.git');

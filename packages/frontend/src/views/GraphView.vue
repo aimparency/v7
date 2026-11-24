@@ -19,7 +19,7 @@ import type { PhaseSearchSelection } from '../stores/ui/phase-search-types'
 import * as vec2 from '../utils/vec2'
 import { isIdeaNode, useGraphSimulation, type GraphLink } from '../composables/useGraphSimulation'
 import { useGraphInteraction } from '../composables/useGraphInteraction'
-import { useLinkedGraphOutlines } from '../composables/useLinkedGraphOutlines'
+import { useLinkedSpaceOutlines } from '../composables/useLinkedSpaceOutlines'
 import { useWebGLGraphRenderer } from '../composables/useWebGLGraphRenderer'
 import { saveProjectThumbnail } from '../utils/db'
 import { connectionArrowWidth, narrowestHitLink } from '../webgl/utils/arrow-geometry'
@@ -52,12 +52,12 @@ const { nodes, links, trigger, randomizeLayout, setLayoutForces } = simulation
 // WebGL renderer
 const webglRenderer = useWebGLGraphRenderer(canvasRef, nodes, links)
 
-// Strings around the linked graphs opened in place
-const { outlines: linkedGraphOutlines, graphAt } = useLinkedGraphOutlines(nodes, trigger)
-const dropGraphId = computed(() => mapStore.connecting && mapStore.connectDrop.kind === 'graph' ? mapStore.connectDrop.repoId : undefined)
+// Strings around the linked spaces opened in place
+const { outlines: linkedSpaceOutlines, spaceAt } = useLinkedSpaceOutlines(nodes, trigger)
+const dropSpaceId = computed(() => mapStore.connecting && mapStore.connectDrop.kind === 'space' ? mapStore.connectDrop.repoId : undefined)
 
 // Use canvas for interaction (same API as SVG)
-const interaction = useGraphInteraction(canvasRef, width, height, simulation, graphAt)
+const interaction = useGraphInteraction(canvasRef, width, height, simulation, spaceAt)
 const { onNodeDown, onNodeUp, onNodeClick, onBackgroundClick, onMouseDown, onMouseMove, onMouseUp, isZooming } = interaction
 
 // Hit test helper - find node at physical position
@@ -286,9 +286,9 @@ const unreadableIdeasSummary = computed(() =>
 // Beside each offered space, open or closed: who offers it, and accepting or declining it.
 const offerCards = computed(() => {
     if (dataStore.offers.length === 0) return []
-    return linkedGraphOutlines.value.flatMap(({ repoId, pending, outline }) => {
+    return linkedSpaceOutlines.value.flatMap(({ repoId, pending, outline }) => {
         if (!pending) return []
-        const offers = dataStore.offers.filter(offer => offer.space?.repoId === repoId)
+        const offers = dataStore.offers.filter(offer => offer.offeredSpace?.repoId === repoId)
         return offers.length ? [{ repoId, x: outline.cx, y: outline.cy, r: Math.max(...outline.radii), offers }] : []
     })
 })
@@ -413,7 +413,7 @@ async function startLayoutPreview() {
   if (layoutPreview.value || layoutSolving.value) return
   layoutSolving.value = true
   try {
-    const { links: semanticPairs } = await trpc.graph.getSemanticNeighbours.query({ graph: projectStore.projectPath })
+    const { links: semanticPairs } = await trpc.space.getSemanticNeighbours.query({ space: projectStore.projectPath })
     const saved = withLayoutDefaults(dataStore.meta?.layout)
     layoutSettings.value = { ...saved }
     layoutShare.value = LAYOUT_PREVIEW_SHARE
@@ -536,7 +536,7 @@ async function applyLayoutPreview() {
   closeLayoutPreview()
   if (applied.length > 0) await dataStore.setConnectionPositions(projectStore.projectPath, applied)
   if (!sameLayoutSettings(settings, preview.saved)) {
-    dataStore.meta = await trpc.project.setLayoutSettings.mutate({ graph: projectStore.projectPath, layout: settings })
+    dataStore.meta = await trpc.project.setLayoutSettings.mutate({ space: projectStore.projectPath, layout: settings })
   }
   const ideas = changedIdeas(applied).length
   useToastStore().info(`Layout changed ${ideas} ideas (${applied.length} connections).`)
@@ -605,25 +605,25 @@ function toggleSpinOffPreview() {
         @mouseup="onMouseUp"
     >
       <g :transform="transform">
-        <template v-for="outline in linkedGraphOutlines" :key="outline.repoId">
+        <template v-for="outline in linkedSpaceOutlines" :key="outline.repoId">
           <path
-            class="linked-graph-outline"
-            :class="{ 'drop-target': dropGraphId === outline.repoId, collapsed: outline.collapsed }"
+            class="linked-space-outline"
+            :class="{ 'drop-target': dropSpaceId === outline.repoId, collapsed: outline.collapsed }"
             :d="outline.path"
             :stroke="outline.color"
             :fill="outline.color"
-            :stroke-width="(dropGraphId === outline.repoId ? 5 : 2.5) / visualScale"
+            :stroke-width="(dropSpaceId === outline.repoId ? 5 : 2.5) / visualScale"
             :stroke-dasharray="outline.pending ? `${2 / visualScale} ${9 / visualScale}` : undefined"
             stroke-linecap="round"
           />
           <!-- An open space closes again by its string: a wide band to click -->
           <path
             v-if="!outline.collapsed"
-            class="linked-graph-outline-hit"
+            class="linked-space-outline-hit"
             :d="outline.path"
             :stroke-width="16 / visualScale"
             @mousedown.stop
-            @click.stop="dataStore.toggleLinkedGraph(outline.repoId)"
+            @click.stop="dataStore.toggleLinkedSpace(outline.repoId)"
           >
             <title>Close this space</title>
           </path>
@@ -860,7 +860,7 @@ function toggleSpinOffPreview() {
   pointer-events: none;
 }
 
-.linked-graph-outline {
+.linked-space-outline {
   fill-opacity: 0.05;
   stroke-opacity: 0.7;
   pointer-events: none;
@@ -872,7 +872,7 @@ function toggleSpinOffPreview() {
   }
 }
 
-.linked-graph-outline-hit {
+.linked-space-outline-hit {
   fill: none;
   stroke: transparent;
   pointer-events: stroke;

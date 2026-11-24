@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { isOngoingState, type Idea } from 'shared';
 
 // The harness cycle as an explicit stage machine. Each model stage ends with a
-// zod-validated result; the harness, not the model, turns results into graph
+// zod-validated result; the harness, not the model, turns results into space
 // writes. Everything here is pure so the transitions are testable without a model.
 
 export type Stage = 'orient' | 'decompose' | 'execute' | 'verify' | 'reflect' | 'record';
@@ -133,7 +133,7 @@ export function applyReceipts(verification: Verification, receipts: Receipt[]): 
 
 /** The system text every stage starts with: the loop's own prompt, then the harness contract. */
 export function stageSystemBase(loopSystemPrompt: string): string {
-  return `${loopSystemPrompt}\n\nYou are one stage of the aimparency harness. The harness picked the idea, owns the loop and writes all results to the idea graph; you work on this one idea and finish by calling the submit tool.`;
+  return `${loopSystemPrompt}\n\nYou are one stage of the aimparency harness. The harness picked the idea, owns the loop and writes all results to the idea space; you work on this one idea and finish by calling the submit tool.`;
 }
 
 export function decomposeInstructions(maxChildren: number): string {

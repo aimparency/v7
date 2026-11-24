@@ -17,7 +17,7 @@ import ServerSettingsModal from './ServerSettingsModal.vue'
 import ServerPowerMenu from './ServerPowerMenu.vue'
 
 // The account corner on a server with accounts: anyone reads, accounts write
-// the graphs they own or were given.
+// the spaces they own or were given.
 const viewer = useViewerStore()
 type Dialog = 'login' | 'sign-up' | 'password' | 'permanent' | 'accounts' | 'server' | 'mcp' | 'discard' | 'delete'
 const dialog = ref<Dialog | null>(null)

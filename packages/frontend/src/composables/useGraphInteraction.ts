@@ -17,8 +17,8 @@ export function useGraphInteraction(
     width: Ref<number>,
     height: Ref<number>,
     simulation: ReturnType<typeof useGraphSimulation>,
-    // The linked graph opened in place whose outline holds a logical point.
-    graphAt: (pos: vec2.T) => string | undefined = () => undefined
+    // The linked space opened in place whose outline holds a logical point.
+    spaceAt: (pos: vec2.T) => string | undefined = () => undefined
 ) {
     // Alias for backwards compatibility
     const svgRef = elementRef
@@ -257,8 +257,8 @@ export function useGraphInteraction(
                     const rSum = (from.r ?? 25) * 2
                     modalStore.openProposeModal(from.id, [((at[0] ?? 0) - from.pos[0]) / rSum, ((at[1] ?? 0) - from.pos[1]) / rSum])
                 } else mayEdit()
-            } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'graph') {
-                void contributeGraph(mapStore.connectFrom as GraphNode, drop.repoId)
+            } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'space') {
+                void contributeSpace(mapStore.connectFrom as GraphNode, drop.repoId)
             } else if (!connectionHandled && mapStore.connectFrom && mapStore.cursorMoved && drop.kind === 'new') {
                 const parentNode = mapStore.connectFrom
                 // A copy: the mouse moves on while the idea modal is open.
@@ -267,7 +267,7 @@ export function useGraphInteraction(
 
                 modalStore.ideaCreationParentId = parentNode.id
                 modalStore.ideaCreationCallback = async (newIdeaId, onConnectionConfirmed) => {
-                    const graph = projectStore.projectPath
+                    const space = projectStore.projectPath
                     const parentR = parentNode.r ?? 25
                     const relativeTo = (childR: number): [number, number] =>
                         [(dropX - (parentNode.pos[0] ?? 0)) / (parentR + childR), (dropY - (parentNode.pos[1] ?? 0)) / (parentR + childR)]
@@ -283,14 +283,14 @@ export function useGraphInteraction(
                     // connection must not wait for it.
                     try {
                         await trpc.idea.connectIdeas.mutate({
-                            graph,
+                            space,
                             parentIdeaId: parentNode.id,
                             childIdeaId: newIdeaId,
                             relativePosition: relativeTo(nodeMap.get(newIdeaId)?.r ?? 25),
                             weight: averageSupportWeight(dataStore.ideas[parentNode.id]),
                         })
                         // Both ideas' incoming/outgoing arrays.
-                        await dataStore.loadIdeas(graph, [parentNode.id, newIdeaId])
+                        await dataStore.loadIdeas(space, [parentNode.id, newIdeaId])
                     } catch (err) {
                         toastStore.error('Connection failed', err)
                         return
@@ -304,7 +304,7 @@ export function useGraphInteraction(
                         const relativePosition = relativeTo(newNode.r ?? 25)
                         const link = links.value.find(l => l.source.id === newIdeaId && l.target.id === parentNode.id)
                         if (link) link.relativePosition = relativePosition
-                        await (dataStore as any).updateConnectionPosition(graph, parentNode.id, newIdeaId, relativePosition)
+                        await (dataStore as any).updateConnectionPosition(space, parentNode.id, newIdeaId, relativePosition)
                     }
                     // Offer contribution % + hypothesis for the new connection.
                     modalStore.openConnectionDetailsModal(parentNode.id, newIdeaId, onConnectionConfirmed)
@@ -358,7 +358,7 @@ export function useGraphInteraction(
         if (over && !over.isRepo && over.space !== fromSpace) {
             // Ideas of two spaces are not connected one by one: an idea of
             // the open space may take the other space as a whole.
-            mapStore.connectDrop = !fromSpace && over.space ? { kind: 'graph', repoId: over.space } : { kind: 'blocked' }
+            mapStore.connectDrop = !fromSpace && over.space ? { kind: 'space', repoId: over.space } : { kind: 'blocked' }
             return
         }
         if (fromSpace) {
@@ -366,12 +366,12 @@ export function useGraphInteraction(
             mapStore.connectDrop = over ? (over.isRepo ? { kind: 'blocked' } : connectDrop(over, undefined)) : { kind: 'new' }
             return
         }
-        mapStore.connectDrop = connectDrop(over, over ? undefined : graphAt(at))
+        mapStore.connectDrop = connectDrop(over, over ? undefined : spaceAt(at))
     }
 
-    // The linked graph supports the idea: one connection on the benefiting
-    // idea (supportingRepos), placed where the graph's node is now.
-    const contributeGraph = async (benefiting: GraphNode, repoId: string) => {
+    // The linked space supports the idea: one connection on the benefiting
+    // idea (supportingRepos), placed where the space's node is now.
+    const contributeSpace = async (benefiting: GraphNode, repoId: string) => {
         if (dataStore.ideas[benefiting.id]?.supportingRepos?.some(edge => edge.repoId === repoId)) {
             toastStore.info('That space already supports this idea.')
             return
@@ -382,7 +382,7 @@ export function useGraphInteraction(
             ? [(graphNode.pos[0] - benefiting.pos[0]) / rSum, (graphNode.pos[1] - benefiting.pos[1]) / rSum]
             : undefined
         try {
-            await trpc.idea.linkRepo.mutate({ graph: projectStore.projectPath, ideaId: benefiting.id, repoId, relativePosition })
+            await trpc.idea.linkRepo.mutate({ space: projectStore.projectPath, ideaId: benefiting.id, repoId, relativePosition })
             await dataStore.loadIdeas(projectStore.projectPath, [benefiting.id])
         } catch (e) {
             toastStore.error('Failed to link the space', e)
@@ -581,20 +581,20 @@ export function useGraphInteraction(
             if (!mayEdit(parent.id)) return
             // Across spaces: the drop decided it while dragging (a whole space, or nothing).
             if (child.space !== parent.space && !child.isRepo) {
-                if (mapStore.connectDrop.kind === 'graph' && isIdeaNode(parent)) await contributeGraph(parent, mapStore.connectDrop.repoId)
+                if (mapStore.connectDrop.kind === 'space' && isIdeaNode(parent)) await contributeSpace(parent, mapStore.connectDrop.repoId)
                 return
             }
 
             if (!isIdeaNode(parent)) return
-            // Dropped on a linked graph's node: that graph supports the idea
+            // Dropped on a linked space's node: that space supports the idea
             // (an idea of the open space only: the link is the open space's).
             if (child.isRepo) {
                 if (parent.space) return
-                await contributeGraph(parent, child.id)
+                await contributeSpace(parent, child.id)
                 return
             }
-            // An idea of a linked graph lies across the boundary between
-            // graphs, and an unreadable idea can't be written.
+            // An idea of a linked space lies across the boundary between
+            // spaces, and an unreadable idea can't be written.
             if (!isIdeaNode(child)) return
 
             // Validate positions and radii
@@ -612,7 +612,7 @@ export function useGraphInteraction(
 
             try {
                 await trpc.idea.connectIdeas.mutate({
-                    graph: projectStore.projectPath,
+                    space: projectStore.projectPath,
                     parentIdeaId: parent.id,
                     childIdeaId: child.id,
                     relativePosition,
@@ -643,10 +643,10 @@ export function useGraphInteraction(
         }
         // Repo and unreadable-idea nodes have no idea detail to select or track
         // (the label tooltip shows an unreadable idea's error); never select
-        // them as ideas. A linked graph with an address opens in place on
+        // them as ideas. A linked space with an address opens in place on
         // click, where its ideas are ideas like any other.
         if (!isIdeaNode(node)) {
-            if (node.isRepo && node.host && !mapStore.cursorMoved) void dataStore.toggleLinkedGraph(node.id)
+            if (node.isRepo && node.host && !mapStore.cursorMoved) void dataStore.toggleLinkedSpace(node.id)
             return
         }
 

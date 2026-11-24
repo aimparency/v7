@@ -24,8 +24,8 @@ import { loadVectorStore } from '../embeddings.js';
 import { backfillEmbeddings, ensureEmbeddings } from '../embedding-backfill.js';
 import { ensureSearchIndex } from '../search-index.js';
 import { t, procedure, delayedProcedure } from '../trpc.js';
-import { findGraphByPath } from '../graphs/registry.js';
-import { graphAddress, resolveGraphAddress } from '../graphs/address.js';
+import { findSpaceByPath } from '../spaces/registry.js';
+import { spaceAddress, resolveSpaceAddress } from '../spaces/address.js';
 
 const projectDiscoveryInputSchema = z.object({
   roots: z.array(z.string()).optional(),
@@ -92,50 +92,50 @@ const discoverProjectsFromRoot = async (
 };
 
 export const projectRouter = t.router({
-  // One graph's changes. The client gets its own address back, never the
+  // One space's changes. The client gets its own address back, never the
   // directory on the server.
   onUpdate: procedure
-    .input(z.object({ graph: z.string() }))
+    .input(z.object({ space: z.string() }))
     .subscription(({ input }) => {
-      const graphPath = normalizeProjectPath(resolveGraphAddress(input.graph).path);
+      const spacePath = normalizeProjectPath(resolveSpaceAddress(input.space).path);
       return observable<ChangeEvent & { origin?: string }>((emit) =>
         // Listeners run inside the emitting request's context: tag the origin
         // so clients can recognize (and undo) their own changes.
         onChange((event) => {
-          if (normalizeProjectPath(event.projectPath) !== graphPath) return;
-          emit.next({ ...event, projectPath: input.graph, origin: currentOrigin() });
+          if (normalizeProjectPath(event.projectPath) !== spacePath) return;
+          emit.next({ ...event, projectPath: input.space, origin: currentOrigin() });
         })
       );
     }),
 
   getMeta: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ ctx, input }) => {
       // Clients call getMeta first when opening a project: warm the search index
       // and vector store now so the first idea-creation search isn't the cold
       // one, and embed ideas that have no current embedding yet. Embedding costs
-      // the server, so only those who write the graph set it off: a visitor
-      // opening many graphs must not keep the server busy.
-      void Promise.all([ensureSearchIndex(input.graph), loadVectorStore(input.graph)])
+      // the server, so only those who write the space set it off: a visitor
+      // opening many spaces must not keep the server busy.
+      void Promise.all([ensureSearchIndex(input.space), loadVectorStore(input.space)])
         .catch(error => console.warn('[Search] Warm-up failed:', error));
-      const writes = rightOn(findGraphByPath(input.graph), ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'read';
-      if (writes && process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.graph).catch(console.error);
-      return await readProjectMeta(input.graph);
+      const writes = rightOn(findSpaceByPath(input.space), ctx.viewer ?? viewerFor(ctx.session?.token)) !== 'read';
+      if (writes && process.env.NODE_ENV !== 'test') void ensureEmbeddings(input.space).catch(console.error);
+      return await readProjectMeta(input.space);
     }),
 
-  // Whether the graph may be changed here; the UI disables editing otherwise.
+  // Whether the space may be changed here; the UI disables editing otherwise.
   getAccess: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ ctx, input }) => {
-      const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.graph));
+      const blocker = await bowmanWriteBlocker(normalizeProjectPath(input.space));
       const viewer = ctx.viewer ?? viewerFor(ctx.session?.token);
-      const graph = findGraphByPath(input.graph);
-      const reason = blocker?.message ?? readOnlyReason(graph, viewer);
-      return { writable: reason === null, reason, user: viewer.name, role: rightOn(graph, viewer), serverAdmin: viewer.serverAdmin };
+      const space = findSpaceByPath(input.space);
+      const reason = blocker?.message ?? readOnlyReason(space, viewer);
+      return { writable: reason === null, reason, user: viewer.name, role: rightOn(space, viewer), serverAdmin: viewer.serverAdmin };
     }),
 
   // Someone else's project by Git URL: cached clone of its .bowman, read-only.
@@ -168,30 +168,30 @@ export const projectRouter = t.router({
     }),
 
   inspectPath: delayedProcedure
-    .input(z.object({ graph: graphAddress }))
+    .input(z.object({ space: spaceAddress }))
     .query(async ({ input }) => {
-      const bowmanPath = resolveBowmanPath(input.graph);
+      const bowmanPath = resolveBowmanPath(input.space);
       return {
-        projectPath: input.graph,
+        projectPath: input.space,
         bowmanPath,
-        bowmanExists: await bowmanExists(input.graph),
-        matches: await completeDirectoryPath(input.graph),
+        bowmanExists: await bowmanExists(input.space),
+        matches: await completeDirectoryPath(input.space),
       };
     }),
 
   buildSearchIndex: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .mutation(async ({ input }) => {
-      const ideas = await listIdeas(input.graph);
-      const phases = await listPhases(input.graph);
+      const ideas = await listIdeas(input.space);
+      const phases = await listPhases(input.space);
 
-      indexIdeas(input.graph, ideas);
-      indexPhases(input.graph, phases);
+      indexIdeas(input.space, ideas);
+      indexPhases(input.space, phases);
 
       // Background embedding generation
-      if (process.env.NODE_ENV !== 'test') void backfillEmbeddings(input.graph).catch(console.error);
+      if (process.env.NODE_ENV !== 'test') void backfillEmbeddings(input.space).catch(console.error);
 
       return {
         success: true,
@@ -204,7 +204,7 @@ export const projectRouter = t.router({
 
   updateMeta: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       meta: z.object({
         name: z.string(),
         color: z.string().regex(/^#[0-9a-fA-F]{6}$/),
@@ -220,7 +220,7 @@ export const projectRouter = t.router({
       })
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       await ensureProjectStructure(projectPath);
       const metaPath = path.join(projectPath, 'meta.json');
       // Preserve fields the editor doesn't send (repoId, linkedRepos, …) by
@@ -243,19 +243,19 @@ export const projectRouter = t.router({
   // The graph's Layout panel stores the settings it applied with.
   setLayoutSettings: delayedProcedure
     .input(z.object({
-      graph: graphAddress,
+      space: spaceAddress,
       layout: LayoutSettingsSchema
     }))
     .mutation(async ({ input }) => {
-      return await updateProjectMeta(input.graph, meta => ({ ...meta, layout: input.layout }));
+      return await updateProjectMeta(input.space, meta => ({ ...meta, layout: input.layout }));
     }),
 
   injectAgentInstructions: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .mutation(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       await assertWritableBowman(projectPath); // writes into the repository itself
       const rootDir = path.dirname(projectPath); // Project root (above .bowman)
 
@@ -304,21 +304,21 @@ export const projectRouter = t.router({
       return { results };
     }),
 
-  // All ideas in one read, plus the files that fail to load (the graph shows
+  // All ideas in one read, plus the files that fail to load (the space shows
   // them as warning nodes).
   loadIdeas: delayedProcedure
     .input(z.object({
-      graph: graphAddress
+      space: spaceAddress
     }))
     .query(async ({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       return scanIdeaFiles(projectPath, ['ideas'], (done, total) => reportProjectLoadProgress({ projectPath, done, total }));
     }),
 
   onLoadProgress: procedure
-    .input(z.object({ graph: graphAddress }))
+    .input(z.object({ space: spaceAddress }))
     .subscription(({ input }) => {
-      const projectPath = normalizeProjectPath(input.graph);
+      const projectPath = normalizeProjectPath(input.space);
       return observable<Pick<ProjectLoadProgress, 'done' | 'total'>>((emit) =>
         onProjectLoadProgress(({ projectPath: loading, done, total }) => { if (loading === projectPath) emit.next({ done, total }); }));
     })

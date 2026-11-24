@@ -7,7 +7,7 @@ import { normalizeProjectPath } from '../project-path.js';
 // copy from a list or a commit message.
 const DIRS = ['ideas', 'archived-ideas', 'phases'];
 
-/** Every id of the graph (ideas, archived ideas, phases) that begins with each prefix. */
+/** Every id of the space (ideas, archived ideas, phases) that begins with each prefix. */
 export async function idsBeginningWith(rawProjectPath: string, prefixes: string[]): Promise<Record<string, string[]>> {
   const projectPath = normalizeProjectPath(rawProjectPath);
   const ids = new Set<string>();

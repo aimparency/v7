@@ -1,4 +1,4 @@
-// The environment for git commands that talk to the remote of a graph somebody
+// The environment for git commands that talk to the remote of a space somebody
 // added by URL. On a server with accounts that somebody is a stranger, so:
 //
 // - only https and ssh, and never a host inside the server's own network (the
@@ -6,7 +6,7 @@
 //   cannot point elsewhere a moment later; redirects are not followed);
 // - none of the server user's own git setup: no credential helpers, no URL
 //   rewrites, no SSH agent, no keys from ~/.ssh;
-// - the only key is the one the graph's owner selected for it;
+// - the only key is the one the space's owner selected for it;
 // - nothing from the repository runs: no hooks.
 //
 // A checkout the server admin listed is their own repository and uses the
@@ -16,7 +16,7 @@ import dns from 'node:dns/promises';
 import net from 'node:net';
 import path from 'node:path';
 import { hasAccounts, serverDir } from 'shared/server-config';
-import { findGraphByPath, type Graph } from './registry.js';
+import { findSpaceByPath, type Space } from './registry.js';
 import { privateKeyFile } from './ssh-keys.js';
 
 const INTERNAL = new net.BlockList();
@@ -55,10 +55,10 @@ async function publicAddress(host: string): Promise<string> {
 
 const shellQuote = (value: string) => `'${value.replace(/'/g, `'\\''`)}'`;
 
-/** `keyFile`: the private key the graph's owner selected, if any. */
+/** `keyFile`: the private key the space's owner selected, if any. */
 export async function remoteGitEnv(url: string, keyFile: string | null): Promise<NodeJS.ProcessEnv> {
   const remote = parseRemote(url);
-  // A file remote exists only in tests and where the operator wrote it into graphs.json.
+  // A file remote exists only in tests and where the operator wrote it into spaces.json.
   const pinned = remote.protocol === 'file' || !hasAccounts() ? null : await publicAddress(remote.host);
   const ssh = [
     'ssh', '-F', '/dev/null', '-o', 'BatchMode=yes', '-o', 'IdentitiesOnly=yes', '-o', 'IdentityAgent=none',
@@ -85,14 +85,14 @@ export async function remoteGitEnv(url: string, keyFile: string | null): Promise
   };
 }
 
-export async function graphGitEnv(graph: Graph): Promise<NodeJS.ProcessEnv> {
-  if (!graph.remote) return { ...process.env, GIT_TERMINAL_PROMPT: '0' };
-  const keyFile = graph.remote.key ? await privateKeyFile(graph.remote.key.account, graph.remote.key.id) : null;
-  return remoteGitEnv(graph.remote.url, keyFile);
+export async function spaceGitEnv(space: Space): Promise<NodeJS.ProcessEnv> {
+  if (!space.remote) return { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+  const keyFile = space.remote.key ? await privateKeyFile(space.remote.key.account, space.remote.key.id) : null;
+  return remoteGitEnv(space.remote.url, keyFile);
 }
 
-/** For git in this directory: a graph added by URL gets the closed environment above. */
+/** For git in this directory: a space added by URL gets the closed environment above. */
 export async function gitEnvFor(directory: string): Promise<NodeJS.ProcessEnv> {
-  const graph = findGraphByPath(directory);
-  return graph ? graphGitEnv(graph) : { ...process.env, GIT_TERMINAL_PROMPT: '0' };
+  const space = findSpaceByPath(directory);
+  return space ? spaceGitEnv(space) : { ...process.env, GIT_TERMINAL_PROMPT: '0' };
 }

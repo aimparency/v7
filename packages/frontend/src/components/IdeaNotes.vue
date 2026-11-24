@@ -10,9 +10,9 @@ import { useViewerStore } from '../stores/viewer'
 import { formatRelativeTime } from '../utils/relative-time'
 import { hasAccounts } from '../utils/runtime-config'
 
-// What visitors leave on an idea of a graph they cannot change: a note (an
+// What visitors leave on an idea of a space they cannot change: a note (an
 // idea, a question) or "I'd like to work on this". Kept on the server, not in
-// the graph; its owner and writers read them and may remove them. An offer
+// the space; its owner and writers read them and may remove them. An offer
 // proposes a whole space as support: those who write accept it (linking that
 // space) or decline it (removing the offer).
 const props = defineProps<{ ideaId: string }>()
@@ -28,7 +28,7 @@ const text = ref('')
 const load = async () => {
   if (!accounts) return
   try {
-    const listing = await trpc.notes.list.query({ graph: projectStore.projectPath, ideaId: props.ideaId })
+    const listing = await trpc.notes.list.query({ space: projectStore.projectPath, ideaId: props.ideaId })
     notes.value = listing.notes
     mayAdd.value = listing.mayAdd
   } catch (error) {
@@ -43,7 +43,7 @@ const accepting = ref<string | null>(null)
 const accept = async (id: string) => {
   accepting.value = id
   try {
-    await trpc.notes.acceptOffer.mutate({ graph: projectStore.projectPath, id })
+    await trpc.notes.acceptOffer.mutate({ space: projectStore.projectPath, id })
     notes.value = notes.value.filter(note => note.id !== id)
     await dataStore.ensureProjectMeta(projectStore.projectPath, { force: true })
     await dataStore.loadIdeas(projectStore.projectPath, [props.ideaId])
@@ -58,7 +58,7 @@ const add = async (kind: 'note' | 'interest') => {
   // Where the server gives accounts automatically, the visitor gets theirs now.
   if (!await viewer.ensureAccount()) return
   try {
-    notes.value.push(await trpc.notes.add.mutate({ graph: projectStore.projectPath, ideaId: props.ideaId, kind, text: text.value }))
+    notes.value.push(await trpc.notes.add.mutate({ space: projectStore.projectPath, ideaId: props.ideaId, kind, text: text.value }))
     text.value = ''
   } catch (error) {
     useToastStore().error('Could not add the note', error)
@@ -67,7 +67,7 @@ const add = async (kind: 'note' | 'interest') => {
 
 const remove = async (id: string) => {
   try {
-    await trpc.notes.remove.mutate({ graph: projectStore.projectPath, id })
+    await trpc.notes.remove.mutate({ space: projectStore.projectPath, id })
     notes.value = notes.value.filter(note => note.id !== id)
   } catch (error) {
     useToastStore().error('Could not remove the note', error)
@@ -82,8 +82,8 @@ const remove = async (id: string) => {
     <div v-for="note in notes" :key="note.id" class="note">
       <span class="by">{{ note.author }} · {{ formatRelativeTime(Date.parse(note.createdAt)) }}</span>
       <button v-if="note.removable" class="remove" :title="note.kind === 'offer' ? 'Decline this offer' : 'Remove this note'" @click="remove(note.id)"><X /></button>
-      <p v-if="note.kind === 'offer' && note.space">
-        <em>offers the space</em> <a :href="note.space.host" target="_blank" rel="noopener">{{ note.space.name }}</a><template v-if="note.text">: {{ note.text }}</template>
+      <p v-if="note.kind === 'offer' && note.offeredSpace">
+        <em>offers the space</em> <a :href="note.offeredSpace.host" target="_blank" rel="noopener">{{ note.offeredSpace.name }}</a><template v-if="note.text">: {{ note.text }}</template>
       </p>
       <p v-else><em v-if="note.kind === 'interest'">would like to work on this</em> {{ note.text }}</p>
       <div v-if="note.kind === 'offer' && dataStore.mayEditIdea(props.ideaId)" class="actions">

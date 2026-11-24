@@ -1,9 +1,9 @@
 // Accounts of a server with `"login": "accounts"`. They belong to the server,
-// not to a graph: accounts.json in the server directory, never in a .bowman, so
+// not to a space: accounts.json in the server directory, never in a .bowman, so
 // git never carries them. Passwords are salted scrypt hashes; login tokens are
-// random and stored as sha256 only. What an account may do on a graph is the
-// graph's business (graphs/registry.ts); here are only the two server-wide
-// rights: server admin, and whether it may create graphs.
+// random and stored as sha256 only. What an account may do on a space is the
+// space's business (spaces/registry.ts); here are only the two server-wide
+// rights: server admin, and whether it may create spaces.
 
 import crypto from 'node:crypto';
 import fs from 'node:fs/promises';
@@ -22,18 +22,18 @@ type Account = {
   /** Wallet addresses (checksummed) that log this account in. */
   wallets?: string[];
   serverAdmin?: boolean;
-  canCreateGraphs?: boolean;
+  canCreateSpaces?: boolean;
   createdAt: string;
   /** Its person deleted it: logged out everywhere; logging in again within ACCOUNT_DELETION_DAYS brings it back, then it is discarded. */
   deletedAt?: string;
   /** The day the account last did anything (a request, a login): kept to the day. */
   lastActiveAt?: string;
 };
-// `graphs`: the slugs this token is limited to (an MCP client the account gave
-// only some graphs); absent, the token is the account everywhere.
+// `spaces`: the slugs this token is limited to (an MCP client the account gave
+// only some spaces); absent, the token is the account everywhere.
 // `site`: the origin of another website whose pages the account let act as it
 // here (auth.grantSite); such a token works from that website's pages only.
-type Token = { hash: string; account: string; label: string; createdAt: string; graphs?: string[]; site?: string };
+type Token = { hash: string; account: string; label: string; createdAt: string; spaces?: string[]; site?: string };
 // A link that lets its holder create an account; `once` is used up by the first.
 type Invitation = {
   id: string;
@@ -42,7 +42,7 @@ type Invitation = {
   expiresAt?: string;
   // The rights the account made with it gets, as set for an existing account.
   serverAdmin?: boolean;
-  canCreateGraphs?: boolean;
+  canCreateSpaces?: boolean;
   // An invitation to one space, made by its owner: whoever takes it (a new
   // account, or one that exists) reads or writes that space.
   grant?: InvitationGrant;
@@ -50,14 +50,14 @@ type Invitation = {
   redeemedBy?: string;
   createdAt: string;
 };
-export type InvitationGrant = { graph: string; right: 'read' | 'write' | 'manage' };
+export type InvitationGrant = { space: string; right: 'read' | 'write' | 'manage' };
 type Accounts = { accounts: Account[]; tokens: Token[]; invitations: Invitation[] };
 
 export type AccountView = {
   id: string;
   name: string;
   serverAdmin: boolean;
-  canCreateGraphs: boolean;
+  canCreateSpaces: boolean;
   /** False while the account lives only in one browser: clearing that browser loses it. */
   permanentLogin: boolean;
 };
@@ -107,8 +107,8 @@ async function passwordMatches(password: string, stored: string | undefined): Pr
 
 const sha256 = (value: string) => crypto.createHash('sha256').update(value).digest('hex');
 
-const view = ({ id, name, serverAdmin, canCreateGraphs, passwordHash, wallets }: Account): AccountView => ({
-  id, name, serverAdmin: serverAdmin === true, canCreateGraphs: canCreateGraphs === true,
+const view = ({ id, name, serverAdmin, canCreateSpaces, passwordHash, wallets }: Account): AccountView => ({
+  id, name, serverAdmin: serverAdmin === true, canCreateSpaces: canCreateSpaces === true,
   permanentLogin: passwordHash !== undefined || (wallets?.length ?? 0) > 0
 });
 
@@ -207,14 +207,14 @@ const newAccount = (name: string, fields: Partial<Account>): Account =>
 export async function createAccount(
   name: string,
   password: string,
-  rights: { serverAdmin?: boolean; canCreateGraphs?: boolean } = {}
+  rights: { serverAdmin?: boolean; canCreateSpaces?: boolean } = {}
 ): Promise<AccountView> {
   const trimmed = cleanName(name);
   assertPassword(password);
   const account = newAccount(trimmed, {
     passwordHash: await hashPassword(password),
     ...(rights.serverAdmin ? { serverAdmin: true } : {}),
-    ...(rights.canCreateGraphs ? { canCreateGraphs: true } : {})
+    ...(rights.canCreateSpaces ? { canCreateSpaces: true } : {})
   });
   await change((accounts) => {
     assertFreeName(accounts, trimmed);
@@ -234,7 +234,7 @@ function validInvitation(accounts: Accounts, code: string): Invitation {
 
 /** The code to hand out (in a link); only its hash is stored. */
 export async function createInvitation(
-  options: { kind: 'once' | 'permanent'; expiresAt?: string; serverAdmin?: boolean; canCreateGraphs?: boolean; grant?: InvitationGrant; invitedBy?: string }
+  options: { kind: 'once' | 'permanent'; expiresAt?: string; serverAdmin?: boolean; canCreateSpaces?: boolean; grant?: InvitationGrant; invitedBy?: string }
 ): Promise<string> {
   // Server admin is a shell on the server: never for whoever holds a shared link.
   if (options.serverAdmin && options.kind !== 'once') {
@@ -247,7 +247,7 @@ export async function createInvitation(
     kind: options.kind,
     ...(options.expiresAt ? { expiresAt: options.expiresAt } : {}),
     ...(options.serverAdmin ? { serverAdmin: true } : {}),
-    ...(options.canCreateGraphs ? { canCreateGraphs: true } : {}),
+    ...(options.canCreateSpaces ? { canCreateSpaces: true } : {}),
     ...(options.grant ? { grant: options.grant } : {}),
     ...(options.invitedBy ? { invitedBy: options.invitedBy } : {}),
     createdAt: new Date().toISOString()
@@ -259,11 +259,11 @@ export async function createInvitation(
 export function listInvitations() {
   const accounts = load();
   const names = new Map(accounts.accounts.map(account => [account.id, account.name]));
-  return accounts.invitations.map(({ id, kind, expiresAt, serverAdmin, canCreateGraphs, grant, invitedBy, redeemedBy, createdAt }) => ({
+  return accounts.invitations.map(({ id, kind, expiresAt, serverAdmin, canCreateSpaces, grant, invitedBy, redeemedBy, createdAt }) => ({
     id, kind, createdAt,
     expiresAt: expiresAt ?? null,
     serverAdmin: serverAdmin === true,
-    canCreateGraphs: canCreateGraphs === true,
+    canCreateSpaces: canCreateSpaces === true,
     grant: grant ?? null,
     invitedBy: invitedBy ? names.get(invitedBy) ?? '(removed account)' : null,
     // A redeemed one-time invitation stays listed, so the admin sees who came through it.
@@ -312,7 +312,7 @@ export async function signUp(name: string, password: string, { open, invitation 
     account = newAccount(trimmed, {
       passwordHash,
       ...(invited?.serverAdmin ? { serverAdmin: true } : {}),
-      ...(invited?.canCreateGraphs ? { canCreateGraphs: true } : {})
+      ...(invited?.canCreateSpaces ? { canCreateSpaces: true } : {})
     });
     return {
       ...accounts,
@@ -416,7 +416,7 @@ export async function setPassword(name: string, password: string) {
   });
 }
 
-export async function setRights(name: string, rights: { serverAdmin?: boolean; canCreateGraphs?: boolean }) {
+export async function setRights(name: string, rights: { serverAdmin?: boolean; canCreateSpaces?: boolean }) {
   // Only what was named changes: an absent right keeps its value.
   const changed = Object.fromEntries(Object.entries(rights).filter(([, value]) => value !== undefined));
   await change((accounts) => {
@@ -493,12 +493,12 @@ export async function login(name: string, password: string): Promise<string | nu
   return await checkPassword(name, password) ? issueToken(name, 'browser') : null;
 }
 
-export async function issueToken(name: string, label: string, graphs?: string[], site?: string): Promise<string> {
+export async function issueToken(name: string, label: string, spaces?: string[], site?: string): Promise<string> {
   const token = crypto.randomBytes(32).toString('base64url');
   await change((accounts) => {
     const entry: Token = {
       hash: sha256(token), account: byName(accounts, name).id, label, createdAt: new Date().toISOString(),
-      ...(graphs ? { graphs } : {}),
+      ...(spaces ? { spaces } : {}),
       ...(site ? { site } : {})
     };
     // A login is activity.
@@ -514,15 +514,15 @@ export async function issueToken(name: string, label: string, graphs?: string[],
  * A space that is gone for good: tokens limited to it no longer name it, so a
  * later space under the same slug is not theirs. A token left with no space is revoked.
  */
-export async function forgetGraphsInTokens(slugs: readonly string[]) {
+export async function forgetSpacesInTokens(slugs: readonly string[]) {
   const gone = new Set(slugs);
-  if (!load().tokens.some(token => token.graphs?.some(slug => gone.has(slug)))) return;
+  if (!load().tokens.some(token => token.spaces?.some(slug => gone.has(slug)))) return;
   await change(accounts => ({
     ...accounts,
     tokens: accounts.tokens.flatMap((token) => {
-      if (!token.graphs?.some(slug => gone.has(slug))) return [token];
-      const graphs = token.graphs.filter(slug => !gone.has(slug));
-      return graphs.length ? [{ ...token, graphs }] : [];
+      if (!token.spaces?.some(slug => gone.has(slug))) return [token];
+      const spaces = token.spaces.filter(slug => !gone.has(slug));
+      return spaces.length ? [{ ...token, spaces }] : [];
     })
   }));
 }
@@ -532,13 +532,13 @@ export async function revokeToken(token: string) {
   await change(accounts => ({ ...accounts, tokens: accounts.tokens.filter(entry => entry.hash !== hash) }));
 }
 
-/** The account a token logs in, the graphs it is limited to (null: none, it is the account everywhere), and the website it was granted to. */
+/** The account a token logs in, the spaces it is limited to (null: none, it is the account everywhere), and the website it was granted to. */
 export function resolveToken(token: string | undefined): (AccountView & { scope: string[] | null; site: string | null }) | null {
   if (!token) return null;
   const accounts = load();
   const entry = accounts.tokens.find(candidate => candidate.hash === sha256(token));
   const account = entry && accounts.accounts.find(candidate => candidate.id === entry.account);
-  return account ? { ...view(account), scope: entry.graphs ?? null, site: entry.site ?? null } : null;
+  return account ? { ...view(account), scope: entry.spaces ?? null, site: entry.site ?? null } : null;
 }
 
 // The tokens an account handed out (browsers it is logged in at, MCP clients),
@@ -549,7 +549,7 @@ export function listTokens(name: string) {
   const accounts = load();
   const { id } = byName(accounts, name);
   return accounts.tokens.filter(token => token.account === id)
-    .map(({ hash, label, createdAt, graphs, site }) => ({ id: hash.slice(0, TOKEN_ID_LENGTH), label, createdAt, graphs: graphs ?? null, site: site ?? null }));
+    .map(({ hash, label, createdAt, spaces, site }) => ({ id: hash.slice(0, TOKEN_ID_LENGTH), label, createdAt, spaces: spaces ?? null, site: site ?? null }));
 }
 
 export async function revokeTokenById(name: string, tokenId: string) {
@@ -559,8 +559,8 @@ export async function revokeTokenById(name: string, tokenId: string) {
   });
 }
 
-// The server admins' wrapped agents edit graphs through the MCP as this account
-// (never a server admin): it writes the graphs it was given, like any account.
+// The server admins' wrapped agents edit spaces through the MCP as this account
+// (never a server admin): it writes the spaces it was given, like any account.
 // Each start replaces its token, so an old one stops working.
 export const AGENTS_ACCOUNT = 'wrapped-agents';
 

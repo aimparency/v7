@@ -74,7 +74,7 @@ describe('IdeaProposalReview', () => {
 
     expect(trpc.idea.approveIdeaSubtree.mutate).toHaveBeenCalledOnce()
     expect(trpc.idea.approveIdeaSubtree.mutate).toHaveBeenCalledWith(expect.objectContaining({
-      graph: '/project/.bowman',
+      space: '/project/.bowman',
       revision: 'r1',
       proposal: expect.objectContaining({ revision: 'r1' }),
       idempotencyKey: expect.stringContaining('r1:')

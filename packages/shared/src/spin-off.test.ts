@@ -30,7 +30,7 @@ function idea(id: string, parents: string[], children: string[], committedIn: st
 const sorted = (xs: string[]) => [...xs].sort();
 
 // A (top); B->A; C->B; D->A and D->B. Export root B.
-function exampleGraph(): Idea[] {
+function exampleSpace(): Idea[] {
   return [
     idea('A', [], ['B', 'D']),
     idea('B', ['A'], ['C', 'D']),
@@ -40,7 +40,7 @@ function exampleGraph(): Idea[] {
 }
 
 test('planSpinOff: worked example — B+C move, D overlaps, A kept', () => {
-  const plan = planSpinOff(exampleGraph(), ['B']);
+  const plan = planSpinOff(exampleSpace(), ['B']);
   assert.deepEqual(sorted(plan.copyIds), ['B', 'C', 'D']);
   assert.deepEqual(sorted(plan.spinOffIds), ['B', 'C']); // red: roots + exclusive supporters
   assert.deepEqual(sorted(plan.overlapIds), ['D']); // orange: shared
@@ -48,7 +48,7 @@ test('planSpinOff: worked example — B+C move, D overlaps, A kept', () => {
 });
 
 test('computeSpinOff: seam edges dropped, shared edges split, phases cleared', () => {
-  const res = computeSpinOff(exampleGraph(), ['B']);
+  const res = computeSpinOff(exampleSpace(), ['B']);
 
   const so = new Map(res.spinOffIdeas.map((a) => [a.id, a]));
   // B's seam edge B->A is dropped (A not copied); B keeps children C and D.
@@ -131,13 +131,13 @@ test('preserveInflow: external inflow folded into intrinsicValue of the seam ide
 });
 
 test('empty / unknown roots produce an empty plan', () => {
-  const plan = planSpinOff(exampleGraph(), ['does-not-exist']);
+  const plan = planSpinOff(exampleSpace(), ['does-not-exist']);
   assert.deepEqual(plan.copyIds, []);
   assert.deepEqual(plan.spinOffIds, []);
 });
 
 test('existing target collisions are remapped consistently without flattening the branch', () => {
-  const copied = computeSpinOff(exampleGraph(), ['B']).spinOffIdeas;
+  const copied = computeSpinOff(exampleSpace(), ['B']).spinOffIdeas;
   const generated = ['D', 'new-B'];
   const result = remapSpinOffCollisions(copied, ['B', 'target-only'], () => generated.shift()!);
 

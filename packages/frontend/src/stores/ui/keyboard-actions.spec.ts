@@ -27,7 +27,7 @@ describe('keyboard actions', () => {
     setActivePinia(createPinia())
   })
 
-  it('deletes a selected graph connection on confirmed dd', async () => {
+  it('deletes a selected space connection on confirmed dd', async () => {
     const graphStore = useGraphUIStore()
     const projectStore = useProjectStore()
     projectStore.projectPath = '/tmp/project'
@@ -80,7 +80,7 @@ describe('keyboard actions', () => {
     expect(undo).not.toHaveBeenCalled()
   })
 
-  it('toggles the focused graph idea with Space in multi-select mode', async () => {
+  it('toggles the focused space idea with Space in multi-select mode', async () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
     const dataStore = useDataStore()
@@ -97,7 +97,7 @@ describe('keyboard actions', () => {
     expect(uiStore.multiSelectMode).toBe(false)
   })
 
-  it('keeps graph delete confirmation in graph UI state', async () => {
+  it('keeps space delete confirmation in space UI state', async () => {
     const graphStore = useGraphUIStore()
     const uiStore = useUIStore()
     const dataStore = {

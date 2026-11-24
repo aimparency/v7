@@ -190,14 +190,14 @@ const performSearch = async (query: string) => {
   try {
     const [keywordResults, semanticResults] = await Promise.all([
       trpc.idea.search.query({
-        graph: projectStore.projectPath,
+        space: projectStore.projectPath,
         query,
         limit: props.resultLimit,
         status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined,
         archived: includeArchived.value
       }),
       trpc.idea.searchSemantic.query({
-        graph: projectStore.projectPath,
+        space: projectStore.projectPath,
         query,
         limit: props.resultLimit * 3,
         status: selectedStatuses.value.length > 0 ? selectedStatuses.value : undefined
@@ -247,7 +247,7 @@ const navigateToParents = async (idea: SearchIdeaResult, wasFocused = false) => 
   if (!idea.supportedIdeas?.length) return
   loading.value = true
   try {
-    const parents = await trpc.idea.getMany.query({ graph: projectStore.projectPath, ideaIds: idea.supportedIdeas })
+    const parents = await trpc.idea.getMany.query({ space: projectStore.projectPath, ideaIds: idea.supportedIdeas })
     navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = parents.map(p => ({ ...p, score: 1 }))
     localNavigationTitle.value = `Parents of: ${idea.text}`
@@ -262,7 +262,7 @@ const navigateToParents = async (idea: SearchIdeaResult, wasFocused = false) => 
 const navigateToChildren = async (idea: SearchIdeaResult, wasFocused = false) => {
   loading.value = true
   try {
-    const children = await trpc.idea.list.query({ graph: projectStore.projectPath, parentIdeaId: idea.id })
+    const children = await trpc.idea.list.query({ space: projectStore.projectPath, parentIdeaId: idea.id })
     if (children.length === 0) return
     navigationHistory.value.push({ title: localNavigationTitle.value || 'Search Results', results: [...searchResults.value] })
     searchResults.value = children.map(c => ({ ...c, score: 1 }))
@@ -331,7 +331,7 @@ const handleKeydown = (event: KeyboardEvent) => {
     return
   }
 
-  // h/l walk the graph from a focused result. In the empty input they do so only
+  // h/l walk the space from a focused result. In the empty input they do so only
   // when the selection can move; otherwise they are typed like any letter.
   if (key === 'h' || key === 'l') {
     const item = selectedItem.value

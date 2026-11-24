@@ -132,30 +132,30 @@ test("a hook loop file round-trips; the human section is optional", () => {
 test("saved loops: the default is never overwritten, selecting one changes the hook text, deleting falls back", () => {
   const root = makeProject();
   try {
-    const graph = path.join(root, ".bowman");
-    enableContinueHook(graph, { agent: "claude" });
-    const fromDefault = saveHookLoop(graph, { slug: "default", title: "Default", work: "Mine.", human: "" });
+    const space = path.join(root, ".bowman");
+    enableContinueHook(space, { agent: "claude" });
+    const fromDefault = saveHookLoop(space, { slug: "default", title: "Default", work: "Mine.", human: "" });
     assert.equal(fromDefault, "default-copy");
-    const slug = saveHookLoop(graph, { title: "Ideation & experiments", work: "Dream up three hypotheses.", human: "" });
+    const slug = saveHookLoop(space, { title: "Ideation & experiments", work: "Dream up three hypotheses.", human: "" });
     assert.equal(slug, "ideation-experiments");
-    assert.equal(saveHookLoop(graph, { title: "Ideation & experiments", work: "Again.", human: "" }), "ideation-experiments-2");
-    assert.deepEqual(listHookLoops(graph).map(loop => loop.slug), ["default", "default-copy", "ideation-experiments", "ideation-experiments-2"]);
+    assert.equal(saveHookLoop(space, { title: "Ideation & experiments", work: "Again.", human: "" }), "ideation-experiments-2");
+    assert.deepEqual(listHookLoops(space).map(loop => loop.slug), ["default", "default-copy", "ideation-experiments", "ideation-experiments-2"]);
     assert.ok(fs.existsSync(path.join(root, ".bowman/hook-loops/ideation-experiments.md")));
 
     const log = currentProgressLog(root)!;
-    enableContinueHook(graph, { loop: slug });
+    enableContinueHook(space, { loop: slug });
     assert.equal(currentProgressLog(root), log, "switching keeps the run's log");
-    assert.deepEqual(continueHookStatus(graph), { installed: true, enabled: true, loop: slug });
+    assert.deepEqual(continueHookStatus(space), { installed: true, enabled: true, loop: slug });
     assert.ok(runHook(root).reason.startsWith("Dream up three hypotheses."));
 
-    saveHookLoop(graph, { slug, title: "Ideation", work: "Changed.", human: "" });
+    saveHookLoop(space, { slug, title: "Ideation", work: "Changed.", human: "" });
     assert.ok(runHook(root).reason.startsWith("Changed."));
 
-    deleteHookLoop(graph, slug);
-    assert.equal(continueHookStatus(graph).loop, null);
+    deleteHookLoop(space, slug);
+    assert.equal(continueHookStatus(space).loop, null);
     assert.match(runHook(root).reason, /get_prioritized_ideas/);
-    assert.throws(() => enableContinueHook(graph, { loop: "gone" }), /No hook loop/);
-    assert.throws(() => deleteHookLoop(graph, "../x"), /Not a hook loop/);
+    assert.throws(() => enableContinueHook(space, { loop: "gone" }), /No hook loop/);
+    assert.throws(() => deleteHookLoop(space, "../x"), /Not a hook loop/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

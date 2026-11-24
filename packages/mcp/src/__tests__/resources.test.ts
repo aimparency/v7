@@ -21,7 +21,7 @@ test('MCP Resources - List & Read', async () => {
 
   // 1. Create Data
   const idea = await caller.idea.createFloatingIdea({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     idea: { text: 'Resource Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 

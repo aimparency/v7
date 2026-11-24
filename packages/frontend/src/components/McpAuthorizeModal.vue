@@ -5,7 +5,7 @@ import { useToastStore } from '../stores/toast'
 import { trpc } from '../trpc'
 import { useViewerStore } from '../stores/viewer'
 import FormModalShell from './FormModalShell.vue'
-import GraphScopeChoice from './GraphScopeChoice.vue'
+import SpaceScopeChoice from './SpaceScopeChoice.vue'
 import LoginControl from './LoginControl.vue'
 
 // An MCP client asked for a login by itself and sent the person here
@@ -52,7 +52,7 @@ const answer = async (decide: () => Promise<{ redirectTo: string }>) => {
 const approve = () => answer(async () => {
   // Where the server gives accounts automatically, the visitor gets theirs now.
   if (!await viewer.ensureAccount()) throw new Error('Log in first.')
-  return trpc.mcpAuth.approve.mutate({ requestId: props.requestId, graphs: scope.value ?? undefined })
+  return trpc.mcpAuth.approve.mutate({ requestId: props.requestId, spaces: scope.value ?? undefined })
 })
 const deny = () => answer(() => trpc.mcpAuth.deny.mutate({ requestId: props.requestId }))
 
@@ -84,7 +84,7 @@ const continueHere = () => { window.location.href = returnAddress.value }
         <p><strong>{{ request.clientName }}</strong> asks to act as you on this server. The answer goes to <code>{{ request.redirectHost }}</code>.</p>
         <template v-if="viewer.name || viewer.getsAccountAutomatically">
           <p v-if="viewer.name" class="hint">You are {{ viewer.name }}. Choose what it may reach.</p>
-          <GraphScopeChoice v-model="scope" />
+          <SpaceScopeChoice v-model="scope" />
         </template>
         <template v-else>
           <p class="hint">Log in first, so it is clear whom it acts as.</p>

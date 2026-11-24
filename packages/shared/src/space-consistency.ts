@@ -1,10 +1,10 @@
 import type { Idea, Phase } from './types.js';
 
-// Referential integrity of a .bowman graph: every link names an existing
+// Referential integrity of a .bowman space: every link names an existing
 // entity, and every link is recorded on both ends. Pure, so the backend's
 // consistency check and the standalone validator apply the same rules.
 
-export type GraphConsistencyIssueCode =
+export type SpaceConsistencyIssueCode =
   | 'idea_nonexistent_phase'
   | 'idea_missing_phase_commitment'
   | 'phase_nonexistent_idea'
@@ -14,24 +14,24 @@ export type GraphConsistencyIssueCode =
   | 'idea_nonexistent_parent'
   | 'idea_missing_parent_supporting_connection';
 
-export type GraphConsistencyIssue = { code: GraphConsistencyIssueCode; message: string };
+export type SpaceConsistencyIssue = { code: SpaceConsistencyIssueCode; message: string };
 
-type GraphIdea = Pick<Idea, 'id' | 'committedIn' | 'supportedIdeas'> & { supportingConnections?: { ideaId: string }[] };
-type GraphPhase = Pick<Phase, 'id' | 'commitments'>;
+type SpaceIdea = Pick<Idea, 'id' | 'committedIn' | 'supportedIdeas'> & { supportingConnections?: { ideaId: string }[] };
+type SpacePhase = Pick<Phase, 'id' | 'commitments'>;
 
 /**
  * `unreadableIdeaIds`: idea files that exist but fail to load. Links to them
  * are never reported as dangling, so a fixer cannot delete them.
  */
-export function checkGraphConsistency(
-  ideas: readonly GraphIdea[],
-  phases: readonly GraphPhase[],
+export function checkSpaceConsistency(
+  ideas: readonly SpaceIdea[],
+  phases: readonly SpacePhase[],
   unreadableIdeaIds: ReadonlySet<string> = new Set()
-): GraphConsistencyIssue[] {
+): SpaceConsistencyIssue[] {
   const ideaMap = new Map(ideas.map((idea) => [idea.id, idea]));
   const phaseMap = new Map(phases.map((phase) => [phase.id, phase]));
-  const issues: GraphConsistencyIssue[] = [];
-  const report = (code: GraphConsistencyIssueCode, message: string) => issues.push({ code, message });
+  const issues: SpaceConsistencyIssue[] = [];
+  const report = (code: SpaceConsistencyIssueCode, message: string) => issues.push({ code, message });
 
   for (const idea of ideas) {
     for (const phaseId of idea.committedIn) {

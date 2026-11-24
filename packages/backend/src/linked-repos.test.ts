@@ -32,7 +32,7 @@ const readRegistry = (p: string) =>
   fs.readJson(path.join(p, 'runtime', 'linked-repos.json')) as Promise<LinkedRepoRegistry>;
 
 test('repoId is generated on first read and stays stable across reads', async () => {
-  const first = await caller.project.getMeta({ graph: projectAPath });
+  const first = await caller.project.getMeta({ space: projectAPath });
   assert.ok(first.repoId, 'repoId should be generated');
   assert.match(first.repoId!, /^[0-9a-f-]{36}$/);
 
@@ -41,13 +41,13 @@ test('repoId is generated on first read and stays stable across reads', async ()
   assert.equal(onDisk.repoId, first.repoId);
 
   // ...and stable on subsequent reads.
-  const second = await caller.project.getMeta({ graph: projectAPath });
+  const second = await caller.project.getMeta({ space: projectAPath });
   assert.equal(second.repoId, first.repoId);
 });
 
 test('register splits portable (meta) and machine-local (runtime) parts', async () => {
   const registered = await caller.linkedRepo.register({
-    graph: projectAPath,
+    space: projectAPath,
     targetPath: projectBPath,
     url: 'https://example.com/repo-b.git',
   });
@@ -75,17 +75,17 @@ test('register splits portable (meta) and machine-local (runtime) parts', async 
 
 test('resolve performs two-stage repoId -> localPath lookup', async () => {
   const { repoId } = await caller.linkedRepo.register({
-    graph: projectAPath,
+    space: projectAPath,
     targetPath: projectBPath,
   });
 
-  const resolved = await caller.linkedRepo.resolve({ graph: projectAPath, repoId });
+  const resolved = await caller.linkedRepo.resolve({ space: projectAPath, repoId });
   assert.equal(resolved.resolved, true);
   assert.equal(resolved.localPath, projectBPath);
 
   // An unknown repoId resolves to the not-checked-out state, not an error.
   const missing = await caller.linkedRepo.resolve({
-    graph: projectAPath,
+    space: projectAPath,
     repoId: '00000000-0000-4000-8000-000000000000',
   });
   assert.equal(missing.resolved, false);
@@ -94,14 +94,14 @@ test('resolve performs two-stage repoId -> localPath lookup', async () => {
 
 test('list reports a linked-but-unresolved repo when the local entry is gone', async () => {
   const { repoId } = await caller.linkedRepo.register({
-    graph: projectAPath,
+    space: projectAPath,
     targetPath: projectBPath,
   });
 
   // Simulate a collaborator who pulled meta.json but has no runtime registry.
   await fs.remove(path.join(projectAPath, 'runtime', 'linked-repos.json'));
 
-  const list = await caller.linkedRepo.list({ graph: projectAPath });
+  const list = await caller.linkedRepo.list({ space: projectAPath });
   assert.equal(list.length, 1);
   assert.equal(list[0].repoId, repoId);
   assert.equal(list[0].resolved, false);
@@ -110,14 +110,14 @@ test('list reports a linked-but-unresolved repo when the local entry is gone', a
 
 test('register rejects linking a repo to itself', async () => {
   await assert.rejects(
-    () => caller.linkedRepo.register({ graph: projectAPath, targetPath: projectAPath }),
+    () => caller.linkedRepo.register({ space: projectAPath, targetPath: projectAPath }),
     /itself/i,
   );
 });
 
 test('register upserts rather than duplicating on re-register', async () => {
-  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, access: 'read' });
-  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, access: 'write' });
+  await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath, access: 'read' });
+  await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath, access: 'write' });
 
   const aMeta = await readMeta(projectAPath);
   assert.equal(aMeta.linkedRepos?.length, 1, 'no duplicate portable entry');
@@ -127,23 +127,23 @@ test('register upserts rather than duplicating on re-register', async () => {
   assert.equal(registry.repos[0].access, 'write', 'access updated');
 });
 
-test('a linked repo keeps the name this graph gives it', async () => {
-  const { repoId } = await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, name: 'Laser tests' });
+test('a linked repo keeps the name this space gives it', async () => {
+  const { repoId } = await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath, name: 'Laser tests' });
   assert.equal((await readMeta(projectAPath)).linkedRepos![0].name, 'Laser tests');
 
-  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath, access: 'write' });
+  await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath, access: 'write' });
   assert.equal((await readMeta(projectAPath)).linkedRepos![0].name, 'Laser tests', 're-registering keeps the name');
 
-  const renamed = await caller.linkedRepo.rename({ graph: projectAPath, repoId, name: 'Repeer' });
+  const renamed = await caller.linkedRepo.rename({ space: projectAPath, repoId, name: 'Repeer' });
   assert.equal(renamed.name, 'Repeer');
   assert.equal((await readMeta(projectAPath)).linkedRepos![0].name, 'Repeer');
-  await assert.rejects(caller.linkedRepo.rename({ graph: projectAPath, repoId: '22222222-2222-4222-8222-222222222222', name: 'x' }), /not linked/);
+  await assert.rejects(caller.linkedRepo.rename({ space: projectAPath, repoId: '22222222-2222-4222-8222-222222222222', name: 'x' }), /not linked/);
 });
 
 test('unregister removes the link from both meta and the runtime registry', async () => {
-  const { repoId } = await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath });
+  const { repoId } = await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath });
 
-  await caller.linkedRepo.unregister({ graph: projectAPath, repoId });
+  await caller.linkedRepo.unregister({ space: projectAPath, repoId });
 
   const aMeta = await readMeta(projectAPath);
   assert.equal(aMeta.linkedRepos?.length, 0);
@@ -152,23 +152,23 @@ test('unregister removes the link from both meta and the runtime registry', asyn
   assert.equal(registry.repos.length, 0);
 });
 
-test('linkHost stores a graph by its address on its server, with no checkout', async () => {
+test('linkHost stores a space by its address on its server, with no checkout', async () => {
   const repoId = '22222222-2222-4222-8222-222222222222';
-  const link = await caller.linkedRepo.linkHost({ graph: projectAPath, host: 'https://hub.example.org/spaces/commons-hub/', repoId, name: 'Commons Hub' });
+  const link = await caller.linkedRepo.linkHost({ space: projectAPath, host: 'https://hub.example.org/spaces/commons-hub/', repoId, name: 'Commons Hub' });
   assert.deepStrictEqual(link, { repoId, name: 'Commons Hub', host: 'https://hub.example.org/spaces/commons-hub' });
   assert.deepStrictEqual((await readMeta(projectAPath)).linkedRepos, [link]);
-  const [listed] = await caller.linkedRepo.list({ graph: projectAPath });
+  const [listed] = await caller.linkedRepo.list({ space: projectAPath });
   assert.equal(listed!.host, link.host);
   assert.equal(listed!.resolved, false, 'not checked out here, and it need not be');
 
-  // Registering a local checkout of the same graph later keeps its address.
+  // Registering a local checkout of the same space later keeps its address.
   await fs.writeJson(path.join(projectBPath, 'meta.json'), { name: 'Commons Hub', repoId });
-  await caller.linkedRepo.register({ graph: projectAPath, targetPath: projectBPath });
+  await caller.linkedRepo.register({ space: projectAPath, targetPath: projectBPath });
   assert.equal((await readMeta(projectAPath)).linkedRepos![0]!.host, link.host);
 });
 
-test('linkHost refuses what is not a graph address, and the graph itself', async () => {
-  await assert.rejects(caller.linkedRepo.linkHost({ graph: projectAPath, host: 'https://hub.example.org/', repoId: '22222222-2222-4222-8222-222222222222', name: 'x' }));
-  const self = await caller.project.getMeta({ graph: projectAPath });
-  await assert.rejects(caller.linkedRepo.linkHost({ graph: projectAPath, host: 'https://hub.example.org/spaces/me', repoId: self.repoId!, name: 'me' }), /itself/);
+test('linkHost refuses what is not a space address, and the space itself', async () => {
+  await assert.rejects(caller.linkedRepo.linkHost({ space: projectAPath, host: 'https://hub.example.org/', repoId: '22222222-2222-4222-8222-222222222222', name: 'x' }));
+  const self = await caller.project.getMeta({ space: projectAPath });
+  await assert.rejects(caller.linkedRepo.linkHost({ space: projectAPath, host: 'https://hub.example.org/spaces/me', repoId: self.repoId!, name: 'me' }), /itself/);
 });

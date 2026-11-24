@@ -46,9 +46,9 @@ describe('git working tree', () => {
     expect(before.lastCommitAt).toBeGreaterThan(0);
     expect(before.changes.map(change => change.path).sort()).toEqual(['.bowman/gone.json', '.bowman/keep.json', '.bowman/new.json']);
 
-    await commitPaths(bowman, ['.bowman/new.json', '.bowman/gone.json'], 'graph: new idea');
+    await commitPaths(bowman, ['.bowman/new.json', '.bowman/gone.json'], 'space: new idea');
 
-    expect(git(repo, 'show', '--name-only', '--format=%s', 'HEAD').trim().split('\n')).toEqual(['graph: new idea', '', '.bowman/gone.json', '.bowman/new.json']);
+    expect(git(repo, 'show', '--name-only', '--format=%s', 'HEAD').trim().split('\n')).toEqual(['space: new idea', '', '.bowman/gone.json', '.bowman/new.json']);
     expect(git(repo, 'status', '--porcelain').split('\n').filter(Boolean).sort()).toEqual([' M .bowman/keep.json', ' M code.ts', '?? notes.txt', 'M  staged.ts']);
     await expect(commitPaths(bowman, ['code.ts'], 'x')).rejects.toThrow(/Not changed/);
     await expect(commitPaths(bowman, ['notes.txt'], 'x')).rejects.toThrow(/Not changed/);

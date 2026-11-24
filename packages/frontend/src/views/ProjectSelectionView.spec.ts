@@ -4,21 +4,21 @@ import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
 import { useViewerStore } from '../stores/viewer'
 
-const { inspectPath, listGraphs, listDeleted, removeGraph, restoreGraph, createGraph, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
+const { inspectPath, listSpaces, listDeleted, removeSpaceEntry, restoreSpace, createSpace, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
   inspectPath: vi.fn(),
   addRemote: vi.fn(),
   addCheckout: vi.fn(),
-  listGraphs: vi.fn().mockResolvedValue([]),
+  listSpaces: vi.fn().mockResolvedValue([]),
   listDeleted: vi.fn().mockResolvedValue([]),
-  removeGraph: vi.fn().mockResolvedValue({ success: true }),
-  restoreGraph: vi.fn().mockResolvedValue({ slug: 'x' }),
-  createGraph: vi.fn(),
+  removeSpaceEntry: vi.fn().mockResolvedValue({ success: true }),
+  restoreSpace: vi.fn().mockResolvedValue({ slug: 'x' }),
+  createSpace: vi.fn(),
   accounts: { on: false }
 }))
 vi.mock('../trpc', () => ({
   trpc: {
     project: { inspectPath: { query: inspectPath } },
-    graphs: { list: { query: listGraphs }, listDeleted: { query: listDeleted }, remove: { mutate: removeGraph }, restore: { mutate: restoreGraph }, create: { mutate: createGraph }, addRemote: { mutate: addRemote }, addCheckout: { mutate: addCheckout } }
+    spaces: { list: { query: listSpaces }, listDeleted: { query: listDeleted }, remove: { mutate: removeSpaceEntry }, restore: { mutate: restoreSpace }, create: { mutate: createSpace }, addRemote: { mutate: addRemote }, addCheckout: { mutate: addCheckout } }
   },
 }))
 vi.mock('../utils/runtime-config', () => ({ hasAccounts: () => accounts.on }))
@@ -33,7 +33,7 @@ const mountView = (modelValue: string, lists = false, viewer = {}) => mount(Proj
   global: {
     plugins: [createTestingPinia({
       createSpy: vi.fn,
-      initialState: { viewer: { name: null, serverAdmin: true, canCreateGraphs: true, signUp: { open: false, browserKey: false }, ...viewer } }
+      initialState: { viewer: { name: null, serverAdmin: true, canCreateSpaces: true, signUp: { open: false, browserKey: false }, ...viewer } }
     })],
     stubs: { LoginControl: true }
   },
@@ -185,12 +185,12 @@ describe('ProjectSelectionView on a server with accounts', () => {
   beforeEach(() => {
     vi.useRealTimers()
     accounts.on = true
-    listGraphs.mockResolvedValue([
+    listSpaces.mockResolvedValue([
       { slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' },
       { slug: 'garden', kind: 'created', name: 'Garden', color: null, owner: null, right: 'owner' }
     ])
     listDeleted.mockReset().mockResolvedValue([])
-    createGraph.mockReset().mockResolvedValue({ slug: 'my-idea' })
+    createSpace.mockReset().mockResolvedValue({ slug: 'my-idea' })
     addRemote.mockReset()
     addCheckout.mockReset()
   })
@@ -206,14 +206,14 @@ describe('ProjectSelectionView on a server with accounts', () => {
     expect(titles(wrapper)).toEqual(['Hack the Hub', 'Garden'])
     expect(wrapper.text()).toContain('ana · /spaces/hack-the-hub')
     await wrapper.find('.history-open-button').trigger('click')
-    expect(wrapper.emitted('open-graph')).toEqual([['hack-the-hub']])
+    expect(wrapper.emitted('open-space')).toEqual([['hack-the-hub']])
   })
 
   it('shows the recently opened spaces first, with the same keys as on this machine', async () => {
     const wrapper = mount(ProjectSelectionView, {
       attachTo: document.body,
       global: {
-        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: 'ben', serverAdmin: false, canCreateGraphs: true, signUp: { open: false, browserKey: false } } } })],
+        plugins: [createTestingPinia({ createSpy: vi.fn, initialState: { viewer: { name: 'ben', serverAdmin: false, canCreateSpaces: true, signUp: { open: false, browserKey: false } } } })],
         stubs: { LoginControl: true }
       },
       props: { modelValue: '', projectHistory: [{ path: 'garden', lastOpened: Date.now(), failedToLoad: false }, { path: '/work/entour', lastOpened: 0, failedToLoad: false }], discoveredProjects: [], scannedRoots: [], isRefreshingDiscoveredProjects: false }
@@ -239,17 +239,17 @@ describe('ProjectSelectionView on a server with accounts', () => {
     // Only the owner's space has the trash.
     expect(wrapper.findAll('.history-item').map(item => item.find('[aria-label="Delete this space"]').exists())).toEqual([false, true])
 
-    listGraphs.mockResolvedValue([{ slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' }])
+    listSpaces.mockResolvedValue([{ slug: 'hack-the-hub', kind: 'created', name: 'Hack the Hub', color: '#123456', owner: 'ana' }])
     listDeleted.mockResolvedValue([{ slug: 'garden', name: 'Garden', color: null, deletedAt: new Date().toISOString(), purgeAt: new Date(Date.now() + 30 * 86_400_000).toISOString() }])
     await wrapper.find('[aria-label="Delete this space"]').trigger('click')
     await flushPromises()
-    expect(removeGraph).toHaveBeenCalledWith({ graph: 'garden' })
+    expect(removeSpaceEntry).toHaveBeenCalledWith({ space: 'garden' })
     expect(wrapper.findAll('h3').map(title => title.text())).toEqual(['Spaces on this server', 'Deleted spaces'])
     expect(wrapper.find('.history-item.deleted').text()).toContain('deleted for good in 30 days')
 
     await wrapper.find('.history-item.deleted [aria-label="Restore"]').trigger('click')
-    expect(restoreGraph).toHaveBeenCalledWith({ slug: 'garden' })
-    expect(wrapper.emitted('open-graph')).toBeUndefined()
+    expect(restoreSpace).toHaveBeenCalledWith({ slug: 'garden' })
+    expect(wrapper.emitted('open-space')).toBeUndefined()
   })
 
   it('filters by name and opens a perfect match with Enter', async () => {
@@ -258,7 +258,7 @@ describe('ProjectSelectionView on a server with accounts', () => {
     expect(titles(wrapper)).toEqual(['Garden'])
     expect(wrapper.find('.select-project').text()).toBe('Open')
     await wrapper.find('input').trigger('keydown', { key: 'Enter' })
-    expect(wrapper.emitted('open-graph')).toEqual([['garden']])
+    expect(wrapper.emitted('open-space')).toEqual([['garden']])
   })
 
   it('creates a space from a new name in the box, and opens it', async () => {
@@ -268,22 +268,22 @@ describe('ProjectSelectionView on a server with accounts', () => {
     expect(wrapper.find('.select-project').text()).toBe('New space')
     await wrapper.find('input').trigger('keydown', { key: 'Enter' })
     await flushPromises()
-    expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
-    expect(wrapper.emitted('open-graph')).toEqual([['my-idea']])
+    expect(createSpace).toHaveBeenCalledWith({ name: 'My idea' })
+    expect(wrapper.emitted('open-space')).toEqual([['my-idea']])
   })
 
   it('lets a visitor create a space where accounts are given automatically, and gets them one first', async () => {
-    const wrapper = mountServer('My idea', { name: null, canCreateGraphs: false, signUp: { open: false, browserKey: true } })
+    const wrapper = mountServer('My idea', { name: null, canCreateSpaces: false, signUp: { open: false, browserKey: true } })
     const ensureAccount = vi.mocked(useViewerStore().ensureAccount).mockResolvedValueOnce(false).mockResolvedValueOnce(true)
     await flushPromises()
     await wrapper.find('.select-project').trigger('click')
     await flushPromises()
-    expect(createGraph).not.toHaveBeenCalled()
+    expect(createSpace).not.toHaveBeenCalled()
 
     await wrapper.find('.select-project').trigger('click')
     await flushPromises()
     expect(ensureAccount).toHaveBeenCalledTimes(2)
-    expect(createGraph).toHaveBeenCalledWith({ name: 'My idea' })
+    expect(createSpace).toHaveBeenCalledWith({ name: 'My idea' })
   })
 
   it('adds a repository from a Git URL in the box and opens it', async () => {
@@ -295,7 +295,7 @@ describe('ProjectSelectionView on a server with accounts', () => {
     await wrapper.find('.select-project').trigger('click')
     await flushPromises()
     expect(addRemote).toHaveBeenCalledWith({ url: 'https://github.com/someone/plans.git' })
-    expect(wrapper.emitted('open-graph')).toEqual([['plans']])
+    expect(wrapper.emitted('open-space')).toEqual([['plans']])
   })
 
   it('adds a repository of the server by its path, for server admins only', async () => {
@@ -323,7 +323,7 @@ describe('ProjectSelectionView on a server with accounts', () => {
   })
 
   it('asks a visitor to log in before creating a space', async () => {
-    const wrapper = mountServer('My idea', { name: null, canCreateGraphs: false })
+    const wrapper = mountServer('My idea', { name: null, canCreateSpaces: false })
     await flushPromises()
     expect(wrapper.find('.select-project').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).toContain('Log in to create a space.')

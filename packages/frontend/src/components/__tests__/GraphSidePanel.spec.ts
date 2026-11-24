@@ -120,7 +120,7 @@ describe('GraphSidePanel', () => {
 
     expect(trpc.idea.update.mutate).toHaveBeenCalledWith(
       expect.objectContaining({
-        graph: '/tmp/project',
+        space: '/tmp/project',
         ideaId: 'p1',
         idea: expect.objectContaining({
           supportingConnections: expect.arrayContaining([

@@ -54,7 +54,7 @@ function sameOrigin(req: http.IncomingMessage): boolean {
   }
 }
 
-// A token limited to some graphs (an MCP client's) or given to another website is never a server admin's login.
+// A token limited to some spaces (an MCP client's) or given to another website is never a server admin's login.
 function isServerAdminToken(token: string | undefined): boolean {
   const account = resolveToken(token);
   return account?.serverAdmin === true && account.scope === null && account.site === null;

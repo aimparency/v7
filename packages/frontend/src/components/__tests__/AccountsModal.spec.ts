@@ -8,7 +8,7 @@ const { createAccount, setRights, listAccounts, listInvitations, createInvitatio
   createInvitation: vi.fn().mockResolvedValue({ code: 'the-code' }),
   createAccount: vi.fn().mockResolvedValue(undefined),
   setRights: vi.fn().mockResolvedValue(undefined),
-  listAccounts: vi.fn().mockResolvedValue([{ name: 'ana', serverAdmin: false, canCreateGraphs: false }])
+  listAccounts: vi.fn().mockResolvedValue([{ name: 'ana', serverAdmin: false, canCreateSpaces: false }])
 }))
 vi.mock('../../trpc', () => ({
   trpc: {
@@ -28,7 +28,7 @@ const mountModal = async () => {
 describe('AccountsModal', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    listAccounts.mockResolvedValue([{ name: 'ana', serverAdmin: false, canCreateGraphs: false }])
+    listAccounts.mockResolvedValue([{ name: 'ana', serverAdmin: false, canCreateSpaces: false }])
     listInvitations.mockResolvedValue([])
     createInvitation.mockResolvedValue({ code: 'the-code' })
   })
@@ -39,7 +39,7 @@ describe('AccountsModal', () => {
 
   it('makes a server admin only after confirming the shell warning, and puts the box back when declined', async () => {
     const wrapper = await mountModal()
-    const [createsGraphs, serverAdmin] = wrapper.findAll('.row input[type=checkbox]')
+    const [createsSpaces, serverAdmin] = wrapper.findAll('.row input[type=checkbox]')
     const confirm = vi.spyOn(window, 'confirm').mockReturnValueOnce(false).mockReturnValueOnce(true)
 
     await serverAdmin!.setValue(true)
@@ -48,19 +48,19 @@ describe('AccountsModal', () => {
     expect(setRights).not.toHaveBeenCalled()
     expect((serverAdmin!.element as HTMLInputElement).checked).toBe(false)
 
-    listAccounts.mockResolvedValue([{ name: 'ana', serverAdmin: true, canCreateGraphs: false }])
+    listAccounts.mockResolvedValue([{ name: 'ana', serverAdmin: true, canCreateSpaces: false }])
     await serverAdmin!.setValue(true)
     await flushPromises()
     expect(setRights).toHaveBeenCalledWith({ name: 'ana', serverAdmin: true })
     expect((serverAdmin!.element as HTMLInputElement).checked).toBe(true)
 
-    // Creating graphs is no shell: nothing to confirm.
+    // Creating spaces is no shell: nothing to confirm.
     setRights.mockClear()
     confirm.mockClear()
-    await createsGraphs!.setValue(true)
+    await createsSpaces!.setValue(true)
     await flushPromises()
     expect(confirm).not.toHaveBeenCalled()
-    expect(setRights).toHaveBeenCalledWith({ name: 'ana', canCreateGraphs: true })
+    expect(setRights).toHaveBeenCalledWith({ name: 'ana', canCreateSpaces: true })
   })
 
   it('adds an account with no server-wide rights', async () => {
@@ -74,7 +74,7 @@ describe('AccountsModal', () => {
   })
 
   it('makes an invitation link, shown once, and lists who used the earlier ones', async () => {
-    listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, canCreateGraphs: false, redeemedBy: 'ben', createdAt: '' }])
+    listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, canCreateSpaces: false, redeemedBy: 'ben', createdAt: '' }])
     const wrapper = await mountModal()
     expect(wrapper.text()).toContain('for one person · used by ben')
 
@@ -88,25 +88,25 @@ describe('AccountsModal', () => {
   })
 
   it('gives an invitation the rights of an account: server admin only for one person, after confirming', async () => {
-    listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, serverAdmin: true, canCreateGraphs: true, redeemedBy: null, createdAt: '' }])
+    listInvitations.mockResolvedValue([{ id: 'first', kind: 'once', expiresAt: null, serverAdmin: true, canCreateSpaces: true, redeemedBy: null, createdAt: '' }])
     const wrapper = await mountModal()
     expect(wrapper.text()).toContain('for one person · no end · server admin · creates spaces')
 
     const form = wrapper.find('form.invite')
-    const [once, createsGraphs, serverAdmin] = form.findAll('input[type=checkbox]')
+    const [once, createsSpaces, serverAdmin] = form.findAll('input[type=checkbox]')
     vi.spyOn(window, 'confirm').mockReturnValue(true)
-    await createsGraphs!.setValue(true)
+    await createsSpaces!.setValue(true)
     await serverAdmin!.setValue(true)
     await form.trigger('submit')
     await flushPromises()
     expect(window.confirm).toHaveBeenCalledWith(expect.stringContaining(ADMIN_SHELL_WARNING))
-    expect(createInvitation).toHaveBeenCalledWith({ kind: 'once', serverAdmin: true, canCreateGraphs: true })
+    expect(createInvitation).toHaveBeenCalledWith({ kind: 'once', serverAdmin: true, canCreateSpaces: true })
 
     // A link for anyone never makes a server admin.
     await once!.setValue(false)
     expect((serverAdmin!.element as HTMLInputElement).disabled).toBe(true)
     await form.trigger('submit')
     await flushPromises()
-    expect(createInvitation).toHaveBeenLastCalledWith({ kind: 'permanent', canCreateGraphs: true })
+    expect(createInvitation).toHaveBeenLastCalledWith({ kind: 'permanent', canCreateSpaces: true })
   })
 })

@@ -73,7 +73,7 @@ const updatePhase = async () => {
     const previousSelectionIds = { ...uiStore.selectedPhaseIdByColumn }
 
     const updatedPhase = await trpc.phase.update.mutate({
-      graph: projectStore.projectPath,
+      space: projectStore.projectPath,
       phaseId: editingPhaseId,
       phase: {
         name: modalStore.newPhaseName.trim(),
@@ -123,7 +123,7 @@ watch(() => modalStore.showPhaseModal, async (newVal) => {
       if (modalStore.phaseModalEditingParentId) {
         try {
           const p = await trpc.phase.get.query({
-            graph: projectStore.projectPath,
+            space: projectStore.projectPath,
             phaseId: modalStore.phaseModalEditingParentId
           })
           selectedParentName.value = p.name

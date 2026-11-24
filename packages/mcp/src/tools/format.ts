@@ -31,7 +31,7 @@ export async function describeRepoEdges(trpcClient: BackendClient, projectPath: 
   if (!ideas.some((a) => a?.supportingRepos?.length)) return; // no registry round-trip
   let registry: Awaited<ReturnType<BackendClient["linkedRepo"]["list"]["query"]>> = [];
   try {
-    registry = await trpcClient.linkedRepo.list.query({ graph: projectPath });
+    registry = await trpcClient.linkedRepo.list.query({ space: projectPath });
   } catch {
     // Registry unreadable: degrade to bare repoIds rather than failing the read.
   }

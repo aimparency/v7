@@ -8,7 +8,7 @@ const DONE = (id: string, text = id) => ({ id, text, status: { state: "implement
 test("countIdeaReferences matches an idea by its 8-char id prefix", () => {
   const id = "8ae69400-1743-4569-b77f-0ae6f1109273";
   const counts = countIdeaReferences(
-    ["feat(graph): data model (8ae69400)", "unrelated commit", "fix: more (8ae69400) again"],
+    ["feat(space): data model (8ae69400)", "unrelated commit", "fix: more (8ae69400) again"],
     [id, "11111111-2222-3333-4444-555555555555"],
   );
   assert.equal(counts.get(id), 2, "counted both referencing commits");

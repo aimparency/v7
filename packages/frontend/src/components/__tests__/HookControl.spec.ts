@@ -4,7 +4,7 @@ import { createTestingPinia } from '@pinia/testing'
 import HookControl from '../HookControl.vue'
 import HookLoopsModal from '../HookLoopsModal.vue'
 
-const defaultLoop = { slug: 'default', title: 'Default', work: 'Continue with the graph.', human: 'Challenge first.' }
+const defaultLoop = { slug: 'default', title: 'Default', work: 'Continue with the space.', human: 'Challenge first.' }
 const refactor = { slug: 'refactor', title: 'Refactor', work: 'Tidy one module.', human: '' }
 
 const { get, select, saveLoop, deleteLoop } = vi.hoisted(() => ({
@@ -38,7 +38,7 @@ describe('HookControl', () => {
 
     await wrapper.findAll('.menu-item')[2]!.trigger('click')
     await flushPromises()
-    expect(select).toHaveBeenCalledWith({ graph: '/p', loop: 'refactor', agent: undefined })
+    expect(select).toHaveBeenCalledWith({ space: '/p', loop: 'refactor', agent: undefined })
     expect(wrapper.find('button').text()).toBe('Hook: Refactor')
     wrapper.unmount()
   })
@@ -54,7 +54,7 @@ describe('HookControl', () => {
 
     await wrapper.findAll('.menu-item')[1]!.trigger('click')
     await flushPromises()
-    expect(select).toHaveBeenCalledWith({ graph: '/p', loop: 'default', agent: 'claude' })
+    expect(select).toHaveBeenCalledWith({ space: '/p', loop: 'default', agent: 'claude' })
     expect(wrapper.find('button').text()).toBe('Hook: Default')
     wrapper.unmount()
   })
@@ -72,7 +72,7 @@ describe('HookLoopsModal', () => {
     await wrapper.find('input').setValue('Ideation')
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(saveLoop).toHaveBeenCalledWith({ graph: '/p', slug: undefined, title: 'Ideation', work: defaultLoop.work, human: defaultLoop.human })
+    expect(saveLoop).toHaveBeenCalledWith({ space: '/p', slug: undefined, title: 'Ideation', work: defaultLoop.work, human: defaultLoop.human })
     expect((wrapper.find('input').element as HTMLInputElement).value).toBe('Ideation')
   })
 
@@ -87,7 +87,7 @@ describe('HookLoopsModal', () => {
     expect(textareas()).toEqual([defaultLoop.work, defaultLoop.human])
     await wrapper.find('form').trigger('submit')
     await flushPromises()
-    expect(saveLoop).toHaveBeenCalledWith({ graph: '/p', slug: 'refactor', title: 'Refactor', work: defaultLoop.work, human: defaultLoop.human })
+    expect(saveLoop).toHaveBeenCalledWith({ space: '/p', slug: 'refactor', title: 'Refactor', work: defaultLoop.work, human: defaultLoop.human })
   })
 
   it('Escape or the close button closes it; with unsaved edits it asks first, Escape again keeps editing', async () => {
@@ -123,7 +123,7 @@ describe('HookLoopsModal', () => {
     expect(activate()!.text()).toBe('Activate')
     await activate()!.trigger('click')
     await flushPromises()
-    expect(select).toHaveBeenCalledWith({ graph: '/p', loop: 'refactor' })
+    expect(select).toHaveBeenCalledWith({ space: '/p', loop: 'refactor' })
 
     await wrapper.setProps({ state: { ...state, loop: 'refactor' } })
     expect(activate()).toBeUndefined() // already running
@@ -136,7 +136,7 @@ describe('HookLoopsModal', () => {
     await activate()!.trigger('click')
     await flushPromises()
     expect(saveLoop).toHaveBeenCalledWith(expect.objectContaining({ slug: undefined, title: 'Ideation' }))
-    expect(select).toHaveBeenLastCalledWith({ graph: '/p', loop: 'ideation' })
+    expect(select).toHaveBeenLastCalledWith({ space: '/p', loop: 'ideation' })
   })
 
   it('without the hook installed Activate points to the Hook menu', () => {

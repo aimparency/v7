@@ -12,7 +12,7 @@
     "start": "node scripts/run-local-stack.mjs start",
     "start:fast": "node scripts/run-local-stack.mjs start --no-build",
     "accounts": "tsx scripts/accounts.mjs",
-    "graphs": "tsx scripts/graphs.mjs",
+    "spaces": "tsx scripts/spaces.mjs",
     "validate:local-runtime": "node scripts/validate-local-runtime.mjs",
     "test:hooks": "bash scripts/hooks/test.sh",
     "verify:migration": "tsx packages/shared/scripts/verify-bowman-migration.ts",

@@ -18,6 +18,15 @@ const moved = new Set();
 
 /** @returns {string} */
 export function serverDirectory() {
+  const directory = locateServerDirectory();
+  if (!moved.has(directory)) {
+    renameGraphsToSpaces(directory);
+    moved.add(directory);
+  }
+  return directory;
+}
+
+function locateServerDirectory() {
   if (process.env.AIMPARENCY_SERVER_DIR) return path.resolve(process.env.AIMPARENCY_SERVER_DIR);
   const name = process.env.AIMPARENCY_SERVER || DEFAULT_SERVER_NAME;
   if (!/^[a-z0-9][a-z0-9-]*$/.test(name)) throw new Error(`A server name has lower-case letters, digits and hyphens: "${name}"`);
@@ -29,6 +38,58 @@ export function serverDirectory() {
     moved.add(legacy);
   }
   return directory;
+}
+
+/** @param {string} file @param {(content: any) => boolean} change */
+function rewriteJson(file, change) {
+  if (!fs.existsSync(file)) return;
+  const content = JSON.parse(fs.readFileSync(file, 'utf8'));
+  if (change(content)) fs.writeFileSync(file, JSON.stringify(content, null, 2) + '\n');
+}
+
+/** @param {any} object @param {string} from @param {string} to */
+function renameKey(object, from, to) {
+  if (!object || typeof object !== 'object' || !(from in object)) return false;
+  if (!(to in object)) object[to] = object[from];
+  delete object[from];
+  return true;
+}
+
+/**
+ * 2026-11: what the server files called graphs are spaces. Renames the
+ * stored names once; idempotent, so a server that already has them is untouched.
+ * @param {string} directory
+ */
+export function renameGraphsToSpaces(directory) {
+  if (!fs.existsSync(directory)) return;
+  const graphs = path.join(directory, 'graphs.json');
+  const spaces = path.join(directory, 'spaces.json');
+  if (fs.existsSync(graphs) && !fs.existsSync(spaces)) {
+    const content = JSON.parse(fs.readFileSync(graphs, 'utf8'));
+    renameKey(content, 'graphs', 'spaces');
+    fs.writeFileSync(spaces, JSON.stringify(content, null, 2) + '\n');
+    fs.rmSync(graphs);
+  }
+  rewriteJson(path.join(directory, 'server.json'), (config) => {
+    const changed = [renameKey(config, 'graphCreation', 'spaceCreation'),
+      renameKey(config.limits, 'graphsPerAccount', 'spacesPerAccount'), renameKey(config.limits, 'graphMegabytes', 'spaceMegabytes')];
+    return changed.some(Boolean);
+  });
+  rewriteJson(path.join(directory, 'accounts.json'), (content) => {
+    const changed = [
+      ...(content.accounts ?? []).map((/** @type {any} */ account) => renameKey(account, 'canCreateGraphs', 'canCreateSpaces')),
+      ...(content.invitations ?? []).map((/** @type {any} */ invitation) => renameKey(invitation, 'canCreateGraphs', 'canCreateSpaces')),
+      ...(content.tokens ?? []).map((/** @type {any} */ token) => renameKey(token, 'graphs', 'spaces'))
+    ];
+    return changed.some(Boolean);
+  });
+  const guest = path.join(directory, 'guest');
+  if (!fs.existsSync(guest)) return;
+  for (const slug of fs.readdirSync(guest)) {
+    // An offer named the space it offers `space`; now `offeredSpace`.
+    rewriteJson(path.join(guest, slug, 'notes.json'), (content) =>
+      (content.notes ?? []).map((/** @type {any} */ note) => renameKey(note, 'space', 'offeredSpace')).some(Boolean));
+  }
 }
 
 /** Idempotent: does nothing once the old directory is gone or the new one exists. */

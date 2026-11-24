@@ -93,12 +93,12 @@ describe('IdeaSearchModal', () => {
 
   it('emits idea selection directly in graph view', async () => {
     vi.mocked(trpc.idea.search.query).mockResolvedValue([
-      { id: 'a1', text: 'Graph idea', status: { state: 'open' }, score: 0.7 } as any
+      { id: 'a1', text: 'Space idea', status: { state: 'open' }, score: 0.7 } as any
     ])
     vi.mocked(trpc.idea.searchSemantic.query).mockResolvedValue([])
     vi.mocked(trpc.idea.get.query).mockResolvedValue({
       id: 'a1',
-      text: 'Graph idea',
+      text: 'Space idea',
       status: { state: 'open' }
     } as any)
 
@@ -130,7 +130,7 @@ describe('IdeaSearchModal', () => {
     await result.trigger('click')
 
     expect(wrapper.emitted('select')).toEqual([
-      [{ type: 'idea', data: { id: 'a1', text: 'Graph idea', status: { state: 'open' } } }]
+      [{ type: 'idea', data: { id: 'a1', text: 'Space idea', status: { state: 'open' } } }]
     ])
   })
 

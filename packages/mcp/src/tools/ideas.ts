@@ -53,9 +53,9 @@ function withChild(parent: IdeaRecord, childId: string): IdeaRecord {
     : { ...parent, supportingConnections: [...parent.supportingConnections, { ideaId: childId, weight: 1, relativePosition: [0, 0] }] };
 }
 
-async function setShares(trpcClient: BackendClient, graph: string, ideaId: string, request: ShareRequest) {
-  const idea = await trpcClient.idea.get.query({ graph, ideaId });
-  await trpcClient.idea.update.mutate({ graph, ideaId, idea: shareUpdate(idea, request) });
+async function setShares(trpcClient: BackendClient, space: string, ideaId: string, request: ShareRequest) {
+  const idea = await trpcClient.idea.get.query({ space, ideaId });
+  await trpcClient.idea.update.mutate({ space, ideaId, idea: shareUpdate(idea, request) });
 }
 
 /**
@@ -63,14 +63,14 @@ async function setShares(trpcClient: BackendClient, graph: string, ideaId: strin
  * reflect on each parent connection's hypothesis that has no reflection yet.
  */
 async function reflectionNudgeFor(trpcClient: BackendClient, projectPath: string, ideaId: string, state: string): Promise<string> {
-  const meta = await trpcClient.project.getMeta.query({ graph: projectPath }).catch(() => null);
+  const meta = await trpcClient.project.getMeta.query({ space: projectPath }).catch(() => null);
   const statuses = meta?.statuses ?? INITIAL_STATES;
   if (!statuses.find((status) => status.key === state)?.promptsReflection) return "";
 
-  const idea = await trpcClient.idea.get.query({ graph: projectPath, ideaId });
+  const idea = await trpcClient.idea.get.query({ space: projectPath, ideaId });
   const lines: string[] = [];
   for (const parentId of idea?.supportedIdeas ?? []) {
-    const parent = await trpcClient.idea.get.query({ graph: projectPath, ideaId: parentId }).catch(() => null);
+    const parent = await trpcClient.idea.get.query({ space: projectPath, ideaId: parentId }).catch(() => null);
     const connection = parent?.supportingConnections?.find((c) => c.ideaId === ideaId);
     if (!parent || !connection || connection.reflection?.trim()) continue;
     const hypothesis = connection.hypothesis?.trim() ? ` — hypothesis: "${connection.hypothesis.trim()}"` : " — no hypothesis recorded";
@@ -95,14 +95,14 @@ export function ideaCreationConfirmationToken(args: Record<string, unknown>): st
 export async function ideaContext(trpcClient: BackendClient, projectPath: string, ideaId: string, allIdeas?: Awaited<ReturnType<BackendClient["idea"]["list"]["query"]>>) {
   // The whole space powers the value model (to choose which parent to follow
   // at branches) and resolves parent/child text from a map instead of N round-trips.
-  allIdeas ??= await trpcClient.idea.list.query({ graph: projectPath });
+  allIdeas ??= await trpcClient.idea.list.query({ space: projectPath });
   const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
   const { flowValues } = calculateIdeaValues(allIdeas);
 
-  const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ graph: projectPath, ideaId });
+  const idea = ideaMap.get(ideaId) || await trpcClient.idea.get.query({ space: projectPath, ideaId });
 
   const similarIdeas = await trpcClient.idea.searchSemantic.query({
-    graph: projectPath,
+    space: projectPath,
     // Text and the start of the description: a long description would exceed the search limit.
     query: `${idea.text} ${idea.description || ''}`.trim().slice(0, MAX_SEARCH_QUERY_CHARS),
     limit: 6 // Request 6, filter self
@@ -153,7 +153,7 @@ export const ideaTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const idea = await trpcClient.idea.get.query({
-        graph: args.space as string,
+        space: args.space as string,
         ideaId: args.ideaId as string,
       });
       await describeRepoEdges(trpcClient, args.space as string, [idea]);
@@ -203,7 +203,7 @@ export const ideaTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const ideas = await trpcClient.idea.search.query({
-        graph: args.space as string,
+        space: args.space as string,
         query: args.query as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
@@ -237,7 +237,7 @@ export const ideaTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const results = await trpcClient.idea.searchSemantic.query({
-        graph: args.space as string,
+        space: args.space as string,
         query: args.query as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
@@ -292,11 +292,11 @@ export const ideaTools: ToolDefinition[] = [
       if (args.confirmationToken === undefined) {
         const [related, projectMeta, parentSplits] = await Promise.all([
           trpcClient.idea.search.query({
-            graph: args.space as string,
+            space: args.space as string,
             query: args.text as string,
             limit: 8,
           }),
-          trpcClient.project.getMeta.query({ graph: args.space as string }).catch(() => null),
+          trpcClient.project.getMeta.query({ space: args.space as string }).catch(() => null),
           describeSplits(trpcClient, args.space as string, parents.map((parent) => parent.ideaId)),
         ]);
         return {
@@ -341,7 +341,7 @@ export const ideaTools: ToolDefinition[] = [
       const pendingId = "the new idea";
       const parentRequests = parents.map((parent) => parentShareRequest(parent, pendingId));
       const parentIdeas = parentRequests.some(Boolean)
-        ? await trpcClient.idea.getMany.query({ graph: args.space as string, ideaIds: parents.map((parent) => parent.ideaId) })
+        ? await trpcClient.idea.getMany.query({ space: args.space as string, ideaIds: parents.map((parent) => parent.ideaId) })
         : [];
       parents.forEach((parent, index) => {
         const request = parentRequests[index];
@@ -358,7 +358,7 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       const result = await trpcClient.idea.createFloatingIdea.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         idea: {
           text: args.text as string,
           description: args.description as string | undefined,
@@ -379,7 +379,7 @@ export const ideaTools: ToolDefinition[] = [
       // Handle supportingConnections (children)
       for (const child of children) {
         await trpcClient.idea.connectIdeas.mutate({
-          graph: args.space as string,
+          space: args.space as string,
           parentIdeaId: result.id,
           childIdeaId: child.ideaId,
           weight: child.weight,
@@ -390,7 +390,7 @@ export const ideaTools: ToolDefinition[] = [
       // Handle supportedIdeas (parents)
       for (const parent of parents) {
         await trpcClient.idea.connectIdeas.mutate({
-          graph: args.space as string,
+          space: args.space as string,
           parentIdeaId: parent.ideaId,
           childIdeaId: result.id,
           weight: parent.weight,
@@ -404,7 +404,7 @@ export const ideaTools: ToolDefinition[] = [
       // If phaseId provided, commit to phase
       if (args.phaseId) {
         await trpcClient.idea.commitToPhase.mutate({
-          graph: args.space as string,
+          space: args.space as string,
           ideaId: result.id,
           phaseId: args.phaseId as string,
         });
@@ -471,7 +471,7 @@ export const ideaTools: ToolDefinition[] = [
       if (fields.cost !== undefined) updateData.cost = fields.cost;
       if (fields.duration !== undefined) updateData.duration = fields.duration;
 
-      const graph = args.space as string;
+      const space = args.space as string;
       const ideaId = args.ideaId as string;
       const addedChildren = ((args.addSupportingConnections as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
       const addedParents = ((args.addSupportedIdeas as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
@@ -481,7 +481,7 @@ export const ideaTools: ToolDefinition[] = [
       // Check every parent's shares before writing anything.
       const parentRequests = addedParents.map((parent) => parentShareRequest(parent, ideaId));
       if (parentRequests.some(Boolean)) {
-        const parentIdeas = await trpcClient.idea.getMany.query({ graph, ideaIds: addedParents.map((parent) => parent.ideaId) });
+        const parentIdeas = await trpcClient.idea.getMany.query({ space, ideaIds: addedParents.map((parent) => parent.ideaId) });
         addedParents.forEach((parent, index) => {
           const request = parentRequests[index];
           const parentIdea = parentIdeas.find((idea) => idea.id === parent.ideaId);
@@ -493,7 +493,7 @@ export const ideaTools: ToolDefinition[] = [
       if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
           args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined || ownShares) {
         const existingIdea = await trpcClient.idea.get.query({
-          graph: args.space as string,
+          space: args.space as string,
           ideaId: args.ideaId as string,
         });
 
@@ -528,7 +528,7 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       await trpcClient.idea.update.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         ideaId: args.ideaId as string,
         idea: updateData,
       });
@@ -537,7 +537,7 @@ export const ideaTools: ToolDefinition[] = [
         if (parent.weight === undefined && parent.hypothesis === undefined && parent.reflection === undefined && !parent.shares) continue;
 
         const parentIdea = await trpcClient.idea.get.query({
-          graph: args.space as string,
+          space: args.space as string,
           ideaId: parent.parentIdeaId,
         });
         const childIdeaId = args.ideaId as string;
@@ -558,7 +558,7 @@ export const ideaTools: ToolDefinition[] = [
           supportingConnections[existingIndex] = next;
         }
         await trpcClient.idea.update.mutate({
-          graph,
+          space,
           ideaId: parent.parentIdeaId,
           idea: parent.shares ? shareUpdate({ ...parentIdea, supportingConnections }, parent.shares) : { supportingConnections },
         });
@@ -572,7 +572,7 @@ export const ideaTools: ToolDefinition[] = [
       if ((args.status as { state?: string } | undefined)?.state === "implemented") {
         try {
           const idea = await trpcClient.idea.get.query({
-            graph: args.space as string,
+            space: args.space as string,
             ideaId: args.ideaId as string,
           });
           if (!idea?.status?.comment?.trim()) {
@@ -598,7 +598,7 @@ export const ideaTools: ToolDefinition[] = [
             text: `Updated idea ${args.ideaId}${verificationNudge}${reflectionNudge}` +
               splitsSection(await describeSplits(
                 trpcClient,
-                graph,
+                space,
                 [...addedParents.map((parent) => parent.ideaId), ...(ownShares || addedChildren.length ? [ideaId] : [])],
                 ideaId,
               )),
@@ -621,7 +621,7 @@ export const ideaTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const { deletedIds } = await trpcClient.idea.delete.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         ideaIds: [args.ideaId as string],
         cascade: args.cascade === true,
       });
@@ -649,7 +649,7 @@ export const ideaTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.merge.mutate({
-        graph: args.space as string,
+        space: args.space as string,
         targetId: args.targetId as string,
         sourceId: args.sourceId as string,
       });

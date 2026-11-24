@@ -42,11 +42,11 @@ const valueGoesTo = computed(() => {
       .slice(0, GAINERS_SHOWN)
       .map(shift => shift.text || '(untitled)')
   } catch {
-    return [] // an incomplete graph (still loading) has no forecast
+    return [] // an incomplete space (still loading) has no forecast
   }
 })
 
-// Capture phase: the dialog owns the keyboard, nothing leaks to list or graph keys.
+// Capture phase: the dialog owns the keyboard, nothing leaks to list or space keys.
 const handleKeydown = (event: KeyboardEvent) => {
   event.stopPropagation()
   const choice = { r: 'keep', x: 'cascade', Escape: null }[event.key]

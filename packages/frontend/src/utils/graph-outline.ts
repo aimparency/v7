@@ -1,4 +1,4 @@
-// The wobbly string around a linked graph opened in place: a closed curve
+// The wobbly string around a linked space opened in place: a closed curve
 // around its ideas that moves gently, so what is external reads at a glance.
 //
 // The shape is radial around the centroid of the ideas: in each direction it

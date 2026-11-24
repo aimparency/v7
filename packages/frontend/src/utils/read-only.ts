@@ -6,7 +6,7 @@ import type { AppRouter } from 'backend'
 // are refused here, before any optimistic local change reaches the server.
 const reasons = new Map<string, string>()
 
-// Viewer state, not graph content: allowed on read-only projects. So are
+// Viewer state, not space content: allowed on read-only projects. So are
 // notes and offers: they are the guests' layer, kept beside the space, and
 // the server decides who may leave one.
 const ALLOWED_MUTATIONS = new Set(['phase.setCursor', 'project.buildSearchIndex', 'notes.add', 'notes.remove'])
@@ -30,7 +30,7 @@ export const isReadOnlyError = (error: unknown) =>
   error instanceof ReadOnlyProjectError || (error instanceof Error && /open read-only/.test(error.message))
 
 export const readOnlyGuardLink: TRPCLink<AppRouter> = () => ({ next, op }) => {
-  const projectPath = (op.input as { graph?: unknown } | undefined)?.graph
+  const projectPath = (op.input as { space?: unknown } | undefined)?.space
   const reason = op.type === 'mutation' && !ALLOWED_MUTATIONS.has(op.path) && typeof projectPath === 'string'
     ? reasons.get(projectKey(projectPath))
     : undefined

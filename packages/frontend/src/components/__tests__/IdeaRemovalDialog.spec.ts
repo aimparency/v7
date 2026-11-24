@@ -54,7 +54,7 @@ describe('IdeaRemovalDialog', () => {
     wrapper.unmount()
   })
 
-  it('answers with r, x and Escape and keeps every key from list and graph handlers', () => {
+  it('answers with r, x and Escape and keeps every key from list and space handlers', () => {
     const wrapper = mountDialog()
     const reachedWindow = vi.fn()
     window.addEventListener('keydown', reachedWindow)

@@ -1,5 +1,5 @@
 import { defineStore } from 'pinia'
-import { isGraphSlug, type Hint } from 'shared'
+import { isSpaceSlug, type Hint } from 'shared'
 import {
   normalizeProjectPath,
   removeProjectFromHistoryEntries,
@@ -22,14 +22,14 @@ export function setRepoUrlParam(repoUrl: string) {
   window.history.replaceState({}, '', url)
 }
 
-// /spaces/<slug>: a graph of this server.
-function graphSlugFromLocation(): string {
+// /spaces/<slug>: a space of this server.
+function spaceSlugFromLocation(): string {
   const slug = /^\/spaces\/([^/]+)\/?$/.exec(window.location.pathname)?.[1] ?? ''
-  return isGraphSlug(slug) ? slug : ''
+  return isSpaceSlug(slug) ? slug : ''
 }
 
 function getInitialProjectPath(): string {
-  const slug = graphSlugFromLocation()
+  const slug = spaceSlugFromLocation()
   if (slug) return slug
   const urlParams = new URLSearchParams(window.location.search)
   if (urlParams.get('repo')) return ''
@@ -66,15 +66,15 @@ export const useProjectStore = defineStore('project', {
   },
 
   actions: {
-    // The address bar names the open project: /spaces/<slug> for a graph of this
+    // The address bar names the open project: /spaces/<slug> for a space of this
     // server, ?project=<path> for a directory of this machine.
     setProjectPath(path: string) {
       const cleanPath = normalizeProjectPath(path)
       this.projectPath = cleanPath
       const url = new URL(window.location.href)
-      url.pathname = isGraphSlug(cleanPath) ? `/spaces/${cleanPath}` : '/'
+      url.pathname = isSpaceSlug(cleanPath) ? `/spaces/${cleanPath}` : '/'
       url.searchParams.delete('path')
-      if (cleanPath && !isGraphSlug(cleanPath)) url.searchParams.set('project', cleanPath)
+      if (cleanPath && !isSpaceSlug(cleanPath)) url.searchParams.set('project', cleanPath)
       else url.searchParams.delete('project')
       if (cleanPath) {
         localStorage.setItem('aimparency-project-path', cleanPath)

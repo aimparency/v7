@@ -1,5 +1,5 @@
 // What a server admin changes in the UI: the server's settings, and repositories
-// on the machine added as graphs. Nobody else may.
+// on the machine added as spaces. Nobody else may.
 import { test, beforeEach, afterEach } from 'vitest';
 import assert from 'node:assert';
 import fs from 'fs-extra';
@@ -33,14 +33,14 @@ const loggedIn = async (name: string) => {
 
 test('a server admin sets the public address and sign-up; the rest of server.json stays', async () => {
   const admin = await loggedIn('admin');
-  await admin.auth.setServerSettings({ publicUrl: 'https://graphs.example.org/', signUp: { open: true }, graphCreation: 'selected' });
-  assert.equal(serverConfig().publicUrl, 'https://graphs.example.org');
+  await admin.auth.setServerSettings({ publicUrl: 'https://spaces.example.org/', signUp: { open: true }, spaceCreation: 'selected' });
+  assert.equal(serverConfig().publicUrl, 'https://spaces.example.org');
   assert.equal(serverConfig().signUp.open, true);
   assert.equal(serverConfig().signUp.browserKey, false);
-  assert.equal(serverConfig().graphCreation, 'selected');
+  assert.equal(serverConfig().spaceCreation, 'selected');
   assert.equal(serverConfig().port, 4100);
   assert.deepEqual(await admin.auth.getServerSettings(), {
-    publicUrl: 'https://graphs.example.org', graphCreation: 'selected',
+    publicUrl: 'https://spaces.example.org', spaceCreation: 'selected',
     signUp: { open: true, browserKey: false, wallet: false }, notes: 'everyone', read: 'everyone'
   });
 
@@ -56,30 +56,30 @@ test('only a server admin sees or changes the settings and adds a repository by 
   await assert.rejects(ana.auth.setServerSettings({ publicUrl: 'https://mine.example.org' }), /server admin/i);
   const repository = path.join(root, 'repository');
   await fs.ensureDir(path.join(repository, '.bowman'));
-  await assert.rejects(ana.graphs.addCheckout({ path: repository }), /server admin/i);
+  await assert.rejects(ana.spaces.addCheckout({ path: repository }), /server admin/i);
 
   const admin = await loggedIn('admin');
-  assert.equal((await admin.graphs.addCheckout({ path: repository })).slug, 'repository');
-  await assert.rejects(admin.graphs.addCheckout({ path: repository }), /already/);
-  await assert.rejects(admin.graphs.addCheckout({ path: path.join(root, 'nowhere') }), /No such directory/);
+  assert.equal((await admin.spaces.addCheckout({ path: repository })).slug, 'repository');
+  await assert.rejects(admin.spaces.addCheckout({ path: repository }), /already/);
+  await assert.rejects(admin.spaces.addCheckout({ path: path.join(root, 'nowhere') }), /No such directory/);
 });
 
-test('the owner changes a graph\'s address; the old one keeps leading there and stays reserved', async () => {
+test('the owner changes a space\'s address; the old one keeps leading there and stays reserved', async () => {
   const admin = await loggedIn('admin');
-  const { slug } = await admin.graphs.create({ name: 'Old Name' });
+  const { slug } = await admin.spaces.create({ name: 'Old Name' });
   assert.equal(slug, 'old-name');
   const ana = await loggedIn('ana');
-  await assert.rejects(ana.graphs.setSlug({ graph: slug, slug: 'mine' }), /owner|FORBIDDEN|may not/i);
-  await assert.rejects(admin.graphs.setSlug({ graph: slug, slug: 'Not Valid' }), /lower-case/);
+  await assert.rejects(ana.spaces.setSlug({ space: slug, slug: 'mine' }), /owner|FORBIDDEN|may not/i);
+  await assert.rejects(admin.spaces.setSlug({ space: slug, slug: 'Not Valid' }), /lower-case/);
 
-  assert.equal((await admin.graphs.setSlug({ graph: slug, slug: 'new-name' })).slug, 'new-name');
-  // The old address answers with the renamed graph.
-  assert.equal((await admin.graphs.getAccess({ graph: 'old-name' }))?.slug, 'new-name');
-  assert.deepEqual((await admin.graphs.list()).map(graph => graph.slug), ['new-name']);
+  assert.equal((await admin.spaces.setSlug({ space: slug, slug: 'new-name' })).slug, 'new-name');
+  // The old address answers with the renamed space.
+  assert.equal((await admin.spaces.getAccess({ space: 'old-name' }))?.slug, 'new-name');
+  assert.deepEqual((await admin.spaces.list()).map(space => space.slug), ['new-name']);
   // Nobody else gets the old address.
-  assert.equal((await admin.graphs.create({ name: 'Old Name' })).slug, 'old-name-2');
-  await assert.rejects(admin.graphs.setSlug({ graph: 'old-name-2', slug: 'old-name' }), /taken/);
-  // The graph itself may take its old address back.
-  assert.equal((await admin.graphs.setSlug({ graph: 'new-name', slug: 'old-name' })).slug, 'old-name');
-  assert.equal((await admin.graphs.getAccess({ graph: 'new-name' }))?.slug, 'old-name');
+  assert.equal((await admin.spaces.create({ name: 'Old Name' })).slug, 'old-name-2');
+  await assert.rejects(admin.spaces.setSlug({ space: 'old-name-2', slug: 'old-name' }), /taken/);
+  // The space itself may take its old address back.
+  assert.equal((await admin.spaces.setSlug({ space: 'new-name', slug: 'old-name' })).slug, 'old-name');
+  assert.equal((await admin.spaces.getAccess({ space: 'new-name' }))?.slug, 'old-name');
 });

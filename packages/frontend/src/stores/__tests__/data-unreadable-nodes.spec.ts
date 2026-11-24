@@ -37,14 +37,14 @@ describe('graphData unreadable-idea nodes', () => {
       id: 'broken',
       file: 'ideas/broken.json',
       error: 'cost: Number must be greater than 0',
-      text: 'Graph view',
+      text: 'Space view',
       supportingIdeaIds: ['grandchild', 'gone']
     }]
 
     const { nodes, links } = store.graphData
 
     const broken = nodes.find((node) => node.id === 'broken')!
-    expect(broken.text).toBe('! Graph view')
+    expect(broken.text).toBe('! Space view')
     expect(broken.unreadable).toBe('cost: Number must be greater than 0')
     expect(broken.color).toBe('#f85149')
     expect(nodes.find((node) => node.id === 'parent')!.unreadable).toBeUndefined()

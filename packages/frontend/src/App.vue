@@ -71,7 +71,7 @@ const activeBowmanRoot = computed(() => normalizedProjectRoot.value ? `${normali
 const activeProjectName = computed(() => {
   const projectRoot = normalizedProjectRoot.value
   if (!projectRoot) return ''
-  // On a server with accounts the address is the graph's slug: show its name.
+  // On a server with accounts the address is the space's slug: show its name.
   if (accounts) return dataStore.meta?.name || projectRoot
 
   const segments = projectRoot.split('/').filter(Boolean)
@@ -146,7 +146,7 @@ const refreshWorkingTree = async () => {
   const projectPath = projectStore.projectPath
   let status = null
   try {
-    if (projectPath) status = await trpc.git.status.query({ graph: projectPath })
+    if (projectPath) status = await trpc.git.status.query({ space: projectPath })
   } catch {
     // treated as no repository
   }
@@ -268,7 +268,7 @@ const openProjectFromHistory = (path: string) => {
   void projectLoad.open(path)
 }
 
-const openGraph = (slug: string) => {
+const openSpace = (slug: string) => {
   projectSelectionReturnPath.value = ''
   void projectLoad.open(slug)
 }
@@ -298,7 +298,7 @@ const closeConnectRequest = () => {
   window.history.replaceState({}, '', url)
 }
 
-// A note from the header's list: its graph, then its idea.
+// A note from the header's list: its space, then its idea.
 const openNote = async (slug: string, ideaId: string) => {
   if (projectStore.projectPath !== slug) await projectLoad.open(slug)
   await uiStore.navigateToIdea(ideaId)
@@ -578,7 +578,7 @@ onUnmounted(() => {
           @click="uiStore.setView('graph')"
           :class="{ active: projectStore.currentView === 'graph' }"
           class="view-btn"
-        >Graph</button>
+        >Space</button>
         <button
           v-if="voiceEnabled"
           @click="uiStore.setView('voice')"
@@ -733,7 +733,7 @@ onUnmounted(() => {
       @remove-from-history="removeFromHistory"
       @refresh-discovered-projects="refreshDiscoveredProjects"
       @open-discovered-project="openDiscoveredProject"
-      @open-graph="openGraph"
+      @open-space="openSpace"
     />
 
     <!-- Main Interface -->
@@ -755,7 +755,7 @@ onUnmounted(() => {
           <!-- Columns View -->
           <ColumnsView v-if="projectStore.currentView === 'columns'" />
 
-          <!-- Graph View -->
+          <!-- Space View -->
           <GraphViewWrapper v-else-if="projectStore.currentView === 'graph'" />
 
           <!-- Voice View -->

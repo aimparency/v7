@@ -101,7 +101,7 @@ describe('graphData repo-node injection', () => {
     store.meta = { name: 'p', color: '#ffffff', linkedRepos: [] } as any
     store.offers = [{
       id: 'offer-1', ideaId: 'idea-1', kind: 'offer', text: 'Why it helps', createdAt: '', author: 'ben', removable: true, mine: true,
-      space: { repoId: REPO_ID, name: 'Ben cooks', host: 'https://hub.example.org/spaces/ben-cooks' }, relativePosition: [1.5, -0.5]
+      offeredSpace: { repoId: REPO_ID, name: 'Ben cooks', host: 'https://hub.example.org/spaces/ben-cooks' }, relativePosition: [1.5, -0.5]
     }]
 
     const { nodes, links } = store.graphData
@@ -127,9 +127,9 @@ describe('graphData repo-node injection', () => {
     store.meta = { name: 'p', color: '#ffffff', linkedRepos: [] } as any
     store.offers = [{
       id: 'offer-1', ideaId: 'idea-1', kind: 'offer', text: '', createdAt: '', author: 'ben', removable: true, mine: true,
-      space: { repoId: REPO_ID, name: 'Cook every Friday', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
+      offeredSpace: { repoId: REPO_ID, name: 'Cook every Friday', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
     }]
-    store.linkedGraphViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), inPlace: { graph: 'cook', writable: true } } }
+    store.linkedSpaceViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), inPlace: { space: 'cook', writable: true } } }
 
     const { nodes, links } = store.graphData
     expect(nodes.some(n => n.id === REPO_ID)).toBe(false) // open: no node of its own
@@ -150,9 +150,9 @@ describe('graphData repo-node injection', () => {
     store.meta = { name: 'p', color: '#ffffff', linkedRepos: [] } as any
     store.offers = [{
       id: 'offer-1', ideaId: 'idea-1', kind: 'offer', text: '', createdAt: '', author: 'ben', removable: true, mine: true,
-      space: { repoId: REPO_ID, name: 'Cook', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
+      offeredSpace: { repoId: REPO_ID, name: 'Cook', host: 'https://hub.example.org/spaces/cook' }, relativePosition: [1.5, 0]
     }]
-    store.linkedGraphViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), inPlace: { graph: 'cook', writable: true } } }
+    store.linkedSpaceViews = { [REPO_ID]: { state: 'shown', ideas: [], ownValues: new Map(), inPlace: { space: 'cook', writable: true } } }
     store.recalculateValuesNow()
 
     const aim = store.getIdeaValue('aim')

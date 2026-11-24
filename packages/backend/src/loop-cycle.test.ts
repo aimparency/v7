@@ -91,9 +91,9 @@ beforeEach(async () => {
 
 afterEach(async () => {
   // Stop the workers and wait until they exited: they write into the project.
-  const state = await caller.loop.getState({ graph: projectPath }).catch(() => null);
+  const state = await caller.loop.getState({ space: projectPath }).catch(() => null);
   for (const instance of state?.instances ?? []) {
-    await caller.loop.stopInstance({ graph: projectPath, instanceId: instance.id }).catch(() => {});
+    await caller.loop.stopInstance({ space: projectPath, instanceId: instance.id }).catch(() => {});
     const pid = (await fs.readJson(getLoopWorkerStatePath(projectPath, instance.id)).catch(() => null))?.pid;
     while (pid && isAlive(pid)) await new Promise((resolve) => setTimeout(resolve, 50));
   }
@@ -112,15 +112,15 @@ afterEach(async () => {
 // the phase has no ongoing commitments left.
 async function setUpLoop() {
   const baseUrl = await startFakeModel();
-  const phase = await caller.phase.create({ graph: projectPath, phase: { name: 'Now' } }) as { id: string };
-  const idea = await caller.idea.createIdeaInPhase({ graph: projectPath, phaseId: phase.id, idea: { text: 'Fix the flaky test' } });
-  await caller.loop.updateSecrets({ graph: projectPath, secrets: { LOOP_API_KEY: 'fake' } });
-  await caller.loop.create({ graph: projectPath, name: 'test loop' });
-  const loopId = (await caller.loop.getState({ graph: projectPath })).loops[0]!.id;
-  await caller.loop.update({ graph: projectPath, loopId, provider: 'openai-compatible', model: 'fake', baseUrl, intervalSeconds: 5, associationChance: 0, capabilities: [] });
-  await caller.loop.createInstance({ graph: projectPath, loopId });
-  const instanceId = (await caller.loop.getState({ graph: projectPath })).instances[0]!.id;
-  await caller.loop.updateInstance({ graph: projectPath, instanceId, targetPhaseId: phase.id, stopPolicy: 'phase_done' });
+  const phase = await caller.phase.create({ space: projectPath, phase: { name: 'Now' } }) as { id: string };
+  const idea = await caller.idea.createIdeaInPhase({ space: projectPath, phaseId: phase.id, idea: { text: 'Fix the flaky test' } });
+  await caller.loop.updateSecrets({ space: projectPath, secrets: { LOOP_API_KEY: 'fake' } });
+  await caller.loop.create({ space: projectPath, name: 'test loop' });
+  const loopId = (await caller.loop.getState({ space: projectPath })).loops[0]!.id;
+  await caller.loop.update({ space: projectPath, loopId, provider: 'openai-compatible', model: 'fake', baseUrl, intervalSeconds: 5, associationChance: 0, capabilities: [] });
+  await caller.loop.createInstance({ space: projectPath, loopId });
+  const instanceId = (await caller.loop.getState({ space: projectPath })).instances[0]!.id;
+  await caller.loop.updateInstance({ space: projectPath, instanceId, targetPhaseId: phase.id, stopPolicy: 'phase_done' });
   return { ideaId: idea.id, instanceId };
 }
 
@@ -128,7 +128,7 @@ async function waitForInstance(instanceId: string, done: (instance: LoopInstance
   const deadline = Date.now() + timeoutMs;
   let instance: LoopInstance | undefined;
   while (Date.now() < deadline) {
-    instance = (await caller.loop.getState({ graph: projectPath })).instances.find((candidate) => candidate.id === instanceId);
+    instance = (await caller.loop.getState({ space: projectPath })).instances.find((candidate) => candidate.id === instanceId);
     if (instance && done(instance)) return instance;
     await new Promise((resolve) => setTimeout(resolve, 200));
   }
@@ -143,14 +143,14 @@ test('a cycle runs execute and verify stages, the harness writes the verdict, an
     { toolCall: { name: 'submit_verdict', arguments: { verdict: 'verified', reasons: 're-ran the test' } } }
   ];
 
-  await caller.loop.startInstance({ graph: projectPath, instanceId });
+  await caller.loop.startInstance({ space: projectPath, instanceId });
   const instance = await waitForInstance(instanceId, (candidate) => candidate.status === 'done');
 
-  const idea = await caller.idea.get({ graph: projectPath, ideaId });
+  const idea = await caller.idea.get({ space: projectPath, ideaId });
   assert.equal(idea.status.state, 'implemented');
   assert.match(idea.status.comment, /test passes 50\/50 runs[\s\S]*re-ran the test/);
   assert.ok(instance.messages.some((message) => message.content.includes('Target phase done: Now')));
-  // The executor reads the graph but never writes it; the worker fills in projectPath.
+  // The executor reads the space but never writes it; the worker fills in projectPath.
   const offered = new Map((modelRequests[0].tools ?? []).map((tool: any) => [tool.function.name, tool.function]));
   assert.ok(offered.has('get_idea_context') && offered.has('submit_execution'));
   assert.ok(!offered.has('update_idea'));
@@ -166,7 +166,7 @@ test('a rejected API key ends the instance in error with a hint where the key li
   const { instanceId } = await setUpLoop();
   script = [{ httpError: 401, body: 'invalid api key' }];
 
-  await caller.loop.startInstance({ graph: projectPath, instanceId });
+  await caller.loop.startInstance({ space: projectPath, instanceId });
   const instance = await waitForInstance(instanceId, (candidate) => candidate.status === 'error');
 
   const errors = instance.messages.filter((message) => message.kind === 'error').map((message) => message.content).join('\n');
@@ -181,15 +181,15 @@ test('human_action_required pauses the instance until the human answers, then th
     { toolCall: { name: 'submit_verdict', arguments: { verdict: 'verified', reasons: 'vitest green' } } }
   ];
 
-  await caller.loop.startInstance({ graph: projectPath, instanceId });
+  await caller.loop.startInstance({ space: projectPath, instanceId });
   const waiting = await waitForInstance(instanceId, (candidate) => candidate.status === 'waiting_for_human');
   assert.ok(waiting.messages.some((message) => message.kind === 'human_action_required' && message.content === 'Which test runner should I use?'), JSON.stringify(waiting.messages.map((message) => [message.kind, message.content.slice(0, 80)])));
-  assert.equal((await caller.idea.get({ graph: projectPath, ideaId })).status.state, 'open');
+  assert.equal((await caller.idea.get({ space: projectPath, ideaId })).status.state, 'open');
 
-  await caller.loop.sendHumanMessage({ graph: projectPath, instanceId, content: 'vitest' });
+  await caller.loop.sendHumanMessage({ space: projectPath, instanceId, content: 'vitest' });
   await waitForInstance(instanceId, (candidate) => candidate.status === 'done');
 
-  assert.equal((await caller.idea.get({ graph: projectPath, ideaId })).status.state, 'implemented');
+  assert.equal((await caller.idea.get({ space: projectPath, ideaId })).status.state, 'implemented');
   // The answer reached the model as the tool result.
   assert.match(JSON.stringify(modelRequests[1].messages), /vitest/);
 }, 60_000);

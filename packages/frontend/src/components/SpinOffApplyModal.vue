@@ -94,7 +94,7 @@ const apply = async () => {
   errorMessage.value = ''
   try {
     const result = await trpc.spinOff.execute.mutate({
-      graph: projectStore.projectPath,
+      space: projectStore.projectPath,
       rootIds: rootIds.value,
       targetPath: pathInput.value.trim(),
       removeFromSource: removeFromSource.value,

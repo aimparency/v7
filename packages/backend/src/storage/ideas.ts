@@ -82,7 +82,7 @@ function normalizeIdeaRecord(raw: any): { idea: any; changed: boolean } {
 }
 
 // [0,0] is the schema default for a connection without a position; it would
-// stack the child onto its parent in the graph, so writes spread it out.
+// stack the child onto its parent in the space, so writes spread it out.
 const hasUnplacedConnection = (idea: { supportingConnections?: Array<{ relativePosition?: [number, number] }> }) =>
   (idea.supportingConnections ?? []).some((c) => c.relativePosition?.[0] === 0 && c.relativePosition?.[1] === 0);
 

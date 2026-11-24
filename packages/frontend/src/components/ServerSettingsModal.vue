@@ -11,7 +11,7 @@ const viewer = useViewerStore()
 
 const settings = reactive({
   publicUrl: '',
-  graphCreation: 'everyone' as 'everyone' | 'selected',
+  spaceCreation: 'everyone' as 'everyone' | 'selected',
   signUp: { open: false, browserKey: false, wallet: false },
   notes: 'everyone' as 'everyone' | 'selected' | 'nobody',
   read: 'everyone' as 'everyone' | 'accounts' | 'selected'
@@ -52,7 +52,7 @@ const save = async () => {
     <form id="server-settings-form" class="stack" @submit.prevent="save">
       <label class="stack field">
         <span>Public address</span>
-        <input v-model="settings.publicUrl" placeholder="https://graphs.example.org" />
+        <input v-model="settings.publicUrl" placeholder="https://spaces.example.org" />
         <span class="hint">Where people open this server. With it, coding agents connect by logging in themselves (no link to copy), and wallets can log in.</span>
         <span v-if="settings.publicUrl.trim() !== loadedUrl" class="hint warning">Agents use a changed address after the server restarts.</span>
       </label>
@@ -67,7 +67,7 @@ const save = async () => {
 
       <label class="stack field">
         <span>Who creates spaces</span>
-        <select v-model="settings.graphCreation">
+        <select v-model="settings.spaceCreation">
           <option value="everyone">every account</option>
           <option value="selected">accounts marked "creates spaces"</option>
         </select>

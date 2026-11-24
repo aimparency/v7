@@ -1,12 +1,12 @@
 // One Aimparency server is described by one directory: its settings
-// (server.json), its accounts, the list of its graphs, and the repositories of
-// graphs created on it. Nothing of this lives in a graph's .bowman, so git
+// (server.json), its accounts, the list of its spaces, and the repositories of
+// spaces created on it. Nothing of this lives in a space's .bowman, so git
 // never carries it. Node only.
 //
 // Without server.json the server is the local one: no login, the person at the
 // machine may do everything. `"login": "accounts"` opens it to other people:
-// accounts write the graphs they own or were given; who reads is
-// guestDefaults.read (everyone, unless set otherwise) and each graph's own setting.
+// accounts write the spaces they own or were given; who reads is
+// guestDefaults.read (everyone, unless set otherwise) and each space's own setting.
 //
 // One machine can hold several servers, each with a name: its directory is
 // ~/.local/share/aimparency/<name> (server-directory.mjs). AIMPARENCY_SERVER
@@ -34,8 +34,8 @@ const ServerConfigSchema = z.object({
   host: z.string().min(1).optional(),
   // The server admins' wrapped agents: a shell on the server, so off unless switched on.
   agents: z.boolean().default(false),
-  // Who may create graphs: every account, or only those the server admin selected.
-  graphCreation: z.enum(['everyone', 'selected']).default('everyone'),
+  // Who may create spaces: every account, or only those the server admin selected.
+  spaceCreation: z.enum(['everyone', 'selected']).default('everyone'),
   // How people get an account without the server admin making one: `open`
   // lets anyone choose a name and password; `browserKey` gives a visitor an
   // account without asking, held by a key in their browser. Invitations work
@@ -48,14 +48,14 @@ const ServerConfigSchema = z.object({
     browserKey: z.boolean().default(false),
     wallet: z.boolean().default(false),
   }).prefault({}),
-  // The address people reach this server at, e.g. "https://graphs.example.org".
+  // The address people reach this server at, e.g. "https://spaces.example.org".
   // A wallet shows it when signing in, and the server accepts a signature only
   // for it, so a signature given to another website is worthless here.
   publicUrl: z.string().url().optional(),
-  // What accounts without rights on a graph (guests) may do there, unless the
-  // graph's owner set it otherwise: `everyone` every account, `selected` the
+  // What accounts without rights on a space (guests) may do there, unless the
+  // space's owner set it otherwise: `everyone` every account, `selected` the
   // accounts the owner named, `nobody`.
-  // Who reads a graph besides its owner and writers: `everyone` (visitors
+  // Who reads a space besides its owner and writers: `everyone` (visitors
   // without a login too), `accounts` every logged-in account, `selected` the
   // accounts the owner named.
   guestDefaults: z.object({
@@ -65,10 +65,10 @@ const ServerConfigSchema = z.object({
   limits: z.object({
     // New accounts from one address; a whole room may share one address.
     accountsPerAddressPerHour: z.number().int().positive().default(100),
-    graphsPerAccount: z.number().int().positive().default(20),
+    spacesPerAccount: z.number().int().positive().default(20),
     notesPerAccountPerHour: z.number().int().positive().default(30),
-    // The .bowman of a graph added from a remote URL.
-    graphMegabytes: z.number().positive().default(50),
+    // The .bowman of a space added from a remote URL.
+    spaceMegabytes: z.number().positive().default(50),
     // An account held only by a browser key, unused this many days, is
     // discarded with what it made: nobody can log into it any more anyway.
     idleAutomaticAccountDays: z.number().positive().default(180),

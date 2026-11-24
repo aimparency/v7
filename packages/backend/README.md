@@ -8,8 +8,8 @@ It owns the project-facing API and the `.bowman` filesystem data model:
 - reads and writes ideas, phases, and project metadata in `.bowman`
 - maintains search, vector, cache, and semantic-graph artifacts
 - generates local in-process embeddings for semantic search
-- recalculates derived idea values after graph changes
-- exposes project, graph, system, market, and optional voice routers
+- recalculates derived idea values after space changes
+- exposes project, space, system, market, and optional voice routers
 
 ## Runtime Role
 

@@ -14,8 +14,8 @@ export const spaceHealthTools: ToolDefinition[] = [
       required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const result = await trpcClient.graphHealth.checkConsistency.query({
-        graph: args.space as string,
+      const result = await trpcClient.spaceHealth.checkConsistency.query({
+        space: args.space as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -31,8 +31,8 @@ export const spaceHealthTools: ToolDefinition[] = [
       required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const result = await trpcClient.graphHealth.fixConsistency.mutate({
-        graph: args.space as string,
+      const result = await trpcClient.spaceHealth.fixConsistency.mutate({
+        space: args.space as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -49,7 +49,7 @@ export const spaceHealthTools: ToolDefinition[] = [
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.project.buildSearchIndex.mutate({
-        graph: args.space as string,
+        space: args.space as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -69,8 +69,8 @@ export const spaceHealthTools: ToolDefinition[] = [
       required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const result = await trpcClient.graphHealth.findDuplicates.query({
-        graph: args.space as string,
+      const result = await trpcClient.spaceHealth.findDuplicates.query({
+        space: args.space as string,
         threshold: args.threshold as number | undefined,
         limit: args.limit as number | undefined,
       });
@@ -93,8 +93,8 @@ export const spaceHealthTools: ToolDefinition[] = [
       required: ["space", "parentIdeaId"],
     },
     handler: async (args, trpcClient) => {
-      const result = await trpcClient.graphHealth.suggestReparents.query({
-        graph: args.space as string,
+      const result = await trpcClient.spaceHealth.suggestReparents.query({
+        space: args.space as string,
         parentIdeaId: args.parentIdeaId as string,
         candidateParentIds: args.candidateParentIds as string[] | undefined,
         limit: args.limit as number | undefined,
@@ -118,8 +118,8 @@ export const spaceHealthTools: ToolDefinition[] = [
       required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const result = await trpcClient.graphHealth.graphHygiene.query({
-        graph: args.space as string,
+      const result = await trpcClient.spaceHealth.spaceHygiene.query({
+        space: args.space as string,
         megaParentThreshold: args.megaParentThreshold as number | undefined,
         duplicateThreshold: args.duplicateThreshold as number | undefined,
         limit: args.limit as number | undefined,
@@ -143,7 +143,7 @@ export const spaceHealthTools: ToolDefinition[] = [
     handler: async (args, trpcClient) => {
       const limit = (args.limit as number | undefined) ?? 30;
       const allIdeas = await trpcClient.idea.list.query({
-        graph: args.space as string,
+        space: args.space as string,
       });
       const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
       // Code-only: a space-bookkeeping commit that merely cites an idea id is
@@ -187,7 +187,7 @@ export const spaceHealthTools: ToolDefinition[] = [
       const MAX_TOKENS_PER_IDEA = 12;
       const MAX_UNIQUE_TOKENS = 400;
 
-      const allIdeas = await trpcClient.idea.list.query({ graph: args.space as string });
+      const allIdeas = await trpcClient.idea.list.query({ space: args.space as string });
       const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
 
       // Ideas already cited by a code commit are reconcile_status's job — skip

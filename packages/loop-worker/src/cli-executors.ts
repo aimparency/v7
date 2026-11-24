@@ -11,7 +11,7 @@ import { executionSchema, type Execution } from './stages.js';
 // Execute-stage backends that delegate the work to a headless coding CLI
 // (Claude Code or Codex) in the loop's execution path. The harness keeps
 // everything else: it compiled the prompt, verifies the result with its own
-// verifier, and alone writes the graph — the CLIs get no MCP servers.
+// verifier, and alone writes the space — the CLIs get no MCP servers.
 
 type ExecutorConfig = HarnessConfig['executor'];
 type CliSpec = { executionPath: string; system: string; prompt: string; signal: AbortSignal };
@@ -27,7 +27,7 @@ export function claudeCodeArgs(system: string, prompt: string, config: ExecutorC
     '--append-system-prompt', system,
     '--permission-mode', 'acceptEdits',
     '--allowedTools', ...config.allowedTools,
-    // No MCP servers (graph writes stay with the harness) and no project
+    // No MCP servers (space writes stay with the harness) and no project
     // settings, whose Stop hook would keep a headless session from ending.
     '--strict-mcp-config',
     '--setting-sources', 'user',
@@ -76,7 +76,7 @@ export function codexArgs(system: string, prompt: string, schemaFile: string, la
     '--ephemeral',
     '--sandbox', 'workspace-write',
     '--skip-git-repo-check',
-    // No user config: its MCP servers would give Codex graph tools.
+    // No user config: its MCP servers would give Codex space tools.
     '--ignore-user-config',
     '--color', 'never',
     '--output-schema', schemaFile,

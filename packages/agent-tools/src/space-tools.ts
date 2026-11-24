@@ -19,28 +19,28 @@ export type PrioritizedIdea = {
   cost: number;
 };
 
-export type GraphTools = ReturnType<typeof connectGraph>;
+export type SpaceTools = ReturnType<typeof connectSpace>;
 
 /**
- * The idea graph of one project, read and changed through the backend that
+ * The idea space of one project, read and changed through the backend that
  * spawned this worker — the same API MCP agents use. Its writes take the
  * backend's file locks, emit change events (live UI, undo history) and keep the
  * search index current. close() releases the socket so the process can exit.
  */
-export function connectGraph(projectPath: string) {
+export function connectSpace(projectPath: string) {
   const host = process.env.BACKEND_WS_HOST || process.env.BIND_HOST || 'localhost';
   const socket = createWSClient({ url: `ws://${host}:${process.env.PORT_BACKEND_WS || '3001'}` });
   const backend = createTRPCClient<AppRouter>({ links: [wsLink({ client: socket })] });
 
-  const listIdeas = () => backend.idea.list.query({ graph: projectPath });
-  const listPhases = () => backend.phase.list.query({ graph: projectPath });
+  const listIdeas = () => backend.idea.list.query({ space: projectPath });
+  const listPhases = () => backend.phase.list.query({ space: projectPath });
 
   // Same selection and ranking as MCP get_prioritized_ideas.
   async function getPrioritizedIdeas(limit = 10, phaseId?: string | null): Promise<PrioritizedIdea[]> {
     const [ideas, phases, meta] = await Promise.all([
       listIdeas(),
       listPhases(),
-      backend.project.getMeta.query({ graph: projectPath }).catch(() => null)
+      backend.project.getMeta.query({ space: projectPath }).catch(() => null)
     ]);
     const phase = resolveWorkPhase(phases, phaseId);
     if (!phase) return [];
@@ -82,7 +82,7 @@ export function connectGraph(projectPath: string) {
   }
 
   async function searchIdeas(query: string, limit = 8) {
-    const results = await backend.idea.searchSemantic.query({ graph: projectPath, query, limit });
+    const results = await backend.idea.searchSemantic.query({ space: projectPath, query, limit });
     return results.map((idea) => ({ id: idea.id, text: idea.text, description: idea.description, status: idea.status }));
   }
 

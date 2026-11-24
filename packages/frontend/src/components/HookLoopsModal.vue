@@ -8,7 +8,7 @@ import { trpc } from '../trpc'
 import { DEFAULT_LOOP, type HookLoop, type HookState } from '../utils/hook-loops'
 
 // The hook's loops: the default (editable, saved only as a new loop) and the
-// graph's saved ones in .bowman/hook-loops/, versioned with it.
+// space's saved ones in .bowman/hook-loops/, versioned with it.
 
 const props = defineProps<{ state: HookState }>()
 const emit = defineEmits<{ update: [state: HookState]; close: [] }>()
@@ -53,9 +53,9 @@ const run = async (action: () => Promise<HookState & { saved?: string }>) => {
   }
 }
 
-const graph = () => projectStore.projectPath
+const space = () => projectStore.projectPath
 const saveDraft = (asNew: boolean) => trpc.continueHook.saveLoop.mutate({
-  graph: graph(),
+  space: space(),
   slug: asNew || isDefault.value ? undefined : slug.value,
   ...draft.value,
   title: asNew && draft.value.title === original.value?.title ? `${draft.value.title} (copy)` : draft.value.title
@@ -73,9 +73,9 @@ const activate = () => run(async () => {
     emit('update', saved) // kept even if activating fails
     loop = saved.saved
   }
-  return { ...await trpc.continueHook.select.mutate({ graph: graph(), loop }), saved: loop }
+  return { ...await trpc.continueHook.select.mutate({ space: space(), loop }), saved: loop }
 })
-const remove = () => run(() => trpc.continueHook.deleteLoop.mutate({ graph: graph(), slug: slug.value }))
+const remove = () => run(() => trpc.continueHook.deleteLoop.mutate({ space: space(), slug: slug.value }))
 
 // Escape out of a textarea is a vim habit, so leaving with unsaved edits asks
 // first (as the idea editor does); Escape on that prompt keeps editing.

@@ -8,7 +8,7 @@ import { updateServerConfig } from 'shared/server-config';
 import { appRouter } from '../server';
 import { clearIndices } from '../search';
 import * as accounts from './accounts';
-import { listGraphs } from '../graphs/registry';
+import { listSpaces } from '../spaces/registry';
 import { discardIdleAccounts } from './discard';
 
 let root = '';
@@ -28,37 +28,37 @@ const guest = async (key: string) => {
 beforeEach(async () => {
   root = await fs.mkdtemp(path.join(os.tmpdir(), 'aimparency-discard-'));
   process.env.AIMPARENCY_SERVER_DIR = root;
-  updateServerConfig({ login: 'accounts', graphCreation: 'everyone' } as never);
+  updateServerConfig({ login: 'accounts', spaceCreation: 'everyone' } as never);
   await accounts.createAccount('ana', 'ana password');
   ana = callerOf((await accounts.login('ana', 'ana password'))!);
-  hub = (await ana.graphs.create({ name: 'Hack the Hub' })).slug;
-  ideaId = (await ana.idea.createFloatingIdea({ graph: hub, idea: { text: 'A shared kitchen' } })).id;
+  hub = (await ana.spaces.create({ name: 'Hack the Hub' })).slug;
+  ideaId = (await ana.idea.createFloatingIdea({ space: hub, idea: { text: 'A shared kitchen' } })).id;
 });
 
 afterEach(async () => {
-  for (const graph of listGraphs()) clearIndices(graph.path);
+  for (const space of listSpaces()) clearIndices(space.path);
   process.env.AIMPARENCY_SERVER_DIR = localServerDir;
   await fs.remove(root);
 });
 
 test('discarding a browser-key account removes its spaces, notes, offers, rights and logins', async () => {
   const { account, caller } = await guest('key-ben');
-  const kitchen = (await caller.graphs.create({ name: 'Ben cooks' })).slug;
-  const repoId = (await caller.project.getMeta({ graph: kitchen })).repoId!;
-  await caller.notes.add({ graph: hub, ideaId, kind: 'note', text: 'Breakfast too?' });
-  await caller.notes.add({ graph: hub, ideaId, kind: 'offer', text: '', space: { host: `https://hub.example.org/spaces/${kitchen}`, repoId, name: 'Ben cooks' } });
-  await ana.graphs.setAccess({ graph: hub, writers: [account.name] });
-  await ana.notes.add({ graph: hub, ideaId, kind: 'note', text: 'Ana stays' });
+  const kitchen = (await caller.spaces.create({ name: 'Ben cooks' })).slug;
+  const repoId = (await caller.project.getMeta({ space: kitchen })).repoId!;
+  await caller.notes.add({ space: hub, ideaId, kind: 'note', text: 'Breakfast too?' });
+  await caller.notes.add({ space: hub, ideaId, kind: 'offer', text: '', offeredSpace: { host: `https://hub.example.org/spaces/${kitchen}`, repoId, name: 'Ben cooks' } });
+  await ana.spaces.setAccess({ space: hub, writers: [account.name] });
+  await ana.notes.add({ space: hub, ideaId, kind: 'note', text: 'Ana stays' });
 
   assert.deepEqual(await caller.auth.ownFootprint(), { spaces: ['Ben cooks'], passedOn: [], notes: 1, offers: 1 });
   assert.equal(await ana.auth.ownFootprint(), null, 'a permanent account is logged out, not discarded');
   await assert.rejects(ana.auth.discardOwnAccount(), /permanent login/);
 
   await caller.auth.discardOwnAccount();
-  assert.deepEqual(listGraphs().map(graph => graph.slug), [hub]);
+  assert.deepEqual(listSpaces().map(space => space.slug), [hub]);
   assert.equal(await fs.pathExists(path.join(root, 'spaces', kitchen)), false);
-  assert.deepEqual((await ana.notes.list({ graph: hub, ideaId })).notes.map(note => note.text), ['Ana stays']);
-  assert.deepEqual(listGraphs()[0]!.writers, []);
+  assert.deepEqual((await ana.notes.list({ space: hub, ideaId })).notes.map(note => note.text), ['Ana stays']);
+  assert.deepEqual(listSpaces()[0]!.writers, []);
   assert.equal(accounts.findAccount(account.name), null);
   assert.equal(accounts.resolveToken('anything'), null);
   assert.equal((await caller.auth.me()).name, null, 'its login is gone');
@@ -68,18 +68,18 @@ test('a space others manage or write in passes to a manager, else the writer add
   const { account: ben, caller } = await guest('key-ben');
   const { account: cleo } = await guest('key-cleo');
   const { account: dana } = await guest('key-dana');
-  const garden = (await caller.graphs.create({ name: 'Garden' })).slug;
-  const bakery = (await caller.graphs.create({ name: 'Bakery' })).slug;
-  const alone = (await caller.graphs.create({ name: 'Alone' })).slug;
-  await caller.graphs.setAccess({ graph: garden, writers: [cleo.name, dana.name] });
-  await caller.graphs.setAccess({ graph: bakery, writers: [cleo.name], managers: [dana.name] });
-  const gardenRepo = (await caller.project.getMeta({ graph: garden })).repoId!;
-  await caller.notes.add({ graph: hub, ideaId, kind: 'offer', text: '', space: { host: `https://hub.example.org/spaces/${garden}`, repoId: gardenRepo, name: 'Garden' } });
+  const garden = (await caller.spaces.create({ name: 'Garden' })).slug;
+  const bakery = (await caller.spaces.create({ name: 'Bakery' })).slug;
+  const alone = (await caller.spaces.create({ name: 'Alone' })).slug;
+  await caller.spaces.setAccess({ space: garden, writers: [cleo.name, dana.name] });
+  await caller.spaces.setAccess({ space: bakery, writers: [cleo.name], managers: [dana.name] });
+  const gardenRepo = (await caller.project.getMeta({ space: garden })).repoId!;
+  await caller.notes.add({ space: hub, ideaId, kind: 'offer', text: '', offeredSpace: { host: `https://hub.example.org/spaces/${garden}`, repoId: gardenRepo, name: 'Garden' } });
 
   assert.deepEqual(await caller.auth.ownFootprint(), { spaces: ['Alone'], passedOn: ['Garden', 'Bakery'], notes: 0, offers: 1 });
   await caller.auth.discardOwnAccount();
 
-  const bySlug = new Map(listGraphs().map(graph => [graph.slug, graph]));
+  const bySlug = new Map(listSpaces().map(space => [space.slug, space]));
   assert.equal(bySlug.has(alone), false, 'nobody else was in it');
   assert.equal(await fs.pathExists(path.join(root, 'spaces', alone)), false);
   assert.equal(bySlug.get(garden)!.owner, cleo.id, 'the writer added first');
@@ -88,12 +88,12 @@ test('a space others manage or write in passes to a manager, else the writer add
   assert.deepEqual(bySlug.get(bakery)!.managers, []);
   assert.deepEqual(bySlug.get(bakery)!.writers, [cleo.id]);
   assert.equal(accounts.findAccount(ben.name), null);
-  assert.equal((await ana.notes.list({ graph: hub, ideaId })).notes.length, 0, 'its own offer goes with it, as any note it wrote');
+  assert.equal((await ana.notes.list({ space: hub, ideaId })).notes.length, 0, 'its own offer goes with it, as any note it wrote');
 });
 
 test('automatic accounts unused for longer than the server allows are discarded; others stay', async () => {
   const { caller: old } = await guest('key-old');
-  await old.graphs.create({ name: 'Old space' });
+  await old.spaces.create({ name: 'Old space' });
   const { caller: recent } = await guest('key-recent');
   await recent.auth.me(); // today
   const DAY = 24 * 60 * 60 * 1000;
@@ -102,5 +102,5 @@ test('automatic accounts unused for longer than the server allows are discarded;
   updateServerConfig({ limits: { idleAutomaticAccountDays: 30 } } as never);
   assert.equal(await discardIdleAccounts(Date.now() + 31 * DAY), 2);
   assert.deepEqual(accounts.listAccounts().map(account => account.name), ['ana'], 'the permanent account stays');
-  assert.deepEqual(listGraphs().map(graph => graph.slug), [hub]);
+  assert.deepEqual(listSpaces().map(space => space.slug), [hub]);
 });

@@ -42,7 +42,7 @@ const clampSaturation = (s: number) => Math.min(0.72, Math.max(0.4, s))
 const clampValue = (v: number) => Math.min(0.56, Math.max(0.38, v))
 
 // A child takes its parent's color shifted by up to ±deviation of each HSV range,
-// so branches of the graph stay similarly colored. Grey parents have no hue to
+// so branches of the space stay similarly colored. Grey parents have no hue to
 // inherit; their children start a new branch with a random hue.
 export function deriveChildIdeaColor(parentColor: string, deviation = 0.05, random = Math.random): string {
   const parent = hexToHsv(parentColor)

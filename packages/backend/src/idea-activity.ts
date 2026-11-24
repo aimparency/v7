@@ -8,7 +8,7 @@ import { normalizeProjectPath } from './project-path.js';
 
 // Who touched which idea lately. Kept in memory and saved, debounced, to the
 // project's gitignored runtime area, so the dev backend's restarts on every
-// source change don't turn the graph dark while agents work. Live state, not
+// source change don't turn the space dark while agents work. Live state, not
 // history: it stays out of git.
 const activityByProject = new Map<string, Map<string, IdeaActivity>>();
 const ACTIVITY_FILE = path.join('runtime', 'idea-activity.json');

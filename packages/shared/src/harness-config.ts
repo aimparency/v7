@@ -5,7 +5,7 @@ import { z } from 'zod';
 import { toBowmanPath } from './project-path.js';
 
 // The harness configuration lives in .bowman/harness.json, versioned with the
-// graph and edited by LLMs or by hand. The loop-worker reads it at the start of
+// space and edited by LLMs or by hand. The loop-worker reads it at the start of
 // every cycle, so a change takes effect on the next cycle without a restart.
 // Every field has a default: a missing file means the defaults.
 

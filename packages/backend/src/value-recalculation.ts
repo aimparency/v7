@@ -8,7 +8,7 @@ import { normalizeProjectPath } from './project-path.js';
 // Recalculation Queue
 const recalculateTimers = new Map<string, NodeJS.Timeout>();
 
-/** Drops a queued recalculation: its space is going (graphs/deletion.ts). */
+/** Drops a queued recalculation: its space is going (spaces/deletion.ts). */
 export function cancelRecalculation(rawProjectPath: string) {
   const projectPath = normalizeProjectPath(rawProjectPath);
   for (const [key, timer] of recalculateTimers) {

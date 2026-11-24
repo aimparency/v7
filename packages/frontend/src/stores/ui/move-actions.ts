@@ -25,14 +25,14 @@ async function moveOnServer(ideaId: string, move: { from?: IdeaContext; to?: Ide
     for (const phase of phases) dataStore.replacePhase(phase.id, phase)
   }
   try {
-    apply(await trpc.idea.move.mutate({ graph: projectPath, ideaId, ...move }))
+    apply(await trpc.idea.move.mutate({ space: projectPath, ideaId, ...move }))
   } catch (error) {
     const contexts = [move.from, move.to].filter((context) => context !== undefined)
     const ideaIds = [ideaId, ...contexts.flatMap((context) => 'parentId' in context ? [context.parentId] : [])]
     const phaseIds = contexts.flatMap((context) => 'phaseId' in context ? [context.phaseId] : [])
     const [ideas, phases] = await Promise.all([
-      trpc.idea.getMany.query({ graph: projectPath, ideaIds }),
-      Promise.allSettled(phaseIds.map((phaseId) => trpc.phase.get.query({ graph: projectPath, phaseId })))
+      trpc.idea.getMany.query({ space: projectPath, ideaIds }),
+      Promise.allSettled(phaseIds.map((phaseId) => trpc.phase.get.query({ space: projectPath, phaseId })))
     ]).catch(() => [[], []] as const)
     apply({ ideas, phases: phases.flatMap((result) => result.status === 'fulfilled' ? [result.value] : []) })
     throw error

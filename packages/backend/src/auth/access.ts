@@ -1,34 +1,34 @@
 // Who may do what. On a server without login the one person at the machine may
-// do everything. With accounts: a graph is read by whom its setting names
+// do everything. With accounts: a space is read by whom its setting names
 // (everyone, every account, or selected accounts; mayRead); its owner and the
 // accounts it gave write access change it; agents, loops and server paths are
 // for nobody (the server admins' agents are a separate switch).
 
 import { TRPCError } from '@trpc/server';
 import { hasAccounts, serverConfig } from 'shared/server-config';
-import { resolveGraphAddress } from '../graphs/address.js';
-import { slugsOf, type Graph } from '../graphs/registry.js';
+import { resolveSpaceAddress } from '../spaces/address.js';
+import { slugsOf, type Space } from '../spaces/registry.js';
 import { resolveToken } from './accounts.js';
 
-// What a viewer is on one graph.
+// What a viewer is on one space.
 // Each includes the ones before it. manage: write, and choose who else reads
 // and writes (invitations too); the owner alone chooses the managers, who
 // reads at all, and the space's address, key and existence.
 const RIGHTS = ['read', 'write', 'manage', 'owner'] as const;
-export type GraphRight = typeof RIGHTS[number];
+export type SpaceRight = typeof RIGHTS[number];
 
-// What a procedure asks for: a right on the graph it names, an account, the
+// What a procedure asks for: a right on the space it names, an account, the
 // server admin, or 'local' (only on a server without login).
-type Need = GraphRight | 'account' | 'serverAdmin' | 'local';
+type Need = SpaceRight | 'account' | 'serverAdmin' | 'local';
 
 export type Viewer = {
-  id: string | null; name: string | null; serverAdmin: boolean; canCreateGraphs: boolean; permanentLogin: boolean;
+  id: string | null; name: string | null; serverAdmin: boolean; canCreateSpaces: boolean; permanentLogin: boolean;
   /** Logged in by a website the account granted (auth.grantSite): that website's origin. */
   site?: string;
 };
 
-const LOCAL_VIEWER: Viewer = { id: null, name: null, serverAdmin: true, canCreateGraphs: true, permanentLogin: true };
-const ANONYMOUS: Viewer = { id: null, name: null, serverAdmin: false, canCreateGraphs: false, permanentLogin: false };
+const LOCAL_VIEWER: Viewer = { id: null, name: null, serverAdmin: true, canCreateSpaces: true, permanentLogin: true };
+const ANONYMOUS: Viewer = { id: null, name: null, serverAdmin: false, canCreateSpaces: false, permanentLogin: false };
 
 // The server admins' wrapped agents: off unless the operator turns them on,
 // since a server admin then holds a shell on the server.
@@ -43,7 +43,7 @@ const LOCAL_ONLY = new Set([
   'project.openGitUrl', 'project.discoverLocalProjects', 'project.inspectPath', 'project.injectAgentInstructions',
   'linkedRepo.register'
 ]);
-// Nothing of a graph: viewer state, or a visitor logging in or out.
+// Nothing of a space: viewer state, or a visitor logging in or out.
 const OPEN_MUTATIONS = new Set([
   'phase.setCursor', 'auth.login', 'auth.logout', 'auth.signUp', 'auth.keyChallenge', 'auth.keyLogin',
   'auth.walletChallenge', 'auth.walletLogin',
@@ -51,10 +51,10 @@ const OPEN_MUTATIONS = new Set([
   'mcpAuth.registerClient', 'mcpAuth.begin', 'mcpAuth.deny', 'mcpAuth.exchange'
 ]);
 const ACCOUNT_MUTATIONS = new Set([
-  'auth.issueToken', 'auth.grantSite', 'auth.acceptInvitation', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'auth.deleteOwnAccount', 'graphs.create', 'graphs.addRemote',
-  // Its handler asks for the owner: a deleted space is no `graph` the access check could resolve.
-  'graphs.restore', 'keys.create', 'keys.remove',
-  // Notes are the guests' part of a graph: who may leave one is the graph's setting (routers/notes.ts).
+  'auth.issueToken', 'auth.grantSite', 'auth.acceptInvitation', 'auth.revokeOwnToken', 'auth.changeOwnPassword', 'auth.makePermanent', 'auth.addWallet', 'auth.discardOwnAccount', 'auth.deleteOwnAccount', 'spaces.create', 'spaces.addRemote',
+  // Its handler asks for the owner: a deleted space is no `space` the access check could resolve.
+  'spaces.restore', 'keys.create', 'keys.remove',
+  // Notes are the guests' part of a space: who may leave one is the space's setting (routers/notes.ts).
   'notes.add', 'notes.remove',
   'mcpAuth.approve'
 ]);
@@ -62,15 +62,15 @@ const WRITE_ROUTERS = new Set(['idea', 'phase', 'git']);
 // Also derived state that costs the server (re-indexing) or is shown to every
 // viewer (activity): not for visitors.
 const WRITE_MUTATIONS = new Set([
-  'history.restore', 'graphHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
+  'history.restore', 'spaceHealth.fixConsistency', 'project.updateMeta', 'project.setLayoutSettings',
   'project.buildSearchIndex', 'activity.record', 'linkedRepo.unregister', 'linkedRepo.linkHost', 'linkedRepo.rename',
-  // Accepting an offer links the offered space into the graph (routers/notes.ts).
+  // Accepting an offer links the offered space into the space (routers/notes.ts).
   'notes.acceptOffer'
 ]);
-const OWNER_MUTATIONS = new Set(['graphs.setRemoteKey', 'graphs.setSlug', 'graphs.remove']);
-// Their handlers keep the owner's part of them to the owner (routers/graphs.ts).
-const MANAGE_MUTATIONS = new Set(['graphs.setAccess', 'graphs.invite', 'graphs.removeInvitation']);
-// What a website the account granted may do beyond writing its graphs; its
+const OWNER_MUTATIONS = new Set(['spaces.setRemoteKey', 'spaces.setSlug', 'spaces.remove']);
+// Their handlers keep the owner's part of them to the owner (routers/spaces.ts).
+const MANAGE_MUTATIONS = new Set(['spaces.setAccess', 'spaces.invite', 'spaces.removeInvitation']);
+// What a website the account granted may do beyond writing its spaces; its
 // account (password, tokens, further websites) stays on this server's own pages.
 const SITE_ACCOUNT_MUTATIONS = new Set(['notes.add', 'notes.remove']);
 // auth.listTokens answers an account about itself (its handler asks for the login).
@@ -95,62 +95,62 @@ export function seesServerPaths(viewer: Viewer | undefined): boolean {
   return !hasAccounts() || viewer?.serverAdmin === true;
 }
 
-// A token limited to some graphs (an MCP client's) is the account on those
-// graphs and nobody anywhere else: not on other graphs, not for the server's
-// own business (accounts, creating graphs, further tokens).
+// A token limited to some spaces (an MCP client's) is the account on those
+// spaces and nobody anywhere else: not on other spaces, not for the server's
+// own business (accounts, creating spaces, further tokens).
 // A token granted to another website is the account only on that website's
 // pages (`origin`, the request's Origin); there it writes what the account
 // writes, and leaves notes, but does no more of the server's own business.
-export function viewerFor(token: string | undefined, graph: Graph | null = null, origin?: string): Viewer {
+export function viewerFor(token: string | undefined, space: Space | null = null, origin?: string): Viewer {
   if (!hasAccounts()) return LOCAL_VIEWER;
   const account = resolveToken(token);
   if (!account) return ANONYMOUS;
   const { scope, site, ...viewer } = account;
   if (site !== null) {
     if (origin !== site) return ANONYMOUS;
-    return { ...viewer, serverAdmin: false, canCreateGraphs: false, site };
+    return { ...viewer, serverAdmin: false, canCreateSpaces: false, site };
   }
   if (scope === null) return viewer;
-  if (!graph || !slugsOf(graph).some(slug => scope.includes(slug))) return ANONYMOUS;
-  return { ...viewer, serverAdmin: false, canCreateGraphs: false };
+  if (!space || !slugsOf(space).some(slug => scope.includes(slug))) return ANONYMOUS;
+  return { ...viewer, serverAdmin: false, canCreateSpaces: false };
 }
 
-/** The graph a request names with `graph`; an unknown one is refused here, whatever the procedure would do with it. */
-export function graphOf(input: unknown): Graph | null {
+/** The space a request names with `space`; an unknown one is refused here, whatever the procedure would do with it. */
+export function spaceOf(input: unknown): Space | null {
   if (!hasAccounts()) return null;
-  const address = (input as { graph?: unknown } | undefined)?.graph;
-  return typeof address === 'string' ? resolveGraphAddress(address).graph : null;
+  const address = (input as { space?: unknown } | undefined)?.space;
+  return typeof address === 'string' ? resolveSpaceAddress(address).space : null;
 }
 
-export function mayCreateGraphs(viewer: Viewer): boolean {
+export function mayCreateSpaces(viewer: Viewer): boolean {
   if (viewer.serverAdmin) return true;
-  return viewer.id !== null && (viewer.canCreateGraphs || serverConfig().graphCreation === 'everyone');
+  return viewer.id !== null && (viewer.canCreateSpaces || serverConfig().spaceCreation === 'everyone');
 }
 
-/** The viewer's right on a graph; a graph without an owner is the server admins'. */
-export function rightOn(graph: Graph | null, viewer: Viewer): GraphRight {
+/** The viewer's right on a space; a space without an owner is the server admins'. */
+export function rightOn(space: Space | null, viewer: Viewer): SpaceRight {
   if (viewer.serverAdmin) return 'owner';
-  if (!graph || viewer.id === null) return 'read';
-  if (graph.owner === viewer.id) return 'owner';
-  if (graph.managers?.includes(viewer.id)) return 'manage';
-  return graph.writers.includes(viewer.id) ? 'write' : 'read';
+  if (!space || viewer.id === null) return 'read';
+  if (space.owner === viewer.id) return 'owner';
+  if (space.managers?.includes(viewer.id)) return 'manage';
+  return space.writers.includes(viewer.id) ? 'write' : 'read';
 }
 
-/** Who reads the graph besides its owner and writers: its own setting, else the server's default. */
-export const readSettingOf = (graph: Graph) => graph.read ?? serverConfig().guestDefaults.read;
+/** Who reads the space besides its owner and writers: its own setting, else the server's default. */
+export const readSettingOf = (space: Space) => space.read ?? serverConfig().guestDefaults.read;
 
 /**
- * Whether the viewer may see the graph at all. Its owner, writers and the
- * server admins always; others by the graph's read setting. Asked of every
- * request that names a graph, whatever else it needs.
+ * Whether the viewer may see the space at all. Its owner, writers and the
+ * server admins always; others by the space's read setting. Asked of every
+ * request that names a space, whatever else it needs.
  */
-export function mayRead(graph: Graph | null, viewer: Viewer): boolean {
-  if (!hasAccounts() || !graph) return true;
-  if (rightOn(graph, viewer) !== 'read') return true;
-  const setting = readSettingOf(graph);
+export function mayRead(space: Space | null, viewer: Viewer): boolean {
+  if (!hasAccounts() || !space) return true;
+  if (rightOn(space, viewer) !== 'read') return true;
+  const setting = readSettingOf(space);
   if (setting === 'everyone') return true;
   if (viewer.id === null) return false;
-  return setting === 'accounts' || (graph.readers ?? []).includes(viewer.id);
+  return setting === 'accounts' || (space.readers ?? []).includes(viewer.id);
 }
 
 // "log in" for a visitor (the UI offers the login), "ask the owner" for an account.
@@ -159,9 +159,9 @@ function refuseReading(viewer: Viewer): never {
   throw new TRPCError({ code: 'FORBIDDEN', message: 'This space is open only to the accounts its owner selected: ask its owner for access.' });
 }
 
-/** Why the viewer may not change this graph, or null when they may. */
-export function readOnlyReason(graph: Graph | null, viewer: Viewer): string | null {
-  if (rightOn(graph, viewer) !== 'read') return null;
+/** Why the viewer may not change this space, or null when they may. */
+export function readOnlyReason(space: Space | null, viewer: Viewer): string | null {
+  if (rightOn(space, viewer) !== 'read') return null;
   return viewer.name
     ? `This space is open read-only for ${viewer.name}: ask its owner for write access.`
     : 'This space is open read-only here: log in to edit.';
@@ -169,14 +169,14 @@ export function readOnlyReason(graph: Graph | null, viewer: Viewer): string | nu
 
 // The message of a refused write keeps "open read-only", which the UI already
 // recognises as "editing is off here".
-export function assertAllowed(path: string, type: string, viewer: Viewer, graph: Graph | null) {
+export function assertAllowed(path: string, type: string, viewer: Viewer, space: Space | null) {
   if (!hasAccounts()) return;
   const need = neededRole(path, type);
   if (need === 'local') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is not available on a server with accounts.` });
   }
-  // Nothing of a graph, not even a note on it, for whom may not read it.
-  if (!mayRead(graph, viewer)) refuseReading(viewer);
+  // Nothing of a space, not even a note on it, for whom may not read it.
+  if (!mayRead(space, viewer)) refuseReading(viewer);
   if (need === 'read' || viewer.serverAdmin) return;
   if (need === 'serverAdmin') {
     throw new TRPCError({ code: 'FORBIDDEN', message: `${path} is for server admins.` });
@@ -191,10 +191,10 @@ export function assertAllowed(path: string, type: string, viewer: Viewer, graph:
   if (viewer.site !== undefined && (need === 'owner' || need === 'manage')) {
     throw new TRPCError({ code: 'FORBIDDEN', message: 'Only the owner of this space may do this, on this server\'s own page.' });
   }
-  const right = rightOn(graph, viewer);
+  const right = rightOn(space, viewer);
   if (RIGHTS.indexOf(right) >= RIGHTS.indexOf(need)) return;
   throw new TRPCError({
     code: 'FORBIDDEN',
-    message: readOnlyReason(graph, viewer) ?? 'Only the owner of this space may do this.'
+    message: readOnlyReason(space, viewer) ?? 'Only the owner of this space may do this.'
   });
 }

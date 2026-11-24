@@ -30,7 +30,7 @@ test('MCP Tools - Phases CRUD', async () => {
   const phaseId = createResult.content[0].text.split('ID: ')[1];
   assert.ok(phaseId, 'Phase ID not found in output');
 
-  let phases = await caller.phase.list({ graph: ctx.projectPath, all: true });
+  let phases = await caller.phase.list({ space: ctx.projectPath, all: true });
   assert.equal(phases.length, 1);
   assert.equal(phases[0].id, phaseId);
 
@@ -42,13 +42,13 @@ test('MCP Tools - Phases CRUD', async () => {
     to: 3000
   });
 
-  const updatedPhase = await caller.phase.get({ graph: ctx.projectPath, phaseId });
+  const updatedPhase = await caller.phase.get({ space: ctx.projectPath, phaseId });
   assert.equal(updatedPhase.name, 'Updated Phase');
   assert.equal(updatedPhase.to, 3000);
 
   // 3. Delete
   await server.callTool('delete_phase', { space: ctx.projectPath, phaseId });
-  phases = await caller.phase.list({ graph: ctx.projectPath, all: true });
+  phases = await caller.phase.list({ space: ctx.projectPath, all: true });
   assert.equal(phases.length, 0);
 });
 
@@ -58,12 +58,12 @@ test('MCP Tools - Phase Commitments', async () => {
   registerTools(server as any, callerProxy as any);
 
   const phase = await caller.phase.create({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     phase: { name: 'P1', from: 0, to: 1000 }
   });
 
   const idea = await caller.idea.createFloatingIdea({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     idea: { text: 'Idea', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
@@ -74,10 +74,10 @@ test('MCP Tools - Phase Commitments', async () => {
     phaseId: phase.id
   });
 
-  let fetchedPhase = await caller.phase.get({ graph: ctx.projectPath, phaseId: phase.id });
+  let fetchedPhase = await caller.phase.get({ space: ctx.projectPath, phaseId: phase.id });
   assert.ok(fetchedPhase.commitments.includes(idea.id));
 
-  let fetchedIdea = await caller.idea.get({ graph: ctx.projectPath, ideaId: idea.id });
+  let fetchedIdea = await caller.idea.get({ space: ctx.projectPath, ideaId: idea.id });
   assert.ok(fetchedIdea.committedIn.includes(phase.id));
 
   // 2. Remove
@@ -87,7 +87,7 @@ test('MCP Tools - Phase Commitments', async () => {
     phaseId: phase.id
   });
 
-  fetchedPhase = await caller.phase.get({ graph: ctx.projectPath, phaseId: phase.id });
+  fetchedPhase = await caller.phase.get({ space: ctx.projectPath, phaseId: phase.id });
   assert.ok(!fetchedPhase.commitments.includes(idea.id));
 });
 
@@ -114,7 +114,7 @@ test('MCP Tools - create_phase resolves relative placement constraints', async (
   assert.match(matchingResult.content[0].text, /at sibling index 1/);
 
   let phases = await caller.phase.list({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     parentPhaseId: null
   });
   assert.deepEqual(phases.map((phase: any) => phase.name), ['First', 'Middle', 'Last']);
@@ -155,7 +155,7 @@ test('MCP Tools - create_phase resolves relative placement constraints', async (
   assert.match(ambiguousResult.content[0].text, /Matches:.*Duplicate/s);
 
   phases = await caller.phase.list({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     parentPhaseId: null
   });
   assert.equal(phases.some((phase: any) => phase.name === 'Conflict'), false);

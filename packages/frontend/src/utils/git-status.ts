@@ -20,13 +20,13 @@ export function changeKind(code: string): string {
   return 'modified'
 }
 
-const GRAPH_FILE = /(?:^|\/)\.bowman\/(ideas|archived-ideas|phases)\/([0-9a-f-]{36})\.json$/
+const SPACE_FILE = /(?:^|\/)\.bowman\/(ideas|archived-ideas|phases)\/([0-9a-f-]{36})\.json$/
 
 // Idea and phase files read as what they hold; other files by their path.
-export function describeChange(path: string, ideas: Record<string, Idea>, phases: Record<string, Phase>): { label: string; isGraph: boolean } {
-  const match = GRAPH_FILE.exec(path)
-  if (!match) return { label: path, isGraph: path.includes('.bowman/') }
+export function describeChange(path: string, ideas: Record<string, Idea>, phases: Record<string, Phase>): { label: string; isSpace: boolean } {
+  const match = SPACE_FILE.exec(path)
+  if (!match) return { label: path, isSpace: path.includes('.bowman/') }
   const [, folder, id] = match
   const name = folder === 'phases' ? phases[id!]?.name : ideas[id!]?.text
-  return { label: `${folder === 'phases' ? 'phase' : 'idea'}: ${name || id!.slice(0, 8)}`, isGraph: true }
+  return { label: `${folder === 'phases' ? 'phase' : 'idea'}: ${name || id!.slice(0, 8)}`, isSpace: true }
 }

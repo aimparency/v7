@@ -20,12 +20,12 @@ test('MCP Tools - Search', async () => {
   registerTools(server as any, callerProxy as any);
 
   await caller.idea.createFloatingIdea({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     idea: { text: 'Find Me', status: { state: 'open', comment: '', date: Date.now() } }
   });
 
   await caller.phase.create({
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     phase: { name: 'Search Phase', from: 0, to: 1000 }
   });
 

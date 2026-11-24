@@ -52,9 +52,9 @@ describe('idea status history and commit diffs', () => {
     expect(diff.map((file) => file.path).sort()).toEqual(['.bowman/ideas/11111111-2222-3333-4444-555555555555.json', 'code.ts']);
     expect(diff.find((file) => file.path === 'code.ts')!.patch).toContain('+export const x = 1');
 
-    // Hosted readers see the graph's part of a commit, never the code...
-    const graphOnly = await getCommitDiff(bowman, history[1]!.commit.hash, bowman);
-    expect(graphOnly.map((file) => file.path)).toEqual(['.bowman/ideas/11111111-2222-3333-4444-555555555555.json']);
+    // Hosted readers see the space's part of a commit, never the code...
+    const spaceOnly = await getCommitDiff(bowman, history[1]!.commit.hash, bowman);
+    expect(spaceOnly.map((file) => file.path)).toEqual(['.bowman/ideas/11111111-2222-3333-4444-555555555555.json']);
     // ...and a blob id is not a commit, so its content is never printed.
     const blob = git(repo, 'rev-parse', `${history[1]!.commit.hash}:code.ts`).trim();
     await expect(getCommitDiff(bowman, blob)).rejects.toThrow();
@@ -96,7 +96,7 @@ describe('parseIdeaContributorLog', () => {
   it('counts authors and co-authors of commits that change the idea file or name the idea', () => {
     const log = [
       record('Felix', '2026-10-30T10:00:00Z', 'feat: thing (abcdef12)\n\nCo-Authored-By: Claude Opus 5.5 <noreply@anthropic.com>\n', ['src/a.ts']),
-      record('Felix', '2026-10-29T10:00:00Z', 'graph edits\n', [`.bowman/ideas/${ideaId}.json`]),
+      record('Felix', '2026-10-29T10:00:00Z', 'space edits\n', [`.bowman/ideas/${ideaId}.json`]),
       record('Felix', '2026-10-28T10:00:00Z', 'unrelated\n', ['.bowman/ideas/99999999-2222-3333-4444-555555555555.json', 'other/ideas/x.json'])
     ].join('');
 
