@@ -242,28 +242,32 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
           <button @click="startOver">Start over <kbd>Space</kbd></button>
         </div>
         <div v-else-if="selected" class="card">
-          <div class="card-meta">
-            <span class="state" :style="{ color: statusColor(selected.idea.status.state) }">{{ selected.idea.status.state }}</span>
-            <span class="priority">priority {{ formatIdeaPriority(selected.priority) }}</span>
-            <span class="position">{{ selectedIndex + 1 }} / {{ entries.length }}</span>
+          <div class="card-body">
+            <div class="card-meta">
+              <span class="state" :style="{ color: statusColor(selected.idea.status.state) }">{{ selected.idea.status.state }}</span>
+              <span class="priority">priority {{ formatIdeaPriority(selected.priority) }}</span>
+              <span class="position">{{ selectedIndex + 1 }} / {{ entries.length }}</span>
+            </div>
+            <p v-if="parents.length" class="parents">for {{ parents.join(' · ') }}</p>
+            <h3 @dblclick="edit">{{ selected.idea.text || '(untitled)' }}</h3>
+            <p v-if="selected.idea.status.comment" class="comment"><template v-for="(part, index) in linkParts(selected.idea.status.comment)" :key="index"><a v-if="part.href" :href="part.href" target="_blank" rel="noopener">{{ part.text }}</a><template v-else>{{ part.text }}</template></template></p>
+            <details v-if="selected.idea.description">
+              <summary>Description</summary>
+              <p class="description"><template v-for="(part, index) in linkParts(selected.idea.description)" :key="index"><a v-if="part.href" :href="part.href" target="_blank" rel="noopener">{{ part.text }}</a><template v-else>{{ part.text }}</template></template></p>
+            </details>
           </div>
-          <p v-if="parents.length" class="parents">for {{ parents.join(' · ') }}</p>
-          <h3 @dblclick="edit">{{ selected.idea.text || '(untitled)' }}</h3>
-          <p v-if="selected.idea.status.comment" class="comment"><template v-for="(part, index) in linkParts(selected.idea.status.comment)" :key="index"><a v-if="part.href" :href="part.href" target="_blank" rel="noopener">{{ part.text }}</a><template v-else>{{ part.text }}</template></template></p>
-          <details v-if="selected.idea.description">
-            <summary>Description</summary>
-            <p class="description"><template v-for="(part, index) in linkParts(selected.idea.description)" :key="index"><a v-if="part.href" :href="part.href" target="_blank" rel="noopener">{{ part.text }}</a><template v-else>{{ part.text }}</template></template></p>
-          </details>
 
-          <ol class="options">
-            <li v-for="(option, index) in options" :key="index" :class="[option.kind, { active: replying === option }]">
-              <button @click="choose(option)"><kbd>{{ index + 1 }}</kbd> {{ option.label }}</button>
-            </li>
-          </ol>
-          <form v-if="replying" class="reply" @submit.prevent="submitReply">
-            <textarea ref="replyInput" v-model="replyText" rows="3" :placeholder="replying.kind === 'reply' ? replying.placeholder : ''" />
-            <button type="submit" :disabled="!replyText.trim()">Send <kbd>Enter</kbd></button>
-          </form>
+          <div class="card-actions">
+            <ol class="options">
+              <li v-for="(option, index) in options" :key="index" :class="[option.kind, { active: replying === option }]">
+                <button @click="choose(option)"><kbd>{{ index + 1 }}</kbd> {{ option.label }}</button>
+              </li>
+            </ol>
+            <form v-if="replying" class="reply" @submit.prevent="submitReply">
+              <textarea ref="replyInput" v-model="replyText" rows="3" :placeholder="replying.kind === 'reply' ? replying.placeholder : ''" />
+              <button type="submit" :disabled="!replyText.trim()">Send <kbd>Enter</kbd></button>
+            </form>
+          </div>
         </div>
       </template>
 
@@ -359,13 +363,23 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
     }
   }
 
+  /* The options stay at the bottom: the idea above scrolls, and the options
+     scroll too once they would take more than half the card. */
   & .card {
     display: flex;
     flex-direction: column;
     gap: 0.6rem;
-    min-height: 18rem;
-    max-height: 65vh;
-    overflow-y: auto;
+    height: min(65vh, 40rem);
+
+    & .card-body, & .card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      min-height: 0;
+      overflow-y: auto;
+    }
+    & .card-body { flex: 1 1 auto; }
+    & .card-actions { flex: 0 0 auto; max-height: 50%; }
 
     & .card-meta {
       display: flex;
