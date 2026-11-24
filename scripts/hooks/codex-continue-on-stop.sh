@@ -45,6 +45,23 @@ if [[ "$human_wait_state" == "confirmed" ]]; then
   exit 0
 fi
 
+# A long context makes most of each turn's cost (every model call re-reads it;
+# 32b3478a). record-session-cost.mjs notes the last turn's peak per call; above
+# the threshold the agent is asked to wrap up so a fresh session continues, and
+# its request for the human (to restart) is granted without the challenge.
+fresh_note=""
+fresh_threshold="${AIMPARENCY_FRESH_CONTEXT_TOKENS:-250000}"
+if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/context-size" ]]; then
+  context_size="$(head -n 1 "$repo_root/.bowman/runtime/context-size")"
+  if [[ "$context_size" =~ ^[0-9]+$ ]] && (( context_size > fresh_threshold )); then
+    if [[ "$human_wait_state" == "requested" ]]; then
+      printf '{"continue":true}\n'
+      exit 0
+    fi
+    fresh_note=" This session re-reads about $(( context_size / 1000 ))k tokens per model call, which makes most of each turn's cost. Finish the current step, commit, write the progress line, then ask the human to restart a fresh session (the work lives in the space): end with [AIMPARENCY_REQUEST_HUMAN]."
+  fi
+fi
+
 # AIMPARENCY_ALLOW_STOP is canonical. Retain the historical misspelling for a
 # deprecation window so existing launch scripts can still request a normal stop.
 if [[ "${AIMPARENCY_ALLOW_STOP:-${AIMPARANCY_ALLOW_STOP:-0}}" == "1" ]]; then
@@ -82,16 +99,7 @@ if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/continue-hook-log" ]]; t
   log_note=" Progress log for the human: after each finished step append one succinct line to $log_file (idea id and title, what changed, commit hash, or the question it is parked on)."
 fi
 
-# A long context makes most of each turn's cost (every model call re-reads it;
-# 32b3478a). record-session-cost.mjs notes the last turn's peak per call; above
-# the threshold the agent is asked to wrap up so a fresh session continues.
-fresh_threshold="${AIMPARENCY_FRESH_CONTEXT_TOKENS:-250000}"
-if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/context-size" ]]; then
-  context_size="$(head -n 1 "$repo_root/.bowman/runtime/context-size")"
-  if [[ "$context_size" =~ ^[0-9]+$ ]] && (( context_size > fresh_threshold )); then
-    log_note="$log_note This session re-reads about $(( context_size / 1000 ))k tokens per model call, which makes most of each turn's cost. Finish the current step, commit, write the progress line, then ask the human to restart a fresh session (the work lives in the space): end with [AIMPARENCY_REQUEST_HUMAN]."
-  fi
-fi
+
 
 node -e '
   const fs = require("fs");
@@ -109,4 +117,4 @@ node -e '
     ? active.human ?? fallback.human ?? "Before waiting for a human, re-check the Aimparency MCP for actionable work. If input is still indispensable, restate the blocker and end with [AIMPARENCY_CONFIRM_HUMAN_BLOCK]."
     : active.work ?? fallback.work ?? "Continue working autonomously using the Aimparency MCP. When human input is indispensable, state it and end with [AIMPARENCY_REQUEST_HUMAN].";
   process.stdout.write(JSON.stringify({ decision: "block", reason: text + logNote }) + "\n");
-' "$human_wait_state" "$active_loop" "$default_loop" "$log_note"
+' "$human_wait_state" "$active_loop" "$default_loop" "$log_note$fresh_note"
