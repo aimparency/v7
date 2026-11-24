@@ -28,7 +28,7 @@ test('MCP Tools - Ideas CRUD', async (t) => {
 
   // 1. Create
   await createIdea(server, {
-    graph: ctx.projectPath, 
+    space: ctx.projectPath, 
     text: 'MCP Idea',
     tags: ['test']
   });
@@ -40,7 +40,7 @@ test('MCP Tools - Ideas CRUD', async (t) => {
 
   // 2. Update
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: ideaId,
     text: 'Updated MCP Idea',
     status: { state: 'implemented' }
@@ -51,12 +51,12 @@ test('MCP Tools - Ideas CRUD', async (t) => {
   assert.equal(updatedIdea.status.state, 'implemented');
 
   // 3. Get
-  const getResult = await server.callTool('get_idea', { graph: ctx.projectPath, ideaId });
+  const getResult = await server.callTool('get_idea', { space: ctx.projectPath, ideaId });
   const fetchedIdea = JSON.parse(getResult.content[0].text);
   assert.equal(fetchedIdea.id, ideaId);
 
   // 4. Delete
-  await server.callTool('delete_idea', { graph: ctx.projectPath, ideaId });
+  await server.callTool('delete_idea', { space: ctx.projectPath, ideaId });
   ideas = await caller.idea.list({ graph: ctx.projectPath });
   assert.equal(ideas.length, 0);
 });
@@ -65,21 +65,21 @@ test('get_idea_context returns every distinct root path while preserving the hig
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
 
-  await createIdea(server, { graph: ctx.projectPath, text: 'Root A', intrinsicValue: 10 });
-  await createIdea(server, { graph: ctx.projectPath, text: 'Root B', intrinsicValue: 5 });
+  await createIdea(server, { space: ctx.projectPath, text: 'Root A', intrinsicValue: 10 });
+  await createIdea(server, { space: ctx.projectPath, text: 'Root B', intrinsicValue: 5 });
   const roots = await caller.idea.list({ graph: ctx.projectPath });
   const rootA = roots.find((idea) => idea.text === 'Root A')!;
   const rootB = roots.find((idea) => idea.text === 'Root B')!;
 
   await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Middle',
     supportedIdeas: [rootA.id, rootB.id],
   });
   const middle = (await caller.idea.list({ graph: ctx.projectPath }))
     .find((idea) => idea.text === 'Middle')!;
   await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Leaf',
     supportedIdeas: [middle.id, rootB.id],
   });
@@ -87,7 +87,7 @@ test('get_idea_context returns every distinct root path while preserving the hig
     .find((idea) => idea.text === 'Leaf')!;
 
   const result = await server.callTool('get_idea_context', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: leaf.id,
   });
   const payload = JSON.parse(result.content[0].text);
@@ -112,7 +112,7 @@ test('get_idea_context works for an idea whose description exceeds the search qu
     idea: { text: 'Long one', description: 'word '.repeat(1000), status: { state: 'open', comment: '', date: Date.now() } }
   });
 
-  const result = await server.callTool('get_idea_context', { graph: ctx.projectPath, ideaId: idea.id });
+  const result = await server.callTool('get_idea_context', { space: ctx.projectPath, ideaId: idea.id });
   assert.ok(!result.isError, result.content[0].text);
   assert.equal(JSON.parse(result.content[0].text).idea.text, 'Long one');
 });
@@ -181,7 +181,7 @@ test('status date changes only on state transition; reviewedAt is independent', 
 
   const initialReview = 1_700_000_000_000;
   await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Long-standing intent',
     status: { state: 'open', reviewedAt: initialReview },
   });
@@ -191,7 +191,7 @@ test('status date changes only on state transition; reviewedAt is independent', 
   const reviewedAt = transitionDate + 10_000;
 
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: created.id,
     status: { state: 'open', comment: 'Still strategically relevant', reviewedAt },
   });
@@ -200,7 +200,7 @@ test('status date changes only on state transition; reviewedAt is independent', 
   assert.equal(reviewed.status.reviewedAt, reviewedAt);
 
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: created.id,
     status: { state: 'partially' },
   });
@@ -215,12 +215,12 @@ test('MCP Tools - update_idea nudges to verify when marking done without evidenc
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await createIdea(server, { graph: ctx.projectPath, text: 'Verify me' });
+  await createIdea(server, { space: ctx.projectPath, text: 'Verify me' });
   const ideaId = (await caller.idea.list({ graph: ctx.projectPath }))[0].id;
 
   // Done without evidence -> nudge.
   const noEvidence = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId,
     status: { state: 'implemented' },
   });
@@ -228,7 +228,7 @@ test('MCP Tools - update_idea nudges to verify when marking done without evidenc
 
   // Done with evidence in the status comment -> no nudge.
   const withEvidence = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId,
     status: { state: 'implemented', comment: 'focused test passes' },
   });
@@ -236,7 +236,7 @@ test('MCP Tools - update_idea nudges to verify when marking done without evidenc
 
   // Non-done updates never nudge.
   const openUpdate = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId,
     status: { state: 'open' },
   });
@@ -261,11 +261,11 @@ test('MCP Tools - done nudge surfaces the type-specific evidence hint', async ()
   const callerProxy = createCallerProxy(caller);
   registerTools(server as any, callerProxy as any);
 
-  await createIdea(server, { graph: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
+  await createIdea(server, { space: ctx.projectPath, text: 'Fix the modal flicker bug', tags: ['ui'] });
   const ideaId = (await caller.idea.list({ graph: ctx.projectPath }))[0].id;
 
   const res = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId,
     status: { state: 'implemented' },
   });
@@ -278,10 +278,10 @@ test('MCP Tools - create_idea accepts edge metadata for parent and child links',
   registerTools(server as any, callerProxy as any);
 
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Parent' }));
-  const childId = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Child' }));
+  const parentId = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Parent' }));
+  const childId = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Child' }));
   const ideaId = idOf(await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Middle',
     supportedIdeas: [{ ideaId: parentId, weight: 2, hypothesis: 'parent rationale' }],
     supportingConnections: [{ ideaId: childId, weight: 3, hypothesis: 'child rationale' }],
@@ -305,17 +305,17 @@ test('MCP Tools - update_idea supports append and remove connection deltas', asy
   registerTools(server as any, callerProxy as any);
 
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Parent' }));
-  const child1Id = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Child 1' }));
-  const child2Id = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Child 2' }));
+  const parentId = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Parent' }));
+  const child1Id = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Child 1' }));
+  const child2Id = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Child 2' }));
   const ideaId = idOf(await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Target',
     supportingConnections: [child1Id],
   }));
 
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId,
     addSupportedIdeas: [{ ideaId: parentId, weight: 4, hypothesis: 'added parent edge' }],
     addSupportingConnections: [{ ideaId: child2Id, weight: 5, hypothesis: 'added child edge' }],
@@ -333,7 +333,7 @@ test('MCP Tools - update_idea supports append and remove connection deltas', asy
   assert.equal(target.supportingConnections.find((c: any) => c.ideaId === child2Id)?.weight, 5);
 
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId,
     removeSupportedIdeas: [parentId],
     removeSupportingConnections: [child1Id],
@@ -356,22 +356,22 @@ test('MCP Tools - list_ideas uncommitted surfaces parented-but-unphased ideas th
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
 
   // A: no phase, no parent -> floating AND uncommitted.
-  const a = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'orphan' }));
+  const a = idOf(await createIdea(server, { space: ctx.projectPath, text: 'orphan' }));
   // B: committed to a phase.
   const phase = await caller.phase.create({ graph: ctx.projectPath, phase: { name: 'P', from: 0, to: 1000 } });
-  const b = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'phased', phaseId: phase.id }));
+  const b = idOf(await createIdea(server, { space: ctx.projectPath, text: 'phased', phaseId: phase.id }));
   // C: has a parent (B) but no phase -> uncommitted but NOT floating (the invisible class).
-  const c = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'connected-unphased', supportedIdeas: [b] }));
+  const c = idOf(await createIdea(server, { space: ctx.projectPath, text: 'connected-unphased', supportedIdeas: [b] }));
 
   const uncommitted = JSON.parse((await server.callTool('list_ideas', {
-    graph: ctx.projectPath, status: 'open', uncommitted: true,
+    space: ctx.projectPath, status: 'open', uncommitted: true,
   })).content[0].text).map((x: any) => x.id);
   assert.ok(uncommitted.includes(a), 'uncommitted includes the orphan');
   assert.ok(uncommitted.includes(c), 'uncommitted includes the connected-but-unphased idea');
   assert.ok(!uncommitted.includes(b), 'uncommitted excludes the phased idea');
 
   const floating = JSON.parse((await server.callTool('list_ideas', {
-    graph: ctx.projectPath, floating: true,
+    space: ctx.projectPath, floating: true,
   })).content[0].text).map((x: any) => x.id);
   assert.ok(floating.includes(a), 'floating includes the orphan');
   assert.ok(!floating.includes(c), 'floating MISSES the connected-but-unphased idea (the discoverability gap)');
@@ -382,7 +382,7 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   registerTools(server as any, createCallerProxy(caller) as any);
 
   const parentResult = await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Mission container',
     intrinsicValue: 10,
     cost: 1,
@@ -391,7 +391,7 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   assert.ok(parentId);
 
   const childResult = await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Executable hidden work',
     supportedIdeas: [parentId],
     cost: 1,
@@ -410,7 +410,7 @@ test('get_prioritized_ideas falls back to connected uncommitted work when a phas
   });
 
   const result = await server.callTool('get_prioritized_ideas', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     phaseId: phase.id,
   });
   const payload = JSON.parse(result.content[0].text);
@@ -429,7 +429,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   registerTools(server as any, createCallerProxy(caller) as any);
 
   const missionResult = await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Permanent mission A',
     intrinsicValue: 10,
     cost: 1,
@@ -437,7 +437,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   const missionId = /Created idea with ID: ([0-9a-f-]+)/.exec(missionResult.content[0].text)?.[1];
   assert.ok(missionId);
   const peerResult = await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Permanent mission B',
     supportedIdeas: [missionId],
     cost: 1,
@@ -445,7 +445,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   const peerId = /Created idea with ID: ([0-9a-f-]+)/.exec(peerResult.content[0].text)?.[1];
   assert.ok(peerId);
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: missionId,
     addSupportedIdeas: [peerId],
   });
@@ -461,7 +461,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   });
 
   const result = await server.callTool('get_prioritized_ideas', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     phaseId: phase.id,
   });
   const payload = JSON.parse(result.content[0].text);
@@ -471,7 +471,7 @@ test('get_prioritized_ideas returns a graph-native exploration contract when no 
   assert.equal(payload.diagnostics.uncommittedLeafIdeas, 0);
   assert.equal(payload.exploration.required, true);
   assert.match(payload.exploration.objective, /actionable leaf/i);
-  assert.ok(payload.exploration.moves.some((move: string) => /graph_hygiene/.test(move)));
+  assert.ok(payload.exploration.moves.some((move: string) => /space_hygiene/.test(move)));
   assert.ok(payload.exploration.moves.some((move: string) => /hypothesis/.test(move)));
   assert.deepEqual(payload.ideas.map((idea: any) => idea.id), [missionId]);
 });
@@ -518,7 +518,7 @@ test('MCP Tools - list_phase_ideas_recursive', async () => {
   });
 
   const result = await server.callTool('list_phase_ideas_recursive', { 
-    graph: ctx.projectPath, 
+    space: ctx.projectPath, 
     phaseId: phase.id 
   });
   
@@ -531,9 +531,9 @@ test('MCP Tools - settling an idea asks to reflect on its parent connections; re
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const parentId = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Parent' }));
+  const parentId = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Parent' }));
   const childId = idOf(await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Child',
     supportedIdeas: [{ ideaId: parentId, weight: 3, hypothesis: 'should unblock the parent' }],
   }));
@@ -541,7 +541,7 @@ test('MCP Tools - settling an idea asks to reflect on its parent connections; re
     .supportingConnections.find((c: any) => c.ideaId === childId);
 
   const settled = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: childId,
     status: { state: 'implemented', comment: 'verified' },
   });
@@ -549,7 +549,7 @@ test('MCP Tools - settling an idea asks to reflect on its parent connections; re
   assert.match(settled.content[0].text, /hypothesis: "should unblock the parent"/);
 
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: childId,
     addSupportedIdeas: [{ ideaId: parentId, reflection: 'it did, partly' }],
   });
@@ -559,14 +559,14 @@ test('MCP Tools - settling an idea asks to reflect on its parent connections; re
   );
 
   const again = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: childId,
     status: { state: 'implemented', comment: 'still' },
   });
   assert.doesNotMatch(again.content[0].text, /reflect on each parent's hypothesis/, 'reflected connections are not asked again');
 
   const reopened = await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: childId,
     status: { state: 'open', comment: '' },
   });
@@ -577,15 +577,15 @@ test('MCP Tools - updating a child edge\'s hypothesis keeps its weight', async (
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
   const idOf = (res: any): string => res.content[0].text.match(/ID:\s*([0-9a-f-]+)/i)[1];
-  const childId = idOf(await createIdea(server, { graph: ctx.projectPath, text: 'Child' }));
+  const childId = idOf(await createIdea(server, { space: ctx.projectPath, text: 'Child' }));
   const parentId = idOf(await createIdea(server, {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     text: 'Parent',
     supportingConnections: [{ ideaId: childId, weight: 7 }],
   }));
 
   await server.callTool('update_idea', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     ideaId: parentId,
     addSupportingConnections: [{ ideaId: childId, hypothesis: 'now with a reason' }],
   });
@@ -598,12 +598,12 @@ test('MCP Tools - updating a child edge\'s hypothesis keeps its weight', async (
 test('update_ideas applies several updates in order and stops at the first failure', async () => {
   const server = new MockServer();
   registerTools(server as any, createCallerProxy(caller) as any);
-  const id = async (text: string) => /Created idea with ID: ([0-9a-f-]+)/.exec((await createIdea(server, { graph: ctx.projectPath, text })).content[0].text)![1]!;
+  const id = async (text: string) => /Created idea with ID: ([0-9a-f-]+)/.exec((await createIdea(server, { space: ctx.projectPath, text })).content[0].text)![1]!;
   const first = await id('Batch first');
   const second = await id('Batch second');
 
   const result = await server.callTool('update_ideas', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     updates: [
       { ideaId: first, status: { state: 'unclear', comment: 'Which color?' } },
       { ideaId: second, tags: ['batched'] },
@@ -614,7 +614,7 @@ test('update_ideas applies several updates in order and stops at the first failu
   assert.deepEqual((await caller.idea.get({ graph: ctx.projectPath, ideaId: second })).tags, ['batched']);
 
   const failed = await server.callTool('update_ideas', {
-    graph: ctx.projectPath,
+    space: ctx.projectPath,
     updates: [
       { ideaId: first, tags: ['kept'] },
       { ideaId: '00000000-0000-4000-8000-000000000000', tags: ['missing'] },

@@ -153,7 +153,7 @@ function startOnePortServer() {
     // <host>/spaces/<slug>/mcp/...: the MCP server for that one graph.
     const graphMcp = /^\/spaces\/([a-z0-9-]+)(\/mcp\/[^?]*)(\?.*)?$/.exec(url);
     if (graphMcp) {
-      req.url = `${graphMcp[2]}${graphMcp[3] ? `${graphMcp[3]}&` : '?'}graph=${graphMcp[1]}`;
+      req.url = `${graphMcp[2]}${graphMcp[3] ? `${graphMcp[3]}&` : '?'}space=${graphMcp[1]}`;
       return proxy(req, res, mcpPort);
     }
     // /mcp and what an MCP client's own login needs at the server's root

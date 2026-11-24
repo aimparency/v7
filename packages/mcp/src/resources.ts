@@ -1,6 +1,6 @@
 import type { BackendClient } from "./client.js";
 import { ListResourcesRequestSchema, ReadResourceRequestSchema } from "@modelcontextprotocol/sdk/types.js";
-import { PROJECT_PATH_PARAMETER, PROJECT_PATH_MISSING_ERROR } from "./constants.js";
+import { SPACE_URI_PARAMETER, SPACE_MISSING_ERROR } from "./constants.js";
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { AIMPARENCY_DIR_NAME } from "shared";
 import { formatIdea, formatIdeas } from "./tools/format.js";
@@ -24,15 +24,15 @@ export function registerResources(server: Server, caller: BackendClient) {
   server.setRequestHandler(ListResourcesRequestSchema, async () => {
     return {
       resources: [
-        { uri: `idea://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Idea", mimeType: "application/json" },
-        { uri: `idea://{uuid}/supporting_connections?${PROJECT_PATH_PARAMETER}`, name: "Idea children", mimeType: "application/json" },
-        { uri: `idea://{uuid}/supported_ideas?${PROJECT_PATH_PARAMETER}`, name: "Idea parents", mimeType: "application/json" },
-        { uri: `ideas://all?${PROJECT_PATH_PARAMETER}`, name: "All ideas", mimeType: "application/json" },
-        { uri: `phase://{uuid}?${PROJECT_PATH_PARAMETER}`, name: "Phase", mimeType: "application/json" },
-        { uri: `phase://{uuid}/ideas?${PROJECT_PATH_PARAMETER}`, name: "Phase ideas", mimeType: "application/json" },
-        { uri: `phases://all?${PROJECT_PATH_PARAMETER}`, name: "All phases", mimeType: "application/json" },
-        { uri: `phases://{parent-uuid}/children?${PROJECT_PATH_PARAMETER}`, name: "Sub-phases", mimeType: "application/json" },
-        { uri: `project://meta?${PROJECT_PATH_PARAMETER}`, name: "Project meta", mimeType: "application/json" },
+        { uri: `idea://{uuid}?${SPACE_URI_PARAMETER}`, name: "Idea", mimeType: "application/json" },
+        { uri: `idea://{uuid}/supporting_connections?${SPACE_URI_PARAMETER}`, name: "Idea children", mimeType: "application/json" },
+        { uri: `idea://{uuid}/supported_ideas?${SPACE_URI_PARAMETER}`, name: "Idea parents", mimeType: "application/json" },
+        { uri: `ideas://all?${SPACE_URI_PARAMETER}`, name: "All ideas", mimeType: "application/json" },
+        { uri: `phase://{uuid}?${SPACE_URI_PARAMETER}`, name: "Phase", mimeType: "application/json" },
+        { uri: `phase://{uuid}/ideas?${SPACE_URI_PARAMETER}`, name: "Phase ideas", mimeType: "application/json" },
+        { uri: `phases://all?${SPACE_URI_PARAMETER}`, name: "All phases", mimeType: "application/json" },
+        { uri: `phases://{parent-uuid}/children?${SPACE_URI_PARAMETER}`, name: "Sub-phases", mimeType: "application/json" },
+        { uri: `project://meta?${SPACE_URI_PARAMETER}`, name: "Project meta", mimeType: "application/json" },
       ],
     };
   });
@@ -42,12 +42,12 @@ export function registerResources(server: Server, caller: BackendClient) {
     const parsed = parseResourceUri(uri);
 
     try {
-      // The graph comes as a query parameter (e.g., idea://uuid?graph=/path/to/project); `projectPath` is its former name.
+      // The space comes as a query parameter (e.g., idea://uuid?space=/path/to/project); `graph` and `projectPath` are its former names.
       const url = new URL(uri, "http://dummy");
-      const projectPath = url.searchParams.get("graph") ?? url.searchParams.get("projectPath");
+      const projectPath = url.searchParams.get("space") ?? url.searchParams.get("graph") ?? url.searchParams.get("projectPath");
 
       if (!projectPath) {
-        throw new Error(PROJECT_PATH_MISSING_ERROR);
+        throw new Error(SPACE_MISSING_ERROR);
       }
 
       if (parsed.type === "idea") {
@@ -205,7 +205,7 @@ export function registerResources(server: Server, caller: BackendClient) {
           {
             uri,
             mimeType: "text/plain",
-            text: `Error reading resource: ${errorMessage}\n\nMake sure to include the graph as a query parameter, e.g.:\nidea://uuid?graph=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
+            text: `Error reading resource: ${errorMessage}\n\nMake sure to include the space as a query parameter, e.g.:\nidea://uuid?space=/abs/path/to/project/${AIMPARENCY_DIR_NAME}`,
           },
         ],
       };

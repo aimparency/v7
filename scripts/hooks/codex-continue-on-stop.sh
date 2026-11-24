@@ -42,7 +42,7 @@ fi
 
 # The text the agent gets is a hook loop: the one named in
 # .bowman/runtime/continue-hook-loop (a slug of .bowman/hook-loops/<slug>.md,
-# versioned with the graph), else the default. The default is read live from
+# versioned with the space), else the default. The default is read live from
 # the Aimparency checkout named in .bowman/runtime/continue-hook-default (written
 # on install), so it follows Aimparency updates; default-loop.md next to this
 # script is only the fallback when that checkout is missing. A loop

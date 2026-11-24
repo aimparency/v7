@@ -1,21 +1,21 @@
-import { GRAPH_TOOL_PROPERTY } from "../constants.js";
+import { SPACE_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences, findReconciliationCandidates } from "../reconcile.js";
 import { extractCodeTokens, scoreCodePresence } from "../code-presence.js";
 import type { ToolDefinition } from "./types.js";
 import { getRepoCommitMessages, CODE_ONLY_PATHSPEC, gitGrepMatches } from "./git.js";
 
-export const graphHealthTools: ToolDefinition[] = [
+export const spaceHealthTools: ToolDefinition[] = [
   {
     name: "check_consistency",
-    description: "Check the idea graph for structural issues: broken links, mismatched parent/child references, orphaned embeddings. Run before fix_consistency.",
+    description: "Check the idea space for structural issues: broken links, mismatched parent/child references, orphaned embeddings. Run before fix_consistency.",
     inputSchema: {
       type: "object",
-      properties: { graph: GRAPH_TOOL_PROPERTY },
-      required: ["graph"],
+      properties: { space: SPACE_TOOL_PROPERTY },
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.checkConsistency.query({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -27,12 +27,12 @@ export const graphHealthTools: ToolDefinition[] = [
     description: "Auto-repair structural inconsistencies found by check_consistency (rewires broken references).",
     inputSchema: {
       type: "object",
-      properties: { graph: GRAPH_TOOL_PROPERTY },
-      required: ["graph"],
+      properties: { space: SPACE_TOOL_PROPERTY },
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.fixConsistency.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -44,12 +44,12 @@ export const graphHealthTools: ToolDefinition[] = [
     description: "Rebuild the text search index and queue background embedding generation for semantic search.",
     inputSchema: {
       type: "object",
-      properties: { graph: GRAPH_TOOL_PROPERTY },
-      required: ["graph"],
+      properties: { space: SPACE_TOOL_PROPERTY },
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.project.buildSearchIndex.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       return {
         content: [{ type: "text", text: JSON.stringify(result, null, 2) }],
@@ -62,15 +62,15 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         threshold: { type: "number", description: "Similarity threshold 0–1 (default 0.92)" },
         limit: { type: "number", description: "Max pairs to return (default 50)" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.findDuplicates.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         threshold: args.threshold as number | undefined,
         limit: args.limit as number | undefined,
       });
@@ -85,16 +85,16 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         parentIdeaId: { type: "string", description: "UUID of the catch-all parent idea" },
         candidateParentIds: { type: "array", items: { type: "string" }, description: "Optional explicit candidate sub-parent UUIDs (default: the catch-all's children that have children)" },
         limit: { type: "number", description: "Max suggestions to return (default 200)" },
       },
-      required: ["graph", "parentIdeaId"],
+      required: ["space", "parentIdeaId"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.suggestReparents.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         parentIdeaId: args.parentIdeaId as string,
         candidateParentIds: args.candidateParentIds as string[] | undefined,
         limit: args.limit as number | undefined,
@@ -105,21 +105,21 @@ export const graphHealthTools: ToolDefinition[] = [
     },
   },
   {
-    name: "graph_hygiene",
-    description: "Read-only dashboard of graph DEFECTS: floating ideas (no phase AND no parents), mega-parents (catch-all smell, >= megaParentThreshold direct children), cancelled/failed ideas not yet archived, collapse candidates (open/in-progress/partially parents whose active children are all implemented: finish the parent or add what it still needs), unestimated ideas (open/in-progress/partially without a cost estimate, ranked at the project's default cost: set cost via update_idea), and duplicate clusters (cosine >= duplicateThreshold; needs build_search_index). Uncommitted ideas are NOT defects — having no phase is a normal state; browse them with list_ideas uncommitted=true. Act via merge_ideas / suggest_reparents / update_idea.",
+    name: "space_hygiene",
+    description: "Read-only dashboard of space DEFECTS: floating ideas (no phase AND no parents), mega-parents (catch-all smell, >= megaParentThreshold direct children), cancelled/failed ideas not yet archived, collapse candidates (open/in-progress/partially parents whose active children are all implemented: finish the parent or add what it still needs), unestimated ideas (open/in-progress/partially without a cost estimate, ranked at the project's default cost: set cost via update_idea), and duplicate clusters (cosine >= duplicateThreshold; needs build_search_index). Uncommitted ideas are NOT defects — having no phase is a normal state; browse them with list_ideas uncommitted=true. Act via merge_ideas / suggest_reparents / update_idea.",
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         megaParentThreshold: { type: "number", description: "Min direct children to flag a mega-parent (default 25)" },
         duplicateThreshold: { type: "number", description: "Cosine threshold for duplicate clusters 0–1 (default 0.92)" },
         limit: { type: "number", description: "Max items per section (default 30)" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.graphHealth.graphHygiene.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         megaParentThreshold: args.megaParentThreshold as number | undefined,
         duplicateThreshold: args.duplicateThreshold as number | undefined,
         limit: args.limit as number | undefined,
@@ -135,20 +135,20 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         limit: { type: "number", description: "Max candidates to return (default 30)" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const limit = (args.limit as number | undefined) ?? 30;
       const allIdeas = await trpcClient.idea.list.query({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
-      // Code-only: a graph-bookkeeping commit that merely cites an idea id is
+      // Code-only: a space-bookkeeping commit that merely cites an idea id is
       // not evidence the idea was implemented (see CODE_ONLY_PATHSPEC).
-      const commitMessages = getRepoCommitMessages(args.graph as string, 2000, CODE_ONLY_PATHSPEC);
+      const commitMessages = getRepoCommitMessages(args.space as string, 2000, CODE_ONLY_PATHSPEC);
       const counts = countIdeaReferences(commitMessages, openIdeas.map((a) => a.id));
       const candidates = findReconciliationCandidates(openIdeas, counts);
       return {
@@ -161,7 +161,7 @@ export const graphHealthTools: ToolDefinition[] = [
             note: commitMessages.length === 0
               ? "No git commits found (not a git repo, or no history) — commit-reference reconciliation is unavailable."
               : candidates.length === 0
-                ? "No open ideas are referenced by commits. Either the graph is in sync or commits don't cite idea ids."
+                ? "No open ideas are referenced by commits. Either the space is in sync or commits don't cite idea ids."
                 : "Each candidate is an OPEN idea cited by a commit — verify against the code, then update_idea to implemented with the evidence in the status comment if confirmed.",
             candidates: candidates.slice(0, limit),
           }, null, 2),
@@ -175,11 +175,11 @@ export const graphHealthTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         minScore: { type: "number", description: "Min fraction of an idea's tokens present in code to flag it, 0–1 (default 0.6)" },
         limit: { type: "number", description: "Max candidates to return (default 20)" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const minScore = (args.minScore as number | undefined) ?? 0.6;
@@ -187,12 +187,12 @@ export const graphHealthTools: ToolDefinition[] = [
       const MAX_TOKENS_PER_IDEA = 12;
       const MAX_UNIQUE_TOKENS = 400;
 
-      const allIdeas = await trpcClient.idea.list.query({ graph: args.graph as string });
+      const allIdeas = await trpcClient.idea.list.query({ graph: args.space as string });
       const openIdeas = allIdeas.filter((a) => a.status?.state === "open");
 
       // Ideas already cited by a code commit are reconcile_status's job — skip
       // them so this heuristic focuses on its complement (no commit reference).
-      const codeCommits = getRepoCommitMessages(args.graph as string, 2000, CODE_ONLY_PATHSPEC);
+      const codeCommits = getRepoCommitMessages(args.space as string, 2000, CODE_ONLY_PATHSPEC);
       const cited = countIdeaReferences(codeCommits, openIdeas.map((a) => a.id));
       const ideasToScan = openIdeas.filter((a) => !((cited.get(a.id) ?? 0) > 0));
 
@@ -208,7 +208,7 @@ export const graphHealthTools: ToolDefinition[] = [
 
       // One git grep per unique token; build the set present in code.
       const present = new Set<string>();
-      for (const tok of uniqueTokens) if (gitGrepMatches(args.graph as string, tok)) present.add(tok);
+      for (const tok of uniqueTokens) if (gitGrepMatches(args.space as string, tok)) present.add(tok);
 
       const ideaById = new Map(openIdeas.map((a) => [a.id, a]));
       const candidates = [...tokensByIdea.entries()]

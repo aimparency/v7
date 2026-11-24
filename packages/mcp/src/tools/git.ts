@@ -13,8 +13,8 @@ import * as path from "path";
 // gracefully and never breaks prioritization.
 // `pathspec` (git pathspec args, e.g. ['--', '.', ':(exclude).bowman']) restricts
 // to commits that touched matching files. Reconciliation passes a code-only
-// pathspec so pure graph-bookkeeping commits (chore(graph)/chore(bowman) that
-// merely cite idea ids while triaging/reframing the graph) don't masquerade as
+// pathspec so pure space-bookkeeping commits (chore(graph)/chore(bowman) that
+// merely cite idea ids while triaging/reframing the space) don't masquerade as
 // "this idea was implemented" — they touch only .bowman/.
 export function getRepoCommitMessages(projectPath: string, maxCommits = 2000, pathspec: string[] = []): string[] {
   try {
@@ -31,7 +31,7 @@ export function getRepoCommitMessages(projectPath: string, maxCommits = 2000, pa
 }
 
 // Commits that changed at least one file outside .bowman/ — i.e. real code work,
-// not graph metadata edits. The basis for the reconciliation signal.
+// not space metadata edits. The basis for the reconciliation signal.
 export const CODE_ONLY_PATHSPEC = ["--", ".", ":(exclude).bowman"];
 
 // True if `token` (fixed string) appears in any tracked code file outside

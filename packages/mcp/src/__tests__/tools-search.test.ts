@@ -30,16 +30,16 @@ test('MCP Tools - Search', async () => {
   });
 
   // 1. Build Index (optional now, but good to test)
-  await server.callTool('build_search_index', { graph: ctx.projectPath });
+  await server.callTool('build_search_index', { space: ctx.projectPath });
 
   // 2. Search Ideas
-  const ideaRes = await server.callTool('search_ideas', { graph: ctx.projectPath, query: 'Find' });
+  const ideaRes = await server.callTool('search_ideas', { space: ctx.projectPath, query: 'Find' });
   const ideas = JSON.parse(ideaRes.content[0].text);
   assert.equal(ideas.length, 1);
   assert.equal(ideas[0].text, 'Find Me');
 
   // 3. Search Phases
-  const phaseRes = await server.callTool('search_phases', { graph: ctx.projectPath, query: 'Search' });
+  const phaseRes = await server.callTool('search_phases', { space: ctx.projectPath, query: 'Search' });
   const phases = JSON.parse(phaseRes.content[0].text);
   assert.equal(phases.length, 1);
   assert.equal(phases[0].name, 'Search Phase');

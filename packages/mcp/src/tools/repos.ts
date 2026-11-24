@@ -1,4 +1,4 @@
-import { GRAPH_TOOL_PROPERTY } from "../constants.js";
+import { SPACE_TOOL_PROPERTY } from "../constants.js";
 import { fetchGraphAtHost } from "shared";
 import type { ToolDefinition } from "./types.js";
 import { applyShares, describeSplits, shareUpdate, splitsSection, validatePercent } from "./shares.js";
@@ -6,18 +6,18 @@ import { applyShares, describeSplits, shareUpdate, splitsSection, validatePercen
 export const repoTools: ToolDefinition[] = [
   {
     name: "import_github_issues",
-    description: "Start or top up the graph from a GitHub repository's open issues: one parent idea 'Open GitHub issues of owner/repo' with each issue as a child (title, body, issue URL, labels as tags). Pull requests are skipped; re-running only adds issues not imported yet. Public repos need no token; GITHUB_TOKEN in the backend's environment reaches private ones. Afterwards, connect the parent to the mission it serves and estimate value/cost of the issues worth doing.",
+    description: "Start or top up the space from a GitHub repository's open issues: one parent idea 'Open GitHub issues of owner/repo' with each issue as a child (title, body, issue URL, labels as tags). Pull requests are skipped; re-running only adds issues not imported yet. Public repos need no token; GITHUB_TOKEN in the backend's environment reaches private ones. Afterwards, connect the parent to the mission it serves and estimate value/cost of the issues worth doing.",
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         repository: { type: "string", description: "owner/repo or a github.com URL" },
       },
-      required: ["graph", "repository"],
+      required: ["space", "repository"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.importGithubIssues.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         repository: args.repository as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -25,18 +25,18 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "import_spec_tasks",
-    description: "Start or top up the graph from spec-driven checklists (GitHub spec-kit specs/*/tasks.md, spec-workflow-mcp .spec-workflow/specs/*/tasks.md): one parent idea per tasks.md, one child per top-level task, [x] as implemented and [-] as partially. Re-running adds new tasks and moves ideas of tasks ticked since forward (never back). Afterwards, connect each parent to the mission it serves and estimate value/cost.",
+    description: "Start or top up the space from spec-driven checklists (GitHub spec-kit specs/*/tasks.md, spec-workflow-mcp .spec-workflow/specs/*/tasks.md): one parent idea per tasks.md, one child per top-level task, [x] as implemented and [-] as partially. Re-running adds new tasks and moves ideas of tasks ticked since forward (never back). Afterwards, connect each parent to the mission it serves and estimate value/cost.",
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         specPath: { type: "string", description: "A tasks.md file or a directory to search, relative to the repository root (e.g. 'specs' or '.')" },
       },
-      required: ["graph", "specPath"],
+      required: ["space", "specPath"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.importSpecTasks.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         specPath: args.specPath as string,
       });
       return { content: [{ type: "text", text: JSON.stringify(result, null, 2) }] };
@@ -48,13 +48,13 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const repos = await trpcClient.linkedRepo.list.query({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       return {
         content: [
@@ -78,29 +78,29 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "register_linked_repo",
-    description: "Make another Aimparency graph linkable from this one. Give host, the graph's address on the server hosting it (https://<server>/spaces/<space>), or targetPath for a project checked out on this machine. Needed once per graph, before the first link_repo to it. name: what this graph calls it, when the graph's own name is unclear here; with repoId and name alone it renames an existing link.",
+    description: "Make another Aimparency space linkable from this one. Give host, the space's address on the server hosting it (https://<server>/spaces/<space>), or targetPath for a project checked out on this machine. Needed once per space, before the first link_repo to it. name: what this space calls it, when the space's own name is unclear here; with repoId and name alone it renames an existing link.",
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
-        host: { type: "string", description: "The graph's address on its Aimparency server, as opened in the browser: https://<server>/spaces/<space>" },
+        space: SPACE_TOOL_PROPERTY,
+        host: { type: "string", description: "The space's address on its Aimparency server, as opened in the browser: https://<server>/spaces/<space>" },
         targetPath: { type: "string", description: "Absolute path to the other project's .bowman dir (or its repo root), for a local checkout" },
         url: { type: "string", description: "Optional relocation hint, e.g. the git remote, so collaborators can find the repo" },
         access: { type: "string", enum: ["read", "write"], description: "Machine-local access intent for the linked checkout. Default read." },
-        name: { type: "string", description: "The name this graph shows for it. Default: the linked graph's own name; a name given once stays on re-registering." },
+        name: { type: "string", description: "The name this space shows for it. Default: the linked space's own name; a name given once stays on re-registering." },
         repoId: { type: "string", description: "With name and no host/targetPath: rename this already linked repo" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const graph = args.graph as string;
+      const graph = args.space as string;
       const name = typeof args.name === "string" ? args.name : undefined;
       if (typeof args.host === "string") {
         const target = await fetchGraphAtHost(args.host);
         let link = await trpcClient.linkedRepo.linkHost.mutate({ graph, ...target });
         if (name) link = await trpcClient.linkedRepo.rename.mutate({ graph, repoId: link.repoId, name });
         return {
-          content: [{ type: "text", text: `Linked graph "${link.name}" at ${link.host} (${link.repoId}). Use link_repo with that repoId to attach it to an idea.` }],
+          content: [{ type: "text", text: `Linked space "${link.name}" at ${link.host} (${link.repoId}). Use link_repo with that repoId to attach it to an idea.` }],
         };
       }
       if (typeof args.targetPath !== "string") {
@@ -133,17 +133,17 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         ideaId: { type: "string", description: "The LOCAL idea being supported" },
         repoId: { type: "string", description: "Linked repo UUID from list_linked_repos" },
         share: { type: "number", description: "Percent of this idea's value flowing into the repo, like a child link's share. Children and repos not named keep their proportions." },
         weight: { type: "number", description: "Raw relative weight; prefer share. Default 1." },
         hypothesis: { type: "string", description: "Why that repo supports this idea" },
       },
-      required: ["graph", "ideaId", "repoId"],
+      required: ["space", "ideaId", "repoId"],
     },
     handler: async (args, trpcClient) => {
-      const projectPath = args.graph as string;
+      const projectPath = args.space as string;
       const repoId = args.repoId as string;
 
       // Fail loudly on an unregistered repoId: idea.linkRepo would happily
@@ -197,15 +197,15 @@ export const repoTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         ideaId: { type: "string" },
         repoId: { type: "string" },
       },
-      required: ["graph", "ideaId", "repoId"],
+      required: ["space", "ideaId", "repoId"],
     },
     handler: async (args, trpcClient) => {
       await trpcClient.idea.unlinkRepo.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         ideaId: args.ideaId as string,
         repoId: args.repoId as string,
       });

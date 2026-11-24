@@ -1,4 +1,4 @@
-import { GRAPH_TOOL_PROPERTY } from "../constants.js";
+import { SPACE_TOOL_PROPERTY } from "../constants.js";
 import { CONTINUE_HOOK_AGENTS, disableContinueHook, enableContinueHook } from "shared/continue-hook";
 import type { ToolDefinition } from "./types.js";
 
@@ -15,10 +15,10 @@ export const hookTools: ToolDefinition[] = [
 
 ## Overview
 
-Aimparency provides lifecycle hooks for coding assistants (Codex, Claude Code, Antigravity / AGY) to enable autonomous continuation through the Aimparency MCP idea graph loop.
+Aimparency provides lifecycle hooks for coding assistants (Codex, Claude Code, Antigravity / AGY) to enable autonomous continuation through the Aimparency MCP idea space loop.
 
 There are two separate hook mechanisms:
-- \`codex-continue-on-stop.sh\` (in \`scripts/hooks/\`): Blocks a coding assistant's stop event (Codex / Claude Code \`Stop\` or AGY \`post_invocation\`) and starts another autonomous turn driven by the Aimparency MCP graph.
+- \`codex-continue-on-stop.sh\` (in \`scripts/hooks/\`): Blocks a coding assistant's stop event (Codex / Claude Code \`Stop\` or AGY \`post_invocation\`) and starts another autonomous turn driven by the Aimparency MCP space.
 - \`wrapped-worker-halt-notify.sh\` (in \`packages/wrapped-agents/common/hooks/\`): Notifies a running wrapped-agent watchdog that its worker finished a turn (does not continue an ordinary conversation).
 
 ---
@@ -53,13 +53,13 @@ Run the installer from the Aimparency repository:
 ### Post-Installation Setup
 1. Restart the coding assistant (Codex, Claude Code or AGY) in the target repository so it reloads project hooks.
 2. For Codex, run \`/hooks\` and trust \`scripts/hooks/codex-continue-on-stop.sh\`. For Claude Code, check \`/hooks\` lists the Stop hook. For AGY, verify \`.gemini/settings.json\` \`post_invocation\` hook.
-3. Verify that the Aimparency MCP is connected and has access to the target's \`.bowman/\` graph.
+3. Verify that the Aimparency MCP is connected and has access to the target's \`.bowman/\` space.
 
 ---
 
 ## Autonomous Continuation & Human-Wait Protocol
 
-### Graph Loop (Normal Continuation)
+### Space Loop (Normal Continuation)
 When the coding assistant attempts to stop normally, the hook blocks the stop event and instructs the assistant to:
 1. Call \`get_prioritized_ideas\`
 2. Orient with \`get_idea_context\`
@@ -74,11 +74,11 @@ An idea that needs a human decision goes to \`unclear\` (\`human-dependent\` for
 ### Two-Stage Human-Wait Protocol
 The default loop stops only when the human explicitly told the agent in this session to stop or to wait:
 1. The assistant says so and ends its response with \`[AIMPARENCY_REQUEST_HUMAN]\`.
-2. The hook challenges the assistant once: anything else waiting on the human is parked in the graph, and there is always more to explore (list_ideas, graph hygiene, research, modeling, experiments).
+2. The hook challenges the assistant once: anything else waiting on the human is parked in the space, and there is always more to explore (list_ideas, space hygiene, research, modeling, experiments).
 3. If the human really asked, the assistant quotes their words and ends with \`[AIMPARENCY_CONFIRM_HUMAN_BLOCK]\`. The hook then yields to the human.
 
 ### Hook loops
-What the hook tells the agent is a hook loop. The default is the Aimparency checkout's \`scripts/hooks/default-loop.md\`, read live on every Stop, so it follows Aimparency updates (a copy next to the installed hook is the fallback). Saved loops are versioned with the graph in \`.bowman/hook-loops/<slug>.md\`: a \`# Title\` line, the text the agent gets when it tries to stop, and optionally a \`## When the agent asks for the human\` section with the challenge text (else the default's). Which loop runs is machine-local (\`.bowman/runtime/continue-hook-loop\`); pick one in the UI's Hook menu or with \`enable_continue_hook\`'s \`loop\`.
+What the hook tells the agent is a hook loop. The default is the Aimparency checkout's \`scripts/hooks/default-loop.md\`, read live on every Stop, so it follows Aimparency updates (a copy next to the installed hook is the fallback). Saved loops are versioned with the space in \`.bowman/hook-loops/<slug>.md\`: a \`# Title\` line, the text the agent gets when it tries to stop, and optionally a \`## When the agent asks for the human\` section with the challenge text (else the default's). Which loop runs is machine-local (\`.bowman/runtime/continue-hook-loop\`); pick one in the UI's Hook menu or with \`enable_continue_hook\`'s \`loop\`.
 
 ### Enable / Disable
 Use the \`enable_continue_hook\` / \`disable_continue_hook\` tools (or the \`enable-hook\` / \`disable-hook\` prompts) only when the human asks. Disabling writes a machine-local flag (\`.bowman/runtime/continue-hook-disabled\`, gitignored) checked on every Stop — no hook-config reload needed.
@@ -116,7 +116,7 @@ pnpm test:hooks
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         agent: {
           type: "string",
           enum: [...CONTINUE_HOOK_AGENTS],
@@ -127,10 +127,10 @@ pnpm test:hooks
           description: "Hook loop to run: \"default\" or the slug of a saved loop in .bowman/hook-loops/. Omit to keep the loop chosen last.",
         },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const text = enableContinueHook(args.graph as string, { agent: args.agent as string | undefined, loop: args.loop as string | undefined });
+      const text = enableContinueHook(args.space as string, { agent: args.agent as string | undefined, loop: args.loop as string | undefined });
       return { content: [{ type: "text", text }] };
     },
   },
@@ -140,12 +140,12 @@ pnpm test:hooks
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
-      const text = disableContinueHook(args.graph as string);
+      const text = disableContinueHook(args.space as string);
       return { content: [{ type: "text", text }] };
     },
   },

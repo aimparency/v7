@@ -84,12 +84,12 @@ Restart Claude after updating the configuration.
 An Aimparency server for other people (see the root README, "Hosting It for a
 Group") serves this MCP over SSE at `https://<host>/mcp/sse`. Without a token it
 can only read. "MCP" in the UI's account corner makes a link with `?token=…`
-that acts as that account, on all its graphs or only on chosen ones; a client
+that acts as that account, on all its spaces or only on chosen ones; a client
 that sends headers may pass the token as `Authorization: Bearer <token>`
-instead. There `graph` is the slug of a graph (the last part of
-`https://<host>/spaces/<slug>`), never a path. A graph's own address,
-`https://<host>/spaces/<slug>/mcp/sse`, serves a session for that one graph: its
-tools need no `graph`.
+instead. There `space` is the slug of a space (the last part of
+`https://<host>/spaces/<slug>`), never a path. A space's own address,
+`https://<host>/spaces/<slug>/mcp/sse`, serves a session for that one space: its
+tools need no `space`.
 
 ```bash
 claude mcp add --transport sse aimparency "https://<host>/mcp/sse?token=<token>"
@@ -99,18 +99,20 @@ Where the server names its public address (`publicUrl` in `server.json`), a
 client can log in by itself instead of carrying a token in its address:
 `https://<host>/mcp/login/sse` answers a client without a login with where to
 get one (OAuth 2.1 with PKCE and dynamic client registration). The client
-opens the server's page, the person approves it there for all their graphs or
+opens the server's page, the person approves it there for all their spaces or
 chosen ones, and it comes back with a token for exactly that.
 
 ```bash
 claude mcp add --transport sse aimparency "https://<host>/mcp/login/sse"
 ```
 
-## Choosing `graph`
+## Choosing `space`
 
-Over stdio, `graph` defaults to the graph of the directory the client started
+Over stdio, `space` defaults to the space of the directory the client started
 the server in (the nearest `.bowman` upwards, within that repository). Name a
-graph only to work on another one.
+space only to work on another one. The tools suggest a direction without
+enforcing it: an agent may descend into spaces that contribute to its own (its
+linked repos), but not rise into spaces its own contributes to.
 
 Aimparency stores project state inside a `.bowman` directory, but MCP calls can usually use either of these absolute paths:
 
@@ -123,31 +125,31 @@ The backend normalizes repo-root paths to the matching `.bowman` directory.
 
 ### Resources (Read-Only Context)
 
-Resources let the LLM read current state without calling functions. All resources require `?graph=/path/to/project` query parameter.
+Resources let the LLM read current state without calling functions. All resources require `?space=/path/to/project` query parameter.
 
 **Ideas:**
-- `idea://<uuid>?graph=/path` - Single idea details
-- `idea://<uuid>/incoming?graph=/path` - Ideas this idea depends on
-- `idea://<uuid>/outgoing?graph=/path` - Ideas that depend on this idea
-- `ideas://all?graph=/path` - All ideas list
+- `idea://<uuid>?space=/path` - Single idea details
+- `idea://<uuid>/incoming?space=/path` - Ideas this idea depends on
+- `idea://<uuid>/outgoing?space=/path` - Ideas that depend on this idea
+- `ideas://all?space=/path` - All ideas list
 
 **Phases:**
-- `phase://<uuid>?graph=/path` - Single phase details
-- `phase://<uuid>/ideas?graph=/path` - Ideas committed to phase
-- `phases://all?graph=/path` - All phases
-- `phases://<parent-uuid>/children?graph=/path` - Child phases
+- `phase://<uuid>?space=/path` - Single phase details
+- `phase://<uuid>/ideas?space=/path` - Ideas committed to phase
+- `phases://all?space=/path` - All phases
+- `phases://<parent-uuid>/children?space=/path` - Child phases
 
 **Project:**
-- `project://meta?graph=/path` - Project metadata (name, color)
+- `project://meta?space=/path` - Project metadata (name, color)
 
 **Example:**
 ```
-Read ideas://all?graph=/home/user/my-project to see all ideas
+Read ideas://all?space=/home/user/my-project to see all ideas
 ```
 
 ### Tools (Actions)
 
-Tools allow the LLM to modify state. All tools take `graph` (until 2026-11 it was called `projectPath`; that name is still accepted).
+Tools allow the LLM to modify state. All tools take `space` (it was called `graph` until 2026-11 and `projectPath` before that; both names are still accepted).
 
 **Idea Operations:**
 - `create-idea` - Create new idea with text, status, relationships
@@ -173,14 +175,14 @@ Tools allow the LLM to modify state. All tools take `graph` (until 2026-11 it wa
 ```javascript
 // Create a new idea
 create-idea({
-  graph: "/home/user/my-project",
+  space: "/home/user/my-project",
   text: "Implement user authentication",
   status: { state: "open", comment: "" }
 })
 
 // Settle it: evidence in the status comment, a reflection on the parent's hypothesis
 update-idea({
-  graph: "/home/user/my-project",
+  space: "/home/user/my-project",
   ideaId: "some-uuid",
   status: { state: "implemented", comment: "JWT with refresh tokens deployed; auth tests pass" },
   addSupportedIdeas: [{ ideaId: "parent-uuid", reflection: "Held: login no longer blocks the beta" }]
@@ -201,7 +203,7 @@ Prompts are pre-built workflows that guide the LLM through complex tasks:
 
 **Example usage with Claude:**
 ```
-Use the "breakdown" prompt with ideaId=<uuid> and graph=/path/to/project
+Use the "breakdown" prompt with ideaId=<uuid> and space=/path/to/project
 ```
 
 ## Workflow Example: Indefinite Goal-Driven Work
@@ -295,12 +297,12 @@ Claude Code) to pick up changes. `pnpm --filter mcp dev` runs a restarting stdio
 
 1. **Check backend is running:** `pnpm dev` or `pnpm start` from the repo root
 2. **Check logs:** Backend logs will show tRPC errors
-3. **Verify graph:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
+3. **Verify space:** Must be an absolute path to a repo/workspace root or its `.bowman` directory
 4. **Verify UUIDs:** All idea/phase IDs must exist
 
 ### Resource reads failing
 
-Common issue: Missing `graph` query parameter
+Common issue: Missing `space` query parameter
 
 **Wrong:**
 ```
@@ -309,7 +311,7 @@ idea://some-uuid
 
 **Correct:**
 ```
-idea://some-uuid?graph=/absolute/path/to/project
+idea://some-uuid?space=/absolute/path/to/project
 ```
 
 ### Connection errors

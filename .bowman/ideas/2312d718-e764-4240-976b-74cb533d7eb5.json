@@ -1,0 +1,24 @@
+{
+  "id": "2312d718-e764-4240-976b-74cb533d7eb5",
+  "text": "MCP says \"space\" everywhere instead of \"graph\"; agents are nudged to descend into contributing spaces, not rise",
+  "description": "Felix 2026-11-24: \"in MCP things are still called graph. They should be called idea spaces or just spaces consistently.\" And: an agent may descend into spaces that contribute to its own (linked repos) but should not rise into spaces its own contributes to; imply gently, don't enforce.",
+  "archived": false,
+  "color": "#2d3a6e",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "ccd6b576-fc66-4b76-bdf3-dc130d898037"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "Every MCP tool takes `space` (old `graph` and `projectPath` still accepted at the boundary, argumentsWithSpace). graph_hygiene is now space_hygiene (loop worker and default-loop.md follow). Resource URIs use ?space= (old names accepted), the prompt argument is `space`, and every description, prompt and hook text says space. The one-port server passes ?space=<slug> to the MCP app. The backend's own tRPC field stays `graph` (internal). The direction hint (SPACE_DIRECTION) sits in every `space` parameter description and the MCP README, not enforced. Caught and fixed one real bug on the way: update_ideas forwarded `graph` to update_idea. Evidence: mcp, loop-worker and backend tsc clean; MCP tests 74/74, loop-worker 35/35, backend mcp-proxy + one-port 7/7, hooks contract test PASS (all on Node 22; Node 26 fails on a better-sqlite3 ABI mismatch unrelated to this). Agents need /mcp reconnect to see the new schema.",
+    "date": 1795531633173
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

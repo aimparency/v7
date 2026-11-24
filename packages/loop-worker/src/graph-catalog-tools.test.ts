@@ -4,7 +4,7 @@ import { toolsByName } from 'mcp/tool-catalog';
 import type { GraphTools } from 'agent-tools';
 import { graphCatalogTools, LOOP_GRAPH_TOOL_NAMES } from './graph-catalog-tools.js';
 
-test('loop graph tools are the MCP tools, with the graph filled in instead of asked for', async () => {
+test('loop space tools are the MCP tools, with the space filled in instead of asked for', async () => {
   const calls: unknown[] = [];
   const backend = { idea: { commitToPhase: { mutate: async (input: unknown) => { calls.push(input); } } } };
   const tools = graphCatalogTools({ backend } as unknown as GraphTools, '/work/project/.bowman');
@@ -13,8 +13,8 @@ test('loop graph tools are the MCP tools, with the graph filled in instead of as
   for (const name of LOOP_GRAPH_TOOL_NAMES) {
     const schema = (tools[name] as any).inputSchema.jsonSchema;
     assert.equal(tools[name]!.description, toolsByName.get(name)!.description, name);
-    assert.equal(schema.properties.graph, undefined, name);
-    assert.ok(!(schema.required ?? []).includes('graph'), name);
+    assert.equal(schema.properties.space, undefined, name);
+    assert.ok(!(schema.required ?? []).includes('space'), name);
   }
 
   const ideaId = '11111111-1111-4111-8111-111111111111';

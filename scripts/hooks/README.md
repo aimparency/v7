@@ -56,7 +56,7 @@ Codex from a repository subdirectory still works.
 ## Enable / disable
 
 The Aimparency MCP exposes `enable_continue_hook` and `disable_continue_hook`,
-plus matching prompts (in Claude Code: `/mcp__aimparency__enable-hook [graph] [agent]`
+plus matching prompts (in Claude Code: `/mcp__aimparency__enable-hook [space] [agent]`
 and `/mcp__aimparency__disable-hook`). Disabling writes a machine-local flag,
 `.bowman/runtime/continue-hook-disabled` (gitignored), that the hook checks
 on every Stop, so it takes effect immediately without reloading agent hook

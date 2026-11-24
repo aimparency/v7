@@ -1,5 +1,5 @@
 import { calculateIdeaValues, childBrief, defaultIdeaCost, INITIAL_STATES, MAX_SEARCH_QUERY_CHARS, missionPathsToRoot } from "shared";
-import { IDEA_STATES_DESCRIPTION, GRAPH_TOOL_PROPERTY } from "../constants.js";
+import { IDEA_STATES_DESCRIPTION, SPACE_TOOL_PROPERTY } from "../constants.js";
 import type { BackendClient, BackendInputs } from "../client.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea, formatIdeas, describeRepoEdges } from "./format.js";
@@ -85,15 +85,15 @@ async function reflectionNudgeFor(trpcClient: BackendClient, projectPath: string
 export function ideaCreationConfirmationToken(args: Record<string, unknown>): string {
   const text = String(args.text ?? "").trim().replace(/\s+/g, " ").toLowerCase();
   return createHash("sha256")
-    .update(JSON.stringify([args.graph, text]))
+    .update(JSON.stringify([args.space, text]))
     .digest("hex")
     .slice(0, 24);
 }
 
 // What get_idea_context returns; get_prioritized_ideas includes it for its top idea.
-// `allIdeas` saves loading the graph again when the caller already has it.
+// `allIdeas` saves loading the space again when the caller already has it.
 export async function ideaContext(trpcClient: BackendClient, projectPath: string, ideaId: string, allIdeas?: Awaited<ReturnType<BackendClient["idea"]["list"]["query"]>>) {
-  // The whole graph powers the value model (to choose which parent to follow
+  // The whole space powers the value model (to choose which parent to follow
   // at branches) and resolves parent/child text from a map instead of N round-trips.
   allIdeas ??= await trpcClient.idea.list.query({ graph: projectPath });
   const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
@@ -146,17 +146,17 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         ideaId: { type: "string" }
       },
-      required: ["graph", "ideaId"],
+      required: ["space", "ideaId"],
     },
     handler: async (args, trpcClient) => {
       const idea = await trpcClient.idea.get.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         ideaId: args.ideaId as string,
       });
-      await describeRepoEdges(trpcClient, args.graph as string, [idea]);
+      await describeRepoEdges(trpcClient, args.space as string, [idea]);
       return {
         content: [
           {
@@ -173,15 +173,15 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         ideaId: { type: "string" }
       },
-      required: ["graph", "ideaId"],
+      required: ["space", "ideaId"],
     },
     handler: async (args, trpcClient) => ({
       content: [{
         type: "text",
-        text: JSON.stringify(await ideaContext(trpcClient, args.graph as string, args.ideaId as string), null, 2),
+        text: JSON.stringify(await ideaContext(trpcClient, args.space as string, args.ideaId as string), null, 2),
       }],
     }),
   },
@@ -191,7 +191,7 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         query: { type: "string" },
         status: { type: ["string", "array"], items: { type: "string" } },
         phaseId: { type: "string" },
@@ -199,11 +199,11 @@ export const ideaTools: ToolDefinition[] = [
         limit: { type: "number" },
         offset: { type: "number" }
       },
-      required: ["graph", "query"],
+      required: ["space", "query"],
     },
     handler: async (args, trpcClient) => {
       const ideas = await trpcClient.idea.search.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         query: args.query as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
@@ -227,17 +227,17 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         query: { type: "string" },
         status: { type: ["string", "array"], items: { type: "string" } },
         phaseId: { type: "string" },
         limit: { type: "number" },
       },
-      required: ["graph", "query"],
+      required: ["space", "query"],
     },
     handler: async (args, trpcClient) => {
       const results = await trpcClient.idea.searchSemantic.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         query: args.query as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
@@ -254,7 +254,7 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         text: { type: "string" },
         description: { type: "string" },
         tags: { type: "array", items: { type: "string" } },
@@ -271,12 +271,12 @@ export const ideaTools: ToolDefinition[] = [
         loopShare: { type: "number", description: "Percent of its value this idea keeps for its own work, next to the shares of its children" },
         intrinsicValue: { type: "number", minimum: 0, description: "Standalone estimated value; includes expected partial completion or failure" },
         valueRationale: { type: "string", description: "Human-authored rationale for the standalone estimated value; never auto-derived" },
-        cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit, compared against the related ideas' costs from the review call. Optional but expected: without it the idea is ranked at the project's default cost and graph_hygiene lists it as unestimated" },
+        cost: { type: "number", exclusiveMinimum: 0, description: "Positive estimated direct present cost in the project's cost unit, compared against the related ideas' costs from the review call. Optional but expected: without it the idea is ranked at the project's default cost and space_hygiene lists it as unestimated" },
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
         phaseId: { type: "string" },
         confirmationToken: { type: "string", description: "Token returned by the review-only first call. Changing the text requires a fresh review; other fields may change." },
       },
-      required: ["graph", "text"],
+      required: ["space", "text"],
     },
     handler: async (args, trpcClient) => {
       if (args.cost !== undefined && (!Number.isFinite(args.cost) || (args.cost as number) <= 0)) {
@@ -292,12 +292,12 @@ export const ideaTools: ToolDefinition[] = [
       if (args.confirmationToken === undefined) {
         const [related, projectMeta, parentSplits] = await Promise.all([
           trpcClient.idea.search.query({
-            graph: args.graph as string,
+            graph: args.space as string,
             query: args.text as string,
             limit: 8,
           }),
-          trpcClient.project.getMeta.query({ graph: args.graph as string }).catch(() => null),
-          describeSplits(trpcClient, args.graph as string, parents.map((parent) => parent.ideaId)),
+          trpcClient.project.getMeta.query({ graph: args.space as string }).catch(() => null),
+          describeSplits(trpcClient, args.space as string, parents.map((parent) => parent.ideaId)),
         ]);
         return {
           content: [{
@@ -313,7 +313,7 @@ export const ideaTools: ToolDefinition[] = [
               costEstimate: args.cost === undefined
                 ? `No cost given. Estimate the idea's direct cost in ${projectMeta?.costUnit || "the project's abstract cost units"} ` +
                   "(its own work, not its children's) relative to the related ideas' costs, and pass it as cost. " +
-                  `Without it the idea is ranked at the default cost ${defaultIdeaCost(projectMeta)} and graph_hygiene lists it as unestimated.`
+                  `Without it the idea is ranked at the default cost ${defaultIdeaCost(projectMeta)} and space_hygiene lists it as unestimated.`
                 : undefined,
               parentSplits: parentSplits
                 ? `${parentSplits}\n\nHow much of each parent does the new idea carry next to these? Pass share on its supportedIdeas entry. ${SHARE_GUIDE}`
@@ -341,7 +341,7 @@ export const ideaTools: ToolDefinition[] = [
       const pendingId = "the new idea";
       const parentRequests = parents.map((parent) => parentShareRequest(parent, pendingId));
       const parentIdeas = parentRequests.some(Boolean)
-        ? await trpcClient.idea.getMany.query({ graph: args.graph as string, ideaIds: parents.map((parent) => parent.ideaId) })
+        ? await trpcClient.idea.getMany.query({ graph: args.space as string, ideaIds: parents.map((parent) => parent.ideaId) })
         : [];
       parents.forEach((parent, index) => {
         const request = parentRequests[index];
@@ -358,7 +358,7 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       const result = await trpcClient.idea.createFloatingIdea.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         idea: {
           text: args.text as string,
           description: args.description as string | undefined,
@@ -379,7 +379,7 @@ export const ideaTools: ToolDefinition[] = [
       // Handle supportingConnections (children)
       for (const child of children) {
         await trpcClient.idea.connectIdeas.mutate({
-          graph: args.graph as string,
+          graph: args.space as string,
           parentIdeaId: result.id,
           childIdeaId: child.ideaId,
           weight: child.weight,
@@ -390,21 +390,21 @@ export const ideaTools: ToolDefinition[] = [
       // Handle supportedIdeas (parents)
       for (const parent of parents) {
         await trpcClient.idea.connectIdeas.mutate({
-          graph: args.graph as string,
+          graph: args.space as string,
           parentIdeaId: parent.ideaId,
           childIdeaId: result.id,
           weight: parent.weight,
           hypothesis: parent.hypothesis,
         });
         const request = parentShareRequest(parent, result.id);
-        if (request) await setShares(trpcClient, args.graph as string, parent.ideaId, request);
+        if (request) await setShares(trpcClient, args.space as string, parent.ideaId, request);
       }
-      if (ownShares) await setShares(trpcClient, args.graph as string, result.id, ownShares);
+      if (ownShares) await setShares(trpcClient, args.space as string, result.id, ownShares);
 
       // If phaseId provided, commit to phase
       if (args.phaseId) {
         await trpcClient.idea.commitToPhase.mutate({
-          graph: args.graph as string,
+          graph: args.space as string,
           ideaId: result.id,
           phaseId: args.phaseId as string,
         });
@@ -418,7 +418,7 @@ export const ideaTools: ToolDefinition[] = [
               (args.cost === undefined ? ". It has no cost estimate yet: set one via update_idea." : "") +
               splitsSection(await describeSplits(
                 trpcClient,
-                args.graph as string,
+                args.space as string,
                 [...parents.map((parent) => parent.ideaId), ...(ownShares ? [result.id] : [])],
                 result.id,
               )),
@@ -433,7 +433,7 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         ideaId: { type: "string" },
         text: { type: "string" },
         description: { type: "string" },
@@ -456,7 +456,7 @@ export const ideaTools: ToolDefinition[] = [
         duration: { type: "number", minimum: 0, description: "Estimated days from now until the idea's value is realized" },
         loopShare: { type: "number", description: "Percent of its value this idea keeps for its own work, next to the shares of its children" },
       },
-      required: ["graph", "ideaId"],
+      required: ["space", "ideaId"],
     },
     handler: async (args, trpcClient) => {
       // The backend validates these; the tool schema above already names them.
@@ -471,7 +471,7 @@ export const ideaTools: ToolDefinition[] = [
       if (fields.cost !== undefined) updateData.cost = fields.cost;
       if (fields.duration !== undefined) updateData.duration = fields.duration;
 
-      const graph = args.graph as string;
+      const graph = args.space as string;
       const ideaId = args.ideaId as string;
       const addedChildren = ((args.addSupportingConnections as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
       const addedParents = ((args.addSupportedIdeas as ConnectionInput[] | undefined) ?? []).map(normalizeConnectionInput);
@@ -493,7 +493,7 @@ export const ideaTools: ToolDefinition[] = [
       if (args.addSupportingConnections !== undefined || args.removeSupportingConnections !== undefined ||
           args.addSupportedIdeas !== undefined || args.removeSupportedIdeas !== undefined || ownShares) {
         const existingIdea = await trpcClient.idea.get.query({
-          graph: args.graph as string,
+          graph: args.space as string,
           ideaId: args.ideaId as string,
         });
 
@@ -528,7 +528,7 @@ export const ideaTools: ToolDefinition[] = [
       }
 
       await trpcClient.idea.update.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         ideaId: args.ideaId as string,
         idea: updateData,
       });
@@ -537,7 +537,7 @@ export const ideaTools: ToolDefinition[] = [
         if (parent.weight === undefined && parent.hypothesis === undefined && parent.reflection === undefined && !parent.shares) continue;
 
         const parentIdea = await trpcClient.idea.get.query({
-          graph: args.graph as string,
+          graph: args.space as string,
           ideaId: parent.parentIdeaId,
         });
         const childIdeaId = args.ideaId as string;
@@ -572,14 +572,14 @@ export const ideaTools: ToolDefinition[] = [
       if ((args.status as { state?: string } | undefined)?.state === "implemented") {
         try {
           const idea = await trpcClient.idea.get.query({
-            graph: args.graph as string,
+            graph: args.space as string,
             ideaId: args.ideaId as string,
           });
           if (!idea?.status?.comment?.trim()) {
             verificationNudge =
               "\n\nReminder: marked implemented without evidence. Record it in status.comment — " +
               verificationHintForIdea(idea) +
-              " — so the graph reflects verified-done rather than claimed-done.";
+              " — so the space reflects verified-done rather than claimed-done.";
           }
         } catch {
           // best-effort: a failed lookup must not break the update
@@ -588,7 +588,7 @@ export const ideaTools: ToolDefinition[] = [
 
       const newState = (args.status as { state?: string } | undefined)?.state;
       const reflectionNudge = newState
-        ? await reflectionNudgeFor(trpcClient, args.graph as string, args.ideaId as string, newState).catch(() => "")
+        ? await reflectionNudgeFor(trpcClient, args.space as string, args.ideaId as string, newState).catch(() => "")
         : "";
 
       return {
@@ -613,15 +613,15 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         ideaId: { type: "string" },
         cascade: { type: "boolean" }
       },
-      required: ["graph", "ideaId"],
+      required: ["space", "ideaId"],
     },
     handler: async (args, trpcClient) => {
       const { deletedIds } = await trpcClient.idea.delete.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         ideaIds: [args.ideaId as string],
         cascade: args.cascade === true,
       });
@@ -641,15 +641,15 @@ export const ideaTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         targetId: { type: "string", description: "UUID of the idea to keep (A)" },
         sourceId: { type: "string", description: "UUID of the idea to archive (B)" },
       },
-      required: ["graph", "targetId", "sourceId"],
+      required: ["space", "targetId", "sourceId"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.idea.merge.mutate({
-        graph: args.graph as string,
+        graph: args.space as string,
         targetId: args.targetId as string,
         sourceId: args.sourceId as string,
       });
@@ -663,23 +663,23 @@ export const ideaTools: ToolDefinition[] = [
 // Several update_idea calls in one: the end of a work chunk usually settles a
 // few ideas at once (status, links).
 const updateIdea = ideaTools.find((tool) => tool.name === "update_idea")!;
-const { graph: _graph, ...updateFields } = (updateIdea.inputSchema.properties ?? {}) as Record<string, object>;
+const { space: _space, ...updateFields } = (updateIdea.inputSchema.properties ?? {}) as Record<string, object>;
 ideaTools.push({
   name: "update_ideas",
   description: "Batch of update_idea calls (same fields per entry), applied in order. Stops at the first failure and reports which updates were applied.",
   inputSchema: {
     type: "object",
     properties: {
-      graph: GRAPH_TOOL_PROPERTY,
+      space: SPACE_TOOL_PROPERTY,
       updates: { type: "array", items: { type: "object", properties: updateFields, required: ["ideaId"] } },
     },
-    required: ["graph", "updates"],
+    required: ["space", "updates"],
   },
   handler: async (args, trpcClient) => {
     const applied: string[] = [];
     for (const update of (args.updates as Record<string, unknown>[]) ?? []) {
       try {
-        const result = await updateIdea.handler({ ...update, graph: args.graph }, trpcClient);
+        const result = await updateIdea.handler({ ...update, space: args.space }, trpcClient);
         const text = result.content.map((part) => (part.type === "text" ? part.text : "")).join("");
         if (result.isError) throw new Error(text);
         applied.push(text);

@@ -1,5 +1,5 @@
 import { calculateIdeaValues, defaultIdeaCost, resolveWorkPhase, selectWorkCandidates, whatIf, type Phase, type WhatIfChange } from "shared";
-import { GRAPH_TOOL_PROPERTY } from "../constants.js";
+import { SPACE_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
 import { formatIdea } from "./format.js";
@@ -9,38 +9,38 @@ import { ideaContext } from "./ideas.js";
 export const navigationTools: ToolDefinition[] = [
   {
     name: "get_prioritized_ideas",
-    description: "Start and resume the infinite loop here. Operate through the graph first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for graph state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). Includes topIdeaContext (what get_idea_context returns) for the top-ranked idea. Shows only the top limit (default 10): ideas below the cut are still open work. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene and connection reflections, decompose a mission, or create a bounded hypothesis and experiment in graph state.",
+    description: "Start and resume the infinite loop here. Operate through the space first: pick a high-value actionable idea, update ideas/connections/phases as understanding changes, verify real outcomes, record the result on the idea, then return and reprioritize toward the mission. Do not substitute planning Markdown for space state. Ranks phase-committed open ideas; if the phase contains only open containers, ranks connected uncommitted open leaves instead (an equal path — work reaches you through parents as well as phases). Includes topIdeaContext (what get_idea_context returns) for the top-ranked idea. Shows only the top limit (default 10): ideas below the cut are still open work. If no actionable leaf exists anywhere, returns an explicit exploration contract: step back, inspect hygiene and connection reflections, decompose a mission, or create a bounded hypothesis and experiment in space state.",
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         phaseId: { type: "string" },
         limit: { type: "number" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       // Fetch all phases once; we need them for both explicit lookup and time-based resolution.
       // parentPhaseId omitted → backend returns all phases
       const allPhases = await trpcClient.phase.list.query({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       const phaseById = new Map(allPhases.map((p) => [p.id, p]));
       // Reported once here instead of in every tool description: what cost estimates mean in this project.
-      const projectMeta = await trpcClient.project.getMeta.query({ graph: args.graph as string }).catch(() => null);
+      const projectMeta = await trpcClient.project.getMeta.query({ graph: args.space as string }).catch(() => null);
 
       const targetPhase = resolveWorkPhase(allPhases, args.phaseId as string | undefined);
       if (!targetPhase) {
         return { content: [{ type: "text", text: "No active phase found. Use list_phases to find a phase and pass phaseId." }] };
       }
 
-      // Run the full-graph economic model so value flows top-down from
+      // Run the full-space economic model so value flows top-down from
       // high-value goals (e.g. ASI) into the sub-ideas that support them and
       // cost aggregates bottom-up. Ranking a single idea by its own
-      // intrinsicValue/cost ignores the graph and is near-useless when most
+      // intrinsicValue/cost ignores the space and is near-useless when most
       // intrinsic value sits at the top.
       const allIdeas = await trpcClient.idea.list.query({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       const { priorities, values, costs, totalIntrinsic } = calculateIdeaValues(allIdeas, defaultIdeaCost(projectMeta));
       const {
@@ -55,7 +55,7 @@ export const navigationTools: ToolDefinition[] = [
 
       // Diagnostics: how many committed ideas are missing economic data
       // An idea with effectively-zero flowed value is disconnected from any intrinsic
-      // value source in the graph — its priority is meaningless regardless of cost.
+      // value source in the space — its priority is meaningless regardless of cost.
       const missingValue = allCommitted.filter(
         (a) => (values.get(a.id) ?? 0) < 1e-10
       ).length;
@@ -76,7 +76,7 @@ export const navigationTools: ToolDefinition[] = [
       // Realized-cost signal: real commits referencing each open idea = actual
       // output. Grounds attention in reality (which ranked ideas have actually
       // produced work) without mutating the human-set value model.
-      const commitMessages = getRepoCommitMessages(args.graph as string);
+      const commitMessages = getRepoCommitMessages(args.space as string);
       const realized = countIdeaReferences(commitMessages, rankedOpenIdeas.map((a) => a.id));
       const realizedSignalAvailable = commitMessages.length > 0;
       // High-priority ideas with zero realized output are the ones the loop
@@ -98,7 +98,7 @@ export const navigationTools: ToolDefinition[] = [
 
       // The loop's next step is orienting on the top idea: save it the get_idea_context call.
       const topIdeaContext = prioritized[0]
-        ? await ideaContext(trpcClient, args.graph as string, prioritized[0].id, allIdeas).catch(() => undefined)
+        ? await ideaContext(trpcClient, args.space as string, prioritized[0].id, allIdeas).catch(() => undefined)
         : undefined
 
       // Build phase path for context
@@ -122,7 +122,7 @@ export const navigationTools: ToolDefinition[] = [
                 phaseFlowedValue: fmt(phaseFlowedValue),
                 phaseTotalCost: fmt(phaseTotalCost),
                 phaseValueFraction: (phaseValueFraction * 100).toFixed(1) + "%",
-                totalGraphIntrinsicValue: totalIntrinsic,
+                totalSpaceIntrinsicValue: totalIntrinsic,
               },
               diagnostics: {
                 committedIdeas: allCommitted.length,
@@ -136,21 +136,21 @@ export const navigationTools: ToolDefinition[] = [
                 note: uncommittedLeaves.length > 0
                   ? `No open leaf idea is committed to this phase; ranked ${uncommittedLeaves.length} connected uncommitted open leaf idea(s) instead. They are reachable through their parents — rank and work them as they are; committing them to a phase is optional.`
                   : emptyActionableFrontier
-                  ? "No open actionable leaf exists in the phase or connected uncommitted graph. Mission containers are context for exploration, not executable work."
+                  ? "No open actionable leaf exists in the phase or connected uncommitted space. Mission containers are context for exploration, not executable work."
                   : missingValue > 0
-                  ? `${missingValue} idea(s) have zero flowed value — they are disconnected from any intrinsic value source in the graph. Their priorities are unreliable.`
+                  ? `${missingValue} idea(s) have zero flowed value — they are disconnected from any intrinsic value source in the space. Their priorities are unreliable.`
                   : "All committed ideas have economic data.",
               },
               exploration: emptyActionableFrontier ? {
                 required: true,
-                objective: "Create or uncover the next valuable actionable leaf in Aimparency graph state before implementing.",
+                objective: "Create or uncover the next valuable actionable leaf in Aimparency space state before implementing.",
                 moves: [
                   "List every open and partially done idea (list_ideas status open/partially, uncommitted ones too) and check each, however low it ranks or wherever it sits: the ranking covers only the phase, and an idea may be actionable without being top-ranked.",
-                  "Inspect graph_hygiene and recent connection reflections (which hypotheses held, which failed) for structural or learned opportunities.",
+                  "Inspect space_hygiene and recent connection reflections (which hypotheses held, which failed) for structural or learned opportunities.",
                   "Step back from the most recent scope and decompose a high-value abstract non-done mission into a bounded leaf.",
                   "Dream up a falsifiable hypothesis with a safe reversible experiment, explicit verification, and stop condition.",
                   "Search before create_idea; connect genuinely new work to the mission and commit it to the active phase.",
-                  "Do not manufacture low-value activity or substitute Markdown planning for graph state."
+                  "Do not manufacture low-value activity or substitute Markdown planning for space state."
                 ]
               } : undefined,
               ideas: prioritized.map((a) => ({
@@ -178,13 +178,13 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const result = await trpcClient.phase.getActivePath.query({
-        graph: args.graph as string,
+        graph: args.space as string,
       });
       return {
         content: [{
@@ -204,7 +204,7 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         status: { type: ["string", "array"], items: { type: "string" } },
         phaseId: { type: "string" },
         floating: { type: "boolean" },
@@ -212,11 +212,11 @@ export const navigationTools: ToolDefinition[] = [
         limit: { type: "number" },
         offset: { type: "number" },
       },
-      required: ["graph"],
+      required: ["space"],
     },
     handler: async (args, trpcClient) => {
       const ideas = await trpcClient.idea.list.query({
-        graph: args.graph as string,
+        graph: args.space as string,
         status: args.status as string | string[] | undefined,
         phaseId: args.phaseId as string | undefined,
         floating: args.floating as boolean | undefined,
@@ -235,22 +235,22 @@ export const navigationTools: ToolDefinition[] = [
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         phaseId: { type: "string" },
         status: { type: ["string", "array"], items: { type: "string" } }
       },
-      required: ["graph", "phaseId"],
+      required: ["space", "phaseId"],
     },
     handler: async (args, trpcClient) => {
         // 1. Get all ideas (cache them)
         const allIdeas = await trpcClient.idea.list.query({
-            graph: args.graph as string,
+            graph: args.space as string,
         });
         const ideaMap = new Map(allIdeas.map((a) => [a.id, a]));
 
         // 2. Fetch the target phase directly
         const phase = await trpcClient.phase.get.query({
-            graph: args.graph as string,
+            graph: args.space as string,
             phaseId: args.phaseId as string,
         });
 
@@ -308,11 +308,11 @@ export const navigationTools: ToolDefinition[] = [
   },
   {
     name: "what_if",
-    description: "Before deciding: how value and priority would shift if an idea left the graph (remove: as if deleted, with its connections) or a connection carried another weight (weight). Read-only; nothing is written. Returns the ideas whose value or priority moves, largest relative move first (values in the graph's units), and the top 5 open ideas before and after.",
+    description: "Before deciding: how value and priority would shift if an idea left the space (remove: as if deleted, with its connections) or a connection carried another weight (weight). Read-only; nothing is written. Returns the ideas whose value or priority moves, largest relative move first (values in the space's units), and the top 5 open ideas before and after.",
     inputSchema: {
       type: "object",
       properties: {
-        graph: GRAPH_TOOL_PROPERTY,
+        space: SPACE_TOOL_PROPERTY,
         change: { type: "string", enum: ["remove", "weight"] },
         ideaId: { type: "string", description: "remove: the idea that leaves" },
         parentId: { type: "string", description: "weight: the parent of the connection" },
@@ -320,10 +320,10 @@ export const navigationTools: ToolDefinition[] = [
         weight: { type: "number", exclusiveMinimum: 0, description: "weight: the connection's new raw weight" },
         limit: { type: "number", description: "Most shifts to list (default 15)" }
       },
-      required: ["graph", "change"],
+      required: ["space", "change"],
     },
     handler: async (args, trpcClient) => {
-      const graph = args.graph as string;
+      const graph = args.space as string;
       const change: WhatIfChange = args.change === "remove"
         ? { kind: "remove", ideaIds: [String(args.ideaId ?? "")] }
         : { kind: "weight", parentId: String(args.parentId ?? ""), childId: String(args.childId ?? ""), weight: Number(args.weight) };

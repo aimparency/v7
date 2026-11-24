@@ -1,7 +1,7 @@
 import type { Idea, RepoConnection } from "shared";
 import type { BackendClient } from "../client.js";
 
-// Compact idea JSON for agents: no graph layout positions, no empty arrays.
+// Compact idea JSON for agents: no space layout positions, no empty arrays.
 export function formatIdea(idea: Partial<Idea>) {
   const compact: Record<string, unknown> = { ...idea };
   if (idea.supportingConnections?.length) {

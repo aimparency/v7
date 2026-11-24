@@ -4,6 +4,7 @@ import type { BackendClient } from "../client.js";
 import { TOOLS } from "./catalog.js";
 import type { ToolDefinition } from "./types.js";
 import { reportToolActivity } from "../activity.js";
+import { SPACE_DIRECTION } from "../constants.js";
 import { expandIdPrefixes, IdPrefixError } from "./id-prefixes.js";
 
 export { verificationHintForIdea, ideaCreationConfirmationToken } from "./ideas.js";
@@ -18,33 +19,33 @@ export function availableTools(withAccounts: boolean) {
   return withAccounts ? TOOLS.filter((tool) => !LOCAL_ONLY_TOOLS.has(tool.name)) : TOOLS;
 }
 
-// A session with a graph of its own (connected through the graph's address,
+// A session with a space of its own (connected through the space's address,
 // <host>/spaces/<slug>/mcp/sse, or started in a repo with a .bowman) works on
-// that graph unless a call names another: its tools take `graph` as optional.
-export function toolForGraph(tool: ToolDefinition, graph: string | undefined): Pick<ToolDefinition, "name" | "description" | "inputSchema"> {
+// that space unless a call names another: its tools take `space` as optional.
+export function toolForSpace(tool: ToolDefinition, space: string | undefined): Pick<ToolDefinition, "name" | "description" | "inputSchema"> {
   const { name, description, inputSchema } = tool;
-  if (!graph || !inputSchema.required?.includes("graph")) return { name, description, inputSchema };
+  if (!space || !inputSchema.required?.includes("space")) return { name, description, inputSchema };
   return {
     name,
     description,
     inputSchema: {
       ...inputSchema,
-      required: inputSchema.required.filter((property) => property !== "graph"),
-      properties: { ...inputSchema.properties, graph: { type: "string", description: `Leave out to work on this session's graph "${graph}"; name another graph to work there` } },
+      required: inputSchema.required.filter((property) => property !== "space"),
+      properties: { ...inputSchema.properties, space: { type: "string", description: `Leave out to work on this session's space "${space}"; name another space to work there. ${SPACE_DIRECTION}` } },
     },
   };
 }
 
-// The graph a call works on: the one it names; `projectPath`, as the parameter
-// was called before (agents and scripts still send it); else the session's.
-export function argumentsWithGraph(given: Record<string, unknown> | undefined, sessionGraph: string | undefined) {
+// The space a call works on: the one it names; `graph` and `projectPath`, as the
+// parameter was called before (agents and scripts still send them); else the session's.
+export function argumentsWithSpace(given: Record<string, unknown> | undefined, sessionSpace: string | undefined) {
   if (!given) return given;
-  const { projectPath, ...rest } = given;
-  const graph = rest.graph ?? projectPath ?? sessionGraph;
-  return graph === undefined ? rest : { ...rest, graph };
+  const { graph, projectPath, ...rest } = given;
+  const space = rest.space ?? graph ?? projectPath ?? sessionSpace;
+  return space === undefined ? rest : { ...rest, space };
 }
 
-export function registerTools(server: Server, trpcClient: BackendClient, graph?: string) {
+export function registerTools(server: Server, trpcClient: BackendClient, space?: string) {
   // The backend says what kind of server this is, once per session. While it
   // does not answer, the tools that bypass it stay out.
   let known: Promise<typeof TOOLS> | undefined;
@@ -55,12 +56,12 @@ export function registerTools(server: Server, trpcClient: BackendClient, graph?:
       return availableTools(true);
     });
   server.setRequestHandler(ListToolsRequestSchema, async () => ({
-    tools: (await sessionTools()).map((tool) => toolForGraph(tool, graph)),
+    tools: (await sessionTools()).map((tool) => toolForSpace(tool, space)),
   }));
 
   server.setRequestHandler(CallToolRequestSchema, async (request) => {
     const { name } = request.params;
-    const args = argumentsWithGraph(request.params.arguments, graph);
+    const args = argumentsWithSpace(request.params.arguments, space);
     try {
       const tool = (await sessionTools()).find((candidate) => candidate.name === name);
       if (!tool) throw new Error(`Unknown tool: ${name}`);
@@ -77,7 +78,7 @@ export function registerTools(server: Server, trpcClient: BackendClient, graph?:
         content: [
           {
             type: "text",
-            text: `Error executing ${name}: ${errorMessage}\n\nPlease check that:\n1. "graph" is the absolute path of the project, or the name of a graph on the server\n2. All ids exist (the full UUID, or a beginning of it that only one id has)\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
+            text: `Error executing ${name}: ${errorMessage}\n\nPlease check that:\n1. "space" is the absolute path of the project, or the name of a space on the server\n2. All ids exist (the full UUID, or a beginning of it that only one id has)\n3. The backend server is running on ws://localhost:${process.env.PORT_BACKEND_WS || '3001'}`,
           },
         ],
         isError: true,

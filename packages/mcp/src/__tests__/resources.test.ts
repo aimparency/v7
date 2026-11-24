@@ -33,8 +33,8 @@ test('MCP Resources - List & Read', async () => {
   assert.ok(ideaTemplate, 'Idea template not found in list');
 
   // 3. Read Idea Resource
-  // URI format: idea://{uuid}?graph=...
-  const ideaUri = `idea://${idea.id}?graph=${encodeURIComponent(ctx.projectPath)}`;
+  // URI format: idea://{uuid}?space=...
+  const ideaUri = `idea://${idea.id}?space=${encodeURIComponent(ctx.projectPath)}`;
   const readIdea = await server.readResource(ideaUri);
   
   const ideaContent = JSON.parse(readIdea.contents[0].text);

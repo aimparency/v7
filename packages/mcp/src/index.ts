@@ -3,14 +3,14 @@
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import { createMcpServer } from "./factory.js";
 import { createBackendClient } from "./client.js";
-import { graphOfDirectory } from "./working-graph.js";
+import { spaceOfDirectory } from "./working-space.js";
 
 const backend = createBackendClient(process.env.AIMPARENCY_TOKEN);
 
 async function main() {
-  // The client starts this server in its working directory: that repo's graph
-  // is the default, and calls name another graph to work there.
-  const server = createMcpServer(backend.trpc, graphOfDirectory(process.cwd()));
+  // The client starts this server in its working directory: that repo's space
+  // is the default, and calls name another space to work there.
+  const server = createMcpServer(backend.trpc, spaceOfDirectory(process.cwd()));
   const transport = new StdioServerTransport();
   await server.connect(transport);
   console.error("Aimparency MCP Server running on stdio");

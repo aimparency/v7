@@ -32,8 +32,8 @@ export function toolIdeaAccess(toolName: string, args: Record<string, unknown>, 
 
 // Fire and forget: activity is a view aid and must never fail a tool call.
 export function reportToolActivity(trpcClient: BackendClient, toolName: string, args: Record<string, unknown>, result: CallToolResult) {
-  if (typeof args.graph !== "string") return;
+  if (typeof args.space !== "string") return;
   for (const access of toolIdeaAccess(toolName, args, result)) {
-    void trpcClient.activity.record.mutate({ graph: args.graph, ...access }).catch(() => {});
+    void trpcClient.activity.record.mutate({ graph: args.space, ...access }).catch(() => {});
   }
 }

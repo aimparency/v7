@@ -9,7 +9,7 @@ import type { BackendClient } from "./client.js";
 // asks): the SDK's router speaks the protocol, this provider hands each step
 // to the backend, where the clients, the waiting requests and the codes live
 // (backend auth/mcp-clients.ts). The person approves on the server's own page
-// (<public URL>/?mcp-authorize=<request>), choosing the graphs; the token the
+// (<public URL>/?mcp-authorize=<request>), choosing the spaces; the token the
 // client ends up with is an ordinary login token limited to those.
 
 // The SDK's check wants an end time; these tokens have none and are looked up

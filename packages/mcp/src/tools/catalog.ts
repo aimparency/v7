@@ -1,4 +1,4 @@
-// Every agent graph tool, defined once: what the agent sees (name,
+// Every agent space tool, defined once: what the agent sees (name,
 // description, input schema) next to the handler that runs it over the backend.
 // The MCP server lists these (tools/index.ts) and the loop worker offers a
 // subset to its model, so both kinds of agent get the same tools.
@@ -8,18 +8,18 @@ import { navigationTools } from "./navigation.js";
 import { ideaTools } from "./ideas.js";
 import { phaseTools } from "./phases.js";
 import { repoTools } from "./repos.js";
-import { graphHealthTools } from "./graph-health.js";
+import { spaceHealthTools } from "./space-health.js";
 import { hookTools } from "./hooks.js";
 import { hypothesisLoopTools } from "./hypothesis-loop.js";
 import { noteTools } from "./notes.js";
 
-// Listing order is what an agent reads first: the work loop, then the graph.
+// Listing order is what an agent reads first: the work loop, then the space.
 export const TOOLS: ToolDefinition[] = [
   ...navigationTools,
   ...ideaTools,
   ...phaseTools,
   ...repoTools,
-  ...graphHealthTools,
+  ...spaceHealthTools,
   ...hypothesisLoopTools,
   ...noteTools,
   ...hookTools,

@@ -72,8 +72,8 @@ export function createMcpApp({ connect, basePath = "", configuredHost, publicUrl
       return;
     }
     const backend = connect(tokenOf(req));
-    // ?graph=<slug>: the session came through that graph's address (the one-port server adds it).
-    const server = createMcpServer(backend.trpc, typeof req.query.graph === "string" ? req.query.graph : undefined);
+    // ?space=<slug>: the session came through that space's address (the one-port server adds it).
+    const server = createMcpServer(backend.trpc, typeof req.query.space === "string" ? req.query.space : undefined);
     const transport = new SSEServerTransport(`${basePath}/messages`, res);
     await server.connect(transport);
     transports.set(transport.sessionId, transport);

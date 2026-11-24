@@ -123,6 +123,14 @@
       "weight": 2,
       "hypothesis": "Fewer required parameters on every call reduces friction and errors for agents that mostly work in their own repo's graph.",
       "reflection": "Held so far: the per-graph session mechanism (e34b5ff1) only needed a stdio source, so this cost one 10-line lookup. The value shows in shorter calls and fewer wrong ids. Whether it causes wrong-graph writes in cross-repo sessions is still to watch."
+    },
+    {
+      "ideaId": "2312d718-e764-4240-976b-74cb533d7eb5",
+      "relativePosition": [
+        -0.13,
+        -3.75
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [

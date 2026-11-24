@@ -21,7 +21,7 @@ test("dream is advertised as an MCP prompt", async () => {
   const dream = result.prompts.find((prompt: any) => prompt.name === "dream");
   assert.ok(dream);
   assert.deepEqual(dream.arguments.map((argument: any) => argument.name), [
-    "graph",
+    "space",
     "focus",
     "wildness",
     "writeBack",
@@ -29,17 +29,17 @@ test("dream is advertised as an MCP prompt", async () => {
 });
 
 test("dream defaults to an epistemically labelled dream that keeps only its memory", async () => {
-  const result = await setup(7).getPrompt("dream", { graph: "/project/.bowman" });
+  const result = await setup(7).getPrompt("dream", { space: "/project/.bowman" });
   const text = result.messages[0].content.text;
   assert.match(result.description, /7 ideas/);
   assert.match(text, /Wildness: strange/);
   assert.match(text, /Write back accepted artifacts: false/);
   assert.match(text, /OBSERVED.*RESEARCHED.*INFERRED.*IMAGINED/);
-  assert.match(text, /Apart from the dream memory, do not mutate the graph/);
+  assert.match(text, /Apart from the dream memory, do not mutate the space/);
 });
 
 test("dream remembers since the last dream and wakes with what it remembers", async () => {
-  const text = (await setup().getPrompt("dream", { graph: "/project/.bowman" })).messages[0].content.text;
+  const text = (await setup().getPrompt("dream", { space: "/project/.bowman" })).messages[0].content.text;
   assert.match(text, /one idea tagged "dream-memory".*status\.reviewedAt is the start of this dream's window/);
   assert.match(text, /Always record the memory in the dream-memory idea's status comment.*"Dream: the whole project"/);
   assert.match(text, /love is intrinsic value/);
@@ -48,7 +48,7 @@ test("dream remembers since the last dream and wakes with what it remembers", as
 
 test("dream can explicitly write back selected residues", async () => {
   const result = await setup().getPrompt("dream", {
-    graph: "/project/.bowman",
+    space: "/project/.bowman",
     focus: "cross-repository cooperation",
     wildness: "unbounded",
     writeBack: "true",
@@ -73,10 +73,10 @@ test("disable-hook works without a path and instructs a single explicit tool cal
   assert.match(text, /current repository/);
 });
 
-test("enable-hook passes through graph and agent", async () => {
-  const result = await setup().getPrompt("enable-hook", { graph: "/p/.bowman", agent: "claude" });
+test("enable-hook passes through space and agent", async () => {
+  const result = await setup().getPrompt("enable-hook", { space: "/p/.bowman", agent: "claude" });
   const text = result.messages[0].content.text;
-  assert.match(text, /enable_continue_hook with graph = \/p\/\.bowman and agent = claude/);
+  assert.match(text, /enable_continue_hook with space = \/p\/\.bowman and agent = claude/);
 });
 
 test("idea-session searches before adding, gates merges and yields every turn to the human", async () => {
@@ -90,27 +90,27 @@ test("idea-session searches before adding, gates merges and yields every turn to
   assert.match(text, /end every turn of this session with \[AIMPARENCY_CONFIRM_HUMAN_BLOCK\]/);
 });
 
-test("idea-session starts from what the graph holds about a given topic", async () => {
-  const result = await setup().getPrompt("idea-session", { graph: "/p/.bowman", topic: "list view" });
+test("idea-session starts from what the space holds about a given topic", async () => {
+  const result = await setup().getPrompt("idea-session", { space: "/p/.bowman", topic: "list view" });
   const text = result.messages[0].content.text;
   assert.equal(result.description, "Feedback and ideation session about list view");
   assert.match(text, /Project: \/p\/\.bowman\nTopic: list view/);
-  assert.match(text, /Start by showing the human what the graph already holds about the topic/);
+  assert.match(text, /Start by showing the human what the space already holds about the topic/);
 });
 
 test("consolidate proposes by default and never merges on its own", async () => {
   const result = await setup().getPrompt("consolidate", {});
   const text = result.messages[0].content.text;
-  assert.equal(result.description, "Consolidate the idea graph");
-  assert.match(text, /Scope: the whole graph/);
+  assert.equal(result.description, "Consolidate the idea space");
+  assert.match(text, /Scope: the whole space/);
   assert.match(text, /megaParentThreshold = 8/);
   assert.match(text, /Never merge on your own/);
   assert.match(text, /merging or deleting ideas, cancelling ideas, setting implemented/);
-  assert.match(text, /Do not mutate the graph/);
+  assert.match(text, /Do not mutate the space/);
 });
 
 test("consolidate can apply the safe reorganization within a subtree", async () => {
-  const result = await setup().getPrompt("consolidate", { graph: "/p/.bowman", focus: "22dd4138", writeBack: "true" });
+  const result = await setup().getPrompt("consolidate", { space: "/p/.bowman", focus: "22dd4138", writeBack: "true" });
   const text = result.messages[0].content.text;
   assert.equal(result.description, "Consolidate the subtree of 22dd4138 (write back)");
   assert.match(text, /Scope: the subtree of 22dd4138/);
@@ -128,7 +128,7 @@ test("today asks for missing interests and time, mixes waiting-for-a-human ideas
 });
 
 test("today goes straight to suggestions when interests and time are given", async () => {
-  const result = await setup().getPrompt("today", { graph: "/hub/.bowman", interests: "gardening", time: "2 hours" });
+  const result = await setup().getPrompt("today", { space: "/hub/.bowman", interests: "gardening", time: "2 hours" });
   const text = result.messages[0].content.text;
   assert.equal(result.description, "What can I do today? (gardening)");
   assert.match(text, /Project: \/hub\/\.bowman\nInterests: gardening\nTime available: 2 hours/);

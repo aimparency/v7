@@ -37,8 +37,8 @@ export class IdPrefixError extends Error {}
 export async function expandIdPrefixes<T extends Record<string, unknown>>(args: T, client: Pick<BackendClient, "graph">): Promise<T> {
   const found = new Set<string>();
   walk(args, "", (value) => { found.add(value); return value; });
-  if (found.size === 0 || typeof args.graph !== "string") return args;
-  const matches = await client.graph.idsBeginningWith.query({ graph: args.graph, prefixes: [...found] });
+  if (found.size === 0 || typeof args.space !== "string") return args;
+  const matches = await client.graph.idsBeginningWith.query({ graph: args.space, prefixes: [...found] });
   for (const prefix of found) {
     const ids = matches[prefix] ?? [];
     if (ids.length === 0) throw new IdPrefixError(`No idea or phase id begins with "${prefix}".`);
