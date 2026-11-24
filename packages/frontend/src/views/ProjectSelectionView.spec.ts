@@ -3,9 +3,11 @@ import { flushPromises, mount } from '@vue/test-utils'
 import { createTestingPinia } from '@pinia/testing'
 import ProjectSelectionView from './ProjectSelectionView.vue'
 import { useViewerStore } from '../stores/viewer'
+import { useProjectStore } from '../stores/project-store'
 
-const { inspectPath, listSpaces, listDeleted, removeSpaceEntry, restoreSpace, createSpace, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
+const { inspectPath, discoverLocalProjects, listSpaces, listDeleted, removeSpaceEntry, restoreSpace, createSpace, addRemote, addCheckout, accounts } = vi.hoisted(() => ({
   inspectPath: vi.fn(),
+  discoverLocalProjects: vi.fn(),
   addRemote: vi.fn(),
   addCheckout: vi.fn(),
   listSpaces: vi.fn().mockResolvedValue([]),
@@ -17,7 +19,7 @@ const { inspectPath, listSpaces, listDeleted, removeSpaceEntry, restoreSpace, cr
 }))
 vi.mock('../trpc', () => ({
   trpc: {
-    project: { inspectPath: { query: inspectPath } },
+    project: { inspectPath: { query: inspectPath }, discoverLocalProjects: { query: discoverLocalProjects } },
     spaces: { list: { query: listSpaces }, listDeleted: { query: listDeleted }, remove: { mutate: removeSpaceEntry }, restore: { mutate: restoreSpace }, create: { mutate: createSpace }, addRemote: { mutate: addRemote }, addCheckout: { mutate: addCheckout } }
   },
 }))
@@ -327,5 +329,56 @@ describe('ProjectSelectionView on a server with accounts', () => {
     await flushPromises()
     expect(wrapper.find('.select-project').attributes('disabled')).toBeDefined()
     expect(wrapper.text()).toContain('Log in to create a space.')
+  })
+})
+
+describe('ProjectSelectionView: a recent space that moved', () => {
+  const kitchen = { path: '/work/kitchen', lastOpened: 1, failedToLoad: false, repoId: 'kitchen-id', name: 'Kitchen' }
+  const mountWithKitchen = () => mount(ProjectSelectionView, {
+    attachTo: document.body,
+    global: { plugins: [createTestingPinia({ createSpy: vi.fn })], stubs: { LoginControl: true } },
+    props: { modelValue: '', projectHistory: [kitchen], discoveredProjects: [], scannedRoots: [], isRefreshingDiscoveredProjects: false },
+  })
+  beforeEach(() => { accounts.on = false; discoverLocalProjects.mockReset() })
+
+  it('is found by its id and opened from where it is now', async () => {
+    discoverLocalProjects
+      .mockResolvedValueOnce({ projects: [] }) // the recent folders: /work/kitchen is gone
+      .mockResolvedValueOnce({ projects: [
+        { path: '/archive/kitchen', bowmanPath: '/archive/kitchen/.bowman', sourceRoot: '/', name: 'Kitchen', repoId: 'kitchen-id', matchedBy: 'id' },
+        { path: '/other/kitchen', bowmanPath: '/other/kitchen/.bowman', sourceRoot: '/', name: 'Kitchen', repoId: 'other', matchedBy: 'name' }
+      ] })
+    const wrapper = mountWithKitchen()
+    await flushPromises()
+    expect(wrapper.find('.history-item').classes()).toContain('failed')
+
+    await wrapper.find('[aria-label="Find it on this machine"]').trigger('click')
+    await flushPromises()
+    expect(discoverLocalProjects).toHaveBeenLastCalledWith(expect.objectContaining({ repoId: 'kitchen-id', name: 'Kitchen' }))
+    expect(useProjectStore().relocateProjectInHistory).toHaveBeenCalledWith('/work/kitchen', '/archive/kitchen', { repoId: 'kitchen-id', name: 'Kitchen' })
+    expect(wrapper.emitted('open-project-from-history')).toEqual([['/archive/kitchen']])
+    wrapper.unmount()
+  })
+
+  it('takes a path typed by hand, and asks first when another space is there', async () => {
+    discoverLocalProjects
+      .mockResolvedValueOnce({ projects: [] })
+      .mockResolvedValueOnce({ projects: [] }) // nothing found by id or name
+      .mockResolvedValueOnce({ projects: [{ path: '/elsewhere', bowmanPath: '/elsewhere/.bowman', sourceRoot: '/elsewhere', name: 'Garden', repoId: 'garden-id' }] })
+    const wrapper = mountWithKitchen()
+    await flushPromises()
+    await wrapper.find('[aria-label="Find it on this machine"]').trigger('click')
+    await flushPromises()
+    expect(wrapper.text()).toContain('Not found')
+
+    await wrapper.find('input[aria-label="Its new path"]').setValue('/elsewhere')
+    await wrapper.find('.typed').trigger('submit')
+    await flushPromises()
+    expect(wrapper.text()).toContain('That is another space (Garden)')
+    expect(wrapper.emitted('open-project-from-history')).toBeUndefined()
+
+    await wrapper.findAll('.problem button')[0]!.trigger('click')
+    expect(wrapper.emitted('open-project-from-history')).toEqual([['/elsewhere']])
+    wrapper.unmount()
   })
 })

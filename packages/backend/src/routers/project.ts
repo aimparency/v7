@@ -29,8 +29,21 @@ import { spaceAddress, resolveSpaceAddress } from '../spaces/address.js';
 
 const projectDiscoveryInputSchema = z.object({
   roots: z.array(z.string()).optional(),
-  maxDepth: z.number().int().min(0).max(6).optional()
+  maxDepth: z.number().int().min(0).max(8).optional(),
+  // A space that moved: only the spaces with this id, or (as suggestions) this
+  // folder or space name, are listed.
+  repoId: z.string().optional(),
+  name: z.string().optional(),
+  limit: z.number().int().positive().max(500).optional()
 });
+
+type SpaceOnDisk = {
+  path: string, bowmanPath: string, sourceRoot: string,
+  name?: string, repoId?: string,
+  /** With a repoId or name to look for: which of them this space matched. */
+  matchedBy?: 'id' | 'name'
+};
+type DiscoveryFilter = { repoId?: string, name?: string, limit: number };
 
 const DISCOVERY_IGNORED_DIRS = new Set([
   '.git',
@@ -50,14 +63,36 @@ const getDefaultDiscoveryRoots = () => {
   return Array.from(new Set([cwd, parent, os.homedir()].filter(Boolean)));
 };
 
+// A space's own name and id, from its meta.json; absent when it has none.
+const readIdentity = async (bowmanPath: string): Promise<{ name?: string, repoId?: string }> => {
+  try {
+    const meta = JSON.parse(await fs.readFile(path.join(bowmanPath, 'meta.json'), 'utf8')) as { name?: unknown, repoId?: unknown };
+    return {
+      ...(typeof meta.name === 'string' && meta.name ? { name: meta.name } : {}),
+      ...(typeof meta.repoId === 'string' && meta.repoId ? { repoId: meta.repoId } : {})
+    };
+  } catch {
+    return {};
+  }
+};
+
+const matchOf = (found: SpaceOnDisk, filter: DiscoveryFilter): SpaceOnDisk['matchedBy'] | null => {
+  if (!filter.repoId && !filter.name) return undefined;
+  if (filter.repoId && found.repoId === filter.repoId) return 'id';
+  const name = filter.name?.trim().toLowerCase();
+  if (name && [path.basename(found.path), found.name ?? ''].some(candidate => candidate.toLowerCase() === name)) return 'name';
+  return null;
+};
+
 const discoverProjectsFromRoot = async (
   root: string,
   maxDepth: number,
   seenProjectRoots: Set<string>,
-  results: Array<{ path: string, bowmanPath: string, sourceRoot: string }>
+  results: SpaceOnDisk[],
+  filter: DiscoveryFilter
 ) => {
   const visit = async (dirPath: string, depth: number): Promise<void> => {
-    if (depth > maxDepth || results.length >= 50) return;
+    if (depth > maxDepth || results.length >= filter.limit) return;
 
     let entries: Dirent[];
     try {
@@ -69,11 +104,10 @@ const discoverProjectsFromRoot = async (
     const hasBowmanDir = entries.some((entry) => entry.isDirectory() && entry.name === '.bowman');
     if (hasBowmanDir && !seenProjectRoots.has(dirPath)) {
       seenProjectRoots.add(dirPath);
-      results.push({
-        path: dirPath,
-        bowmanPath: path.join(dirPath, '.bowman'),
-        sourceRoot: root
-      });
+      const bowmanPath = path.join(dirPath, '.bowman');
+      const found: SpaceOnDisk = { path: dirPath, bowmanPath, sourceRoot: root, ...await readIdentity(bowmanPath) };
+      const matchedBy = matchOf(found, filter);
+      if (matchedBy !== null) results.push(matchedBy ? { ...found, matchedBy } : found);
     }
 
     if (depth === maxDepth) return;
@@ -84,7 +118,7 @@ const discoverProjectsFromRoot = async (
       if (entry.name.startsWith('.') && depth > 0) continue;
 
       await visit(path.join(dirPath, entry.name), depth + 1);
-      if (results.length >= 50) return;
+      if (results.length >= filter.limit) return;
     }
   };
 
@@ -152,14 +186,16 @@ export const projectRouter = t.router({
         new Set((input?.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map((root: string) => path.resolve(root)))
       );
       const maxDepth = input?.maxDepth ?? 2;
+      const filter: DiscoveryFilter = { repoId: input?.repoId, name: input?.name, limit: input?.limit ?? 50 };
       const seenProjectRoots = new Set<string>();
-      const projects: Array<{ path: string, bowmanPath: string, sourceRoot: string }> = [];
+      const projects: SpaceOnDisk[] = [];
 
       for (const root of roots) {
-        await discoverProjectsFromRoot(root, maxDepth, seenProjectRoots, projects);
+        await discoverProjectsFromRoot(root, maxDepth, seenProjectRoots, projects, filter);
       }
 
-      projects.sort((left, right) => left.path.localeCompare(right.path));
+      // Matches by id first: those are the space itself, a name is only a guess.
+      projects.sort((left, right) => Number(left.matchedBy === 'name') - Number(right.matchedBy === 'name') || left.path.localeCompare(right.path));
 
       return {
         rootsScanned: roots,

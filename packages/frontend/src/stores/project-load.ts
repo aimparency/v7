@@ -164,7 +164,7 @@ export const useProjectLoadStore = defineStore('project-load', {
         await this.showView()
         if (!isCurrent()) return
 
-        projectStore.addProjectToHistory(projectPath)
+        projectStore.addProjectToHistory(projectPath, { repoId: dataStore.meta?.repoId, name: dataStore.meta?.name })
         projectStore.clearProjectFailure(projectPath)
         this.status = 'idle'
         uiStore.endUIStateRestore()

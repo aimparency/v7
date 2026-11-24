@@ -43,6 +43,32 @@ export const repoTools: ToolDefinition[] = [
     },
   },
   {
+    name: "find_spaces_on_disk",
+    description: "The spaces (.bowman folders) on this machine: path, name and repoId of each. Without repoId or name it lists them (nearby folders and the home folder, a few levels deep). To find a space that moved, give its repoId: a match is the same space wherever it went (matchedBy: id); a name only suggests folders of that name (matchedBy: name), maybe another space. A linked repo whose folder moved is pointed at the new one with register_linked_repo targetPath. Only on a server without accounts (this machine's own).",
+    inputSchema: {
+      type: "object",
+      properties: {
+        repoId: { type: "string", description: "The id of the space to find (its meta.json repoId, as list_linked_repos shows it)" },
+        name: { type: "string", description: "A folder or space name to suggest matches for" },
+        roots: { type: "array", items: { type: "string" }, description: "Absolute folders to search. Default: the backend's folder, its parent and the home folder" },
+        maxDepth: { type: "number", description: "How many folder levels below each root. Default 6 when looking for a space, else 3" },
+      },
+      required: [],
+    },
+    handler: async (args, trpcClient) => {
+      const looking = Boolean(args.repoId || args.name);
+      const { rootsScanned, projects } = await trpcClient.project.discoverLocalProjects.query({
+        ...(args.roots ? { roots: args.roots as string[] } : {}),
+        maxDepth: (args.maxDepth as number | undefined) ?? (looking ? 6 : 3),
+        limit: looking ? 20 : 200,
+        ...(args.repoId ? { repoId: args.repoId as string } : {}),
+        ...(args.name ? { name: args.name as string } : {}),
+      });
+      const spaces = projects.map(({ path, name, repoId, matchedBy }) => ({ path, ...(name ? { name } : {}), repoId: repoId ?? "none", ...(matchedBy ? { matchedBy } : {}) }));
+      return { content: [{ type: "text", text: JSON.stringify({ rootsScanned, spaces }, null, 2) }] };
+    },
+  },
+  {
     name: "list_linked_repos",
     description: "List the repos this project can link an idea to: repoId, name, and whether the repo is checked out on this machine (resolved). Call it to get the repoId that link_repo needs.",
     inputSchema: {

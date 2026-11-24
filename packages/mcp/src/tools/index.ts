@@ -11,9 +11,9 @@ export { verificationHintForIdea, ideaCreationConfirmationToken } from "./ideas.
 export { resolvePhasePlacement } from "./phases.js";
 export { countIdeaReferences } from "../reconcile.js";
 
-// Tools that touch this machine's files directly instead of asking the backend,
-// so its access checks never see them: a server with accounts must not offer them.
-const LOCAL_ONLY_TOOLS = new Set(["enable_continue_hook", "disable_continue_hook"]);
+// Tools about this machine's files (directly, or through a backend procedure
+// that only a server without accounts answers): a server with accounts does not offer them.
+const LOCAL_ONLY_TOOLS = new Set(["enable_continue_hook", "disable_continue_hook", "find_spaces_on_disk"]);
 
 export function availableTools(withAccounts: boolean) {
   return withAccounts ? TOOLS.filter((tool) => !LOCAL_ONLY_TOOLS.has(tool.name)) : TOOLS;

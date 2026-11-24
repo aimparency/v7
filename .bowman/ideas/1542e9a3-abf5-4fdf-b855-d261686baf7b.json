@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Accepted by Felix 2026-11-23: \"yes please. MCP needs an equivalent to the project/spaces page.\" So it mirrors what the start page shows: the local projects (discoverLocalProjects) or, with accounts, the spaces, with name, repoId, counts, last activity and whether each is already linked from the calling graph.",
-    "date": 1795471936841
+    "state": "partially",
+    "comment": "Core exists since b78ef0c0: MCP find_spaces_on_disk without filters lists every .bowman on this machine (nearby + home, 3 levels by default, up to 200) with path, name and repoId ('none' when missing). Still missing from the proposal: idea/open counts, last activity, whether the calling space already registered it, the mission line (36665fa6), and initializing a missing repoId/meta.",
+    "date": 1795537985553
   },
   "intrinsicValue": 0,
   "cost": 1,

@@ -1164,6 +1164,29 @@ test('discoverLocalProjects - finds nearby repositories with .bowman directories
   );
 });
 
+test('discoverLocalProjects - finds a moved space by its id; a folder of the same name is only a suggestion', async () => {
+  const root = path.join(testRootPath, 'moved');
+  const repoId = '6f1d3c2a-8b4e-4f5a-9c7d-0e1f2a3b4c5d';
+  const write = async (dir: string, meta: object) => {
+    await fs.ensureDir(path.join(dir, '.bowman'));
+    await fs.writeJson(path.join(dir, '.bowman', 'meta.json'), meta);
+  };
+  await write(path.join(root, 'archive', '2026', 'kitchen-renamed'), { name: 'Kitchen', repoId });
+  await write(path.join(root, 'kitchen'), { name: 'Another kitchen', repoId: '11111111-1111-4111-8111-111111111111' });
+  await write(path.join(root, 'garden'), { name: 'Garden' });
+
+  const found = await caller.project.discoverLocalProjects({ roots: [root], maxDepth: 4, repoId, name: 'kitchen' });
+  assert.deepEqual(found.projects.map(project => [path.relative(root, project.path), project.matchedBy]), [
+    [path.join('archive', '2026', 'kitchen-renamed'), 'id'],
+    ['kitchen', 'name']
+  ]);
+  assert.equal(found.projects[0]!.name, 'Kitchen');
+
+  // A path typed by hand: the space there and its id.
+  const typed = await caller.project.discoverLocalProjects({ roots: [path.join(root, 'garden')], maxDepth: 0 });
+  assert.deepEqual(typed.projects.map(project => [project.name, project.repoId, project.matchedBy]), [['Garden', undefined, undefined]]);
+});
+
 test('inspectPath - distinguishes an existing .bowman from a new project path', async () => {
   const existingRoot = path.join(testRootPath, 'existing');
   await fs.ensureDir(path.join(existingRoot, '.bowman'));

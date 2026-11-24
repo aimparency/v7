@@ -169,3 +169,19 @@ test('link_repo takes a share in percent and answers with the split; a link keep
   const listed = JSON.parse((await server.callTool('list_linked_repos', { space: ctx.projectPath })).content[0].text);
   assert.equal(listed[0].name, 'Ways of Will (life)');
 });
+
+test('find_spaces_on_disk finds a moved space by its id; a name only suggests', async () => {
+  const server = makeServer();
+  const root = targetCtx.projectPath.replace(/\/\.bowman$/, '');
+  const repoId = '7a2b3c4d-5e6f-4a1b-8c2d-3e4f5a6b7c8d';
+  await fs.writeJson(`${targetCtx.projectPath}/meta.json`, { name: 'Ways of Will', repoId });
+
+  const found = JSON.parse((await server.callTool('find_spaces_on_disk', { roots: [root], maxDepth: 0, repoId })).content[0].text);
+  assert.deepEqual(found.spaces, [{ path: root, name: 'Ways of Will', repoId, matchedBy: 'id' }]);
+
+  const byName = JSON.parse((await server.callTool('find_spaces_on_disk', { roots: [root], maxDepth: 0, name: 'ways of will' })).content[0].text);
+  assert.equal(byName.spaces[0].matchedBy, 'name');
+
+  const other = JSON.parse((await server.callTool('find_spaces_on_disk', { roots: [root], maxDepth: 0, repoId: '00000000-0000-4000-8000-000000000000' })).content[0].text);
+  assert.deepEqual(other.spaces, []);
+});

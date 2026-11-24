@@ -1,14 +1,16 @@
 <script setup lang="ts">
 import { computed, nextTick, onMounted, onUnmounted, ref, watch } from 'vue'
-import type { ProjectHistoryEntry } from '../stores/ui/project-helpers'
+import type { ProjectHistoryEntry, SpaceIdentity } from '../stores/ui/project-helpers'
 import { trpc } from '../trpc'
 import { loadProjectThumbnails } from '../utils/db'
 import { formatRelativeTime } from '../utils/relative-time'
 import { keepInMiddle } from '../utils/keep-in-middle'
 import { gitRepositoryLocation } from 'shared'
-import { Pencil, RotateCcw, Trash2, X } from 'lucide-vue-next'
+import { Pencil, RotateCcw, Search, Trash2, X } from 'lucide-vue-next'
 import LoginControl from '../components/LoginControl.vue'
 import DeployKeyModal from '../components/DeployKeyModal.vue'
+import MovedSpaceFinder from '../components/MovedSpaceFinder.vue'
+import { useProjectStore } from '../stores/project-store'
 import { useToastStore } from '../stores/toast'
 import { useViewerStore } from '../stores/viewer'
 import { hasAccounts } from '../utils/runtime-config'
@@ -69,6 +71,30 @@ const deleteSpace = (slug: string) => changeSpace('Could not delete the space', 
 const restoreSpace = (slug: string) => changeSpace('Could not restore the space', () => trpc.spaces.restore.mutate({ slug }))
 const listSpaces = () => loadSpaces().catch(error => toast.error('Could not list the spaces of this server', error))
 onMounted(listSpaces)
+
+// Recent folders that no longer hold a space (moved, renamed, deleted): they
+// offer to find it again (MovedSpaceFinder). Only on this machine alone.
+const missingPaths = ref(new Set<string>())
+const finding = ref<string | null>(null)
+onMounted(async () => {
+  const paths = props.projectHistory.map(project => project.path)
+  if (accounts || paths.length === 0) return
+  try {
+    const { projects } = await trpc.project.discoverLocalProjects.query({ roots: paths, maxDepth: 0, limit: 500 })
+    const present = new Set(projects.map(project => project.path))
+    missingPaths.value = new Set(paths.filter(path => !present.has(path)))
+  } catch {
+    // Not knowing which are missing only hides the Find button.
+  }
+})
+const projectStore = useProjectStore()
+const relocate = (from: string, to: string, identity: SpaceIdentity) => {
+  finding.value = null
+  missingPaths.value.delete(from)
+  projectStore.relocateProjectInHistory(from, to, identity)
+  toast.info(`Found it at ${to}`)
+  emit('open-project-from-history', to)
+}
 // Which spaces one may read depends on who is logged in.
 watch(() => viewer.name, listSpaces)
 
@@ -170,6 +196,8 @@ type Entry = {
   failed?: boolean
   /** A recent entry: d d (or ×) forgets it. */
   recent?: boolean
+  /** A recent space whose folder is gone: look for it on this machine. */
+  find?: { from: string, identity: SpaceIdentity }
   /** The owner's space: the trash deletes it (restorable). */
   remove?: () => void
   /** What e (or the pencil) copies into the box. */
@@ -207,8 +235,11 @@ const recentEntries = computed<Entry[]>(() => props.projectHistory.flatMap(proje
     detail: opened,
     searchable: pathSearchable(project.path),
     thumbnail: project.path,
-    failed: project.failedToLoad,
+    failed: project.failedToLoad || missingPaths.value.has(project.path),
     recent: true,
+    find: project.failedToLoad || missingPaths.value.has(project.path)
+      ? { from: project.path, identity: { repoId: project.repoId, name: project.name } }
+      : undefined,
     edit: project.path,
     open: () => emit('open-project-from-history', project.path)
   }]
@@ -444,9 +475,8 @@ onUnmounted(revokeThumbnails)
         </p>
 
         <div v-if="section.entries.length > 0" class="history-list">
+          <template v-for="entry in section.entries" :key="entry.key">
           <div
-            v-for="entry in section.entries"
-            :key="entry.key"
             class="history-item"
             :class="{ failed: entry.failed, selected: indexOf(entry) === selectedIndex, removing: entry.key === pendingRemoval, 'discovered-item': section.id === 'nearby', deleted: section.id === 'deleted' }"
           >
@@ -486,6 +516,15 @@ onUnmounted(revokeThumbnails)
               @click.stop="copyIntoBox(entry)"
             ><Pencil /></button>
             <button
+              v-if="entry.find"
+              type="button"
+              class="edit-button"
+              tabindex="-1"
+              title="Find it on this machine, or give its new path"
+              aria-label="Find it on this machine"
+              @click.stop="finding = finding === entry.key ? null : entry.key"
+            ><Search /></button>
+            <button
               v-if="entry.remove"
               type="button"
               class="remove-button"
@@ -504,6 +543,13 @@ onUnmounted(revokeThumbnails)
               @click.stop="emit('remove-from-history', entry.key.slice('recent:'.length))"
             ><X /></button>
           </div>
+          <MovedSpaceFinder
+            v-if="entry.find && finding === entry.key"
+            :from="entry.find.from"
+            :identity="entry.find.identity"
+            @use="(to, identity) => relocate(entry.find!.from, to, identity)"
+          />
+          </template>
         </div>
         <p v-else class="empty-state">{{ section.empty }}</p>
       </section>

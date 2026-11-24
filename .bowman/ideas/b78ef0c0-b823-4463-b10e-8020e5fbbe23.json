@@ -5,15 +5,24 @@
   "archived": false,
   "color": "#323e69",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "f05d525c-9c93-4eb2-82f0-8352b735c52b",
+      "relativePosition": [
+        3.37,
+        1.64
+      ],
+      "weight": 1
+    }
+  ],
   "supportedIdeas": [
     "ccd6b576-fc66-4b76-bdf3-dc130d898037"
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Accepted by Felix 2026-11-24. The graph→space rename it waited for is done (41579c29), so it can be built now with the new names.",
-    "date": 1795532213045
+    "state": "implemented",
+    "comment": "Local case (this machine, no accounts) and agents done. Backend: project.discoverLocalProjects reads each space's meta.json (name, repoId) and takes repoId/name filters (matchedBy 'id' = the same space, 'name' = only a suggestion), maxDepth up to 8, limit. Frontend: history entries remember repoId and name once a space has loaded; the Spaces page checks the recent paths on opening, a missing (or failed) one is red and gets a Find button (magnifier). MovedSpaceFinder searches nearby + home 6 levels deep: one id match moves the history entry there and opens it; otherwise it lists the matches (same space / same name) and has a field for the new path; a space there with another id is used only after 'Use it anyway'. MCP: find_spaces_on_disk (local-only), which also points to register_linked_repo targetPath for a moved linked repo. Not done: server checkouts on a server with accounts (follow-up idea). Entries in the history from before this change have no id yet, so for them the search goes by folder name (suggestions) until they are opened once. Evidence: backend test 'finds a moved space by its id; a folder of the same name is only a suggestion', ProjectSelectionView.spec 2 new cases (found by id → relocated + opened; typed path with another space asks first), project-helpers.spec relocation case, MCP test find_spaces_on_disk; pnpm check 25/25.",
+    "date": 1795537985034
   },
   "intrinsicValue": 0,
   "cost": 2,

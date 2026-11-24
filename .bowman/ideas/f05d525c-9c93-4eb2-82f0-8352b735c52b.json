@@ -1,0 +1,24 @@
+{
+  "id": "f05d525c-9c93-4eb2-82f0-8352b735c52b",
+  "text": "A server checkout whose folder moved: show it as missing and let the server admin point it at the new path",
+  "description": "Follow-up of b78ef0c0, which covered this machine (recent spaces) and agents. On a server with accounts, a space of kind 'checkout' lives at an operator-given path; when that folder moves, the registry (spaces.json) still points at the old one. Proposal: spaces.list marks such a checkout missing (no .bowman at its path); a server admin gets the same finder (search by the space's id, or a typed path) through an admin-only spaces.relocate. Needs the space's repoId in the registry entry (stored when listed while present), since the meta is gone once the folder is.",
+  "archived": false,
+  "color": "#354c6c",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "b78ef0c0-b823-4463-b10e-8020e5fbbe23"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "open",
+    "comment": "Split off 2026-11-24; rare case (admin-added server paths), so not built with the local one.",
+    "date": 1795537994456
+  },
+  "intrinsicValue": 0,
+  "cost": 2,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

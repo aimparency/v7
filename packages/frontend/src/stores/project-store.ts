@@ -2,10 +2,12 @@ import { defineStore } from 'pinia'
 import { isSpaceSlug, type Hint } from 'shared'
 import {
   normalizeProjectPath,
+  relocateProjectInHistory,
   removeProjectFromHistoryEntries,
   setProjectFailureState,
   upsertProjectHistory,
-  type ProjectHistoryEntry
+  type ProjectHistoryEntry,
+  type SpaceIdentity
 } from './ui/project-helpers'
 import { hasAccounts } from '../utils/runtime-config'
 
@@ -85,8 +87,13 @@ export const useProjectStore = defineStore('project', {
       window.history.replaceState({}, '', url)
     },
 
-    addProjectToHistory(path: string) {
-      this.projectHistory = upsertProjectHistory(this.projectHistory, path, Date.now())
+    addProjectToHistory(path: string, identity: SpaceIdentity = {}) {
+      this.projectHistory = upsertProjectHistory(this.projectHistory, path, Date.now(), identity)
+      localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
+    },
+
+    relocateProjectInHistory(from: string, to: string, identity: SpaceIdentity = {}) {
+      this.projectHistory = relocateProjectInHistory(this.projectHistory, from, to, identity)
       localStorage.setItem('aimparency-project-history', JSON.stringify(this.projectHistory))
     },
 

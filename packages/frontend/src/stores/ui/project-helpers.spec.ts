@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import {
   normalizeProjectPath,
+  relocateProjectInHistory,
   removeProjectFromHistoryEntries,
   setProjectFailureState,
   upsertProjectHistory,
@@ -39,5 +40,21 @@ describe('project helpers', () => {
 
     const removed = removeProjectFromHistoryEntries(cleared, '/tmp/demo/.bowman')
     expect(removed).toEqual([{ path: '/other', lastOpened: 2, failedToLoad: false }])
+  })
+
+  it('keeps the space\'s id on reopening, and moves an entry to where its space went', () => {
+    const history: ProjectHistoryEntry[] = [
+      { path: '/a', lastOpened: 1, failedToLoad: true, repoId: 'r', name: 'Kitchen' },
+      { path: '/b', lastOpened: 2, failedToLoad: false }
+    ]
+    expect(upsertProjectHistory(history, '/a', 5)[0]).toEqual({ path: '/a', lastOpened: 5, failedToLoad: false, repoId: 'r', name: 'Kitchen' })
+
+    const moved = relocateProjectInHistory(history, '/a', '/archive/a', { repoId: 'r', name: 'Kitchen' })
+    expect(moved).toEqual([
+      { path: '/archive/a', lastOpened: 1, failedToLoad: false, repoId: 'r', name: 'Kitchen' },
+      { path: '/b', lastOpened: 2, failedToLoad: false }
+    ])
+    // Moved onto a path the history knows already: that older entry goes.
+    expect(relocateProjectInHistory(history, '/a', '/b').map(entry => entry.path)).toEqual(['/b'])
   })
 })
