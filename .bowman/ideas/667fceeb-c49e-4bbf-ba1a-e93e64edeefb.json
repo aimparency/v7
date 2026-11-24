@@ -1,0 +1,24 @@
+{
+  "id": "667fceeb-c49e-4bbf-ba1a-e93e64edeefb",
+  "text": "Space settings: Enter saves and closes from any field, like Edit Idea; space list pencil only for folder paths",
+  "description": "Felix 2026-11-24: \"enter in space settings name should close and save. Not only in name. Make behavior similar to edit aim. edit aim is the vorbild. Don't offer edit button for space list where it does not make sense. I think it makes sense only for local path spaces.\" Follows c12eff30 (Esc and close button in modals).",
+  "archived": false,
+  "color": "#2d6d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "bd292a4b-146a-43fe-afc9-2c66be52c199"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "implemented",
+    "comment": "50b77f9b. ProjectSettingsModal now uses FormModalShell with @confirm=save: Enter in an input/select/checkbox (Ctrl/Cmd+Enter in a textarea) saves and closes, same as Edit Idea; fields with an Enter action of their own (slug, add person, note writer, link by address, import issues) use .prevent so they keep it. Duplicate overlay/header/footer CSS removed. Space list: Entry.edit only on folder-path entries (recent path, nearby); server and deleted spaces show no pencil, e there only focuses the box. Other modals checked: the rest with fields are native forms (Enter submits) or have no fields. Evidence: ProjectSettingsModal.spec +2 (Enter in subtitle saves+closes; Enter in issue field doesn't save) 8/8, ProjectSelectionView.spec +1 (no pencil for server spaces) 25/25, App/FormModalShell/modal-helpers specs green, vue-tsc clean. Specs need NODE_OPTIONS=--no-experimental-webstorage under Node 26. Not tried by hand in the browser.",
+    "date": 1795552881677
+  },
+  "intrinsicValue": 0,
+  "cost": 1,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}
