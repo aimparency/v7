@@ -1,0 +1,23 @@
+{
+  "id": "9a1c9493-e0e9-4635-99fd-52b002f38040",
+  "text": "Option: nothing feels slow any more; settle the loading-performance idea",
+  "archived": false,
+  "color": "#492d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Close it without changes.",
+    "date": 1795540678715
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

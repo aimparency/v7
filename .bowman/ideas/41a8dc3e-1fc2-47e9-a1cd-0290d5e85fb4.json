@@ -1,0 +1,23 @@
+{
+  "id": "41a8dc3e-1fc2-47e9-a1cd-0290d5e85fb4",
+  "text": "Option: the first open of a space until the graph shows is what feels slow (then load descriptions and status comments on demand)",
+  "archived": false,
+  "color": "#2d5766",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "About half of the 1.4 MB transfer is text the canvas doesn't draw.",
+    "date": 1795540667195
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

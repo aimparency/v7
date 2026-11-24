@@ -1,0 +1,23 @@
+{
+  "id": "151cca32-2def-4cd6-98ef-0227e348e9f6",
+  "text": "Option: the graph moving until it settles is what feels slow (then tune the force simulation)",
+  "archived": false,
+  "color": "#2d4d66",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "One browser trace first, then change the simulation.",
+    "date": 1795540678537
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

@@ -1,0 +1,23 @@
+{
+  "id": "d481e2cb-94dd-46c2-ae54-611798c072bd",
+  "text": "Option: switching between spaces is what feels slow",
+  "archived": false,
+  "color": "#2d663a",
+  "tags": [],
+  "supportingConnections": [],
+  "supportedIdeas": [
+    "c91747e6-c112-411f-8784-43a549470957"
+  ],
+  "committedIn": [],
+  "status": {
+    "state": "ai-proposition",
+    "comment": "Then trace one switch.",
+    "date": 1795540678633
+  },
+  "intrinsicValue": 0,
+  "cost": 0.5,
+  "selfWeight": 1,
+  "duration": 1,
+  "costVariance": 0,
+  "valueVariance": 0
+}

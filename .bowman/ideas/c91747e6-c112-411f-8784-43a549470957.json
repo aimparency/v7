@@ -30,6 +30,38 @@
       ],
       "weight": 1,
       "hypothesis": "Most of the remaining built-app delay sits in one stage between data arrival and paint; measuring the stages finds it. Refuted if the time spreads evenly with no stage over ~30%."
+    },
+    {
+      "ideaId": "41a8dc3e-1fc2-47e9-a1cd-0290d5e85fb4",
+      "relativePosition": [
+        -3.73,
+        0.36
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "151cca32-2def-4cd6-98ef-0227e348e9f6",
+      "relativePosition": [
+        -3.49,
+        1.38
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "d481e2cb-94dd-46c2-ae54-611798c072bd",
+      "relativePosition": [
+        1.73,
+        3.33
+      ],
+      "weight": 1
+    },
+    {
+      "ideaId": "9a1c9493-e0e9-4635-99fd-52b002f38040",
+      "relativePosition": [
+        0.86,
+        3.65
+      ],
+      "weight": 1
     }
   ],
   "supportedIdeas": [
@@ -40,7 +72,7 @@
   ],
   "status": {
     "state": "unclear",
-    "comment": "Measured 2026-11-22 on this repo (951 ideas), backend in-process via appRouter: project.loadIdeas 150-180 ms, returning 1.44 MB; phase.list ~30 ms; getMeta 1.5 s on the first call (cold start), 2 ms after. Of the 1.5 MB of idea files, status comments are 469 KB, descriptions 315 KB, connections 182 KB: about half the transfer is text the canvas does not draw. So the backend is not the slow part; transfer of 1.4 MB over the WebSocket and client work (value calculation, graph layout settling) are the candidates, which only a browser trace shows (perfLog already logs data.loadProject:start/done).\n\nQuestion for Felix: what feels slow: (a) first open of a space until the graph shows, (b) the graph moving until it settles, (c) switching between spaces, or (d) something else? With (a) the likely step is loading descriptions and status comments on demand (halves the transfer); with (b) the force simulation; then I'd take one browser trace to confirm before changing anything.",
+    "comment": "Measured 2026-11-22 on this repo (951 ideas), backend in-process: project.loadIdeas 150-180 ms returning 1.44 MB; phase.list ~30 ms; getMeta 1.5 s cold, 2 ms after. About half of the transfer is text the canvas does not draw (status comments 469 KB, descriptions 315 KB). The backend is not the slow part; transfer and client work (value calculation, layout settling) are the candidates, which only a browser trace shows.\n\nFelix: what feels slow? Pick an option (number key in the inbox). Then I take one browser trace before changing anything.",
     "date": 1795380006482
   },
   "intrinsicValue": 0,
