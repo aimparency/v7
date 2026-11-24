@@ -1,4 +1,5 @@
 import { calculateIdeaValues, defaultIdeaCost, resolveWorkPhase, selectWorkCandidates, whatIf, type Phase, type WhatIfChange } from "shared";
+import { linkedSpaceCandidates } from "./linked-ranking.js";
 import { SPACE_TOOL_PROPERTY } from "../constants.js";
 import { countIdeaReferences } from "../reconcile.js";
 import type { ToolDefinition } from "./types.js";
@@ -16,6 +17,7 @@ export const navigationTools: ToolDefinition[] = [
         space: SPACE_TOOL_PROPERTY,
         phaseId: { type: "string" },
         limit: { type: "number" },
+        descend: { type: "boolean", description: "Also rank the open leaf ideas of the spaces that contribute to this one (linked repos checked out here), on this space's value scale: fromLinkedSpaces, and mergedTop with both. Default false" },
       },
       required: ["space"],
     },
@@ -101,6 +103,21 @@ export const navigationTools: ToolDefinition[] = [
         ? await ideaContext(trpcClient, args.space as string, prioritized[0].id, allIdeas).catch(() => undefined)
         : undefined
 
+      // One level down into contributing spaces, on this space's scale (linked-ranking.ts).
+      const costUnit = projectMeta?.costUnit || "abstract units";
+      const linked = args.descend
+        ? await linkedSpaceCandidates(trpcClient, args.space as string, allIdeas, values, totalIntrinsic, costUnit)
+        : undefined;
+      const limit = (args.limit as number) || 10;
+      const linkedSection = linked ? {
+        fromLinkedSpaces: linked.candidates.slice(0, limit).map((c) => ({ ...c, priority: fmt(c.priority), flowedValue: fmt(c.flowedValue), aggregatedCost: fmt(c.aggregatedCost) })),
+        linkedSpaceNotes: linked.notes.length ? linked.notes : undefined,
+        mergedTop: [
+          ...prioritized.map((a) => ({ id: a.id, text: a.text, priority: a._priority, space: "this space" })),
+          ...linked.candidates.map((c) => ({ id: c.id, text: c.text, priority: c.priority, space: c.space.name })),
+        ].sort((a, b) => b.priority - a.priority).slice(0, limit).map((entry) => ({ ...entry, priority: fmt(entry.priority) })),
+      } : {};
+
       // Build phase path for context
       const phasePath: string[] = [];
       for (let cur: Phase | undefined = targetPhase; cur; cur = cur.parent ? phaseById.get(cur.parent) : undefined) {
@@ -165,6 +182,7 @@ export const navigationTools: ToolDefinition[] = [
                 rawCost: a.cost,
                 status: a.status?.state,
               })),
+              ...linkedSection,
               topIdeaContext,
             }, null, 2),
           },

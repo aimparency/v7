@@ -191,3 +191,32 @@ test('find_spaces_on_disk finds a moved space by its id; a name only suggests', 
   const listed = JSON.parse((await server.callTool('find_spaces_on_disk', { space: ctx.projectPath, roots: [root], maxDepth: 0 })).content[0].text);
   assert.deepEqual(listed.spaces, [{ path: root, name: 'Ways of Will', repoId, ideas: 0, open: 0, linked: true }]);
 });
+
+test('get_prioritized_ideas descends into a linked space on this space\'s value scale', async () => {
+  const server = makeServer();
+  const open = () => ({ state: 'open', comment: '', date: Date.now() });
+  const root = await caller.idea.createFloatingIdea({ space: ctx.projectPath, idea: { text: 'Top root', intrinsicValue: 100, status: open() } });
+  await server.callTool('register_linked_repo', { space: ctx.projectPath, targetPath: targetCtx.projectPath });
+  const repoId = JSON.parse((await server.callTool('list_linked_repos', { space: ctx.projectPath })).content[0].text)[0].repoId;
+  await server.callTool('link_repo', { space: ctx.projectPath, ideaId: root.id, repoId });
+
+  const theirRoot = await caller.idea.createFloatingIdea({ space: targetCtx.projectPath, idea: { text: 'Their root', intrinsicValue: 10, status: open() } });
+  const theirLeaf = await caller.idea.createFloatingIdea({ space: targetCtx.projectPath, idea: { text: 'Their leaf', status: open(), cost: 2 } });
+  await caller.idea.connectIdeas({ space: targetCtx.projectPath, parentIdeaId: theirRoot.id, childIdeaId: theirLeaf.id });
+  // Both roots pass on all they get (no loop share), so the scaling shows plainly.
+  await caller.idea.update({ space: ctx.projectPath, ideaId: root.id, idea: { selfWeight: 0 } });
+  await caller.idea.update({ space: targetCtx.projectPath, ideaId: theirRoot.id, idea: { selfWeight: 0 } });
+
+  const phase = await caller.phase.create({ space: ctx.projectPath, phase: { name: 'Now' } });
+  await caller.idea.commitToPhase({ space: ctx.projectPath, ideaId: root.id, phaseId: phase.id });
+
+  const plain = JSON.parse((await server.callTool('get_prioritized_ideas', { space: ctx.projectPath, phaseId: phase.id })).content[0].text);
+  assert.equal(plain.fromLinkedSpaces, undefined, 'only on request');
+
+  const result = JSON.parse((await server.callTool('get_prioritized_ideas', { space: ctx.projectPath, phaseId: phase.id, descend: true })).content[0].text);
+  const leaf = result.fromLinkedSpaces.find((entry: any) => entry.id === theirLeaf.id);
+  assert.equal(leaf.space.name, 'Ways of Will');
+  assert.ok(Math.abs(Number(leaf.flowedValue) - 100) < 1e-6, `all 100 flowing into their node reach their leaf, got ${leaf.flowedValue}`);
+  assert.ok(!result.fromLinkedSpaces.some((entry: any) => entry.id === theirRoot.id), 'a parent with an open child is no leaf');
+  assert.ok(result.mergedTop.some((entry: any) => entry.id === theirLeaf.id && entry.space === 'Ways of Will'));
+});
