@@ -65,12 +65,28 @@ export function priceUsage(byModel, prices) {
 
 const IDEA_FILE = /^\.bowman\/ideas\/([0-9a-f-]{36})\.json$/;
 
-/** Ideas whose files changed since `since` (ISO time): in commits and in the working tree. */
+/**
+ * Ideas the turn changed since `since` (ISO time): their files differ from the
+ * state at that time, in commits or in the working tree. A change of
+ * realizedCostUsd alone is this recorder's own write, not the turn's work.
+ */
 export function changedIdeas(repoRoot, since) {
-  const git = (...args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' });
+  const git = (...args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
   const committed = git('log', `--since=${since}`, '--name-only', '--format=', '--', '.bowman/ideas').split('\n');
   const working = git('status', '--porcelain', '--untracked-files=all', '--', '.bowman/ideas').split('\n').map(line => line.slice(3));
-  return [...new Set([...committed, ...working].map(file => IDEA_FILE.exec(file.trim())?.[1]).filter(Boolean))];
+  const candidates = [...new Set([...committed, ...working].map(file => file.trim()).filter(file => IDEA_FILE.test(file)))];
+  const before = git('rev-list', '-1', `--before=${since}`, 'HEAD').trim();
+  const withoutCost = (text) => {
+    try {
+      const { realizedCostUsd: _cost, ...rest } = JSON.parse(text);
+      return JSON.stringify(rest);
+    } catch {
+      return text;
+    }
+  };
+  const read = (file) => { try { return fs.readFileSync(path.join(repoRoot, file), 'utf8'); } catch { return ''; } };
+  const earlier = (file) => { try { return before ? git('show', `${before}:${file}`) : ''; } catch { return ''; } };
+  return candidates.filter(file => withoutCost(read(file)) !== withoutCost(earlier(file))).map(file => IDEA_FILE.exec(file)[1]);
 }
 
 async function main() {

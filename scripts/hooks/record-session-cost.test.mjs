@@ -40,6 +40,10 @@ test('the ideas a turn changed: committed since the last stop, and in the workin
   try {
     assert.deepEqual(changedIdeas(repo, new Date(Date.now() - 3_600_000).toISOString()).sort(), [committed, uncommitted]);
     assert.deepEqual(changedIdeas(repo, new Date(Date.now() + 3_600_000).toISOString()), [uncommitted], 'commits before the last stop do not count');
+    // The recorder's own write (realizedCostUsd only) is no work of the turn.
+    const later = new Date(Date.now() + 3_600_000).toISOString();
+    fs.writeFileSync(path.join(repo, '.bowman', 'ideas', `${committed}.json`), JSON.stringify({ realizedCostUsd: 0.5 }));
+    assert.deepEqual(changedIdeas(repo, later), [uncommitted]);
   } finally {
     fs.rmSync(repo, { recursive: true, force: true });
   }
