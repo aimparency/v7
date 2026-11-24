@@ -5,7 +5,17 @@
   "archived": false,
   "color": "#2d3c66",
   "tags": [],
-  "supportingConnections": [],
+  "supportingConnections": [
+    {
+      "ideaId": "5c1ccaa8-3b38-42f0-90e5-7392084e38c4",
+      "relativePosition": [
+        2.05,
+        -3.14
+      ],
+      "weight": 1,
+      "hypothesis": "Interest compounding is a small second factor (≤5% before 6 months) on the same per-commit dated costs; building both in one 'cost in today's money' function costs barely more than this one alone"
+    }
+  ],
   "supportedIdeas": [
     "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
   ],
@@ -17,9 +27,9 @@
   },
   "intrinsicValue": 0,
   "cost": 3,
+  "realizedCostUsd": 0.479458,
   "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "realizedCostUsd": 0.479458
+  "valueVariance": 0
 }

@@ -7,19 +7,20 @@
   "tags": [],
   "supportingConnections": [],
   "supportedIdeas": [
-    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9"
+    "b2a7c3cf-224a-4933-bcae-fd99e85d38e9",
+    "760d59dd-08ac-4485-b476-61026d8ff281"
   ],
   "committedIn": [],
   "status": {
     "state": "open",
-    "comment": "Design note 2026-11-24 after 675fce29/2b55e8c3: realizedCostUsd is a running nominal sum without dates (git is the history, no arrays in .bowman). Compounding therefore reads the dates from git: each commit that raised an idea's realizedCostUsd gives (commit time, increase), and cost_today = Σ increase · (1 + r)^(days/365) with r = ANNUAL_DISCOUNT_RATE. Increases not yet committed count as today. Cheap to compute per idea with `git log -p --follow` on its file; for the calibration script, once per idea. Ready to build once a few ideas carry realizedCostUsd (the hook records from now on).",
+    "comment": "Modelled 2026-11-24 (before building): 21 ideas carry realizedCostUsd, the oldest from 2026-11-08, so the data spans ~16 days. At r = 10%/yr compounding multiplies a cost by 1.0042 at 16 days, 1.0079 at 30, 1.049 at 6 months, 1.10 at a year: far below the spread of the cost estimates it would be compared with. The opposite pull, the intelligence-growth discount (760d59dd), is 10-100x larger at every age (g=4/yr: ×0.94 at 16 days, ×0.50 at 6 months; g=10: ×0.90, ×0.32). Decision (reversible): don't build interest compounding on its own yet; build it as the second factor inside 760d59dd's one 'cost in today's money' function, cost_today = cost_then · (1+r)^(t) · g^(−t), so both share the git-date lookup from the design note above. Hypothesis that could fail: until the oldest realized cost is ~6 months old, compounding changes no idea's priority rank.",
     "date": 1795472023532
   },
   "intrinsicValue": 0,
   "cost": 2,
+  "realizedCostUsd": 0.22438,
   "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,
-  "valueVariance": 0,
-  "realizedCostUsd": 0.22438
+  "valueVariance": 0
 }
