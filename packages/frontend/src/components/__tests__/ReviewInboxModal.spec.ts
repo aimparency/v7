@@ -103,7 +103,7 @@ describe('ReviewInboxModal', () => {
     expect(texts()).toEqual(['done', 'question'])
 
     await button('human-dependent').trigger('click')
-    await button('chronological').trigger('click')
+    await button('by plan').trigger('click')
     expect(texts()).toEqual(['done', 'blocked', 'question'])
 
     press('j')

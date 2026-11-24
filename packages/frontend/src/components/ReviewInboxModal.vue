@@ -24,7 +24,10 @@ const shownStates = ref<string[]>([...AWAITING_HUMAN_STATES])
 // Chronological: in the order the ideas first appear in the phases.
 const ORDERS = ['priority', 'chronological'] as const
 const order = ref<(typeof ORDERS)[number]>('priority')
-const view = ref<'cards' | 'list'>('cards')
+const ORDER_LABELS = { priority: 'by priority', chronological: 'by plan' } as const
+const ORDER_TITLES = { priority: 'Highest calculated priority first', chronological: 'In the order the ideas first appear in the phases' } as const
+const VIEWS = ['cards', 'list'] as const
+const view = ref<(typeof VIEWS)[number]>('cards')
 const selectedIndex = ref(0)
 // Past the last card: everything was decided or put off for later.
 const finished = ref(false)
@@ -196,21 +199,39 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
   >
     <div id="review-inbox">
       <div class="filters">
-        <button
-          v-for="state in AWAITING_HUMAN_STATES"
-          :key="state"
-          :class="{ active: shownStates.includes(state) }"
-          @click="toggleState(state)"
-        >{{ state }} {{ countOf(state) }}</button>
-        <span class="order">
+        <div class="states" role="group" aria-label="Show">
           <button
-            v-for="option in ORDERS"
-            :key="option"
-            :class="{ active: order === option }"
-            @click="order = option"
-          >{{ option }}</button>
-          <button class="view" title="Cards or list (Tab)" @click="toggleView">{{ view === 'cards' ? 'list' : 'cards' }}</button>
-        </span>
+            v-for="state in AWAITING_HUMAN_STATES"
+            :key="state"
+            class="chip"
+            :class="{ on: shownStates.includes(state) }"
+            :aria-pressed="shownStates.includes(state)"
+            :title="shownStates.includes(state) ? `Hide ${state}` : `Show ${state}`"
+            @click="toggleState(state)"
+          ><span class="dot" :style="{ background: statusColor(state) }" />{{ state }} <span class="count">{{ countOf(state) }}</span></button>
+        </div>
+        <div class="settings">
+          <span class="segmented" role="group" aria-label="Order">
+            <button
+              v-for="option in ORDERS"
+              :key="option"
+              :class="{ on: order === option }"
+              :aria-pressed="order === option"
+              :title="ORDER_TITLES[option]"
+              @click="order = option"
+            >{{ ORDER_LABELS[option] }}</button>
+          </span>
+          <span class="segmented" role="group" aria-label="View (Tab)">
+            <button
+              v-for="option in VIEWS"
+              :key="option"
+              :class="{ on: view === option }"
+              :aria-pressed="view === option"
+              title="Cards or list (Tab)"
+              @click="view !== option && toggleView()"
+            >{{ option }}</button>
+          </span>
+        </div>
       </div>
 
       <p v-if="entries.length === 0" class="empty">Nothing is waiting on you.</p>
@@ -297,15 +318,45 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
     border-radius: 4px;
     padding: 0.2rem 0.6rem;
     cursor: pointer;
-
-    &.active { border-color: #007acc; background: #333; }
   }
 
   & .filters {
     display: flex;
-    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    gap: 0.5rem;
 
-    & .order { display: flex; gap: 0.4rem; margin-left: auto; }
+    & .states, & .settings { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+    & button { white-space: nowrap; }
+
+    /* States: independent toggles; an off state is dimmed with a hollow dot. */
+    & .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      border-radius: 999px;
+      opacity: 0.45;
+
+      & .dot { width: 0.55rem; height: 0.55rem; border-radius: 50%; }
+      & .count { color: #aaa; }
+      &.on { opacity: 1; background: #333; border-color: #666; }
+      &:not(.on) .dot { background: transparent !important; box-shadow: inset 0 0 0 1px #888; }
+    }
+
+    /* Order and view: one of each, as joined buttons. */
+    & .segmented {
+      display: inline-flex;
+
+      & button {
+        border-radius: 0;
+        color: #aaa;
+
+        &:first-child { border-radius: 4px 0 0 4px; }
+        &:last-child { border-radius: 0 4px 4px 0; }
+        & + button { border-left: none; }
+        &.on { color: inherit; background: #3a3a3a; }
+      }
+    }
   }
 
   & .card {
