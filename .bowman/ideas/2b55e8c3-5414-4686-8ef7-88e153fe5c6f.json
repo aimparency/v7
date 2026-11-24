@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Found by Claude while settling 675fce29; not yet discussed with Felix.",
-    "date": 1795538628240
+    "state": "implemented",
+    "comment": "scripts/hooks/record-session-cost.mjs, started by the Stop hook in the background (from the Aimparency checkout named in continue-hook-default, so installed hooks follow updates; never blocks or fails the hook). Per Stop: transcript lines since the last Stop of that session (offset in .bowman/runtime/session-costs.json), usage per model with each API message counted once (by message.id), priced from .bowman/harness.json prices; cache writes split into 5-minute and 1-hour by the transcript's cache_creation; a model without a complete price is logged as unpriced and nothing is recorded. The cost goes evenly to the ideas whose files changed since the last Stop (commits since then + working tree incl. untracked) via POST /idea.addRealizedCost; a log line per Stop in .bowman/runtime/session-costs.log. Prices: harness price schema gained optional cacheReadPerMTok, cacheWritePerMTok, cacheWrite1hPerMTok; .bowman/harness.json has claude-opus-5-5 at $4 in / $20 out / $0.20 cache read / $5 5-min write / $8 1-h write per MTok (from the claude-api reference, cached 2026-11-03). These are API list prices; on a subscription they are the API-equivalent value, not money spent. Evidence: record-session-cost.test.mjs 4/4 (message dedup, 1h split, cache-unpriced stays unknown, changed ideas since a time incl. working tree), hooks contract test PASS, loadHarnessConfig reads the new harness.json, real run on this session: 'claude-opus-5-5 12+3142210r+0w+56422w1h in/4929 out; $1.1784'; pnpm check 25/25. Not yet observed: a Stop that records on a changed idea (the Stop after this commit should put this turn's cost on this idea). Known noise: wrapped agents committing in the same tree within a turn get a share.",
+    "date": 1795539019135
   },
   "intrinsicValue": 0,
   "cost": 2,

@@ -14,6 +14,18 @@ stop_event="$(cat)"
 hook_dir="$(dirname "${BASH_SOURCE[0]}")"
 repo_root="$(git -C "$hook_dir" rev-parse --show-toplevel 2>/dev/null || true)"
 legacy_flag="$(git -C "$hook_dir" rev-parse --path-format=absolute --git-path aimparency-continue-disabled 2>/dev/null || true)"
+
+# What the turn cost goes to the ideas it changed (record-session-cost.mjs from
+# the Aimparency checkout, so it follows updates; in the background, so the hook
+# never waits for it or fails with it).
+cost_recorder="$hook_dir/record-session-cost.mjs"
+if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/continue-hook-default" ]]; then
+  live_recorder="$(dirname "$(head -n 1 "$repo_root/.bowman/runtime/continue-hook-default")")/record-session-cost.mjs"
+  [[ -f "$live_recorder" ]] && cost_recorder="$live_recorder"
+fi
+if [[ -n "$repo_root" && -f "$cost_recorder" ]]; then
+  (printf '%s' "$stop_event" | node "$cost_recorder" "$repo_root" >/dev/null 2>&1 &)
+fi
 if [[ -n "$repo_root" && -e "$repo_root/.bowman/runtime/continue-hook-disabled" ]] || [[ -n "$legacy_flag" && -e "$legacy_flag" ]]; then
   printf '{"continue":true}\n'
   exit 0

@@ -57,7 +57,12 @@ export const harnessConfigSchema = z.object({
   /** USD per million tokens, keyed by model id as configured in loops.json. */
   prices: z.record(z.string(), z.object({
     inputPerMTok: z.number().min(0),
-    outputPerMTok: z.number().min(0)
+    outputPerMTok: z.number().min(0),
+    // Prompt caching (read by the Stop hook's session cost, scripts/hooks/record-session-cost.mjs):
+    // reading cached input, writing it for 5 minutes, writing it for 1 hour.
+    cacheReadPerMTok: z.number().min(0).optional(),
+    cacheWritePerMTok: z.number().min(0).optional(),
+    cacheWrite1hPerMTok: z.number().min(0).optional()
   }).strict()).default({}),
   budgets: z.object({
     /** Once a cycle has used this many tokens, it starts no further stage. */

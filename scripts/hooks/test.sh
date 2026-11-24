@@ -194,4 +194,6 @@ AIMPARENCY_PROJECT="$WORKER_PROJECT" \
   "$REPO_DIR/packages/wrapped-agents/common/hooks/wrapped-worker-halt-notify.sh" 2>/dev/null
 [[ ! -s "$TEST_ROOT/curl.log" ]]
 
+node --test "$REPO_DIR/scripts/hooks/record-session-cost.test.mjs" >/dev/null
+
 echo "Aimparency Codex continuation hook contract: PASS"

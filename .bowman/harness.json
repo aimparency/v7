@@ -1,0 +1,11 @@
+{
+  "prices": {
+    "claude-opus-5-5": {
+      "inputPerMTok": 4,
+      "outputPerMTok": 20,
+      "cacheReadPerMTok": 0.2,
+      "cacheWritePerMTok": 5,
+      "cacheWrite1hPerMTok": 8
+    }
+  }
+}
