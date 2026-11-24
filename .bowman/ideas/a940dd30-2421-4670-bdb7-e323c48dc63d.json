@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Accepted by Felix 2026-11-23 in this shape (no new field).",
-    "date": 1795472031426
+    "state": "implemented",
+    "comment": "2026-11-24, Felix asked for 'tinder-like' deciding: 1–4, a number key decides and shows the next. Built: the ⧗ inbox opens in card view, one waiting idea at a time (review, human-dependent, unclear, and standalone ai-propositions; a proposal under a waiting idea is one of its options instead). Numbered options: its ai-proposition children first (choosing opens it, cancels the other proposals, hands the idea back as open with 'Chosen: …' before the old comment), then per state: review Accept / Send back… / Drop; human-dependent Done, I did it / Answer… / Drop; unclear Answer… / Drop; proposal Take it up / Answer… / Drop. Space/→ later, ← back, u undo, e edit, Tab list view. URLs in status comment and description are clickable. The MCP state description tells agents to put each answer as an ai-proposition child (packages/mcp/src/constants.ts). Code: utils/decision-options.ts, utils/link-parts.ts, utils/review-inbox.ts, components/ReviewInboxModal.vue. Verified: frontend tests 160/160 across utils, App and the inbox spec (card flow, typed answer with number keys ignored while typing, undo, list view); vue-tsc clean. Not tried in the browser yet. File paths in comments are not clickable (only web links).",
+    "date": 1795509255872
   },
   "intrinsicValue": 0,
   "cost": 2,

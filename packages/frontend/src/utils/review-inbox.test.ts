@@ -9,7 +9,7 @@ const phase = (id: string, commitments: string[], childPhaseIds: string[] = []) 
   ({ id, name: id, parent: null, commitments, childPhaseIds }) as Phase
 
 describe('rankIdeasAwaitingHuman', () => {
-  it('lists review and human-dependent ideas by calculated priority, skipping the rest', () => {
+  it('lists review, human-dependent and unclear ideas by calculated priority, skipping the rest', () => {
     const ideas = Object.fromEntries([
       idea('low-review', 'review'),
       idea('high-blocked', 'human-dependent'),
@@ -22,8 +22,18 @@ describe('rankIdeasAwaitingHuman', () => {
 
     const ranked = rankIdeasAwaitingHuman(ideas, priorities)
 
-    expect(ranked.map(entry => entry.idea.id)).toEqual(['high-blocked', 'low-review', 'unranked-review'])
+    expect(ranked.map(entry => entry.idea.id)).toEqual(['high-blocked', 'low-review', 'question', 'unranked-review'])
     expect(ranked[0]!.priority).toBe(3)
+  })
+
+  it('shows a proposal on its own card only when its parent does not wait on the human', () => {
+    const ideas = Object.fromEntries([
+      { ...idea('question', 'unclear'), supportedIdeas: [] },
+      { ...idea('option', 'ai-proposition'), supportedIdeas: ['question'] },
+      { ...idea('work', 'open'), supportedIdeas: [] },
+      { ...idea('proposal', 'ai-proposition'), supportedIdeas: ['work'] }
+    ].map(entry => [entry.id, entry]))
+    expect(rankIdeasAwaitingHuman(ideas, new Map()).map(entry => entry.idea.id)).toEqual(['proposal', 'question'])
   })
 
   it('can narrow to one state', () => {

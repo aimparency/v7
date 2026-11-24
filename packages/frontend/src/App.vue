@@ -672,7 +672,7 @@ onUnmounted(() => {
           <button
             v-if="projectStore.projectPath && dataStore.access.writable"
             class="icon-btn inbox-btn"
-            title="Ideas awaiting your review or decision, by priority"
+            title="Decide what waits on you, one idea at a time"
             @click="showReviewInbox = true"
           >
             <Hourglass /> {{ awaitingHumanCount }}

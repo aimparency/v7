@@ -4,29 +4,40 @@ import FormModalShell from './FormModalShell.vue'
 import { useDataStore } from '../stores/data'
 import { useProjectStore } from '../stores/project-store'
 import { useUIModalStore } from '../stores/ui/modal-store'
-import { AWAITING_HUMAN_STATES, DEFAULT_AWAITING_HUMAN_STATES, firstAppearanceOrder, rankIdeasAwaitingHuman, sortChronologically } from '../utils/review-inbox'
+import { AWAITING_HUMAN_STATES, firstAppearanceOrder, rankIdeasAwaitingHuman, sortChronologically } from '../utils/review-inbox'
+import { decide, decisionOptions, type DecisionOption, type StatusChange } from '../utils/decision-options'
+import { linkParts } from '../utils/link-parts'
 import { formatIdeaPriority } from '../utils/phase-priority'
 import { isReadOnlyError } from '../utils/read-only'
 import { useToastStore } from '../stores/toast'
 import type { IdeaState } from 'shared'
 
+// Everything that waits on the human, one card at a time: a number key picks
+// an option and the next idea comes up. The list view shows them all at once.
 const emit = defineEmits<{ close: [] }>()
 
 const dataStore = useDataStore()
 const projectStore = useProjectStore()
 const modalStore = useUIModalStore()
 
-const shownStates = ref<string[]>([...DEFAULT_AWAITING_HUMAN_STATES])
+const shownStates = ref<string[]>([...AWAITING_HUMAN_STATES])
 // Chronological: in the order the ideas first appear in the phases.
 const ORDERS = ['priority', 'chronological'] as const
 const order = ref<(typeof ORDERS)[number]>('priority')
+const view = ref<'cards' | 'list'>('cards')
 const selectedIndex = ref(0)
-const sendBackReason = ref<string | null>(null)
+// Past the last card: everything was decided or put off for later.
+const finished = ref(false)
+// The option waiting for its text (an answer, what to change), and that text.
+const replying = ref<DecisionOption | null>(null)
+const replyText = ref('')
 const error = ref('')
 const listRef = ref<HTMLElement | null>(null)
-const reasonInput = ref<HTMLInputElement | null>(null)
+const replyInput = ref<HTMLTextAreaElement | null>(null)
+// Each decision's statuses before it, newest last: u takes one back.
+const undoStack = ref<StatusChange[][]>([])
 
-const allEntries = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities, AWAITING_HUMAN_STATES))
+const allEntries = computed(() => rankIdeasAwaitingHuman(dataStore.ideas, dataStore.calculatedPriorities))
 const entries = computed(() => {
   const shown = allEntries.value.filter(entry => shownStates.value.includes(entry.idea.status.state))
   if (order.value === 'priority') return shown
@@ -38,46 +49,87 @@ const toggleState = (state: string) => {
     ? shownStates.value.filter(shown => shown !== state)
     : [...shownStates.value, state]
 }
-const selected = computed(() => entries.value[selectedIndex.value] ?? null)
+const selected = computed(() => finished.value ? null : entries.value[selectedIndex.value] ?? null)
+const options = computed(() => selected.value ? decisionOptions(selected.value.idea, dataStore.ideas) : [])
+const parents = computed(() => (selected.value?.idea.supportedIdeas ?? [])
+  .map(id => dataStore.ideas[id]?.text)
+  .filter((text): text is string => !!text))
 const statusColor = (state: string) => dataStore.getStatuses.find((status: IdeaState) => status.key === state)?.color ?? '#888'
 
-// Deciding removes the idea from the list; stay at the same position.
-watch(entries, list => { selectedIndex.value = Math.min(selectedIndex.value, Math.max(list.length - 1, 0)) })
-watch([shownStates, order], () => { selectedIndex.value = 0 })
+// A decided idea leaves the list, so the same position shows the next one.
+watch(entries, list => {
+  if (selectedIndex.value < list.length) return
+  if (view.value === 'cards' && list.length) finished.value = true
+  selectedIndex.value = Math.max(list.length - 1, 0)
+})
+watch([shownStates, order], () => { selectedIndex.value = 0; finished.value = false })
 watch(selectedIndex, async () => {
   await nextTick()
   listRef.value?.querySelector('.selected')?.scrollIntoView({ block: 'nearest' })
 })
 
-const setStatus = async (state: string, comment: string) => {
-  const idea = selected.value?.idea
-  if (!idea) return
+const apply = async (changes: StatusChange[]) => {
   error.value = ''
+  const before = changes.map(change => ({ ideaId: change.ideaId, status: dataStore.ideas[change.ideaId]!.status }))
   try {
-    await dataStore.updateIdea(projectStore.projectPath, idea.id, { status: { ...idea.status, state, comment } })
+    for (const change of changes) await dataStore.updateIdea(projectStore.projectPath, change.ideaId, { status: change.status })
+    return before
   } catch (failure) {
     if (isReadOnlyError(failure)) useToastStore().error('Cannot change status', failure)
     else error.value = failure instanceof Error ? failure.message : String(failure)
+    return null
   }
 }
 
-// Accepting keeps the status comment: it carries the verification evidence.
-const accept = () => {
-  if (selected.value?.idea.status.state === 'review') void setStatus('implemented', selected.value.idea.status.comment)
+const choose = async (option: DecisionOption | undefined) => {
+  const idea = selected.value?.idea
+  if (!idea || !option) return
+  if (option.kind === 'reply' && replying.value !== option) {
+    replying.value = option
+    replyText.value = ''
+    await nextTick()
+    replyInput.value?.focus()
+    return
+  }
+  const before = await apply(decide(idea, option, dataStore.ideas, replyText.value))
+  if (!before) return
+  undoStack.value.push(before)
+  replying.value = null
 }
-const confirmSendBack = async () => {
-  const reason = sendBackReason.value?.trim()
-  if (!reason) return
-  await setStatus('open', reason)
-  sendBackReason.value = null
+const submitReply = () => {
+  if (replyText.value.trim()) void choose(replying.value ?? undefined)
 }
-const startSendBack = async () => {
-  if (!selected.value) return
-  sendBackReason.value = ''
+
+const undo = async () => {
+  const before = undoStack.value.pop()
+  if (!before || !(await apply(before))) return
   await nextTick()
-  reasonInput.value?.focus()
+  const index = entries.value.findIndex(entry => entry.idea.id === before[0]!.ideaId)
+  if (index >= 0) selectedIndex.value = index
+  finished.value = false
 }
-const open = () => {
+
+const later = () => {
+  if (selectedIndex.value + 1 < entries.value.length) selectedIndex.value++
+  else if (view.value === 'cards') finished.value = true
+}
+const previous = () => {
+  if (finished.value) finished.value = false
+  else selectedIndex.value = Math.max(selectedIndex.value - 1, 0)
+}
+const startOver = () => {
+  selectedIndex.value = 0
+  finished.value = false
+}
+const toggleView = () => {
+  view.value = view.value === 'cards' ? 'list' : 'cards'
+  finished.value = false
+}
+const showCard = (index: number) => {
+  selectedIndex.value = index
+  view.value = 'cards'
+}
+const edit = () => {
   if (selected.value) modalStore.openIdeaEditModal(selected.value.idea.id)
 }
 
@@ -85,22 +137,43 @@ const open = () => {
 const handleKeydown = (event: KeyboardEvent) => {
   if (modalStore.showIdeaEditModal) return
   event.stopPropagation()
-  if (sendBackReason.value !== null) {
-    // Typing the reason: Enter submits the form, Escape abandons it.
+  if (replying.value) {
+    // Typing: Enter sends (Shift+Enter is a new line), Escape abandons it.
     if (event.key === 'Escape') {
       event.preventDefault()
-      sendBackReason.value = null
+      replying.value = null
+    } else if (event.key === 'Enter' && !event.shiftKey) {
+      event.preventDefault()
+      submitReply()
     }
     return
   }
+  if (event.ctrlKey || event.metaKey || event.altKey) return
+  if (view.value === 'cards' && /^[1-9]$/.test(event.key)) {
+    event.preventDefault()
+    if (finished.value) startOver()
+    else void choose(options.value[Number(event.key) - 1])
+    return
+  }
+  const cards: Record<string, () => void> = {
+    ' ': () => finished.value ? startOver() : later(),
+    ArrowRight: later,
+    l: later,
+    ArrowLeft: previous,
+    h: previous
+  }
+  const list: Record<string, () => void> = {
+    j: later,
+    ArrowDown: later,
+    k: previous,
+    ArrowUp: previous,
+    Enter: () => showCard(selectedIndex.value)
+  }
   const actions: Record<string, () => void> = {
-    j: () => { selectedIndex.value = Math.min(selectedIndex.value + 1, entries.value.length - 1) },
-    ArrowDown: () => { selectedIndex.value = Math.min(selectedIndex.value + 1, entries.value.length - 1) },
-    k: () => { selectedIndex.value = Math.max(selectedIndex.value - 1, 0) },
-    ArrowUp: () => { selectedIndex.value = Math.max(selectedIndex.value - 1, 0) },
-    e: open,
-    a: accept,
-    s: startSendBack,
+    ...(view.value === 'cards' ? cards : list),
+    e: edit,
+    u: () => void undo(),
+    Tab: toggleView,
     Escape: () => emit('close')
   }
   const action = actions[event.key]
@@ -117,7 +190,7 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
   <FormModalShell
     :show="true"
     title="Awaiting you"
-    width="min(90vw, 48rem)"
+    width="min(92vw, 48rem)"
     :close-on-escape="false"
     @request-close="emit('close')"
   >
@@ -136,17 +209,50 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
             :class="{ active: order === option }"
             @click="order = option"
           >{{ option }}</button>
+          <button class="view" title="Cards or list (Tab)" @click="toggleView">{{ view === 'cards' ? 'list' : 'cards' }}</button>
         </span>
       </div>
 
       <p v-if="entries.length === 0" class="empty">Nothing is waiting on you.</p>
-      <ol v-else ref="listRef">
+
+      <template v-else-if="view === 'cards'">
+        <div v-if="finished" class="card finished">
+          <p>That was all {{ entries.length }} still waiting.</p>
+          <button @click="startOver">Start over <kbd>Space</kbd></button>
+        </div>
+        <div v-else-if="selected" class="card">
+          <div class="card-meta">
+            <span class="state" :style="{ color: statusColor(selected.idea.status.state) }">{{ selected.idea.status.state }}</span>
+            <span class="priority">priority {{ formatIdeaPriority(selected.priority) }}</span>
+            <span class="position">{{ selectedIndex + 1 }} / {{ entries.length }}</span>
+          </div>
+          <p v-if="parents.length" class="parents">for {{ parents.join(' · ') }}</p>
+          <h3 @dblclick="edit">{{ selected.idea.text || '(untitled)' }}</h3>
+          <p v-if="selected.idea.status.comment" class="comment"><template v-for="(part, index) in linkParts(selected.idea.status.comment)" :key="index"><a v-if="part.href" :href="part.href" target="_blank" rel="noopener">{{ part.text }}</a><template v-else>{{ part.text }}</template></template></p>
+          <details v-if="selected.idea.description">
+            <summary>Description</summary>
+            <p class="description"><template v-for="(part, index) in linkParts(selected.idea.description)" :key="index"><a v-if="part.href" :href="part.href" target="_blank" rel="noopener">{{ part.text }}</a><template v-else>{{ part.text }}</template></template></p>
+          </details>
+
+          <ol class="options">
+            <li v-for="(option, index) in options" :key="index" :class="[option.kind, { active: replying === option }]">
+              <button @click="choose(option)"><kbd>{{ index + 1 }}</kbd> {{ option.label }}</button>
+            </li>
+          </ol>
+          <form v-if="replying" class="reply" @submit.prevent="submitReply">
+            <textarea ref="replyInput" v-model="replyText" rows="3" :placeholder="replying.kind === 'reply' ? replying.placeholder : ''" />
+            <button type="submit" :disabled="!replyText.trim()">Send <kbd>Enter</kbd></button>
+          </form>
+        </div>
+      </template>
+
+      <ol v-else ref="listRef" class="list">
         <li
           v-for="(entry, index) in entries"
           :key="entry.idea.id"
           :class="{ selected: index === selectedIndex }"
           @click="selectedIndex = index"
-          @dblclick="open"
+          @dblclick="showCard(index)"
         >
           <span class="priority">{{ formatIdeaPriority(entry.priority) }}</span>
           <span class="state" :style="{ color: statusColor(entry.idea.status.state) }">{{ entry.idea.status.state }}</span>
@@ -157,17 +263,21 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
         </li>
       </ol>
 
-      <form v-if="sendBackReason !== null" class="send-back" @submit.prevent="confirmSendBack">
-        <input ref="reasonInput" v-model="sendBackReason" placeholder="What still needs to change?" />
-        <button type="submit" :disabled="!sendBackReason.trim()">Send back</button>
-      </form>
       <p v-if="error" class="error">{{ error }}</p>
 
       <div class="keys">
-        <span><kbd>j</kbd>/<kbd>k</kbd> move</span>
+        <template v-if="view === 'cards'">
+          <span><kbd>1</kbd>–<kbd>9</kbd> decide</span>
+          <span><kbd>Space</kbd>/<kbd>→</kbd> later</span>
+          <span><kbd>←</kbd> back</span>
+        </template>
+        <template v-else>
+          <span><kbd>j</kbd>/<kbd>k</kbd> move</span>
+          <span><kbd>Enter</kbd> decide</span>
+        </template>
         <span><kbd>e</kbd> edit</span>
-        <span :class="{ unavailable: selected?.idea.status.state !== 'review' }"><kbd>a</kbd> accept</span>
-        <span><kbd>s</kbd> send back</span>
+        <span :class="{ unavailable: !undoStack.length }"><kbd>u</kbd> undo</span>
+        <span><kbd>Tab</kbd> {{ view === 'cards' ? 'list' : 'cards' }}</span>
         <span><kbd>Esc</kbd> close</span>
       </div>
     </div>
@@ -180,25 +290,79 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
   flex-direction: column;
   gap: 0.75rem;
 
+  & button {
+    color: inherit;
+    background: #2a2a2a;
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 0.2rem 0.6rem;
+    cursor: pointer;
+
+    &.active { border-color: #007acc; background: #333; }
+  }
+
   & .filters {
     display: flex;
     gap: 0.4rem;
 
-    & button {
-      color: inherit;
-      background: #2a2a2a;
-      border: 1px solid #444;
-      border-radius: 4px;
-      padding: 0.2rem 0.6rem;
-      cursor: pointer;
-
-      &.active { border-color: #007acc; background: #333; }
-    }
-
     & .order { display: flex; gap: 0.4rem; margin-left: auto; }
   }
 
-  & ol {
+  & .card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    min-height: 18rem;
+    max-height: 65vh;
+    overflow-y: auto;
+
+    & .card-meta {
+      display: flex;
+      gap: 1rem;
+      font-size: var(--font-size-small);
+      color: #aaa;
+
+      & .position { margin-left: auto; }
+    }
+
+    & h3 { margin: 0; font-size: var(--font-size-title); }
+    & .parents { margin: 0; font-size: var(--font-size-small); color: #aaa; }
+    & .comment, & .description { margin: 0; white-space: pre-wrap; }
+    & details { color: #ccc; }
+    & summary { cursor: pointer; color: #aaa; }
+
+    &.finished { align-items: center; justify-content: center; }
+  }
+
+  & .options {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+
+    & button {
+      width: 100%;
+      text-align: left;
+      padding: 0.4rem 0.6rem;
+
+      &:hover { border-color: #888; }
+    }
+
+    & .choose button { border-color: #c4a7e7; }
+    & .active button { border-color: #007acc; }
+  }
+
+  & .reply {
+    display: flex;
+    gap: 0.4rem;
+    align-items: flex-end;
+
+    & textarea { flex: 1; }
+  }
+
+  & .list {
     list-style: none;
     margin: 0;
     padding: 0;
@@ -223,24 +387,19 @@ onUnmounted(() => window.removeEventListener('keydown', handleKeydown, true))
     & li:not(.selected) .comment { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   }
 
-  & .send-back {
-    display: flex;
-    gap: 0.4rem;
-
-    & input { flex: 1; }
-  }
-
   & .empty, & .error { margin: 0; }
   & .error { color: #e57373; }
 
   & .keys {
     display: flex;
+    flex-wrap: wrap;
     gap: 1rem;
     font-size: var(--font-size-small);
     color: #aaa;
 
     & .unavailable { opacity: 0.4; }
-    & kbd { font-family: monospace; }
   }
+
+  & kbd { font-family: monospace; }
 }
 </style>

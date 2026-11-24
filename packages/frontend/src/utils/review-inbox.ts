@@ -2,9 +2,9 @@ import type { Phase } from 'shared'
 import type { Idea } from '../stores/data'
 
 // States that wait on the human: finished work to accept, blocked work only a
-// human can unblock, and questions only a human can answer.
-export const AWAITING_HUMAN_STATES = ['review', 'human-dependent', 'unclear'] as const
-export const DEFAULT_AWAITING_HUMAN_STATES = ['review', 'human-dependent'] as const
+// human can unblock, questions only a human can answer, and AI proposals to
+// take up or turn down.
+export const AWAITING_HUMAN_STATES = ['review', 'human-dependent', 'unclear', 'ai-proposition'] as const
 
 export type InboxEntry = { idea: Idea; priority: number }
 
@@ -12,10 +12,15 @@ export type InboxEntry = { idea: Idea; priority: number }
 export function rankIdeasAwaitingHuman(
   ideas: Record<string, Idea>,
   priorities: Map<string, number>,
-  states: readonly string[] = DEFAULT_AWAITING_HUMAN_STATES
+  states: readonly string[] = AWAITING_HUMAN_STATES
 ): InboxEntry[] {
   return Object.values(ideas)
     .filter(idea => !idea.archived && states.includes(idea.status.state))
+    // A proposal under an idea that itself waits is one of its options, decided on that idea's card.
+    .filter(idea => idea.status.state !== 'ai-proposition' || !(idea.supportedIdeas ?? []).some(parentId => {
+      const parent = ideas[parentId]
+      return !!parent && !parent.archived && parent.status.state !== 'ai-proposition' && AWAITING_HUMAN_STATES.some(state => state === parent.status.state)
+    }))
     .map(idea => ({ idea, priority: priorities.get(idea.id) ?? 0 }))
     .sort((left, right) => right.priority - left.priority || left.idea.text.localeCompare(right.idea.text))
 }

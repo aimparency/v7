@@ -8,8 +8,8 @@ import { useUIModalStore } from '../../stores/ui/modal-store'
 
 vi.mock('../../trpc', () => ({ trpc: {} }))
 
-const idea = (id: string, state: string, comment = '') =>
-  ({ id, text: id, archived: false, status: { state, comment, date: 1 } })
+const idea = (id: string, state: string, comment = '', children: string[] = []) =>
+  ({ id, text: id, archived: false, status: { state, comment, date: 1 }, supportingConnections: children.map(ideaId => ({ ideaId })), supportedIdeas: [] })
 
 describe('ReviewInboxModal', () => {
   let dataStore: any
@@ -26,7 +26,8 @@ describe('ReviewInboxModal', () => {
             done: idea('done', 'review', 'tests pass'),
             blocked: idea('blocked', 'human-dependent', 'needs a login'),
             open: idea('open', 'open'),
-            question: idea('question', 'unclear')
+            question: idea('question', 'unclear', 'Which one?', ['yes']),
+            yes: { ...idea('yes', 'ai-proposition'), supportedIdeas: ['question'] }
           },
           phases: {
             plan: { id: 'plan', name: 'plan', parent: null, commitments: ['done', 'blocked'], childPhaseIds: [] }
@@ -36,51 +37,66 @@ describe('ReviewInboxModal', () => {
       }
     })
     dataStore = useDataStore()
-    dataStore.calculatedPriorities = new Map([['done', 1], ['blocked', 2], ['open', 5]])
+    dataStore.calculatedPriorities = new Map([['done', 1], ['blocked', 2], ['open', 5], ['question', 0.5]])
     modalStore = useUIModalStore()
   })
 
   const press = (key: string) => document.body.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true }))
+  const title = (wrapper: any) => wrapper.find('.card h3').text()
+  const options = (wrapper: any) => wrapper.findAll('.options li').map((item: any) => item.text())
 
-  it('lists what waits on the human by priority and accepts reviewed work with its evidence', async () => {
+  it('shows one idea at a time; a number decides, Space puts it off', async () => {
     const wrapper = mount(ReviewInboxModal, { attachTo: document.body })
 
-    expect(wrapper.findAll('li .text').map(item => item.text())).toEqual(['blocked', 'done'])
+    expect(title(wrapper)).toBe('blocked')
+    expect(options(wrapper)).toEqual(['1 Done, I did it', '2 Answer…', '3 Drop'])
 
-    press('a') // human-dependent: nothing to accept
-    expect(dataStore.updateIdea).not.toHaveBeenCalled()
+    press(' ')
+    await nextTick()
+    expect(title(wrapper)).toBe('done')
+    press('1')
+    expect(dataStore.updateIdea).toHaveBeenCalledWith('/p', 'done', { status: { state: 'implemented', comment: 'tests pass', date: 1 } })
 
-    press('j')
-    press('a')
-    expect(dataStore.updateIdea).toHaveBeenCalledWith('/p', 'done', {
-      status: { state: 'implemented', comment: 'tests pass', date: 1 }
-    })
+    press(' ')
+    await nextTick()
+    expect(title(wrapper)).toBe('question')
+    expect(options(wrapper)[0]).toBe('1 yes')
+    press(' ')
+    await nextTick()
+    expect(wrapper.find('.finished').exists()).toBe(true)
     wrapper.unmount()
   })
 
-  it('sends work back to open with a reason and opens ideas in the editor', async () => {
+  it('takes a written answer, undoes it, and opens ideas in the editor', async () => {
     const wrapper = mount(ReviewInboxModal, { attachTo: document.body })
 
     press('e')
     expect(modalStore.openIdeaEditModal).toHaveBeenCalledWith('blocked')
 
-    press('j')
-    press('s')
+    press('2')
     await nextTick()
-    await wrapper.find('.send-back input').setValue('missing screenshot')
-    await wrapper.find('.send-back').trigger('submit')
-    expect(dataStore.updateIdea).toHaveBeenCalledWith('/p', 'done', {
-      status: { state: 'open', comment: 'missing screenshot', date: 1 }
-    })
+    await nextTick()
+    await wrapper.find('.reply textarea').setValue('logged in')
+    press('1') // typing: numbers don't decide
+    press('Enter')
+    await nextTick()
+    expect(dataStore.updateIdea).toHaveBeenCalledTimes(1)
+    expect(dataStore.updateIdea).toHaveBeenCalledWith('/p', 'blocked', { status: { state: 'open', comment: 'Answer: logged in\n\nneeds a login', date: 1 } })
+
+    await new Promise(resolve => setTimeout(resolve))
+    press('u')
+    await new Promise(resolve => setTimeout(resolve))
+    expect(dataStore.updateIdea).toHaveBeenLastCalledWith('/p', 'blocked', { status: { state: 'human-dependent', comment: 'needs a login', date: 1 } })
     wrapper.unmount()
   })
 
-  it('toggles states (unclear is off by default) and orders by first appearance in the phases', async () => {
+  it('lists them all, filtered by state and ordered by first appearance in the phases', async () => {
     const wrapper = mount(ReviewInboxModal, { attachTo: document.body })
-    const texts = () => wrapper.findAll('li .text').map(item => item.text())
+    press('Tab')
+    await nextTick()
+    const texts = () => wrapper.findAll('.list li .text').map(item => item.text())
     const button = (label: string) => wrapper.findAll('.filters button').find(item => item.text().startsWith(label))!
 
-    await button('unclear').trigger('click')
     expect(texts()).toEqual(['blocked', 'done', 'question'])
 
     await button('human-dependent').trigger('click')
@@ -89,6 +105,11 @@ describe('ReviewInboxModal', () => {
     await button('human-dependent').trigger('click')
     await button('chronological').trigger('click')
     expect(texts()).toEqual(['done', 'blocked', 'question'])
+
+    press('j')
+    press('Enter')
+    await nextTick()
+    expect(title(wrapper)).toBe('blocked')
     wrapper.unmount()
   })
 })
