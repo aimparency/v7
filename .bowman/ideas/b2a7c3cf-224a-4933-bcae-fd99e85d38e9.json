@@ -12,7 +12,8 @@
         3.66
       ],
       "weight": 43.2,
-      "hypothesis": "Measured actual cost per idea gives the calibration the 30+ estimate/actual pairs it is waiting for within weeks instead of months."
+      "hypothesis": "Measured actual cost per idea gives the calibration the 30+ estimate/actual pairs it is waiting for within weeks instead of months.",
+      "reflection": "The data path now exists end to end, but 'within weeks' looks unlikely: most work currently runs through Claude Code with the Stop hook, which records no cost. 30+ pairs need either more harness cycles or a cost record for hook-driven sessions."
     },
     {
       "ideaId": "3244cd8d-96ac-4fbf-8068-a96450552d3a",

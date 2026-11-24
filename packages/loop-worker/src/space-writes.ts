@@ -56,6 +56,13 @@ export async function applyDecomposition(
   return applied;
 }
 
+/** Adds a cycle's actual cost to the idea it worked on; a failure to record it never fails the cycle. */
+export async function recordRealizedCost(space: SpaceTools, projectPath: string, ideaId: string, usd: number) {
+  await space.backend.idea.addRealizedCost.mutate({ space: toProjectRoot(projectPath), ideaId, usd }).catch((error: unknown) => {
+    console.error(`[loop-worker] could not record the cost of a cycle on ${ideaId}:`, error);
+  });
+}
+
 export async function applyStatus(space: SpaceTools, projectPath: string, ideaId: string, change: StatusChange) {
   await callSpaceTool(space, projectPath, 'update_idea', { ideaId, status: change });
 }

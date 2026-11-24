@@ -54,7 +54,8 @@ function fakeSpace(ideas: any[], targetId: string, similar: any[] = []) {
       update: { mutate: async (input: any) => { writes.push(['update', input]); } },
       search: { query: async () => [] },
       createFloatingIdea: { mutate: async (input: any) => { writes.push(['create', input]); return { id: '99999999-9999-4999-8999-999999999999' }; } },
-      connectIdeas: { mutate: async (input: any) => { writes.push(['connect', input]); } }
+      connectIdeas: { mutate: async (input: any) => { writes.push(['connect', input]); } },
+      addRealizedCost: { mutate: async (input: any) => { writes.push(['cost', input]); } }
     },
     project: { getMeta: { query: async () => null } }
   };
@@ -205,6 +206,7 @@ test('budgets: a priced cycle records its cost, the token budget stops before th
   await fs.writeFile(path.join(pricedContext.projectPath, '.bowman', 'harness.json'), JSON.stringify({ prices }));
   await runCycle(pricedContext);
   assert.equal((await readOnlyTrace(pricedContext.projectPath)).costUsd, 40, 'two stages at $10 input + $10 output each');
+  assert.deepEqual(priced.writes.filter(([kind]) => kind === 'cost').map(([, input]) => [input.ideaId, input.usd]), [['leaf', 40]], 'the idea keeps what the cycle cost');
 
   const limited = leaf();
   const scripted = submittingModel([executionDone, ['submit_verdict', { verdict: 'verified', reasons: 'ok' }]]);

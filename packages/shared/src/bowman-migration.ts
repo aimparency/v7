@@ -80,6 +80,13 @@ export const BOWMAN_MIGRATIONS: BowmanMigration[] = [
     // nothing is rewritten. The version still moves: code from before would
     // drop the new field when it rewrites meta.json, and now it only reads.
     run: async () => {}
+  },
+  {
+    version: 8,
+    name: 'an idea carries what harness cycles on it actually cost',
+    // Ideas gained the optional `realizedCostUsd`. Nothing has it yet, so
+    // nothing is rewritten; the version moves so older code only reads.
+    run: async () => {}
   }
 ];
 

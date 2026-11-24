@@ -771,6 +771,17 @@ export const ideaRouter = t.router({
 
   // Many connection offsets in one call (autolayout, drag saves): each parent
   // file is rewritten once; every other field, including hypotheses, is kept.
+  // A harness cycle's actual cost, added to the idea it worked on. The stored
+  // sum stays nominal dollars; compounding or discounting it is computed.
+  addRealizedCost: delayedProcedure
+    .input(z.object({ space: spaceAddress, ideaId: z.string().uuid(), usd: z.number().finite().positive() }))
+    .mutation(async ({ input }) => {
+      const updated = await updateIdea(input.space, input.ideaId, (idea) => ({
+        ...idea, realizedCostUsd: (idea.realizedCostUsd ?? 0) + input.usd
+      }));
+      return { realizedCostUsd: updated!.realizedCostUsd! };
+    }),
+
   setConnectionPositions: delayedProcedure
     .input(z.object({
       space: spaceAddress,

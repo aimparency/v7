@@ -15,9 +15,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "open",
-    "comment": "Felix 2026-11-23 decided: store it in dollars (option a). A dollar amount needs its date for the discounts (interest 5c1ccaa8, intelligence growth 760d59dd), but no history list: store realizedCostUsd plus realizedCostAt (the date the sum refers to). When the harness adds a cost, it compounds the stored sum to today, adds the new amount and sets the date to today; git keeps the older states. Idea values stay undated: they are shares of the root's value, not money. Still a data model change: migration per AGENTS.md.",
-    "date": 1795472031310
+    "state": "implemented",
+    "comment": "Data model 8: ideas carry optional realizedCostUsd, the summed actual cost of harness cycles in nominal US dollars (unit as decided with 5c1ccaa8; compounding/discounting stays computed). Backend idea.addRealizedCost({space, ideaId, usd > 0}) adds under the idea's file lock; the loop worker's record step calls it whenever a cycle's cost is known (a failure only logs). Migration v8 is a no-op version move (like v7) so older code stops writing; frozen fixture data-model-v7; protocol schemas regenerated and protocol/README says version 8 and documents the field (also fixed its stale /g/<slug> host form to /spaces/<slug>). Evidence: backend test 'an idea sums what harness cycles on it actually cost' (0.25 + 0.5 = 0.75, cost estimate untouched, negative refused); cycle.test priced cycle writes ['leaf', 40]; migration tests incl. data-model-v7 15/15; pnpm verify:migration on v7 and ~/life: no conflicts, value calc ok; pnpm check 25/25. Only CLI-executor and priced API cycles record; Claude Code sessions driven by the Stop hook don't go through the harness and record nothing.",
+    "date": 1795538600656
   },
   "intrinsicValue": 0,
   "cost": 2,

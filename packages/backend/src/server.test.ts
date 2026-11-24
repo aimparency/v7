@@ -1372,6 +1372,16 @@ test('a project from a newer Aimparency can be read but not changed', async () =
   assert.deepStrictEqual(await fs.readJson(path.join(testProjectPath, 'meta.json')), newer, 'meta.json is untouched');
 });
 
+test('an idea sums what harness cycles on it actually cost, next to its estimate', async () => {
+  const status = { state: 'open', comment: '', date: Date.now() };
+  const idea = await caller.idea.createFloatingIdea({ space: testProjectPath, idea: { text: 'Worked on', status, cost: 2 } });
+  await caller.idea.addRealizedCost({ space: testProjectPath, ideaId: idea.id, usd: 0.25 });
+  assert.deepEqual(await caller.idea.addRealizedCost({ space: testProjectPath, ideaId: idea.id, usd: 0.5 }), { realizedCostUsd: 0.75 });
+  const stored = await caller.idea.get({ space: testProjectPath, ideaId: idea.id });
+  assert.deepEqual([stored.cost, stored.realizedCostUsd], [2, 0.75]);
+  await assert.rejects(caller.idea.addRealizedCost({ space: testProjectPath, ideaId: idea.id, usd: -1 }));
+});
+
 test('ideas created without a cost stay unestimated: no default is written, space_hygiene lists them', async () => {
   await caller.project.getMeta({ space: testProjectPath });
   const meta = await caller.project.updateMeta({ space: testProjectPath, meta: { name: 'Costs', color: '#007acc', costUnit: 'hours', defaultCost: 3 } });

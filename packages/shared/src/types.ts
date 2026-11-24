@@ -53,6 +53,7 @@ export const IdeaSchema = z.object({
   intrinsicValue: z.number().finite().nonnegative().default(0), // Standalone estimated value
   valueRationale: z.string().optional(), // Human-authored explanation for the intrinsic value estimate
   cost: z.number().finite().positive().optional(), // Estimated direct present cost; absent = not estimated yet, valued at the project's defaultCost
+  realizedCostUsd: z.number().finite().nonnegative().optional(), // What harness cycles that worked on the idea actually cost, summed in US dollars at the time (data model 8)
   selfWeight: z.number().default(0), // Share of the value reaching the idea that it realizes through its own work
   // Economic refinement: temporal and uncertainty modeling
   duration: z.number().finite().nonnegative().default(1), // Estimated days from now until value is realized

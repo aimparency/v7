@@ -13,7 +13,8 @@
         -3.6
       ],
       "weight": 1,
-      "hypothesis": "Durable realized cost per idea is the data the calibration of cost estimates has been waiting for; refuted if harness cycles turn out too few or too uneven per idea to compare with estimates."
+      "hypothesis": "Durable realized cost per idea is the data the calibration of cost estimates has been waiting for; refuted if harness cycles turn out too few or too uneven per idea to compare with estimates.",
+      "reflection": "Built as the hypothesis said: the realized cost is now durable on the idea, next to cost. Whether it calibrates estimates depends on harness cycles happening; today most work runs through Claude Code sessions with the Stop hook, which record nothing, so the refutation risk ('too few cycles per idea') is real and worth watching."
     }
   ],
   "supportedIdeas": [
@@ -22,9 +23,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Done: each stage records tokens and wall time (trace); harness.json `prices` (USD per million tokens by model id) give each cycle's cost, stored as trace costUsd and shown in the cycle's status event ('Cost unknown' naming unpriced models instead of guessing); `budgets.maxTokensPerCycle` stops before the next stage, `budgets.maxUsdPerDay` skips cycles once today's priced traces reach it. Evidence: costs.test (sum, unpriced, today's spend), cycle.test budgets (priced cost 40 in a mock cycle, token budget stops before verify without status change, daily budget makes no model call and no trace), loop-worker 27/27, backend loop-cycle e2e 3/3, knip clean. Remaining: durable realized cost on the idea — split into the unclear child with the unit question for Felix.",
-    "date": 1794161142312
+    "state": "implemented",
+    "comment": "Complete with 675fce29: per-stage tokens and time in traces, USD from harness.json prices, per-cycle and per-day budgets, and now the realized cost durable on the idea (realizedCostUsd, data model 8). Evidence: see 675fce29 and the earlier comment (costs.test, cycle.test budgets); pnpm check 25/25.",
+    "date": 1795538601152
   },
   "intrinsicValue": 0,
   "cost": 2,

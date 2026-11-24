@@ -82,7 +82,8 @@
         -0.56
       ],
       "weight": 1,
-      "hypothesis": "Hard budgets make autonomous runs safe to leave unattended."
+      "hypothesis": "Hard budgets make autonomous runs safe to leave unattended.",
+      "reflection": "Budgets exist and are tested (token budget stops before the next stage, daily USD budget skips cycles); whether they make unattended runs safe is not yet observed in a long real run."
     },
     {
       "ideaId": "49bc4383-5675-404e-8f23-575959c28f94",

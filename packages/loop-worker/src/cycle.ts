@@ -15,7 +15,7 @@ import { calculateIdeaValues, missionPathsToRoot, type Idea } from 'shared';
 import { loadHarnessConfig, type HarnessConfig } from 'shared/harness-config';
 import { compileContext, type ContextInput } from './context.js';
 import { filterToolsByCapabilities } from './capabilities.js';
-import { applyDecomposition, applyReflections, applyStatus } from './space-writes.js';
+import { applyDecomposition, applyReflections, applyStatus, recordRealizedCost } from './space-writes.js';
 import { selectCycleTarget } from './runtime-policy.js';
 import { runStage, type StageTrace, type StageUsage } from './stage-runner.js';
 import { writeCycleTrace } from './traces.js';
@@ -239,6 +239,8 @@ export async function runCycle(ctx: CycleContext) {
   if (change && !signal.aborted) await applyStatus(space, projectPath, idea.id, change);
   const costUsd = cycleCostUsd(stageTraces, config.prices);
   const unpriced = unpricedModels(stageTraces, config.prices);
+  // The idea keeps what work on it actually cost, next to its estimate (b2a7c3cf calibrates one with the other).
+  if (costUsd !== null && costUsd > 0) await recordRealizedCost(space, projectPath, idea.id, costUsd);
   const tracePath = await writeCycleTrace(projectPath, {
     instanceId,
     startedAt,
