@@ -135,7 +135,8 @@ async function main() {
   const byModel = usageByModel(fresh.split('\n'));
   if (Object.keys(byModel).length === 0) return;
   // The next Stop's hook reads it: a long context makes most of a turn's cost (32b3478a).
-  fs.writeFileSync(path.join(runtime, 'context-size'), `${peakContextTokens(fresh.split('\n'))}\n`);
+  // Named by session, since other sessions (and the next one) share this file.
+  fs.writeFileSync(path.join(runtime, 'context-size'), `${peakContextTokens(fresh.split('\n'))} ${session}\n`);
   const prices = (() => {
     try { return JSON.parse(fs.readFileSync(path.join(repoRoot, '.bowman', 'harness.json'), 'utf8')).prices; } catch { return undefined; }
   })();

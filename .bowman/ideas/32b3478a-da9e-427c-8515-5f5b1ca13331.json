@@ -14,12 +14,12 @@
   "committedIn": [],
   "status": {
     "state": "implemented",
-    "comment": "record-session-cost.mjs writes the last turn's peak context per model call (input + cache read + cache write) to .bowman/runtime/context-size; at the next Stop the hook adds to its block reason, above AIMPARENCY_FRESH_CONTEXT_TOKENS (default 250000): 'This session re-reads about Nk tokens per model call, which makes most of each turn's cost. Finish the current step, commit, write the progress line, then ask the human to restart a fresh session … end with [AIMPARENCY_REQUEST_HUMAN]'. Uses the existing human-wait protocol, no new marker: restarting is a human (or wrapper) action. Evidence: recorder test 'the largest context one call read', hook contract test cases (300000 → note with '300k', 1000 → none) PASS. The measurement (cost per finished idea before/after a restart) is open: this session is the first case.",
+    "comment": "record-session-cost.mjs writes the last turn's peak context per model call (input + cache read + cache write) and the session id to .bowman/runtime/context-size; at that session's next Stop the hook adds to its block reason, above AIMPARENCY_FRESH_CONTEXT_TOKENS (default 250000), a request to wrap up and ask the human for a fresh session ([AIMPARENCY_REQUEST_HUMAN], granted without the challenge). Fix 2026-11-24: the figure was repo-wide, so the first fresh session (1bb1c449, ~26k/call) was told it re-reads 786k and asked to restart again; now only the session's own figure counts. Evidence: hook contract test cases (300000 same session → note with '300k'; other session → none; 1000 → none) and recorder test PASS. Open measurement: session-costs.log, fresh session 1bb1c449 first turn $0.39 with 366k cache reads over 14 calls vs about $0.36–0.97 per turn for the 779k-context session.",
     "date": 1795540912852
   },
   "intrinsicValue": 0,
   "cost": 1,
-  "realizedCostUsd": 1.346578,
+  "realizedCostUsd": 1.900396,
   "selfWeight": 1,
   "duration": 1,
   "costVariance": 0,

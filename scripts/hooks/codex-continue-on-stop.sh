@@ -46,14 +46,17 @@ if [[ "$human_wait_state" == "confirmed" ]]; then
 fi
 
 # A long context makes most of each turn's cost (every model call re-reads it;
-# 32b3478a). record-session-cost.mjs notes the last turn's peak per call; above
-# the threshold the agent is asked to wrap up so a fresh session continues, and
-# its request for the human (to restart) is granted without the challenge.
+# 32b3478a). record-session-cost.mjs notes the last turn's peak per call and its
+# session; only this session's own figure counts (a fresh session must not
+# inherit the old one's). Above the threshold the agent is asked to wrap up so a
+# fresh session continues, and its request for the human (to restart) is
+# granted without the challenge.
 fresh_note=""
 fresh_threshold="${AIMPARENCY_FRESH_CONTEXT_TOKENS:-250000}"
 if [[ -n "$repo_root" && -s "$repo_root/.bowman/runtime/context-size" ]]; then
-  context_size="$(head -n 1 "$repo_root/.bowman/runtime/context-size")"
-  if [[ "$context_size" =~ ^[0-9]+$ ]] && (( context_size > fresh_threshold )); then
+  read -r context_size context_session _ <"$repo_root/.bowman/runtime/context-size" || true
+  stop_session="$(node -e 'process.stdout.write(String(JSON.parse(process.argv[1]).session_id ?? ""))' "$stop_event" 2>/dev/null || true)"
+  if [[ "$context_size" =~ ^[0-9]+$ && -n "$stop_session" && "$context_session" == "$stop_session" ]] && (( context_size > fresh_threshold )); then
     if [[ "$human_wait_state" == "requested" ]]; then
       printf '{"continue":true}\n'
       exit 0
