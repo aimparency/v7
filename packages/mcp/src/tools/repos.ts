@@ -44,7 +44,7 @@ export const repoTools: ToolDefinition[] = [
   },
   {
     name: "find_spaces_on_disk",
-    description: "The spaces (.bowman folders) on this machine: path, name and repoId of each. Without repoId or name it lists them (nearby folders and the home folder, a few levels deep). To find a space that moved, give its repoId: a match is the same space wherever it went (matchedBy: id); a name only suggests folders of that name (matchedBy: name), maybe another space. A linked repo whose folder moved is pointed at the new one with register_linked_repo targetPath. Only on a server without accounts (this machine's own).",
+    description: "The spaces (.bowman folders) on this machine: path, name and repoId of each. Without repoId or name it lists them (nearby folders and the home folder, a few levels deep) with how alive each is (ideas, open, lastChange; counts only, never their content) and whether your space links it already (linked). To find a space that moved, give its repoId: a match is the same space wherever it went (matchedBy: id); a name only suggests folders of that name (matchedBy: name), maybe another space. A linked repo whose folder moved is pointed at the new one with register_linked_repo targetPath. Only on a server without accounts (this machine's own).",
     inputSchema: {
       type: "object",
       properties: {
@@ -52,6 +52,7 @@ export const repoTools: ToolDefinition[] = [
         name: { type: "string", description: "A folder or space name to suggest matches for" },
         roots: { type: "array", items: { type: "string" }, description: "Absolute folders to search. Default: the backend's folder, its parent and the home folder" },
         maxDepth: { type: "number", description: "How many folder levels below each root. Default 6 when looking for a space, else 3" },
+        space: { type: "string", description: "Your space, to mark the spaces it links already. Default: this session's space" },
       },
       required: [],
     },
@@ -63,8 +64,16 @@ export const repoTools: ToolDefinition[] = [
         limit: looking ? 20 : 200,
         ...(args.repoId ? { repoId: args.repoId as string } : {}),
         ...(args.name ? { name: args.name as string } : {}),
+        details: !looking,
       });
-      const spaces = projects.map(({ path, name, repoId, matchedBy }) => ({ path, ...(name ? { name } : {}), repoId: repoId ?? "none", ...(matchedBy ? { matchedBy } : {}) }));
+      const linked = new Set(args.space && !looking
+        ? (await trpcClient.linkedRepo.list.query({ space: args.space as string }).catch(() => [])).map((repo) => repo.repoId)
+        : []);
+      const spaces = projects.map(({ path, name, repoId, matchedBy, ideas, open, lastChange }) => ({
+        path, ...(name ? { name } : {}), repoId: repoId ?? "none", ...(matchedBy ? { matchedBy } : {}),
+        ...(ideas !== undefined ? { ideas, open, ...(lastChange ? { lastChange } : {}) } : {}),
+        ...(repoId && linked.has(repoId) ? { linked: true } : {}),
+      }));
       return { content: [{ type: "text", text: JSON.stringify({ rootsScanned, spaces }, null, 2) }] };
     },
   },

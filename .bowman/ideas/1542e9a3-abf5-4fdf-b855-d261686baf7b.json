@@ -11,9 +11,9 @@
   ],
   "committedIn": [],
   "status": {
-    "state": "partially",
-    "comment": "Core exists since b78ef0c0: MCP find_spaces_on_disk without filters lists every .bowman on this machine (nearby + home, 3 levels by default, up to 200) with path, name and repoId ('none' when missing). Still missing from the proposal: idea/open counts, last activity, whether the calling space already registered it, the mission line (36665fa6), and initializing a missing repoId/meta.",
-    "date": 1795537985553
+    "state": "implemented",
+    "comment": "MCP find_spaces_on_disk (b78ef0c0) without filters lists every .bowman on this machine (nearby + home, 3 levels by default, up to 200): path, name, repoId ('none' when missing), ideas, open (open + partially), lastChange (newest idea file), and linked: true when the calling space already links it. Counts only, never idea content, so the black-box rule holds. Backend: discoverLocalProjects details flag (readActivity). Left out on purpose: root aim titles (the proposal made them conditional on Felix's OK under e81b11c3) and initializing a missing repoId/meta (an agent can open the space and let it get one; separate if it turns out to matter); the mission line is 36665fa6. Evidence: backend discovery test (2 ideas, 1 open, lastChange), MCP test lists the target with ideas/open and linked after register_linked_repo; mcp and backend tsc clean. Takes effect for agents after /mcp reconnect.",
+    "date": 1795538075651
   },
   "intrinsicValue": 0,
   "cost": 1,

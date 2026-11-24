@@ -34,7 +34,9 @@ const projectDiscoveryInputSchema = z.object({
   // folder or space name, are listed.
   repoId: z.string().optional(),
   name: z.string().optional(),
-  limit: z.number().int().positive().max(500).optional()
+  limit: z.number().int().positive().max(500).optional(),
+  // How alive each space is: counts and the last change, never its ideas' content.
+  details: z.boolean().optional()
 });
 
 type SpaceOnDisk = {
@@ -42,8 +44,34 @@ type SpaceOnDisk = {
   name?: string, repoId?: string,
   /** With a repoId or name to look for: which of them this space matched. */
   matchedBy?: 'id' | 'name'
+  ideas?: number, open?: number, lastChange?: string
 };
-type DiscoveryFilter = { repoId?: string, name?: string, limit: number };
+type DiscoveryFilter = { repoId?: string, name?: string, limit: number, details?: boolean };
+
+const OPEN_STATES = new Set(['open', 'partially']);
+// Counts of a space's ideas, its open ones, and when an idea last changed.
+const readActivity = async (bowmanPath: string): Promise<Pick<SpaceOnDisk, 'ideas' | 'open' | 'lastChange'>> => {
+  const directory = path.join(bowmanPath, 'ideas');
+  let files: string[];
+  try {
+    files = (await fs.readdir(directory)).filter(file => file.endsWith('.json'));
+  } catch {
+    return { ideas: 0, open: 0 };
+  }
+  let open = 0;
+  let last = 0;
+  for (const file of files) {
+    try {
+      const filePath = path.join(directory, file);
+      const [content, stat] = await Promise.all([fs.readFile(filePath, 'utf8'), fs.stat(filePath)]);
+      if (OPEN_STATES.has((JSON.parse(content) as { status?: { state?: string } }).status?.state ?? '')) open++;
+      last = Math.max(last, stat.mtimeMs);
+    } catch {
+      // An unreadable idea file counts as an idea, not as open.
+    }
+  }
+  return { ideas: files.length, open, ...(last ? { lastChange: new Date(last).toISOString() } : {}) };
+};
 
 const DISCOVERY_IGNORED_DIRS = new Set([
   '.git',
@@ -107,7 +135,9 @@ const discoverProjectsFromRoot = async (
       const bowmanPath = path.join(dirPath, '.bowman');
       const found: SpaceOnDisk = { path: dirPath, bowmanPath, sourceRoot: root, ...await readIdentity(bowmanPath) };
       const matchedBy = matchOf(found, filter);
-      if (matchedBy !== null) results.push(matchedBy ? { ...found, matchedBy } : found);
+      if (matchedBy !== null) {
+        results.push({ ...found, ...(matchedBy ? { matchedBy } : {}), ...(filter.details ? await readActivity(bowmanPath) : {}) });
+      }
     }
 
     if (depth === maxDepth) return;
@@ -186,7 +216,7 @@ export const projectRouter = t.router({
         new Set((input?.roots?.length ? input.roots : getDefaultDiscoveryRoots()).map((root: string) => path.resolve(root)))
       );
       const maxDepth = input?.maxDepth ?? 2;
-      const filter: DiscoveryFilter = { repoId: input?.repoId, name: input?.name, limit: input?.limit ?? 50 };
+      const filter: DiscoveryFilter = { repoId: input?.repoId, name: input?.name, limit: input?.limit ?? 50, details: input?.details };
       const seenProjectRoots = new Set<string>();
       const projects: SpaceOnDisk[] = [];
 

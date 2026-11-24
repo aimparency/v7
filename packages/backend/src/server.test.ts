@@ -1182,6 +1182,14 @@ test('discoverLocalProjects - finds a moved space by its id; a folder of the sam
   ]);
   assert.equal(found.projects[0]!.name, 'Kitchen');
 
+  // How alive it is: counts and last change, no idea content.
+  const gardenIdeas = path.join(root, 'garden', '.bowman', 'ideas');
+  await fs.ensureDir(gardenIdeas);
+  await fs.writeJson(path.join(gardenIdeas, 'a.json'), { status: { state: 'open' } });
+  await fs.writeJson(path.join(gardenIdeas, 'b.json'), { status: { state: 'implemented' } });
+  const detailed = await caller.project.discoverLocalProjects({ roots: [path.join(root, 'garden')], maxDepth: 0, details: true });
+  assert.deepEqual([detailed.projects[0]!.ideas, detailed.projects[0]!.open, typeof detailed.projects[0]!.lastChange], [2, 1, 'string']);
+
   // A path typed by hand: the space there and its id.
   const typed = await caller.project.discoverLocalProjects({ roots: [path.join(root, 'garden')], maxDepth: 0 });
   assert.deepEqual(typed.projects.map(project => [project.name, project.repoId, project.matchedBy]), [['Garden', undefined, undefined]]);

@@ -184,4 +184,9 @@ test('find_spaces_on_disk finds a moved space by its id; a name only suggests', 
 
   const other = JSON.parse((await server.callTool('find_spaces_on_disk', { roots: [root], maxDepth: 0, repoId: '00000000-0000-4000-8000-000000000000' })).content[0].text);
   assert.deepEqual(other.spaces, []);
+
+  // Listed: how alive it is, and that the calling space links it once it does.
+  await server.callTool('register_linked_repo', { space: ctx.projectPath, targetPath: targetCtx.projectPath });
+  const listed = JSON.parse((await server.callTool('find_spaces_on_disk', { space: ctx.projectPath, roots: [root], maxDepth: 0 })).content[0].text);
+  assert.deepEqual(listed.spaces, [{ path: root, name: 'Ways of Will', repoId, ideas: 0, open: 0, linked: true }]);
 });
