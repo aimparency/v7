@@ -10,7 +10,7 @@ Work step by step through the Aimparency MCP:
 
 Every Aimparency MCP tool is yours to run (only the continue-hook toggles wait for the human). Graph state, not Markdown planning, holds the work. Preserve unrelated user changes.
 
-Stop only when the human explicitly told you in this session to stop or to wait for them: then say so and end with [AIMPARENCY_REQUEST_HUMAN]. A question for the human, a decision only they can make, missing credentials or an action only they can take are never a reason to stop: park them in the graph as in step 2 and continue elsewhere.
+Stop only when the human explicitly told you in this session to stop or to wait for them: then say so and end with [AIMPARENCY_REQUEST_HUMAN]. A question for the human, a decision only they can make, missing credentials or an action only they can take are never a reason to stop: park them in the graph as in step 2 and continue elsewhere. Your questions cost the human attention: decide anything reversible yourself, state the assumption in the graph, and tell them afterwards; ask only about what can't be undone.
 
 ## When the agent asks for the human
 
