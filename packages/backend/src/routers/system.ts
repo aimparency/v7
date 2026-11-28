@@ -1,21 +1,9 @@
-import path from 'node:path';
-import { fileURLToPath } from 'node:url';
 import { z } from 'zod';
 import { hasAccounts } from 'shared/server-config';
+import { localMcpCommand } from '../local-mcp.js';
 import { t, delayedProcedure } from '../trpc.js';
 import { readSystemStatus, writeSystemStatus } from '../storage/project.js';
 import { spaceAddress } from '../spaces/address.js';
-
-// Without accounts an agent starts the MCP server itself, over stdio: the
-// command with this checkout's absolute paths works from any directory. The
-// server reaches this backend over its WebSocket, named only when not the default.
-export function localMcpCommand() {
-  const mcp = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../../mcp');
-  const host = process.env.BIND_HOST;
-  const port = process.env.PORT_BACKEND_WS;
-  const env: Record<string, string> = host || (port && port !== '3001') ? { BACKEND_WS_URL: `ws://${host || 'localhost'}:${port || '3001'}` } : {};
-  return { command: path.join(mcp, 'node_modules/.bin/tsx'), args: [path.join(mcp, 'src/index.ts')], env };
-}
 
 export const systemRouter = t.router({
   mcpCommand: delayedProcedure.query(() => hasAccounts() ? null : localMcpCommand()),
